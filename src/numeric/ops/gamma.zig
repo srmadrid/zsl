@@ -27,10 +27,10 @@ pub fn Gamma(X: type) type {
         .real => @compileError("zml.numeric.gamma: not implemented for " ++ @typeName(X) ++ " yet."),
         .complex => @compileError("zml.numeric.gamma: not implemented for " ++ @typeName(X) ++ " yet."),
         .custom => {
-            if (comptime !types.hasMethod(X, "Gamma", fn (type) type, &.{X}))
-                @compileError("zml.numeric.gamma: " ++ @typeName(X) ++ " must implement `fn Gamma(type) type`");
+            if (comptime !types.hasMethod(X, "ZmlGamma", fn (type) type, &.{X}))
+                @compileError("zml.numeric.gamma: " ++ @typeName(X) ++ " must implement `fn ZmlGamma(type) type`");
 
-            return X.Gamma(X);
+            return X.ZmlGamma(X);
         },
     }
 }
@@ -50,42 +50,27 @@ pub fn Gamma(X: type) type {
 /// ## Arguments
 /// * `x` (`anytype`): The numeric value to get the gamma function of.
 /// * `ctx` (`anytype`): A context struct providing necessary resources and
-///   configuration for the operation. The required fields depend on `X`. If the
-///   context is missing required fields or contains unnecessary or wrongly
-///   typed fields, the compiler will emit a detailed error message describing
-///   the expected structure.
-///
-/// ### Context structure
-/// The fields of `ctx` depend on `numeric.Gamma(X)`.
-///
-/// #### `numeric.Gamma(X)` is not allocated
-/// The context must be empty.
-///
-/// #### `numeric.Gamma(X)` is allocated
-/// * `allocator: std.mem.Allocator` The allocator to use for the output value.
+///   configuration for the operation.
 ///
 /// ## Returns
-/// `numeric.Gamma(@TypeOf(x))`: The gamma of `x`.
+/// `numeric.Gamma(@TypeOf(x))`: The gamma function  of `x`.
 ///
 /// ## Errors
-/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails. Can
-///   only happen if `numeric.Gamma(X)` is allocated.
+/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
 ///
 /// ## Custom type support
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` must implement the required `Gamma` method. The expected signature and
-/// behavior of `Gamma` are as follows:
-/// * `fn Gamma(type) type`: Returns the return type of `gamma` for the custom
-///   numeric type.
+/// `X` must implement the required `ZmlGamma` method. The expected signature
+/// and behavior of `ZmlGamma` are as follows:
+/// * `fn ZmlGamma(type) type`: Returns the type of the gamma function of `x`.
 ///
-/// Let us denote the return type `numeric.Gamma(X)` as `R`. Then, `R` or `X`
-/// must implement the required `gamma` method. The expected signatures and
-/// behavior of `gamma` are as follows:
-/// * `R` is not allocated: `fn gamma(X) R`: Returns the gamma function of `x`.
-/// * `R` is allocated: `fn gamma(std.mem.Allocator, X) !R`: Returns the
-///   gamma function of `x` as a newly allocated value.
+/// `numeric.Gamma(X)` or `X` must implement the required `zmlGamma` method. The
+/// expected signature and behavior of `zmlGamma` are as follows:
+/// * `fn zmlGamma(X, anytype) !numeric.Gamma(X)`: Returns the gamma function of
+///   `x`, potentially using the provided context for necessary resources. This
+///   function is responsible for validating the context.
 pub inline fn gamma(x: anytype, ctx: anytype) !numeric.Gamma(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Gamma(X);
@@ -106,47 +91,22 @@ pub inline fn gamma(x: anytype, ctx: anytype) !numeric.Gamma(@TypeOf(x)) {
 
             return float.gamma(x);
         },
-        .dyadic => @compileError("zml.numeric.gamma: not implemented for " ++ @typeName(X) ++ " yet."),
-        .cfloat => @compileError("zml.numeric.gamma: not implemented for " ++ @typeName(X) ++ " yet."),
-        .integer => @compileError("zml.numeric.gamma: not implemented for " ++ @typeName(X) ++ " yet."),
-        .rational => @compileError("zml.numeric.gamma: not implemented for " ++ @typeName(X) ++ " yet."),
-        .real => @compileError("zml.numeric.gamma: not implemented for " ++ @typeName(X) ++ " yet."),
-        .complex => @compileError("zml.numeric.gamma: not implemented for " ++ @typeName(X) ++ " yet."),
+        .dyadic => unreachable,
+        .cfloat => unreachable,
+        .integer => unreachable,
+        .rational => unreachable,
+        .real => unreachable,
+        .complex => unreachable,
         .custom => {
-            if (comptime types.isAllocated(R)) {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X },
-                    "gamma",
-                    fn (std.mem.Allocator, X) anyerror!R,
-                    &.{ std.mem.Allocator, X },
-                ) orelse
-                    @compileError("zml.numeric.gamma: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn gamma(std.mem.Allocator, " ++ @typeName(X) ++ ") !" ++ @typeName(R) ++ "`");
+            const Impl: type = comptime types.anyHasMethod(
+                &.{ R, X },
+                "zmlGamma",
+                fn (X, anytype) anyerror!numeric.Gamma(X),
+                &.{ X, @TypeOf(ctx) },
+            ) orelse
+                @compileError("zml.numeric.gamma: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlGamma(" ++ @typeName(X) ++ ", anytype) !" ++ @typeName(R) ++ "`");
 
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the custom numeric's memory allocation.",
-                        },
-                    },
-                );
-
-                return Impl.gamma(ctx.allocator, x);
-            } else {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X },
-                    "gamma",
-                    fn (X) R,
-                    &.{X},
-                ) orelse
-                    @compileError("zml.numeric.gamma: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn gamma(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
-
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return Impl.gamma(x);
-            }
+            return Impl.zmlGamma(x, ctx);
         },
     }
 }

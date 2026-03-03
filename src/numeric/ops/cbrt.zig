@@ -27,10 +27,10 @@ pub fn Cbrt(X: type) type {
         .real => @compileError("zml.numeric.cbrt: not implemented for " ++ @typeName(X) ++ " yet."),
         .complex => @compileError("zml.numeric.cbrt: not implemented for " ++ @typeName(X) ++ " yet."),
         .custom => {
-            if (comptime !types.hasMethod(X, "Cbrt", fn (type) type, &.{X}))
-                @compileError("zml.numeric.cbrt: " ++ @typeName(X) ++ " must implement `fn Cbrt(type) type`");
+            if (comptime !types.hasMethod(X, "ZmlCbrt", fn (type) type, &.{X}))
+                @compileError("zml.numeric.cbrt: " ++ @typeName(X) ++ " must implement `fn ZmlCbrt(type) type`");
 
-            return X.Cbrt(X);
+            return X.ZmlCbrt(X);
         },
     }
 }
@@ -45,42 +45,27 @@ pub fn Cbrt(X: type) type {
 /// ## Arguments
 /// * `x` (`anytype`): The numeric value to get the cube root of.
 /// * `ctx` (`anytype`): A context struct providing necessary resources and
-///   configuration for the operation. The required fields depend on `X`. If the
-///   context is missing required fields or contains unnecessary or wrongly
-///   typed fields, the compiler will emit a detailed error message describing
-///   the expected structure.
-///
-/// ### Context structure
-/// The fields of `ctx` depend on `numeric.Cbrt(X)`.
-///
-/// #### `numeric.Cbrt(X)` is not allocated
-/// The context must be empty.
-///
-/// #### `numeric.Cbrt(X)` is allocated
-/// * `allocator: std.mem.Allocator` The allocator to use for the output value.
+///   configuration for the operation.
 ///
 /// ## Returns
 /// `numeric.Cbrt(@TypeOf(x))`: The cube root of `x`.
 ///
 /// ## Errors
-/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails. Can
-///   only happen if `numeric.Cbrt(X)` is allocated.
+/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
 ///
 /// ## Custom type support
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` must implement the required `Cbrt` method. The expected signature and
-/// behavior of `Cbrt` are as follows:
-/// * `fn Cbrt(type) type`: Returns the return type of `cbrt` for the custom
-///   numeric type.
+/// `X` must implement the required `ZmlCbrt` method. The expected signature and
+/// behavior of `ZmlCbrt` are as follows:
+/// * `fn ZmlCbrt(type) type`: Returns the type of the cube root of `x`.
 ///
-/// Let us denote the return type `numeric.Cbrt(X)` as `R`. Then, `R` or `X`
-/// must implement the required `cbrt` method. The expected signatures and
-/// behavior of `cbrt` are as follows:
-/// * `R` is not allocated: `fn cbrt(X) R`: Returns the cube root of `x`.
-/// * `R` is allocated: `fn cbrt(std.mem.Allocator, X) !R`: Returns the cube
-///   root of `x` as a newly allocated value.
+/// `numeric.Cbrt(X)` or `X` must implement the required `zmlCbrt` method. The
+/// expected signature and behavior of `zmlCbrt` are as follows:
+/// * `fn zmlCbrt(X, anytype) !numeric.Cbrt(X)`: Returns the cube root of `x`,
+///   potentially using the provided context for necessary resources. This
+///   function is responsible for validating the context.
 pub inline fn cbrt(x: anytype, ctx: anytype) !numeric.Cbrt(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Cbrt(X);
@@ -101,47 +86,22 @@ pub inline fn cbrt(x: anytype, ctx: anytype) !numeric.Cbrt(@TypeOf(x)) {
 
             return float.cbrt(x);
         },
-        .dyadic => @compileError("zml.numeric.cbrt: not implemented for " ++ @typeName(X) ++ " yet."),
-        .cfloat => @compileError("zml.numeric.cbrt: not implemented for " ++ @typeName(X) ++ " yet."),
-        .integer => @compileError("zml.numeric.cbrt: not implemented for " ++ @typeName(X) ++ " yet."),
-        .rational => @compileError("zml.numeric.cbrt: not implemented for " ++ @typeName(X) ++ " yet."),
-        .real => @compileError("zml.numeric.cbrt: not implemented for " ++ @typeName(X) ++ " yet."),
-        .complex => @compileError("zml.numeric.cbrt: not implemented for " ++ @typeName(X) ++ " yet."),
+        .dyadic => unreachable,
+        .cfloat => unreachable,
+        .integer => unreachable,
+        .rational => unreachable,
+        .real => unreachable,
+        .complex => unreachable,
         .custom => {
-            if (comptime types.isAllocated(R)) {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X },
-                    "cbrt",
-                    fn (std.mem.Allocator, X) anyerror!R,
-                    &.{ std.mem.Allocator, X },
-                ) orelse
-                    @compileError("zml.numeric.cbrt: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn cbrt(std.mem.Allocator, " ++ @typeName(X) ++ ") !" ++ @typeName(R) ++ "`");
+            const Impl: type = comptime types.anyHasMethod(
+                &.{ R, X },
+                "zmlCbrt",
+                fn (X, anytype) anyerror!numeric.Cbrt(X),
+                &.{ X, @TypeOf(ctx) },
+            ) orelse
+                @compileError("zml.numeric.cbrt: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlCbrt(" ++ @typeName(X) ++ ", anytype) !" ++ @typeName(R) ++ "`");
 
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the custom numeric's memory allocation.",
-                        },
-                    },
-                );
-
-                return Impl.cbrt(ctx.allocator, x);
-            } else {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X },
-                    "cbrt",
-                    fn (X) R,
-                    &.{X},
-                ) orelse
-                    @compileError("zml.numeric.cbrt: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn cbrt(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
-
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return Impl.cbrt(x);
-            }
+            return Impl.zmlCbrt(x, ctx);
         },
     }
 }

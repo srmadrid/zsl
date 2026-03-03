@@ -27,10 +27,10 @@ pub fn Re(X: type) type {
         .real => return X,
         .complex => return types.Scalar(X),
         .custom => {
-            if (comptime !types.hasMethod(X, "Re", fn (type) type, &.{X}))
-                @compileError("zml.numeric.re: " ++ @typeName(X) ++ " must implement `fn Re(type) type`");
+            if (comptime !types.hasMethod(X, "ZmlRe", fn (type) type, &.{X}))
+                @compileError("zml.numeric.re: " ++ @typeName(X) ++ " must implement `fn ZmlRe(type) type`");
 
-            return X.Re(X);
+            return X.ZmlRe(X);
         },
     }
 }
@@ -45,51 +45,31 @@ pub fn Re(X: type) type {
 /// ## Arguments
 /// * `x` (`anytype`): The numeric value to get the real part of.
 /// * `ctx` (`anytype`): A context struct providing necessary resources and
-///   configuration for the operation. The required fields depend on `X`. If the
-///   context is missing required fields or contains unnecessary or wrongly
-///   typed fields, the compiler will emit a detailed error message describing
-///   the expected structure.
-///
-/// ### Context structure
-/// The fields of `ctx` depend on `numeric.Re(X)`.
-///
-/// #### `numeric.Re(X)` is not allocated
-/// The context must be empty.
-///
-/// #### `numeric.Re(X)` is allocated and `X.has_simple_re` exists and is true
-/// * `allocator: std.mem.Allocator` (optional): The allocator to use for the
-///   output value. If not provided, a read-only view will be returned.
-///
-/// #### `numeric.Re(X)` is allocated and `X.has_simple_re` does not exist or is false
-/// * `allocator: std.mem.Allocator`: The allocator to use for the output value.
+///   configuration for the operation.
 ///
 /// ## Returns
 /// `numeric.Re(@TypeOf(x))`: The real part of `x`.
 ///
 /// ## Errors
-/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails. Can
-///   only happen if `numeric.Re(X)` is allocated and an allocator is provided.
+/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
 ///
 /// ## Custom type support
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` must implement the required `Re` method. The expected signature and
-/// behavior of `Re` are as follows:
-/// * `fn Re(type) type`: Returns the return type of `re` for the custom
-///   numeric type.
+/// `X` must implement the required `ZmlRe` method. The expected signature and
+/// behavior of `ZmlRe` are as follows:
+/// * `fn ZmlRe(type) type`: Returns the type of the real part of `x`.
 ///
-/// Let us denote the return type `numeric.Re(X)` as `R`. Then, `R` or `X` must
-/// implement the required `re` method. The expected signatures and behavior of
-/// `re` are as follows:
-/// * `R` is not allocated: `fn re(X) R`: Returns the real part of `x`.
-/// * `R` is allocated:
-///   * `X.has_simple_re` exists and is true: `fn re(?std.mem.Allocator, X) !R`:
-///     Returns the real part of `x` as a newly allocated value, if the
-///     allocator is provided, or a read-only view if not. If not provided, it
-///     must not fail.
-///   * `X.has_simple_re` does not exist or is false: `fn re(std.mem.Allocator, X) !R`:
-///     Returns the real part of `x` as a newly allocated value.
+/// `numeric.Re(X)` or `X` must implement the required `zmlRe` method. The
+/// expected signature and behavior of `zmlRe` are as follows:
+/// * `fn zmlRe(X, anytype) !numeric.Re(X)`: Returns the real part of `x`,
+///   potentially using the provided context for necessary resources. This
+///   function is responsible for validating the context.
+///
+/// Custom allocated types can optionally declare `zml_has_simple_re` as `true`
+/// to indicate that their `zmlRe` implementation can be called without an
+/// allocator in the context, instead returning a view and never erroring.
 pub inline fn re(x: anytype, ctx: anytype) !numeric.Re(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Re(X);
@@ -157,66 +137,15 @@ pub inline fn re(x: anytype, ctx: anytype) !numeric.Re(@TypeOf(x)) {
         .real => @compileError("zml.numeric.re: not implemented for " ++ @typeName(X) ++ " yet."),
         .complex => @compileError("zml.numeric.re: not implemented for " ++ @typeName(X) ++ " yet."),
         .custom => {
-            if (comptime types.isAllocated(R)) {
-                if (comptime @hasDecl(X, "has_simple_re") and X.has_simple_re) {
-                    const Impl: type = comptime types.anyHasMethod(
-                        &.{ R, X },
-                        "re",
-                        fn (?std.mem.Allocator, X) anyerror!R,
-                        &.{ std.mem.Allocator, X },
-                    ) orelse
-                        @compileError("zml.numeric.re: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn re(?std.mem.Allocator, " ++ @typeName(X) ++ ") !" ++ @typeName(R) ++ "`");
+            const Impl: type = comptime types.anyHasMethod(
+                &.{ R, X },
+                "zmlRe",
+                fn (X, anytype) anyerror!numeric.Re(X),
+                &.{ X, @TypeOf(ctx) },
+            ) orelse
+                @compileError("zml.numeric.re: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlRe(" ++ @typeName(X) ++ ", anytype) !" ++ @typeName(R) ++ "`");
 
-                    comptime types.validateContext(
-                        @TypeOf(ctx),
-                        .{
-                            .allocator = .{
-                                .type = std.mem.Allocator,
-                                .required = false,
-                                .description = "The allocator to use for the custom numeric's memory allocation. If not provided, a view will be returned.",
-                            },
-                        },
-                    );
-
-                    return if (comptime types.ctxHasField(@TypeOf(ctx), "allocator", std.mem.Allocator))
-                        Impl.re(ctx.allocator, x)
-                    else
-                        Impl.re(null, x) catch unreachable;
-                } else {
-                    const Impl: type = comptime types.anyHasMethod(
-                        &.{ R, X },
-                        "re",
-                        fn (std.mem.Allocator, X) anyerror!R,
-                        &.{ std.mem.Allocator, X },
-                    ) orelse
-                        @compileError("zml.numeric.re: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn re(std.mem.Allocator, " ++ @typeName(X) ++ ") !" ++ @typeName(R) ++ "`");
-
-                    comptime types.validateContext(
-                        @TypeOf(ctx),
-                        .{
-                            .allocator = .{
-                                .type = std.mem.Allocator,
-                                .required = true,
-                                .description = "The allocator to use for the custom numeric's memory allocation.",
-                            },
-                        },
-                    );
-
-                    return Impl.re(ctx.allocator, x);
-                }
-            } else {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X },
-                    "re",
-                    fn (X) R,
-                    &.{X},
-                ) orelse
-                    @compileError("zml.numeric.re: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn re(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
-
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return Impl.re(x);
-            }
+            return Impl.zmlRe(x, ctx);
         },
     }
 }

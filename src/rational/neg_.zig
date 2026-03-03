@@ -6,7 +6,7 @@ const Rational = rational.Rational;
 
 const check_aliasing = @import("check_aliasing.zig").check_aliasing;
 
-/// Performs in-place computation of the absolute value of a rational.
+/// Performs in-place computation of the negation of a rational.
 ///
 /// If the allocator is not provided, `o` and `x` must be the same rational, and
 /// the operation will simply set the `positive` field of `o` to `true`.
@@ -16,7 +16,7 @@ const check_aliasing = @import("check_aliasing.zig").check_aliasing;
 ///   allocations. If provided, must be the same allocator used to initialize
 ///   `o`.
 /// * `o` (`*Rational`): The output operand.
-/// * `x` (`Rational`): The rational value to get the absolute value of.
+/// * `x` (`Rational`): The rational value to get the negation of.
 ///
 /// ## Returns
 /// `void`
@@ -27,12 +27,12 @@ const check_aliasing = @import("check_aliasing.zig").check_aliasing;
 ///   rationals.
 /// * `rational.Error.AllocatorRequired`: If `o` and `x` are different rationals
 ///   and no allocator is provided.
-pub fn abs_(allocator: ?std.mem.Allocator, o: *Rational, x: Rational) !void {
+pub fn neg_(allocator: ?std.mem.Allocator, o: *Rational, x: Rational) !void {
     if (check_aliasing(o, x)) {
-        o.num.positive = true;
+        o.num.positive = !x.num.positive;
     } else {
         if (allocator) |a|
-            try o.set(a, rational.abs(null, x) catch unreachable, 1)
+            try o.set(a, rational.neg(null, x) catch unreachable, 1)
         else
             return rational.Error.AllocatorRequired;
     }

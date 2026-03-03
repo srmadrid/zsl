@@ -75,30 +75,10 @@ pub inline fn init(comptime N: type, ctx: anytype) !N {
         .real => @compileError("zml.numeric.init: not implemented for " ++ @typeName(N) ++ " yet."),
         .complex => @compileError("zml.numeric.init: not implemented for " ++ @typeName(N) ++ " yet."),
         .custom => {
-            if (comptime types.isAllocated(N)) {
-                comptime if (!types.hasMethod(N, "init", fn (std.mem.Allocator) anyerror!N, &.{std.mem.Allocator}))
-                    @compileError("zml.numeric.init: " ++ @typeName(N) ++ " must implement `fn init(std.mem.Allocator) !" ++ @typeName(N) ++ "`");
+            comptime if (!types.hasMethod(N, "zmlInit", fn (anytype) anyerror!N, &.{@TypeOf(ctx)}))
+                @compileError("zml.numeric.init: " ++ @typeName(N) ++ " must implement `fn zmlInit(anytype) !" ++ @typeName(N) ++ "`");
 
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the custom numeric's memory allocation.",
-                        },
-                    },
-                );
-
-                return N.init(ctx.allocator);
-            } else {
-                comptime if (!types.hasMethod(N, "init", fn () N, &.{}))
-                    @compileError("zml.numeric.init: " ++ @typeName(N) ++ " must implement `fn init() " ++ @typeName(N) ++ "`");
-
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return N.init();
-            }
+            return N.zmlInit(ctx);
         },
     }
 }

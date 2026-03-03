@@ -23,37 +23,23 @@ const numeric = @import("../../numeric.zig");
 /// * `o` (`anytype`): The output operand.
 /// * `x` (`anytype`): The input operand.
 /// * `ctx` (`anytype`): A context struct providing necessary resources and
-///   configuration for the operation. The required fields depend on `X` and
-///   `Y`. If the context is missing required fields or contains unnecessary or
-///   wrongly typed fields, the compiler will emit a detailed error message
-///   describing the expected structure.
-///
-/// ### Context structure
-/// The fields of `ctx` depend on `O`.
-///
-/// #### `O` is not allocated
-/// The context must be empty.
-///
-/// #### `O` is allocated
-/// * `allocator: std.mem.Allocator`: The allocator to use for the output value.
+///   configuration for the operation.
 ///
 /// ## Returns
 /// `void`
 ///
 /// ## Errors
-/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails. Can
-///   only happen if `O` is allocated.
+/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
 ///
 /// ## Custom type support
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `O` or `X` must implement the required `set` method. The expected signature
-/// and behavior of `set` are as follows:
-/// * `O` is not allocated: `fn set(*O, X) void`: Sets the value of `o` to `x`.
-/// * `O` is allocated: `fn set(std.mem.Allocator, *O, X) !void`: Sets the value
-///   of `o` to `x`, using the provided allocator for any necessary memory
-///   management.
+/// `O` or `X` must implement the required `zmlSet` method. The expected
+/// signature and behavior of `zmlSet` are as follows:
+/// * `fn zmlSet(*O, X, anytype) !void`: Sets the value of `o` to `x`,
+///   potentially using the provided context for necessary resources. This
+///   function is responsible for validating the context.
 pub inline fn set(o: anytype, x: anytype, ctx: anytype) !void {
     comptime var O: type = @TypeOf(o);
     const X: type = @TypeOf(x);
@@ -67,91 +53,26 @@ pub inline fn set(o: anytype, x: anytype, ctx: anytype) !void {
 
     if (comptime types.isCustomType(O)) {
         if (comptime types.isCustomType(X)) { // O and X both custom
-            if (comptime types.isAllocated(O)) {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ O, X },
-                    "set",
-                    fn (std.mem.Allocator, *O, X) anyerror!void,
-                    &.{ std.mem.Allocator, *O, X },
-                ) orelse
-                    @compileError("zml.numeric.set: " ++ @typeName(O) ++ " or " ++ @typeName(X) ++ " must implement `fn set(std.mem.Allocator, *" ++ @typeName(O) ++ ", " ++ @typeName(X) ++ ") !void`");
+            const Impl: type = comptime types.anyHasMethod(
+                &.{ O, X },
+                "zmlSet",
+                fn (*O, X, anytype) anyerror!void,
+                &.{ *O, X, @TypeOf(ctx) },
+            ) orelse
+                @compileError("zml.numeric.set: " ++ @typeName(O) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlSet(*" ++ @typeName(O) ++ ", " ++ @typeName(X) ++ ", anytype) !void`");
 
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the custom numeric's memory allocation.",
-                        },
-                    },
-                );
-
-                return Impl.set(ctx.allocator, o, x);
-            } else {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ O, X },
-                    "set",
-                    fn (*O, X) void,
-                    &.{ *O, X },
-                ) orelse
-                    @compileError("zml.numeric.set: " ++ @typeName(O) ++ " or " ++ @typeName(X) ++ " must implement `fn set(*" ++ @typeName(O) ++ ", " ++ @typeName(X) ++ ") void`");
-
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return Impl.set(o, x);
-            }
+            return Impl.set(o, x, ctx);
         } else { // only O custom
-            if (comptime types.isAllocated(O)) {
-                comptime if (!types.hasMethod(O, "set", fn (std.mem.Allocator, *O, X) anyerror!void, &.{ std.mem.Allocator, *O, X }))
-                    @compileError("zml.numeric.set: " ++ @typeName(O) ++ " must implement `fn set(std.mem.Allocator, *" ++ @typeName(O) ++ ", " ++ @typeName(X) ++ ") !void`");
+            comptime if (!types.hasMethod(O, "zmlSet", fn (*O, X, anytype) anyerror!void, &.{ *O, X, @TypeOf(ctx) }))
+                @compileError("zml.numeric.set: " ++ @typeName(O) ++ " must implement `fn zmlSet(*" ++ @typeName(O) ++ ", " ++ @typeName(X) ++ ", anytype) !void`");
 
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the custom numeric's memory allocation.",
-                        },
-                    },
-                );
-
-                return O.set(ctx.allocator, o, x);
-            } else {
-                comptime if (!types.hasMethod(O, "set", fn (*O, X) void, &.{ *O, X }))
-                    @compileError("zml.numeric.set: " ++ @typeName(O) ++ " must implement `fn set(*" ++ @typeName(O) ++ ", " ++ @typeName(X) ++ ") void`");
-
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return O.set(o, x);
-            }
+            return O.zmlSet(o, x, ctx);
         }
     } else if (comptime types.isCustomType(X)) { // only X custom
-        if (comptime types.isAllocated(O)) {
-            comptime if (!types.hasMethod(X, "set", fn (std.mem.Allocator, *O, X) anyerror!void, &.{ std.mem.Allocator, *O, X }))
-                @compileError("zml.numeric.set: " ++ @typeName(X) ++ " must implement `fn set(std.mem.Allocator, *" ++ @typeName(O) ++ ", " ++ @typeName(X) ++ ") !void`");
+        comptime if (!types.hasMethod(X, "zmlSet", fn (*O, X, anytype) anyerror!void, &.{ *O, X, @TypeOf(ctx) }))
+            @compileError("zml.numeric.set: " ++ @typeName(X) ++ " must implement `fn zmlSet(*" ++ @typeName(O) ++ ", " ++ @typeName(X) ++ ", anytype) !void`");
 
-            comptime types.validateContext(
-                @TypeOf(ctx),
-                .{
-                    .allocator = .{
-                        .type = std.mem.Allocator,
-                        .required = true,
-                        .description = "The allocator to use for the custom numeric's memory allocation.",
-                    },
-                },
-            );
-
-            return X.set(ctx.allocator, o, x);
-        } else {
-            comptime if (!types.hasMethod(X, "set", fn (*O, X) void, &.{ *O, X }))
-                @compileError("zml.numeric.set: " ++ @typeName(X) ++ " must implement `fn set(*" ++ @typeName(O) ++ ", " ++ @typeName(X) ++ ") void`");
-
-            comptime types.validateContext(@TypeOf(ctx), .{});
-
-            return X.set(o, x);
-        }
+        return X.zmlSet(o, x, ctx);
     }
 
     switch (comptime types.numericType(O)) {

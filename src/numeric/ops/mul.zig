@@ -20,24 +20,24 @@ pub fn Mul(X: type, Y: type) type {
         if (comptime types.isCustomType(Y)) { // X and Y both custom
             const Impl: type = comptime types.anyHasMethod(
                 &.{ X, Y },
-                "Mul",
+                "ZmlMul",
                 fn (type, type) type,
                 &.{ X, Y },
             ) orelse
-                @compileError("zml.numeric.mul: " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn Mul(type, type) type`");
+                @compileError("zml.numeric.mul: " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn ZmlMul(type, type) type`");
 
-            return Impl.Mul(X, Y);
+            return Impl.ZmlMul(X, Y);
         } else { // only X custom
-            comptime if (!types.hasMethod(X, "Mul", fn (type, type) type, &.{ X, Y }))
-                @compileError("zml.numeric.mul: " ++ @typeName(X) ++ " must implement `fn Mul(type, type) type`");
+            comptime if (!types.hasMethod(X, "ZmlMul", fn (type, type) type, &.{ X, Y }))
+                @compileError("zml.numeric.mul: " ++ @typeName(X) ++ " must implement `fn ZmlMul(type, type) type`");
 
-            return X.Mul(X, Y);
+            return X.ZmlMul(X, Y);
         }
     } else if (comptime types.isCustomType(Y)) { // only Y custom
-        comptime if (!types.hasMethod(Y, "Mul", fn (type, type) type, &.{ X, Y }))
-            @compileError("zml.numeric.mul: " ++ @typeName(Y) ++ " must implement `fn Mul(type, type) type`");
+        comptime if (!types.hasMethod(Y, "ZmlMul", fn (type, type) type, &.{ X, Y }))
+            @compileError("zml.numeric.mul: " ++ @typeName(Y) ++ " must implement `fn ZmlMul(type, type) type`");
 
-        return Y.Mul(X, Y);
+        return Y.ZmlMul(X, Y);
     }
 
     switch (comptime types.numericType(X)) {
@@ -131,19 +131,7 @@ pub fn Mul(X: type, Y: type) type {
 /// * `x` (`anytype`): The left operand.
 /// * `y` (`anytype`): The right operand.
 /// * `ctx` (`anytype`): A context struct providing necessary resources and
-///   configuration for the operation. The required fields depend on `X` and
-///   `Y`. If the context is missing required fields or contains unnecessary or
-///   wrongly typed fields, the compiler will emit a detailed error message
-///   describing the expected structure.
-///
-/// ### Context structure
-/// The fields of `ctx` depend on `numeric.Mul(X, Y)`.
-///
-/// #### `numeric.Mul(X, Y)` is not allocated
-/// The context must be empty.
-///
-/// #### `numeric.Mul(X, Y)` is allocated
-/// * `allocator: std.mem.Allocator`: The allocator to use for the output value.
+///   configuration for the operation.
 ///
 /// ## Returns
 /// `numeric.Mul(@TypeOf(x), @TypeOf(y))`: The result of the multiplication.
@@ -156,18 +144,15 @@ pub fn Mul(X: type, Y: type) type {
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` or `Y` must implement the required `Mul` method. The expected signature
-/// and behavior of `Mul` are as follows:
-/// * `fn Mul(type, type) type`: Returns the return type of `mul` for the input
-///   types.
+/// `X` or `Y` must implement the required `ZmlMul` method. The expected signature
+/// and behavior of `ZmlMul` are as follows:
+/// * `fn ZmlMul(type, type) type`: Returns the type of `x + y`.
 ///
-/// Let us denote the return type `numeric.Mul(X, Y)` as `R`. Then, `R`, `X` or
-/// `Y` must implement the required `mul` method. The expected signatures and
-/// behavior of `mul` are as follows:
-/// * `R` is not allocated: `fn mul(X, Y) R`: Returns the multiplication of `x`
-///   and `y`.
-/// * `R` is allocated: `fn mul(std.mem.Allocator, X, Y) !R`: Returns the
-///   mul of `x` and `y` as a newly allocated value.
+/// `numeric.Mul(X, Y)`, `X` or `Y` must implement the required `zmlMul` method.
+/// The expected signatures and behavior of `zmlMul` are as follows:
+/// * `fn zmlMul(X, Y, anytype) !numeric.Mul(X, Y)`: Returns the multiplication
+///   of `x` and `y`, potentially using the provided context for necessary
+///   resources. This function is responsible for validating the context.
 pub inline fn mul(x: anytype, y: anytype, ctx: anytype) !numeric.Mul(@TypeOf(x), @TypeOf(y)) {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
@@ -175,111 +160,36 @@ pub inline fn mul(x: anytype, y: anytype, ctx: anytype) !numeric.Mul(@TypeOf(x),
 
     if (comptime types.isCustomType(X)) {
         if (comptime types.isCustomType(Y)) { // X and Y both custom
-            if (comptime types.isAllocated(R)) {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X, Y },
-                    "mul",
-                    fn (std.mem.Allocator, X, Y) anyerror!R,
-                    &.{ std.mem.Allocator, X, Y },
-                ) orelse
-                    @compileError("zml.numeric.mul: " ++ @typeName(R) ++ ", " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn mul(std.mem.Allocator, " ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") !" ++ @typeName(R) ++ "`");
+            const Impl: type = comptime types.anyHasMethod(
+                &.{ R, X, Y },
+                "zmlMul",
+                fn (X, Y, anytype) anyerror!R,
+                &.{ X, Y, @TypeOf(ctx) },
+            ) orelse
+                @compileError("zml.numeric.mul: " ++ @typeName(R) ++ ", " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn zmlMul(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ", anytype) !" ++ @typeName(R) ++ "`");
 
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the custom numeric's memory allocation.",
-                        },
-                    },
-                );
-
-                return Impl.mul(ctx.allocator, x, y);
-            } else {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X, Y },
-                    "mul",
-                    fn (X, Y) R,
-                    &.{ X, Y },
-                ) orelse
-                    @compileError("zml.numeric.mul: " ++ @typeName(R) ++ ", " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn mul(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
-
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return Impl.mul(x, y);
-            }
+            return Impl.zmlMul(x, y, ctx);
         } else { // only X custom
-            if (comptime types.isAllocated(R)) {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X },
-                    "mul",
-                    fn (std.mem.Allocator, X, Y) anyerror!R,
-                    &.{ std.mem.Allocator, X, Y },
-                ) orelse
-                    @compileError("zml.numeric.mul: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn mul(std.mem.Allocator, " ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") !" ++ @typeName(R) ++ "`");
+            const Impl: type = comptime types.anyHasMethod(
+                &.{ R, X },
+                "zmlMul",
+                fn (X, Y, anytype) anyerror!R,
+                &.{ X, Y, @TypeOf(ctx) },
+            ) orelse
+                @compileError("zml.numeric.mul: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlMul(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ", anytype) !" ++ @typeName(R) ++ "`");
 
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the custom numeric's memory allocation.",
-                        },
-                    },
-                );
-
-                return Impl.mul(ctx.allocator, x, y);
-            } else {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X },
-                    "mul",
-                    fn (X, Y) R,
-                    &.{ X, Y },
-                ) orelse
-                    @compileError("zml.numeric.mul: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn mul(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
-
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return Impl.mul(x, y);
-            }
+            return Impl.zmlMul(x, y, ctx);
         }
     } else if (comptime types.isCustomType(Y)) { // only Y custom
-        if (comptime types.isAllocated(R)) {
-            const Impl: type = comptime types.anyHasMethod(
-                &.{ R, Y },
-                "mul",
-                fn (std.mem.Allocator, X, Y) anyerror!R,
-                &.{ std.mem.Allocator, X, Y },
-            ) orelse
-                @compileError("zml.numeric.mul: " ++ @typeName(R) ++ " or " ++ @typeName(Y) ++ " must implement `fn mul(std.mem.Allocator, " ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") !" ++ @typeName(R) ++ "`");
+        const Impl: type = comptime types.anyHasMethod(
+            &.{ R, Y },
+            "zmlMul",
+            fn (X, Y, anytype) anyerror!R,
+            &.{ X, Y, @TypeOf(ctx) },
+        ) orelse
+            @compileError("zml.numeric.mul: " ++ @typeName(R) ++ " or " ++ @typeName(Y) ++ " must implement `fn zmlMul(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ", anytype) !" ++ @typeName(R) ++ "`");
 
-            comptime types.validateContext(
-                @TypeOf(ctx),
-                .{
-                    .allocator = .{
-                        .type = std.mem.Allocator,
-                        .required = true,
-                        .description = "The allocator to use for the custom numeric's memory allocation.",
-                    },
-                },
-            );
-
-            return Impl.mul(ctx.allocator, x, y);
-        } else {
-            const Impl: type = comptime types.anyHasMethod(
-                &.{ R, Y },
-                "mul",
-                fn (X, Y) R,
-                &.{ X, Y },
-            ) orelse
-                @compileError("zml.numeric.mul: " ++ @typeName(R) ++ " or " ++ @typeName(Y) ++ " must implement `fn mul(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
-
-            comptime types.validateContext(@TypeOf(ctx), .{});
-
-            return Impl.mul(x, y);
-        }
+        return Impl.zmlMul(x, y, ctx);
     }
 
     switch (comptime types.numericType(X)) {

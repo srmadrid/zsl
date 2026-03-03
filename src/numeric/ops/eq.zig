@@ -28,19 +28,9 @@ const numeric = @import("../../numeric.zig");
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// ### `X` is custom
-/// `X` must implement the required `eq` method. The expected signature and
-/// behavior of `eq` are as follows:
-/// * `fn eq(X, Y) bool`: Compares `x` and `y` for equality.
-///
-/// ### `Y` is a custom numeric type
-/// `Y` must implement the required `eq` method, with the same specifications as
-/// above.
-///
-/// ### Both `X` and `Y` are custom numeric types
-/// At least one of `X` and `Y` must implement the required `eq` method, with
-/// the same specifications as above. If both implement it, `X`'s implementation
-/// will be used.
+/// `X` or `Y` must implement the required `zmlEq` method. The expected
+/// signature and behavior of `zmlEq` are as follows:
+/// * `fn zmlEq(X, Y) bool`: Compares `x` and `y` for equality.
 pub inline fn eq(x: anytype, y: anytype) bool {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
@@ -49,24 +39,24 @@ pub inline fn eq(x: anytype, y: anytype) bool {
         if (comptime types.isCustomType(Y)) { // X and Y both custom
             const Impl: type = comptime types.anyHasMethod(
                 &.{ X, Y },
-                "eq",
+                "zmlEq",
                 fn (X, Y) bool,
                 &.{ X, Y },
             ) orelse
-                @compileError("zml.numeric.eq: " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn eq(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
+                @compileError("zml.numeric.eq: " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn zmlEq(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
 
-            return Impl.eq(x, y);
+            return Impl.zmlEq(x, y);
         } else { // only X custom
-            comptime if (!types.hasMethod(X, "eq", fn (X, Y) bool, &.{ X, Y }))
-                @compileError("zml.numeric.eq: " ++ @typeName(X) ++ " must implement `fn eq(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
+            comptime if (!types.hasMethod(X, "zmlEq", fn (X, Y) bool, &.{ X, Y }))
+                @compileError("zml.numeric.eq: " ++ @typeName(X) ++ " must implement `fn zmlEq(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
 
-            return X.eq(x, y);
+            return X.zmlEq(x, y);
         }
     } else if (comptime types.isCustomType(Y)) { // only Y custom
-        comptime if (!types.hasMethod(Y, "eq", fn (X, Y) bool, &.{ X, Y }))
-            @compileError("zml.numeric.eq: " ++ @typeName(Y) ++ " must implement `fn eq(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
+        comptime if (!types.hasMethod(Y, "zmlEq", fn (X, Y) bool, &.{ X, Y }))
+            @compileError("zml.numeric.eq: " ++ @typeName(Y) ++ " must implement `fn zmlEq(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
 
-        return Y.eq(x, y);
+        return Y.zmlEq(x, y);
     }
 
     switch (comptime types.numericType(X)) {

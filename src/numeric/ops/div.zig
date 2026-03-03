@@ -20,24 +20,24 @@ pub fn Div(X: type, Y: type) type {
         if (comptime types.isCustomType(Y)) { // X and Y both custom
             const Impl: type = comptime types.anyHasMethod(
                 &.{ X, Y },
-                "Div",
+                "ZmlDiv",
                 fn (type, type) type,
                 &.{ X, Y },
             ) orelse
-                @compileError("zml.numeric.div: " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn Div(type, type) type`");
+                @compileError("zml.numeric.div: " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn ZmlDiv(type, type) type`");
 
-            return Impl.Div(X, Y);
+            return Impl.ZmlDiv(X, Y);
         } else { // only X custom
-            comptime if (!types.hasMethod(X, "Div", fn (type, type) type, &.{ X, Y }))
-                @compileError("zml.numeric.div: " ++ @typeName(X) ++ " must implement `fn Div(type, type) type`");
+            comptime if (!types.hasMethod(X, "ZmlDiv", fn (type, type) type, &.{ X, Y }))
+                @compileError("zml.numeric.div: " ++ @typeName(X) ++ " must implement `fn ZmlDiv(type, type) type`");
 
-            return X.Div(X, Y);
+            return X.ZmlDiv(X, Y);
         }
     } else if (comptime types.isCustomType(Y)) { // only Y custom
-        comptime if (!types.hasMethod(Y, "Div", fn (type, type) type, &.{ X, Y }))
-            @compileError("zml.numeric.div: " ++ @typeName(Y) ++ " must implement `fn Div(type, type) type`");
+        comptime if (!types.hasMethod(Y, "ZmlDiv", fn (type, type) type, &.{ X, Y }))
+            @compileError("zml.numeric.div: " ++ @typeName(Y) ++ " must implement `fn ZmlDiv(type, type) type`");
 
-        return Y.Div(X, Y);
+        return Y.ZmlDiv(X, Y);
     }
 
     switch (comptime types.numericType(X)) {
@@ -131,43 +131,27 @@ pub fn Div(X: type, Y: type) type {
 /// * `x` (`anytype`): The left operand.
 /// * `y` (`anytype`): The right operand.
 /// * `ctx` (`anytype`): A context struct providing necessary resources and
-///   configuration for the operation. The required fields depend on `X` and
-///   `Y`. If the context is missing required fields or contains unnecessary or
-///   wrongly typed fields, the compiler will emit a detailed error message
-///   describing the expected structure.
-///
-/// ### Context structure
-/// The fields of `ctx` depend on `numeric.Div(X, Y)`.
-///
-/// #### `numeric.Div(X, Y)` is not allocated
-/// The context must be empty.
-///
-/// #### `numeric.Div(X, Y)` is allocated
-/// * `allocator: std.mem.Allocator`: The allocator to use for the output value.
+///   configuration for the operation.
 ///
 /// ## Returns
 /// `numeric.Div(@TypeOf(x), @TypeOf(y))`: The result of the division.
 ///
 /// ## Errors
-/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails. Can
-///   only happen if `numeric.Div(X, Y)` is allocated.
+/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
 ///
 /// ## Custom type support
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` or `Y` must implement the required `Div` method. The expected signature
-/// and behavior of `Div` are as follows:
-/// * `fn Div(type, type) type`: Returns the return type of `div` for the input
-///   types.
+/// `X` or `Y` must implement the required `ZmlDiv` method. The expected signature
+/// and behavior of `ZmlDiv` are as follows:
+/// * `fn ZmlDiv(type, type) type`: Returns the type of `x + y`.
 ///
-/// Let us denote the return type `numeric.Div(X, Y)` as `R`. Then, `R`, `X` or
-/// `Y` must implement the required `div` method. The expected signatures and
-/// behavior of `div` are as follows:
-/// * `R` is not allocated: `fn div(X, Y) R`: Returns the division of `x` and
-///   `y`.
-/// * `R` is allocated: `fn div(std.mem.Allocator, X, Y) !R`: Returns the
-///   division of `x` and `y` as a newly allocated value.
+/// `numeric.Div(X, Y)`, `X` or `Y` must implement the required `zmlDiv` method.
+/// The expected signatures and behavior of `zmlDiv` are as follows:
+/// * `fn zmlDiv(X, Y, anytype) !numeric.Div(X, Y)`: Returns the division of `x`
+///   and `y`, potentially using the provided context for necessary resources.
+///   This function is responsible for validating the context.
 pub inline fn div(x: anytype, y: anytype, ctx: anytype) !numeric.Div(@TypeOf(x), @TypeOf(y)) {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
@@ -175,111 +159,36 @@ pub inline fn div(x: anytype, y: anytype, ctx: anytype) !numeric.Div(@TypeOf(x),
 
     if (comptime types.isCustomType(X)) {
         if (comptime types.isCustomType(Y)) { // X and Y both custom
-            if (comptime types.isAllocated(R)) {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X, Y },
-                    "div",
-                    fn (std.mem.Allocator, X, Y) anyerror!R,
-                    &.{ std.mem.Allocator, X, Y },
-                ) orelse
-                    @compileError("zml.numeric.div: " ++ @typeName(R) ++ ", " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn div(std.mem.Allocator, " ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") !" ++ @typeName(R) ++ "`");
+            const Impl: type = comptime types.anyHasMethod(
+                &.{ R, X, Y },
+                "zmlDiv",
+                fn (X, Y, anytype) anyerror!R,
+                &.{ X, Y, @TypeOf(ctx) },
+            ) orelse
+                @compileError("zml.numeric.div: " ++ @typeName(R) ++ ", " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn zmlDiv(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ", anytype) !" ++ @typeName(R) ++ "`");
 
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the custom numeric's memory allocation.",
-                        },
-                    },
-                );
-
-                return Impl.div(ctx.allocator, x, y);
-            } else {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X, Y },
-                    "div",
-                    fn (X, Y) R,
-                    &.{ X, Y },
-                ) orelse
-                    @compileError("zml.numeric.div: " ++ @typeName(R) ++ ", " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn div(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
-
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return Impl.div(x, y);
-            }
+            return Impl.zmlDiv(x, y, ctx);
         } else { // only X custom
-            if (comptime types.isAllocated(R)) {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X },
-                    "div",
-                    fn (std.mem.Allocator, X, Y) anyerror!R,
-                    &.{ std.mem.Allocator, X, Y },
-                ) orelse
-                    @compileError("zml.numeric.div: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn div(std.mem.Allocator, " ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") !" ++ @typeName(R) ++ "`");
+            const Impl: type = comptime types.anyHasMethod(
+                &.{ R, X },
+                "zmlDiv",
+                fn (X, Y, anytype) anyerror!R,
+                &.{ X, Y, @TypeOf(ctx) },
+            ) orelse
+                @compileError("zml.numeric.div: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlDiv(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ", anytype) !" ++ @typeName(R) ++ "`");
 
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the custom numeric's memory allocation.",
-                        },
-                    },
-                );
-
-                return Impl.div(ctx.allocator, x, y);
-            } else {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X },
-                    "div",
-                    fn (X, Y) R,
-                    &.{ X, Y },
-                ) orelse
-                    @compileError("zml.numeric.div: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn div(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
-
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return Impl.div(x, y);
-            }
+            return Impl.zmlDiv(x, y, ctx);
         }
     } else if (comptime types.isCustomType(Y)) { // only Y custom
-        if (comptime types.isAllocated(R)) {
-            const Impl: type = comptime types.anyHasMethod(
-                &.{ R, Y },
-                "div",
-                fn (std.mem.Allocator, X, Y) anyerror!R,
-                &.{ std.mem.Allocator, X, Y },
-            ) orelse
-                @compileError("zml.numeric.div: " ++ @typeName(R) ++ " or " ++ @typeName(Y) ++ " must implement `fn div(std.mem.Allocator, " ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") !" ++ @typeName(R) ++ "`");
+        const Impl: type = comptime types.anyHasMethod(
+            &.{ R, Y },
+            "zmlDiv",
+            fn (X, Y, anytype) anyerror!R,
+            &.{ X, Y, @TypeOf(ctx) },
+        ) orelse
+            @compileError("zml.numeric.div: " ++ @typeName(R) ++ " or " ++ @typeName(Y) ++ " must implement `fn zmlDiv(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ", anytype) !" ++ @typeName(R) ++ "`");
 
-            comptime types.validateContext(
-                @TypeOf(ctx),
-                .{
-                    .allocator = .{
-                        .type = std.mem.Allocator,
-                        .required = true,
-                        .description = "The allocator to use for the custom numeric's memory allocation.",
-                    },
-                },
-            );
-
-            return Impl.div(ctx.allocator, x, y);
-        } else {
-            const Impl: type = comptime types.anyHasMethod(
-                &.{ R, Y },
-                "div",
-                fn (X, Y) R,
-                &.{ X, Y },
-            ) orelse
-                @compileError("zml.numeric.div: " ++ @typeName(R) ++ " or " ++ @typeName(Y) ++ " must implement `fn div(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
-
-            comptime types.validateContext(@TypeOf(ctx), .{});
-
-            return Impl.div(x, y);
-        }
+        return Impl.zmlDiv(x, y, ctx);
     }
 
     switch (comptime types.numericType(X)) {

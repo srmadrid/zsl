@@ -27,10 +27,10 @@ pub fn Lgamma(X: type) type {
         .real => @compileError("zml.numeric.lgamma: not implemented for " ++ @typeName(X) ++ " yet."),
         .complex => @compileError("zml.numeric.lgamma: not implemented for " ++ @typeName(X) ++ " yet."),
         .custom => {
-            if (comptime !types.hasMethod(X, "Lgamma", fn (type) type, &.{X}))
-                @compileError("zml.numeric.lgamma: " ++ @typeName(X) ++ " must implement `fn Lgamma(type) type`");
+            if (comptime !types.hasMethod(X, "ZmlLgamma", fn (type) type, &.{X}))
+                @compileError("zml.numeric.lgamma: " ++ @typeName(X) ++ " must implement `fn ZmlLgamma(type) type`");
 
-            return X.Lgamma(X);
+            return X.ZmlLgamma(X);
         },
     }
 }
@@ -39,7 +39,7 @@ pub fn Lgamma(X: type) type {
 ///
 /// The log-gamma function is defined as:
 /// $$
-/// \log(\Gamma(x)) = \log\left(\int_0^\infty t^{x - 1} e^{-t} \mathrm{d}t\right).
+/// \log(\Gamma(x)) = \left(\int_0^\infty t^{x - 1} e^{-t} \mathrm{d}t\right).
 /// $$
 ///
 /// ## Signature
@@ -50,43 +50,28 @@ pub fn Lgamma(X: type) type {
 /// ## Arguments
 /// * `x` (`anytype`): The numeric value to get the log-gamma function of.
 /// * `ctx` (`anytype`): A context struct providing necessary resources and
-///   configuration for the operation. The required fields depend on `X`. If the
-///   context is missing required fields or contains unnecessary or wrongly
-///   typed fields, the compiler will emit a detailed error message describing
-///   the expected structure.
-///
-/// ### Context structure
-/// The fields of `ctx` depend on `numeric.Lgamma(X)`.
-///
-/// #### `numeric.Lgamma(X)` is not allocated
-/// The context must be empty.
-///
-/// #### `numeric.Lgamma(X)` is allocated
-/// * `allocator: std.mem.Allocator` The allocator to use for the output value.
+///   configuration for the operation.
 ///
 /// ## Returns
-/// `numeric.Lgamma(@TypeOf(x))`: The log-gamma of `x`.
+/// `numeric.Lgamma(@TypeOf(x))`: The log-gamma function  of `x`.
 ///
 /// ## Errors
-/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails. Can
-///   only happen if `numeric.Lgamma(X)` is allocated.
+/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
 ///
 /// ## Custom type support
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` must implement the required `Lgamma` method. The expected signature and
-/// behavior of `Lgamma` are as follows:
-/// * `fn Lgamma(type) type`: Returns the return type of `lgamma` for the custom
-///   numeric type.
-///
-/// Let us denote the return type `numeric.Lgamma(X)` as `R`. Then, `R` or `X`
-/// must implement the required `lgamma` method. The expected signatures and
-/// behavior of `lgamma` are as follows:
-/// * `R` is not allocated: `fn lgamma(X) R`: Returns the log-gamma function of
+/// `X` must implement the required `ZmlLgamma` method. The expected signature
+/// and behavior of `ZmlLgamma` are as follows:
+/// * `fn ZmlLgamma(type) type`: Returns the type of the log-gamma function of
 ///   `x`.
-/// * `R` is allocated: `fn lgamma(std.mem.Allocator, X) !R`: Returns the
-///   log-gamma function of `x` as a newly allocated value.
+///
+/// `numeric.Lgamma(X)` or `X` must implement the required `zmlLgamma` method.
+/// The expected signature and behavior of `zmlLgamma` are as follows:
+/// * `fn zmlLgamma(X, anytype) !numeric.Lgamma(X)`: Returns the log-gamma
+///   function of `x`, potentially using the provided context for necessary
+///   resources. This function is responsible for validating the context.
 pub inline fn lgamma(x: anytype, ctx: anytype) !numeric.Lgamma(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Lgamma(X);
@@ -107,47 +92,22 @@ pub inline fn lgamma(x: anytype, ctx: anytype) !numeric.Lgamma(@TypeOf(x)) {
 
             return float.lgamma(x);
         },
-        .dyadic => @compileError("zml.numeric.lgamma: not implemented for " ++ @typeName(X) ++ " yet."),
-        .cfloat => @compileError("zml.numeric.lgamma: not implemented for " ++ @typeName(X) ++ " yet."),
-        .integer => @compileError("zml.numeric.lgamma: not implemented for " ++ @typeName(X) ++ " yet."),
-        .rational => @compileError("zml.numeric.lgamma: not implemented for " ++ @typeName(X) ++ " yet."),
-        .real => @compileError("zml.numeric.lgamma: not implemented for " ++ @typeName(X) ++ " yet."),
-        .complex => @compileError("zml.numeric.lgamma: not implemented for " ++ @typeName(X) ++ " yet."),
+        .dyadic => unreachable,
+        .cfloat => unreachable,
+        .integer => unreachable,
+        .rational => unreachable,
+        .real => unreachable,
+        .complex => unreachable,
         .custom => {
-            if (comptime types.isAllocated(R)) {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X },
-                    "lgamma",
-                    fn (std.mem.Allocator, X) anyerror!R,
-                    &.{ std.mem.Allocator, X },
-                ) orelse
-                    @compileError("zml.numeric.lgamma: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn lgamma(std.mem.Allocator, " ++ @typeName(X) ++ ") !" ++ @typeName(R) ++ "`");
+            const Impl: type = comptime types.anyHasMethod(
+                &.{ R, X },
+                "zmlLgamma",
+                fn (X, anytype) anyerror!numeric.Lgamma(X),
+                &.{ X, @TypeOf(ctx) },
+            ) orelse
+                @compileError("zml.numeric.lgamma: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlLgamma(" ++ @typeName(X) ++ ", anytype) !" ++ @typeName(R) ++ "`");
 
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the custom numeric's memory allocation.",
-                        },
-                    },
-                );
-
-                return Impl.lgamma(ctx.allocator, x);
-            } else {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X },
-                    "lgamma",
-                    fn (X) R,
-                    &.{X},
-                ) orelse
-                    @compileError("zml.numeric.lgamma: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn lgamma(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
-
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return Impl.lgamma(x);
-            }
+            return Impl.zmlLgamma(x, ctx);
         },
     }
 }

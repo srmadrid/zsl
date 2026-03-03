@@ -27,10 +27,10 @@ pub fn Tan(X: type) type {
         .real => @compileError("zml.numeric.tan: not implemented for " ++ @typeName(X) ++ " yet."),
         .complex => @compileError("zml.numeric.tan: not implemented for " ++ @typeName(X) ++ " yet."),
         .custom => {
-            if (comptime !types.hasMethod(X, "Tan", fn (type) type, &.{X}))
-                @compileError("zml.numeric.tan: " ++ @typeName(X) ++ " must implement `fn Tan(type) type`");
+            if (comptime !types.hasMethod(X, "ZmlTan", fn (type) type, &.{X}))
+                @compileError("zml.numeric.tan: " ++ @typeName(X) ++ " must implement `fn ZmlTan(type) type`");
 
-            return X.Tan(X);
+            return X.ZmlTan(X);
         },
     }
 }
@@ -45,42 +45,27 @@ pub fn Tan(X: type) type {
 /// ## Arguments
 /// * `x` (`anytype`): The numeric value to get the tangent of.
 /// * `ctx` (`anytype`): A context struct providing necessary resources and
-///   configuration for the operation. The required fields depend on `X`. If the
-///   context is missing required fields or contains unnecessary or wrongly
-///   typed fields, the compiler will emit a detailed error message describing
-///   the expected structure.
-///
-/// ### Context structure
-/// The fields of `ctx` depend on `numeric.Tan(X)`.
-///
-/// #### `numeric.Tan(X)` is not allocated
-/// The context must be empty.
-///
-/// #### `numeric.Tan(X)` is allocated
-/// * `allocator: std.mem.Allocator` The allocator to use for the output value.
+///   configuration for the operation.
 ///
 /// ## Returns
 /// `numeric.Tan(@TypeOf(x))`: The tangent of `x`.
 ///
 /// ## Errors
-/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails. Can
-///   only happen if `numeric.Tan(X)` is allocated.
+/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
 ///
 /// ## Custom type support
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` must implement the required `Tan` method. The expected signature and
-/// behavior of `Tan` are as follows:
-/// * `fn Tan(type) type`: Returns the return type of `tan` for the custom
-///   numeric type.
+/// `X` must implement the required `ZmlTan` method. The expected signature and
+/// behavior of `ZmlTan` are as follows:
+/// * `fn ZmlTan(type) type`: Returns the type of the tangent of `x`.
 ///
-/// Let us denote the return type `numeric.Tan(X)` as `R`. Then, `R` or `X`
-/// must implement the required `tan` method. The expected signatures and
-/// behavior of `tan` are as follows:
-/// * `R` is not allocated: `fn tan(X) R`: Returns the tangent of `x`.
-/// * `R` is allocated: `fn tan(std.mem.Allocator, X) !R`: Returns the tangent
-///   of `x` as a newly allocated value.
+/// `numeric.Tan(X)` or `X` must implement the required `zmlTan` method. The
+/// expected signature and behavior of `zmlTan` are as follows:
+/// * `fn zmlTan(X, anytype) !numeric.Tan(X)`: Returns the tangent of `x`,
+///   potentially using the provided context for necessary resources. This
+///   function is responsible for validating the context.
 pub inline fn tan(x: anytype, ctx: anytype) !numeric.Tan(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Tan(X);
@@ -101,51 +86,26 @@ pub inline fn tan(x: anytype, ctx: anytype) !numeric.Tan(@TypeOf(x)) {
 
             return float.tan(x);
         },
-        .dyadic => @compileError("zml.numeric.tan: not implemented for " ++ @typeName(X) ++ " yet."),
+        .dyadic => unreachable,
         .cfloat => {
             comptime types.validateContext(@TypeOf(ctx), .{});
 
             return cfloat.tan(x);
         },
-        .integer => @compileError("zml.numeric.tan: not implemented for " ++ @typeName(X) ++ " yet."),
-        .rational => @compileError("zml.numeric.tan: not implemented for " ++ @typeName(X) ++ " yet."),
-        .real => @compileError("zml.numeric.tan: not implemented for " ++ @typeName(X) ++ " yet."),
-        .complex => @compileError("zml.numeric.tan: not implemented for " ++ @typeName(X) ++ " yet."),
+        .integer => unreachable,
+        .rational => unreachable,
+        .real => unreachable,
+        .complex => unreachable,
         .custom => {
-            if (comptime types.isAllocated(R)) {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X },
-                    "tan",
-                    fn (std.mem.Allocator, X) anyerror!R,
-                    &.{ std.mem.Allocator, X },
-                ) orelse
-                    @compileError("zml.numeric.tan: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn tan(std.mem.Allocator, " ++ @typeName(X) ++ ") !" ++ @typeName(R) ++ "`");
+            const Impl: type = comptime types.anyHasMethod(
+                &.{ R, X },
+                "zmlTan",
+                fn (X, anytype) anyerror!numeric.Tan(X),
+                &.{ X, @TypeOf(ctx) },
+            ) orelse
+                @compileError("zml.numeric.tan: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlTan(" ++ @typeName(X) ++ ", anytype) !" ++ @typeName(R) ++ "`");
 
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the custom numeric's memory allocation.",
-                        },
-                    },
-                );
-
-                return Impl.tan(ctx.allocator, x);
-            } else {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X },
-                    "tan",
-                    fn (X) R,
-                    &.{X},
-                ) orelse
-                    @compileError("zml.numeric.tan: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn tan(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
-
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return Impl.tan(x);
-            }
+            return Impl.zmlTan(x, ctx);
         },
     }
 }

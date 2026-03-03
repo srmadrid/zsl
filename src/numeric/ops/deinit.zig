@@ -84,27 +84,10 @@ pub inline fn deinit(x: anytype, ctx: anytype) void {
             x.deinit(ctx.allocator);
         },
         .custom => {
-            if (comptime types.isAllocated(X)) {
-                comptime if (!types.hasMethod(X, "deinit", fn (*X, std.mem.Allocator) void, &.{}))
-                    @compileError("zml.deinit: " ++ @typeName(X) ++ " must implement `fn deinit(*" ++ @typeName(X) ++ ", std.mem.Allocator) void`");
+            comptime if (!types.hasMethod(X, "zmlDeinit", fn (*X, anytype) void, &.{ *X, @TypeOf(ctx) }))
+                @compileError("zml.deinit: " ++ @typeName(X) ++ " must implement `fn zmlDeinit(*" ++ @typeName(X) ++ ", anytype) void`");
 
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the custom numeric's memory deallocation. Must be the same allocator used to initialize it.",
-                        },
-                    },
-                );
-
-                x.deinit(ctx.allocator);
-            } else {
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                // No deinitialization needed for non-allocated custom types, this is a no-op.
-            }
+            X.zmlDeinit(x, ctx);
         },
     }
 }

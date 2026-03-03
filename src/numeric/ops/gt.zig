@@ -28,19 +28,9 @@ const numeric = @import("../../numeric.zig");
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// ### `X` is custom
-/// `X` must implement the required `gt` method. The expected signature and
-/// behavior of `gt` are as follows:
-/// * `fn gt(X, Y) bool`: Compares `x` and `y` for greater-than ordering.
-///
-/// ### `Y` is a custom numeric type
-/// `Y` must implement the required `gt` method, with the same specifications as
-/// above.
-///
-/// ### Both `X` and `Y` are custom numeric types
-/// At least one of `X` and `Y` must implement the required `gt` method, with
-/// the same specifications as above. If both implement it, `X`'s implementation
-/// will be used.
+/// `X` or `Y` must implement the required `zmlGt` method. The expected
+/// signature and behavior of `zmlGt` are as follows:
+/// * `fn zmlGt(X, Y) bool`: Compares `x` and `y` for greater-than ordering.
 pub inline fn gt(x: anytype, y: anytype) bool {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
@@ -49,24 +39,24 @@ pub inline fn gt(x: anytype, y: anytype) bool {
         if (comptime types.isCustomType(Y)) { // X and Y both custom
             const Impl: type = comptime types.anyHasMethod(
                 &.{ X, Y },
-                "gt",
+                "zmlGt",
                 fn (X, Y) bool,
                 &.{ X, Y },
             ) orelse
-                @compileError("zml.numeric.gt: " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn gt(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
+                @compileError("zml.numeric.gt: " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn zmlGt(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
 
-            return Impl.gt(x, y);
+            return Impl.zmlGt(x, y);
         } else { // only X custom
-            comptime if (!types.hasMethod(X, "gt", fn (X, Y) bool, &.{ X, Y }))
-                @compileError("zml.numeric.gt: " ++ @typeName(X) ++ " must implement `fn gt(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
+            comptime if (!types.hasMethod(X, "zmlGt", fn (X, Y) bool, &.{ X, Y }))
+                @compileError("zml.numeric.gt: " ++ @typeName(X) ++ " must implement `fn zmlGt(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
 
-            return X.gt(x, y);
+            return X.zmlGt(x, y);
         }
     } else if (comptime types.isCustomType(Y)) { // only Y custom
-        comptime if (!types.hasMethod(Y, "gt", fn (X, Y) bool, &.{ X, Y }))
-            @compileError("zml.numeric.gt: " ++ @typeName(Y) ++ " must implement `fn gt(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
+        comptime if (!types.hasMethod(Y, "zmlGt", fn (X, Y) bool, &.{ X, Y }))
+            @compileError("zml.numeric.gt: " ++ @typeName(Y) ++ " must implement `fn zmlGt(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
 
-        return Y.gt(x, y);
+        return Y.zmlGt(x, y);
     }
 
     switch (comptime types.numericType(X)) {

@@ -873,6 +873,8 @@ pub const RenameStructFields = context_checks.RenameStructFields;
 pub const renameStructFields = context_checks.renameStructFields;
 pub const KeepStructFields = context_checks.KeepStructFields;
 pub const keepStructFields = context_checks.keepStructFields;
+pub const KeepRenameStructFields = context_checks.KeepRenameStructFields;
+pub const keepRenameStructFields = context_checks.keepRenameStructFields;
 
 /// Returns the return type of a function when called with the given input
 /// types. If the return type does not depend on the input types, it is returned

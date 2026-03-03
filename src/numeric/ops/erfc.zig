@@ -27,17 +27,17 @@ pub fn Erfc(X: type) type {
         .real => @compileError("zml.numeric.erfc: not implemented for " ++ @typeName(X) ++ " yet."),
         .complex => @compileError("zml.numeric.erfc: not implemented for " ++ @typeName(X) ++ " yet."),
         .custom => {
-            if (comptime !types.hasMethod(X, "Erfc", fn (type) type, &.{X}))
-                @compileError("zml.numeric.erfc: " ++ @typeName(X) ++ " must implement `fn Erfc(type) type`");
+            if (comptime !types.hasMethod(X, "ZmlErfc", fn (type) type, &.{X}))
+                @compileError("zml.numeric.erfc: " ++ @typeName(X) ++ " must implement `fn ZmlErfc(type) type`");
 
-            return X.Erfc(X);
+            return X.ZmlErfc(X);
         },
     }
 }
 
 /// Returns the complementary error function of a numeric `x`.
 ///
-/// The complementary error function is defined as:
+/// The error function is defined as:
 /// $$
 /// \mathrm{erfc}(x) = 1 - \frac{2}{\sqrt{\pi}} \int_0^x e^{-t^2} \mathrm{d}t.
 /// $$
@@ -51,43 +51,27 @@ pub fn Erfc(X: type) type {
 /// * `x` (`anytype`): The numeric value to get the complementary error function
 ///   of.
 /// * `ctx` (`anytype`): A context struct providing necessary resources and
-///   configuration for the operation. The required fields depend on `X`. If the
-///   context is missing required fields or contains unnecessary or wrongly
-///   typed fields, the compiler will emit a detailed error message describing
-///   the expected structure.
-///
-/// ### Context structure
-/// The fields of `ctx` depend on `numeric.Erfc(X)`.
-///
-/// #### `numeric.Erfc(X)` is not allocated
-/// The context must be empty.
-///
-/// #### `numeric.Erfc(X)` is allocated
-/// * `allocator: std.mem.Allocator` The allocator to use for the output value.
+///   configuration for the operation.
 ///
 /// ## Returns
-/// `numeric.Erfc(@TypeOf(x))`: The complementary error fuction of `x`.
+/// `numeric.Erfc(@TypeOf(x))`: The error function of `x`.
 ///
 /// ## Errors
-/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails. Can
-///   only happen if `numeric.Erfc(X)` is allocated.
+/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
 ///
 /// ## Custom type support
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` must implement the required `Erfc` method. The expected signature and
-/// behavior of `Erfc` are as follows:
-/// * `fn Erfc(type) type`: Returns the return type of `erfc` for the custom
-///   numeric type.
+/// `X` must implement the required `ZmlErfc` method. The expected signature and
+/// behavior of `ZmlErfc` are as follows:
+/// * `fn ZmlErfc(type) type`: Returns the type of the error function of `x`.
 ///
-/// Let us denote the return type `numeric.Erfc(X)` as `R`. Then, `R` or `X`
-/// must implement the required `erfc` method. The expected signatures and
-/// behavior of `erfc` are as follows:
-/// * `R` is not allocated: `fn erfc(X) R`: Returns the complementary error
-///   function of `x`.
-/// * `R` is allocated: `fn erfc(std.mem.Allocator, X) !R`: Returns the
-///   complementary error function of `x` as a newly allocated value.
+/// `numeric.Erfc(X)` or `X` must implement the required `zmlErfc` method. The
+/// expected signature and behavior of `zmlErfc` are as follows:
+/// * `fn zmlErfc(X, anytype) !numeric.Erfc(X)`: Returns the error function of
+///   `x`, potentially using the provided context for necessary resources. This
+///   function is responsible for validating the context.
 pub inline fn erfc(x: anytype, ctx: anytype) !numeric.Erfc(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Erfc(X);
@@ -108,47 +92,22 @@ pub inline fn erfc(x: anytype, ctx: anytype) !numeric.Erfc(@TypeOf(x)) {
 
             return float.erfc(x);
         },
-        .dyadic => @compileError("zml.numeric.erfc: not implemented for " ++ @typeName(X) ++ " yet."),
-        .cfloat => @compileError("zml.numeric.erfc: not implemented for " ++ @typeName(X) ++ " yet."),
-        .integer => @compileError("zml.numeric.erfc: not implemented for " ++ @typeName(X) ++ " yet."),
-        .rational => @compileError("zml.numeric.erfc: not implemented for " ++ @typeName(X) ++ " yet."),
-        .real => @compileError("zml.numeric.erfc: not implemented for " ++ @typeName(X) ++ " yet."),
-        .complex => @compileError("zml.numeric.erfc: not implemented for " ++ @typeName(X) ++ " yet."),
+        .dyadic => unreachable,
+        .cfloat => unreachable,
+        .integer => unreachable,
+        .rational => unreachable,
+        .real => unreachable,
+        .complex => unreachable,
         .custom => {
-            if (comptime types.isAllocated(R)) {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X },
-                    "erfc",
-                    fn (std.mem.Allocator, X) anyerror!R,
-                    &.{ std.mem.Allocator, X },
-                ) orelse
-                    @compileError("zml.numeric.erfc: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn erfc(std.mem.Allocator, " ++ @typeName(X) ++ ") !" ++ @typeName(R) ++ "`");
+            const Impl: type = comptime types.anyHasMethod(
+                &.{ R, X },
+                "zmlErfc",
+                fn (X, anytype) anyerror!numeric.Erfc(X),
+                &.{ X, @TypeOf(ctx) },
+            ) orelse
+                @compileError("zml.numeric.erfc: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlErfc(" ++ @typeName(X) ++ ", anytype) !" ++ @typeName(R) ++ "`");
 
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the custom numeric's memory allocation.",
-                        },
-                    },
-                );
-
-                return Impl.erfc(ctx.allocator, x);
-            } else {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X },
-                    "erfc",
-                    fn (X) R,
-                    &.{X},
-                ) orelse
-                    @compileError("zml.numeric.erfc: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn erfc(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
-
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return Impl.erfc(x);
-            }
+            return Impl.zmlErfc(x, ctx);
         },
     }
 }

@@ -27,10 +27,10 @@ pub fn Exp(X: type) type {
         .real => @compileError("zml.numeric.exp: not implemented for " ++ @typeName(X) ++ " yet."),
         .complex => @compileError("zml.numeric.exp: not implemented for " ++ @typeName(X) ++ " yet."),
         .custom => {
-            if (comptime !types.hasMethod(X, "Exp", fn (type) type, &.{X}))
-                @compileError("zml.numeric.exp: " ++ @typeName(X) ++ " must implement `fn Exp(type) type`");
+            if (comptime !types.hasMethod(X, "ZmlExp", fn (type) type, &.{X}))
+                @compileError("zml.numeric.exp: " ++ @typeName(X) ++ " must implement `fn ZmlExp(type) type`");
 
-            return X.Exp(X);
+            return X.ZmlExp(X);
         },
     }
 }
@@ -45,42 +45,27 @@ pub fn Exp(X: type) type {
 /// ## Arguments
 /// * `x` (`anytype`): The numeric value to get the exponential of.
 /// * `ctx` (`anytype`): A context struct providing necessary resources and
-///   configuration for the operation. The required fields depend on `X`. If the
-///   context is missing required fields or contains unnecessary or wrongly
-///   typed fields, the compiler will emit a detailed error message describing
-///   the expected structure.
-///
-/// ### Context structure
-/// The fields of `ctx` depend on `numeric.Exp(X)`.
-///
-/// #### `numeric.Exp(X)` is not allocated
-/// The context must be empty.
-///
-/// #### `numeric.Exp(X)` is allocated
-/// * `allocator: std.mem.Allocator` The allocator to use for the output value.
+///   configuration for the operation.
 ///
 /// ## Returns
 /// `numeric.Exp(@TypeOf(x))`: The exponential of `x`.
 ///
 /// ## Errors
-/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails. Can
-///   only happen if `numeric.Exp(X)` is allocated.
+/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
 ///
 /// ## Custom type support
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` must implement the required `Exp` method. The expected signature and
-/// behavior of `Exp` are as follows:
-/// * `fn Exp(type) type`: Returns the return type of `exp` for the custom
-///   numeric type.
+/// `X` must implement the required `ZmlExp` method. The expected signature and
+/// behavior of `ZmlExp` are as follows:
+/// * `fn ZmlExp(type) type`: Returns the type of the exponential of `x`.
 ///
-/// Let us denote the return type `numeric.Exp(X)` as `R`. Then, `R` or `X` must
-/// implement the required `exp` method. The expected signatures and behavior of
-/// `exp` are as follows:
-/// * `R` is not allocated: `fn exp(X) R`: Returns the exponential of `x`.
-/// * `R` is allocated: `fn exp(std.mem.Allocator, X) !R`: Returns the
-///   exponential of `x` as a newly allocated value.
+/// `numeric.Exp(X)` or `X` must implement the required `zmlExp` method. The
+/// expected signature and behavior of `zmlExp` are as follows:
+/// * `fn zmlExp(X, anytype) !numeric.Exp(X)`: Returns the exponential of `x`,
+///   potentially using the provided context for necessary resources. This
+///   function is responsible for validating the context.
 pub inline fn exp(x: anytype, ctx: anytype) !numeric.Exp(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Exp(X);
@@ -101,51 +86,26 @@ pub inline fn exp(x: anytype, ctx: anytype) !numeric.Exp(@TypeOf(x)) {
 
             return float.exp(x);
         },
-        .dyadic => @compileError("zml.numeric.exp: not implemented for " ++ @typeName(X) ++ " yet."),
+        .dyadic => unreachable,
         .cfloat => {
             comptime types.validateContext(@TypeOf(ctx), .{});
 
             return cfloat.exp(x);
         },
-        .integer => @compileError("zml.numeric.exp: not implemented for " ++ @typeName(X) ++ " yet."),
-        .rational => @compileError("zml.numeric.exp: not implemented for " ++ @typeName(X) ++ " yet."),
-        .real => @compileError("zml.numeric.exp: not implemented for " ++ @typeName(X) ++ " yet."),
-        .complex => @compileError("zml.numeric.exp: not implemented for " ++ @typeName(X) ++ " yet."),
+        .integer => unreachable,
+        .rational => unreachable,
+        .real => unreachable,
+        .complex => unreachable,
         .custom => {
-            if (comptime types.isAllocated(R)) {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X },
-                    "exp",
-                    fn (std.mem.Allocator, X) anyerror!R,
-                    &.{ std.mem.Allocator, X },
-                ) orelse
-                    @compileError("zml.numeric.exp: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn exp(std.mem.Allocator, " ++ @typeName(X) ++ ") !" ++ @typeName(R) ++ "`");
+            const Impl: type = comptime types.anyHasMethod(
+                &.{ R, X },
+                "zmlExp",
+                fn (X, anytype) anyerror!numeric.Exp(X),
+                &.{ X, @TypeOf(ctx) },
+            ) orelse
+                @compileError("zml.numeric.exp: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlExp(" ++ @typeName(X) ++ ", anytype) !" ++ @typeName(R) ++ "`");
 
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the custom numeric's memory allocation.",
-                        },
-                    },
-                );
-
-                return Impl.exp(ctx.allocator, x);
-            } else {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X },
-                    "exp",
-                    fn (X) R,
-                    &.{X},
-                ) orelse
-                    @compileError("zml.numeric.exp: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn exp(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
-
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return Impl.exp(x);
-            }
+            return Impl.zmlExp(x, ctx);
         },
     }
 }

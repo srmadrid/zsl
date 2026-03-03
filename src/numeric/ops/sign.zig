@@ -27,10 +27,10 @@ pub fn Sign(X: type) type {
         .real => return X,
         .complex => return X,
         .custom => {
-            if (comptime !types.hasMethod(X, "Sign", fn (type) type, &.{X}))
-                @compileError("zml.numeric.sign: " ++ @typeName(X) ++ " must implement `fn Sign(type) type`");
+            if (comptime !types.hasMethod(X, "ZmlSign", fn (type) type, &.{X}))
+                @compileError("zml.numeric.sign: " ++ @typeName(X) ++ " must implement `fn ZmlSign(type) type`");
 
-            return X.Sign(X);
+            return X.ZmlSign(X);
         },
     }
 }
@@ -45,54 +45,32 @@ pub fn Sign(X: type) type {
 /// ## Arguments
 /// * `x` (`anytype`): The numeric value to get the sign of.
 /// * `ctx` (`anytype`): A context struct providing necessary resources and
-///   configuration for the operation. The required fields depend on `X`. If the
-///   context is missing required fields or contains unnecessary or wrongly
-///   typed fields, the compiler will emit a detailed error message describing
-///   the expected structure.
-///
-/// ### Context structure
-/// The fields of `ctx` depend on `numeric.Sign(X)` and `X`.
-///
-/// #### `numeric.Sign(X)` is not allocated
-/// The context must be empty.
-///
-/// #### `numeric.Sign(X)` is allocated and `X.has_simple_sign` exists and is true
-/// * `allocator: std.mem.Allocator` (optional): The allocator to use for the
-///   output value. If not provided, a read-only view will be returned.
-///
-/// #### `numeric.Sign(X)` is allocated and `X.has_simple_sign` does not exist or is false
-/// * `allocator: std.mem.Allocator`: The allocator to use for the output value.
+///   configuration for the operation.
 ///
 /// ## Returns
 /// `numeric.Sign(@TypeOf(x))`: The sign of `x`.
 ///
 /// ## Errors
-/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails. Can
-///   only happen if `numeric.Sign(X)` is allocated and an allocator is
-///   provided.
+/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
 ///
 /// ## Custom type support
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` must implement the required `Sign` method. The expected signature and
-/// behavior of `Sign` are as follows:
-/// * `fn Sign(type) type`: Returns the return type of `sign` for the custom
-///   numeric type.
+/// `X` must implement the required `ZmlSign` method. The expected signature and
+/// behavior of `ZmlSign` are as follows:
+/// * `fn ZmlSign(type) type`: Returns the type of the sign of `x`.
 ///
-/// Let us denote the return type `numeric.Sign(X)` as `R`. Then, `R` or `X`
-/// must implement the required `sign` method. The expected signatures and
-/// behavior of `sign` are as follows:
-/// * `R` is not allocated: `fn sign(X) R`: Returns the sign of `x`.
-/// * `R` is allocated: `fn sign(?std.mem.Allocator, X) !R`: Returns the sign of
-///   `x` as a newly allocated value, if the allocator is provided, or a
-///   read-only view if not. If not provided, it must not fail.
-/// * `R` is allocated:
-///   * `X.has_simple_sign` exists and is true: `fn sign(?std.mem.Allocator, X) !R`:
-///     Returns the sign of `x` as a newly allocated value, if the allocator is
-///     provided, or a read-only view if not. If not provided, it must not fail.
-///   * `X.has_simple_sign` does not exist or is false: `fn sign(std.mem.Allocator, X) !R`:
-///     Returns the sign of `x` as a newly allocated value.
+/// `numeric.Sign(X)` or `X` must implement the required `zmlSign` method. The
+/// expected signature and behavior of `zmlSign` are as follows:
+/// * `fn zmlSign(X, anytype) !numeric.Sign(X)`: Returns the sign of `x`,
+///   potentially using the provided context for necessary resources. This
+///   function is responsible for validating the context.
+///
+/// Custom allocated types can optionally declare `zml_has_simple_sign` as
+/// `true` to indicate that their `zmlASign` implementation can be called
+/// without an allocator in the context, instead returning a view and never
+/// erroring.
 pub inline fn sign(x: anytype, ctx: anytype) !numeric.Sign(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Sign(X);
@@ -121,7 +99,7 @@ pub inline fn sign(x: anytype, ctx: anytype) !numeric.Sign(@TypeOf(x)) {
         .cfloat => {
             comptime types.validateContext(@TypeOf(ctx), .{});
 
-            return x.sign();
+            return cfloat.sign(x);
         },
         .integer => {
             comptime types.validateContext(
@@ -160,66 +138,15 @@ pub inline fn sign(x: anytype, ctx: anytype) !numeric.Sign(@TypeOf(x)) {
         .real => @compileError("zml.numeric.sign: not implemented for " ++ @typeName(X) ++ " yet."),
         .complex => @compileError("zml.numeric.sign: not implemented for " ++ @typeName(X) ++ " yet."),
         .custom => {
-            if (comptime types.isAllocated(R)) {
-                if (comptime @hasDecl(X, "has_simple_sign") and X.has_simple_sign) {
-                    const Impl: type = comptime types.anyHasMethod(
-                        &.{ R, X },
-                        "sign",
-                        fn (?std.mem.Allocator, X) anyerror!R,
-                        &.{ std.mem.Allocator, X },
-                    ) orelse
-                        @compileError("zml.numeric.sign: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn sign(?std.mem.Allocator, " ++ @typeName(X) ++ ") !" ++ @typeName(R) ++ "`");
+            const Impl: type = comptime types.anyHasMethod(
+                &.{ R, X },
+                "zmlSign",
+                fn (X, anytype) anyerror!numeric.Sign(X),
+                &.{ X, @TypeOf(ctx) },
+            ) orelse
+                @compileError("zml.numeric.sign: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlSign(" ++ @typeName(X) ++ ", anytype) !" ++ @typeName(R) ++ "`");
 
-                    comptime types.validateContext(
-                        @TypeOf(ctx),
-                        .{
-                            .allocator = .{
-                                .type = std.mem.Allocator,
-                                .required = false,
-                                .description = "The allocator to use for the custom numeric's memory allocation. If not provided, a view will be returned.",
-                            },
-                        },
-                    );
-
-                    return if (comptime types.ctxHasField(@TypeOf(ctx), "allocator", std.mem.Allocator))
-                        Impl.sign(ctx.allocator, x)
-                    else
-                        Impl.sign(null, x) catch unreachable;
-                } else {
-                    const Impl: type = comptime types.anyHasMethod(
-                        &.{ R, X },
-                        "sign",
-                        fn (std.mem.Allocator, X) anyerror!R,
-                        &.{ std.mem.Allocator, X },
-                    ) orelse
-                        @compileError("zml.numeric.sign: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn sign(std.mem.Allocator, " ++ @typeName(X) ++ ") !" ++ @typeName(R) ++ "`");
-
-                    comptime types.validateContext(
-                        @TypeOf(ctx),
-                        .{
-                            .allocator = .{
-                                .type = std.mem.Allocator,
-                                .required = true,
-                                .description = "The allocator to use for the custom numeric's memory allocation.",
-                            },
-                        },
-                    );
-
-                    return Impl.sign(ctx.allocator, x);
-                }
-            } else {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X },
-                    "sign",
-                    fn (X) R,
-                    &.{X},
-                ) orelse
-                    @compileError("zml.numeric.sign: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn sign(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
-
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return Impl.sign(x);
-            }
+            return Impl.zmlSign(x, ctx);
         },
     }
 }

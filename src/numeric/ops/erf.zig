@@ -27,10 +27,10 @@ pub fn Erf(X: type) type {
         .real => @compileError("zml.numeric.erf: not implemented for " ++ @typeName(X) ++ " yet."),
         .complex => @compileError("zml.numeric.erf: not implemented for " ++ @typeName(X) ++ " yet."),
         .custom => {
-            if (comptime !types.hasMethod(X, "Erf", fn (type) type, &.{X}))
-                @compileError("zml.numeric.erf: " ++ @typeName(X) ++ " must implement `fn Erf(type) type`");
+            if (comptime !types.hasMethod(X, "ZmlErf", fn (type) type, &.{X}))
+                @compileError("zml.numeric.erf: " ++ @typeName(X) ++ " must implement `fn ZmlErf(type) type`");
 
-            return X.Erf(X);
+            return X.ZmlErf(X);
         },
     }
 }
@@ -50,42 +50,27 @@ pub fn Erf(X: type) type {
 /// ## Arguments
 /// * `x` (`anytype`): The numeric value to get the error function of.
 /// * `ctx` (`anytype`): A context struct providing necessary resources and
-///   configuration for the operation. The required fields depend on `X`. If the
-///   context is missing required fields or contains unnecessary or wrongly
-///   typed fields, the compiler will emit a detailed error message describing
-///   the expected structure.
-///
-/// ### Context structure
-/// The fields of `ctx` depend on `numeric.Erf(X)`.
-///
-/// #### `numeric.Erf(X)` is not allocated
-/// The context must be empty.
-///
-/// #### `numeric.Erf(X)` is allocated
-/// * `allocator: std.mem.Allocator` The allocator to use for the output value.
+///   configuration for the operation.
 ///
 /// ## Returns
-/// `numeric.Erf(@TypeOf(x))`: The error fuction of `x`.
+/// `numeric.Erf(@TypeOf(x))`: The error function of `x`.
 ///
 /// ## Errors
-/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails. Can
-///   only happen if `numeric.Erf(X)` is allocated.
+/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
 ///
 /// ## Custom type support
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` must implement the required `Erf` method. The expected signature and
-/// behavior of `Erf` are as follows:
-/// * `fn Erf(type) type`: Returns the return type of `erf` for the custom
-///   numeric type.
+/// `X` must implement the required `ZmlErf` method. The expected signature and
+/// behavior of `ZmlErf` are as follows:
+/// * `fn ZmlErf(type) type`: Returns the type of the error function of `x`.
 ///
-/// Let us denote the return type `numeric.Erf(X)` as `R`. Then, `R` or `X`
-/// must implement the required `erf` method. The expected signatures and
-/// behavior of `erf` are as follows:
-/// * `R` is not allocated: `fn erf(X) R`: Returns the error function of `x`.
-/// * `R` is allocated: `fn erf(std.mem.Allocator, X) !R`: Returns the error
-///   function of `x` as a newly allocated value.
+/// `numeric.Erf(X)` or `X` must implement the required `zmlErf` method. The
+/// expected signature and behavior of `zmlErf` are as follows:
+/// * `fn zmlErf(X, anytype) !numeric.Erf(X)`: Returns the error function of
+///   `x`, potentially using the provided context for necessary resources. This
+///   function is responsible for validating the context.
 pub inline fn erf(x: anytype, ctx: anytype) !numeric.Erf(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Erf(X);
@@ -106,47 +91,22 @@ pub inline fn erf(x: anytype, ctx: anytype) !numeric.Erf(@TypeOf(x)) {
 
             return float.erf(x);
         },
-        .dyadic => @compileError("zml.numeric.erf: not implemented for " ++ @typeName(X) ++ " yet."),
-        .cfloat => @compileError("zml.numeric.erf: not implemented for " ++ @typeName(X) ++ " yet."),
-        .integer => @compileError("zml.numeric.erf: not implemented for " ++ @typeName(X) ++ " yet."),
-        .rational => @compileError("zml.numeric.erf: not implemented for " ++ @typeName(X) ++ " yet."),
-        .real => @compileError("zml.numeric.erf: not implemented for " ++ @typeName(X) ++ " yet."),
-        .complex => @compileError("zml.numeric.erf: not implemented for " ++ @typeName(X) ++ " yet."),
+        .dyadic => unreachable,
+        .cfloat => unreachable,
+        .integer => unreachable,
+        .rational => unreachable,
+        .real => unreachable,
+        .complex => unreachable,
         .custom => {
-            if (comptime types.isAllocated(R)) {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X },
-                    "erf",
-                    fn (std.mem.Allocator, X) anyerror!R,
-                    &.{ std.mem.Allocator, X },
-                ) orelse
-                    @compileError("zml.numeric.erf: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn erf(std.mem.Allocator, " ++ @typeName(X) ++ ") !" ++ @typeName(R) ++ "`");
+            const Impl: type = comptime types.anyHasMethod(
+                &.{ R, X },
+                "zmlErf",
+                fn (X, anytype) anyerror!numeric.Erf(X),
+                &.{ X, @TypeOf(ctx) },
+            ) orelse
+                @compileError("zml.numeric.erf: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlErf(" ++ @typeName(X) ++ ", anytype) !" ++ @typeName(R) ++ "`");
 
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the custom numeric's memory allocation.",
-                        },
-                    },
-                );
-
-                return Impl.erf(ctx.allocator, x);
-            } else {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X },
-                    "erf",
-                    fn (X) R,
-                    &.{X},
-                ) orelse
-                    @compileError("zml.numeric.erf: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn erf(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
-
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return Impl.erf(x);
-            }
+            return Impl.zmlErf(x, ctx);
         },
     }
 }

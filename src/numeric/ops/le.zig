@@ -28,19 +28,10 @@ const numeric = @import("../../numeric.zig");
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// ### `X` is custom
-/// `X` must implement the required `le` method. The expected signature and
-/// behavior of `le` are as follows:
-/// * `fn le(X, Y) bool`: Compares `x` and `y` for less-than or equal ordering.
-///
-/// ### `Y` is a custom numeric type
-/// `Y` must implement the required `le` method, with the same specifications as
-/// above.
-///
-/// ### Both `X` and `Y` are custom numeric types
-/// At least one of `X` and `Y` must implement the required `le` method, with
-/// the same specifications as above. If both implement it, `X`'s implementation
-/// will be used.
+/// `X` or `Y` must implement the required `zmlLe` method. The expected
+/// signature and behavior of `zmlLe` are as follows:
+/// * `fn zmlLe(X, Y) bool`: Compares `x` and `y` for less-than or equal
+///   ordering.
 pub inline fn le(x: anytype, y: anytype) bool {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
@@ -49,24 +40,24 @@ pub inline fn le(x: anytype, y: anytype) bool {
         if (comptime types.isCustomType(Y)) { // X and Y both custom
             const Impl: type = comptime types.anyHasMethod(
                 &.{ X, Y },
-                "le",
+                "zmlLe",
                 fn (X, Y) bool,
                 &.{ X, Y },
             ) orelse
-                @compileError("zml.numeric.le: " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn le(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
+                @compileError("zml.numeric.le: " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn zmlLe(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
 
-            return Impl.le(x, y);
+            return Impl.zmlLe(x, y);
         } else { // only X custom
-            comptime if (!types.hasMethod(X, "le", fn (X, Y) bool, &.{ X, Y }))
-                @compileError("zml.numeric.le: " ++ @typeName(X) ++ " must implement `fn le(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
+            comptime if (!types.hasMethod(X, "zmlLe", fn (X, Y) bool, &.{ X, Y }))
+                @compileError("zml.numeric.le: " ++ @typeName(X) ++ " must implement `fn zmlLe(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
 
-            return X.le(x, y);
+            return X.zmlLe(x, y);
         }
     } else if (comptime types.isCustomType(Y)) { // only Y custom
-        comptime if (!types.hasMethod(Y, "le", fn (X, Y) bool, &.{ X, Y }))
-            @compileError("zml.numeric.le: " ++ @typeName(Y) ++ " must implement `fn le(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
+        comptime if (!types.hasMethod(Y, "zmlLe", fn (X, Y) bool, &.{ X, Y }))
+            @compileError("zml.numeric.le: " ++ @typeName(Y) ++ " must implement `fn zmlLe(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
 
-        return Y.le(x, y);
+        return Y.zmlLe(x, y);
     }
 
     switch (comptime types.numericType(X)) {

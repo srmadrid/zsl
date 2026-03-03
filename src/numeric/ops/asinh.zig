@@ -27,10 +27,10 @@ pub fn Asinh(X: type) type {
         .real => @compileError("zml.numeric.asinh: not implemented for " ++ @typeName(X) ++ " yet."),
         .complex => @compileError("zml.numeric.asinh: not implemented for " ++ @typeName(X) ++ " yet."),
         .custom => {
-            if (comptime !types.hasMethod(X, "Asinh", fn (type) type, &.{X}))
-                @compileError("zml.numeric.asinh: " ++ @typeName(X) ++ " must implement `fn Asinh(type) type`");
+            if (comptime !types.hasMethod(X, "ZmlAsinh", fn (type) type, &.{X}))
+                @compileError("zml.numeric.asinh: " ++ @typeName(X) ++ " must implement `fn ZmlAsinh(type) type`");
 
-            return X.Asinh(X);
+            return X.ZmlAsinh(X);
         },
     }
 }
@@ -45,43 +45,28 @@ pub fn Asinh(X: type) type {
 /// ## Arguments
 /// * `x` (`anytype`): The numeric value to get the hyperbolic arcsine of.
 /// * `ctx` (`anytype`): A context struct providing necessary resources and
-///   configuration for the operation. The required fields depend on `X`. If the
-///   context is missing required fields or contains unnecessary or wrongly
-///   typed fields, the compiler will emit a detailed error message describing
-///   the expected structure.
-///
-/// ### Context structure
-/// The fields of `ctx` depend on `numeric.Asinh(X)`.
-///
-/// #### `numeric.Asinh(X)` is not allocated
-/// The context must be empty.
-///
-/// #### `numeric.Asinh(X)` is allocated
-/// * `allocator: std.mem.Allocator` The allocator to use for the output value.
+///   configuration for the operation.
 ///
 /// ## Returns
 /// `numeric.Asinh(@TypeOf(x))`: The hyperbolic arcsine of `x`.
 ///
 /// ## Errors
-/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails. Can
-///   only happen if `numeric.Asinh(X)` is allocated.
+/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
 ///
 /// ## Custom type support
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` must implement the required `Asinh` method. The expected signature and
-/// behavior of `Asinh` are as follows:
-/// * `fn Asinh(type) type`: Returns the return type of `asinh` for the custom
-///   numeric type.
-///
-/// Let us denote the return type `numeric.Asinh(X)` as `R`. Then, `R` or `X`
-/// must implement the required `asinh` method. The expected signatures and
-/// behavior of `asinh` are as follows:
-/// * `R` is not allocated: `fn asinh(X) R`: Returns the hyperbolic arcsine of
+/// `X` must implement the required `ZmlAsinh` method. The expected signature and
+/// behavior of `ZmlAsinh` are as follows:
+/// * `fn ZmlAsinh(type) type`: Returns the type of the hyperbolic arcsine of
 ///   `x`.
-/// * `R` is allocated: `fn asinh(std.mem.Allocator, X) !R`: Returns the
-///   hyperbolic arcsine of `x` as a newly allocated value.
+///
+/// `numeric.Asinh(X)` or `X` must implement the required `zmlAsinh` method. The
+/// expected signature and behavior of `zmlAsinh` are as follows:
+/// * `fn zmlAsinh(X, anytype) !numeric.Asinh(X)`: Returns the hyperbolic
+///   arcsine of `x`, potentially using the provided context for necessary
+///   resources. This function is responsible for validating the context.
 pub inline fn asinh(x: anytype, ctx: anytype) !numeric.Asinh(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Asinh(X);
@@ -102,51 +87,26 @@ pub inline fn asinh(x: anytype, ctx: anytype) !numeric.Asinh(@TypeOf(x)) {
 
             return float.asinh(x);
         },
-        .dyadic => @compileError("zml.numeric.asinh: not implemented for " ++ @typeName(X) ++ " yet."),
+        .dyadic => unreachable,
         .cfloat => {
             comptime types.validateContext(@TypeOf(ctx), .{});
 
             return cfloat.asinh(x);
         },
-        .integer => @compileError("zml.numeric.asinh: not implemented for " ++ @typeName(X) ++ " yet."),
-        .rational => @compileError("zml.numeric.asinh: not implemented for " ++ @typeName(X) ++ " yet."),
-        .real => @compileError("zml.numeric.asinh: not implemented for " ++ @typeName(X) ++ " yet."),
-        .complex => @compileError("zml.numeric.asinh: not implemented for " ++ @typeName(X) ++ " yet."),
+        .integer => unreachable,
+        .rational => unreachable,
+        .real => unreachable,
+        .complex => unreachable,
         .custom => {
-            if (comptime types.isAllocated(R)) {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X },
-                    "asinh",
-                    fn (std.mem.Allocator, X) anyerror!R,
-                    &.{ std.mem.Allocator, X },
-                ) orelse
-                    @compileError("zml.numeric.asinh: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn asinh(std.mem.Allocator, " ++ @typeName(X) ++ ") !" ++ @typeName(R) ++ "`");
+            const Impl: type = comptime types.anyHasMethod(
+                &.{ R, X },
+                "zmlAsinh",
+                fn (X, anytype) anyerror!numeric.Asinh(X),
+                &.{ X, @TypeOf(ctx) },
+            ) orelse
+                @compileError("zml.numeric.asinh: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlAsinh(" ++ @typeName(X) ++ ", anytype) !" ++ @typeName(R) ++ "`");
 
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the custom numeric's memory allocation.",
-                        },
-                    },
-                );
-
-                return Impl.asinh(ctx.allocator, x);
-            } else {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X },
-                    "asinh",
-                    fn (X) R,
-                    &.{X},
-                ) orelse
-                    @compileError("zml.numeric.asinh: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn asinh(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
-
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return Impl.asinh(x);
-            }
+            return Impl.zmlAsinh(x, ctx);
         },
     }
 }

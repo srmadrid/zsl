@@ -19,16 +19,13 @@ pub const neg = @import("ops/neg.zig").neg;
 pub const neg_ = @import("ops/neg_.zig").neg_;
 pub const Re = @import("ops/re.zig").Re;
 pub const re = @import("ops/re.zig").re;
-pub const re_ = @import("ops/re_.zig").re_;
 pub const Im = @import("ops/im.zig").Im;
 pub const im = @import("ops/im.zig").im;
-pub const im_ = @import("ops/im_.zig").im_;
 pub const Conj = @import("ops/conj.zig").Conj;
 pub const conj = @import("ops/conj.zig").conj;
 pub const conj_ = @import("ops/conj_.zig").conj_;
 pub const Sign = @import("ops/sign.zig").Sign;
 pub const sign = @import("ops/sign.zig").sign;
-pub const sign_ = @import("ops/sign_.zig").sign_;
 // pub const copysign = @import("ops/copysign.zig").copysign;
 
 // Arithmetic operations
@@ -46,25 +43,19 @@ pub const div = @import("ops/div.zig").div;
 pub const div_ = @import("ops/div_.zig").div_;
 
 // Comparison operations
-pub const cmp = @import("ops/cmp.zig").cmp;
+// pub const cmp = @import("ops/cmp.zig").cmp;
 pub const eq = @import("ops/eq.zig").eq;
-pub const eq_ = @import("ops/eq_.zig").eq_;
 pub const ne = @import("ops/ne.zig").ne;
-pub const ne_ = @import("ops/ne_.zig").ne_;
 pub const lt = @import("ops/lt.zig").lt;
-pub const lt_ = @import("ops/lt_.zig").lt_;
 pub const le = @import("ops/le.zig").le;
-pub const le_ = @import("ops/le_.zig").le_;
 pub const gt = @import("ops/gt.zig").gt;
-pub const gt_ = @import("ops/gt_.zig").gt_;
 pub const ge = @import("ops/ge.zig").ge;
-pub const ge_ = @import("ops/ge_.zig").ge_;
-pub const Max = @import("ops/max.zig").Max;
-pub const max = @import("ops/max.zig").max;
-pub const max_ = @import("ops/max_.zig").max_;
-pub const Min = @import("ops/min.zig").Min;
-pub const min = @import("ops/min.zig").min;
-pub const min_ = @import("ops/min_.zig").min_;
+// pub const Max = @import("ops/max.zig").Max;
+// pub const max = @import("ops/max.zig").max;
+// pub const max_ = @import("ops/max_.zig").max_;
+// pub const Min = @import("ops/min.zig").Min;
+// pub const min = @import("ops/min.zig").min;
+// pub const min_ = @import("ops/min_.zig").min_;
 
 // Exponential functions
 pub const Exp = @import("ops/exp.zig").Exp;
@@ -84,18 +75,18 @@ pub const log2 = @import("ops/log2.zig").log2;
 pub const log2_ = @import("ops/log2_.zig").log2_;
 
 // Power functions
-pub const Pow = @import("ops/pow.zig").Pow;
-pub const pow = @import("ops/pow.zig").pow;
-pub const pow_ = @import("ops/pow_.zig").pow_;
+// pub const Pow = @import("ops/pow.zig").Pow;
+// pub const pow = @import("ops/pow.zig").pow;
+// pub const pow_ = @import("ops/pow_.zig").pow_;
 pub const Sqrt = @import("ops/sqrt.zig").Sqrt;
 pub const sqrt = @import("ops/sqrt.zig").sqrt;
 pub const sqrt_ = @import("ops/sqrt_.zig").sqrt_;
 pub const Cbrt = @import("ops/cbrt.zig").Cbrt;
 pub const cbrt = @import("ops/cbrt.zig").cbrt;
 pub const cbrt_ = @import("ops/cbrt_.zig").cbrt_;
-pub const Hypot = @import("ops/hypot.zig").Hypot;
-pub const hypot = @import("ops/hypot.zig").hypot;
-pub const hypot_ = @import("ops/hypot_.zig").hypot_;
+// pub const Hypot = @import("ops/hypot.zig").Hypot;
+// pub const hypot = @import("ops/hypot.zig").hypot;
+// pub const hypot_ = @import("ops/hypot_.zig").hypot_;
 
 // Trigonometric functions
 pub const Sin = @import("ops/sin.zig").Sin;
@@ -116,9 +107,9 @@ pub const acos_ = @import("ops/acos_.zig").acos_;
 pub const Atan = @import("ops/atan.zig").Atan;
 pub const atan = @import("ops/atan.zig").atan;
 pub const atan_ = @import("ops/atan_.zig").atan_;
-pub const Atan2 = @import("ops/atan2.zig").Atan2;
-pub const atan2 = @import("ops/atan2.zig").atan2;
-pub const atan2_ = @import("ops/atan2_.zig").atan2_;
+// pub const Atan2 = @import("ops/atan2.zig").Atan2;
+// pub const atan2 = @import("ops/atan2.zig").atan2;
+// pub const atan2_ = @import("ops/atan2_.zig").atan2_;
 
 // Hyperbolic functions
 pub const Sinh = @import("ops/sinh.zig").Sinh;

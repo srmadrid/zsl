@@ -461,6 +461,9 @@ pub fn StripStructFields(comptime S: type, comptime fields_to_remove: []const []
 /// Removes specified fields from a struct instance, returning a new struct
 /// instance without those fields.
 ///
+/// The fields to remove are specified as an array of field names. If a
+/// specified field does not exist in the struct, it is simply ignored.
+///
 /// ## Arguments
 /// * `s` (`anytype`): The struct instance from which to remove fields.
 /// * fields_to_remove (`[]const []const u8`): An array of field names to
@@ -671,6 +674,126 @@ pub fn keepStructFields(s: anytype, comptime fields_to_keep: []const []const u8)
     var result: KeepStructFields(S, fields_to_keep) = undefined;
     inline for (@typeInfo(@TypeOf(result)).@"struct".fields) |field| {
         @field(result, field.name) = @field(s, field.name);
+    }
+
+    return result;
+}
+
+pub fn KeepRenameStructFields(
+    comptime S: type,
+    comptime fields_to_keep_and_rename: anytype,
+) type {
+    const info = @typeInfo(S);
+    if (info != .@"struct")
+        @compileError("zml.types.KeepRenameStructFields: S must be a struct type, got\n\tS: " ++ @typeName(S) ++ "\n");
+
+    const F: type = @TypeOf(fields_to_keep_and_rename);
+    const finfo = @typeInfo(F);
+
+    if (finfo != .@"struct")
+        @compileError("zml.types.KeepRenameStructFields: fields_to_keep_and_rename must be a struct, got\n\tfields_to_keep_and_rename: " ++ @typeName(F) ++ "\n");
+
+    // Create new fields array
+    comptime var temp_new_fields: [finfo.@"struct".fields.len]std.builtin.Type.StructField = undefined;
+    comptime var real_num_fields: comptime_int = 0;
+    inline for (finfo.@"struct".fields) |field_to_keep_and_rename| {
+        comptime var field_info: std.builtin.Type.StructField = undefined;
+        inline for (info.@"struct".fields) |field| {
+            if (comptime std.mem.eql(u8, field.name, field_to_keep_and_rename.name)) {
+                field_info = .{
+                    .name = @as([:0]const u8, @field(fields_to_keep_and_rename, field_to_keep_and_rename.name)),
+                    .type = field.type,
+                    .default_value_ptr = field.default_value_ptr,
+                    .is_comptime = field.is_comptime,
+                    .alignment = field.alignment,
+                };
+                temp_new_fields[real_num_fields] = field_info;
+                real_num_fields += 1;
+                break;
+            }
+        }
+    }
+
+    comptime var new_fields: [real_num_fields]std.builtin.Type.StructField = undefined;
+    inline for (0..real_num_fields) |i| {
+        new_fields[i] = temp_new_fields[i];
+    }
+
+    return @Type(.{ .@"struct" = .{
+        .layout = .auto,
+        .fields = &new_fields,
+        .decls = &.{},
+        .is_tuple = false,
+    } });
+}
+
+/// Creates a new struct type by keeping only the specified fields from the
+/// original struct type and renaming them according to a mapping provided in
+/// another struct.
+///
+/// If a field specified in `fields_to_keep_and_rename` does not exist in `s`,
+/// it is ignored. Only the fields listed in `fields_to_keep_and_rename` will be
+/// present in the new struct type, and their names will be changed according to
+/// the provided mapping.
+///
+/// ## Arguments
+/// * `s` (`anytype`): The struct instance from which to keep and rename fields.
+/// * `fields_to_keep_and_rename` (`anytype`): A struct instance that defines
+///   the mapping of old field names to new field names for the fields to be
+///   kept. Each field in this struct should have the name of the field to be
+///   kept and renamed in `s`, and its value should be a string representing the
+///   new name i.e.:
+///   ```zig
+///   .{
+///       .old_field_name1 = "new_field_name1",
+///       .old_field_name2 = "new_field_name2",
+///       ...
+///   }
+///   ```
+///
+/// ## Returns
+/// `types.KeepRenameStructFields(@TypeOf(s), fields_to_keep_and_rename)`: A new
+/// struct instance containing only the specified fields with their names
+/// changed according to the provided mapping.
+///
+/// ## Examples
+/// ```zig
+/// const s = .{ .a = 1, .b = 2, .c = 3, .d = 4 };
+/// const fields_to_keep_and_rename = .{
+///     .a = "alpha",
+///     .c = "gamma",
+///     .e = "epsilon", // This field does not exist in s, so it will be ignored
+/// };
+/// const kept_and_renamed = zml.types.keepRenameStructFields(s, fields_to_keep_and_rename);
+/// // kept_and_renamed is .{ .alpha = 1, .gamma = 3 }
+/// ```
+pub fn keepRenameStructFields(
+    s: anytype,
+    comptime fields_to_keep_and_rename: anytype,
+) KeepRenameStructFields(@TypeOf(s), fields_to_keep_and_rename) {
+    const S = @TypeOf(s);
+    const info = @typeInfo(S);
+    if (info != .@"struct")
+        @compileError("zml.types.keepRenameStructFields: s must be a struct, got\n\ts: " ++ @typeName(S) ++ "\n");
+
+    const F: type = @TypeOf(fields_to_keep_and_rename);
+    const finfo = @typeInfo(F);
+
+    var result: KeepRenameStructFields(S, fields_to_keep_and_rename) = undefined;
+    inline for (@typeInfo(@TypeOf(result)).@"struct".fields) |field| {
+        comptime var renamed = false;
+        inline for (finfo.@"struct".fields) |ffield| {
+            if (comptime std.mem.eql(u8, field.name, @field(fields_to_keep_and_rename, ffield.name))) {
+                @field(result, field.name) = @field(s, ffield.name);
+                renamed = true;
+                break;
+            }
+        }
+
+        if (!renamed) {
+            // Field is not in the keep_and_rename list, so we skip it
+            continue;
+        }
     }
 
     return result;

@@ -27,10 +27,10 @@ pub fn Acos(X: type) type {
         .real => @compileError("zml.numeric.acos: not implemented for " ++ @typeName(X) ++ " yet."),
         .complex => @compileError("zml.numeric.acos: not implemented for " ++ @typeName(X) ++ " yet."),
         .custom => {
-            if (comptime !types.hasMethod(X, "Acos", fn (type) type, &.{X}))
-                @compileError("zml.numeric.acos: " ++ @typeName(X) ++ " must implement `fn Acos(type) type`");
+            if (comptime !types.hasMethod(X, "ZmlAcos", fn (type) type, &.{X}))
+                @compileError("zml.numeric.acos: " ++ @typeName(X) ++ " must implement `fn ZmlAcos(type) type`");
 
-            return X.Acos(X);
+            return X.ZmlAcos(X);
         },
     }
 }
@@ -45,42 +45,27 @@ pub fn Acos(X: type) type {
 /// ## Arguments
 /// * `x` (`anytype`): The numeric value to get the arccosine of.
 /// * `ctx` (`anytype`): A context struct providing necessary resources and
-///   configuration for the operation. The required fields depend on `X`. If the
-///   context is missing required fields or contains unnecessary or wrongly
-///   typed fields, the compiler will emit a detailed error message describing
-///   the expected structure.
-///
-/// ### Context structure
-/// The fields of `ctx` depend on `numeric.Acos(X)`.
-///
-/// #### `numeric.Acos(X)` is not allocated
-/// The context must be empty.
-///
-/// #### `numeric.Acos(X)` is allocated
-/// * `allocator: std.mem.Allocator` The allocator to use for the output value.
+///   configuration for the operation.
 ///
 /// ## Returns
 /// `numeric.Acos(@TypeOf(x))`: The arccosine of `x`.
 ///
 /// ## Errors
-/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails. Can
-///   only happen if `numeric.Acos(X)` is allocated.
+/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
 ///
 /// ## Custom type support
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` must implement the required `Acos` method. The expected signature and
-/// behavior of `Acos` are as follows:
-/// * `fn Acos(type) type`: Returns the return type of `acos` for the custom
-///   numeric type.
+/// `X` must implement the required `ZmlAcos` method. The expected signature and
+/// behavior of `ZmlAcos` are as follows:
+/// * `fn ZmlAcos(type) type`: Returns the type of the arccosine of `x`.
 ///
-/// Let us denote the return type `numeric.Acos(X)` as `R`. Then, `R` or `X`
-/// must implement the required `acos` method. The expected signatures and
-/// behavior of `acos` are as follows:
-/// * `R` is not allocated: `fn acos(X) R`: Returns the arccosine of `x`.
-/// * `R` is allocated: `fn acos(std.mem.Allocator, X) !R`: Returns the
-///   arccosine of `x` as a newly allocated value.
+/// `numeric.Acos(X)` or `X` must implement the required `zmlAcos` method. The
+/// expected signature and behavior of `zmlAcos` are as follows:
+/// * `fn zmlAcos(X, anytype) !numeric.Acos(X)`: Returns the arccosine of `x`,
+///   potentially using the provided context for necessary resources. This
+///   function is responsible for validating the context.
 pub inline fn acos(x: anytype, ctx: anytype) !numeric.Acos(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Acos(X);
@@ -101,51 +86,26 @@ pub inline fn acos(x: anytype, ctx: anytype) !numeric.Acos(@TypeOf(x)) {
 
             return float.acos(x);
         },
-        .dyadic => @compileError("zml.numeric.acos: not implemented for " ++ @typeName(X) ++ " yet."),
+        .dyadic => unreachable,
         .cfloat => {
             comptime types.validateContext(@TypeOf(ctx), .{});
 
             return cfloat.acos(x);
         },
-        .integer => @compileError("zml.numeric.acos: not implemented for " ++ @typeName(X) ++ " yet."),
-        .rational => @compileError("zml.numeric.acos: not implemented for " ++ @typeName(X) ++ " yet."),
-        .real => @compileError("zml.numeric.acos: not implemented for " ++ @typeName(X) ++ " yet."),
-        .complex => @compileError("zml.numeric.acos: not implemented for " ++ @typeName(X) ++ " yet."),
+        .integer => unreachable,
+        .rational => unreachable,
+        .real => unreachable,
+        .complex => unreachable,
         .custom => {
-            if (comptime types.isAllocated(R)) {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X },
-                    "acos",
-                    fn (std.mem.Allocator, X) anyerror!R,
-                    &.{ std.mem.Allocator, X },
-                ) orelse
-                    @compileError("zml.numeric.acos: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn acos(std.mem.Allocator, " ++ @typeName(X) ++ ") !" ++ @typeName(R) ++ "`");
+            const Impl: type = comptime types.anyHasMethod(
+                &.{ R, X },
+                "zmlAcos",
+                fn (X, anytype) anyerror!numeric.Acos(X),
+                &.{ X, @TypeOf(ctx) },
+            ) orelse
+                @compileError("zml.numeric.acos: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlAcos(" ++ @typeName(X) ++ ", anytype) !" ++ @typeName(R) ++ "`");
 
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the custom numeric's memory allocation.",
-                        },
-                    },
-                );
-
-                return Impl.acos(ctx.allocator, x);
-            } else {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X },
-                    "acos",
-                    fn (X) R,
-                    &.{X},
-                ) orelse
-                    @compileError("zml.numeric.acos: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn acos(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
-
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return Impl.acos(x);
-            }
+            return Impl.zmlAcos(x, ctx);
         },
     }
 }

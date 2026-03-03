@@ -81,27 +81,10 @@ pub inline fn copy(x: anytype, ctx: anytype) !@TypeOf(x) {
             return x.copy(ctx.allocator);
         },
         .custom => {
-            if (comptime types.isAllocated(X)) {
-                comptime if (!types.hasMethod(X, "copy", fn (X, std.mem.Allocator) anyerror!X, &.{ X, std.mem.Allocator }))
-                    @compileError("zml.numeric.copy: " ++ @typeName(X) ++ " must implement `fn copy(" ++ @typeName(X) ++ ", std.mem.Allocator) !" ++ @typeName(X) ++ "`");
+            comptime if (!types.hasMethod(X, "zmlCopy", fn (X, anytype) anyerror!X, &.{ X, @TypeOf(ctx) }))
+                @compileError("zml.numeric.copy: " ++ @typeName(X) ++ " must implement `fn zmlCopy(" ++ @typeName(X) ++ ", anytype) !" ++ @typeName(X) ++ "`");
 
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the custom numeric's memory allocation.",
-                        },
-                    },
-                );
-
-                return x.copy(ctx.allocator);
-            } else {
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return x;
-            }
+            return X.zmlCopy(x, ctx);
         },
     }
 }

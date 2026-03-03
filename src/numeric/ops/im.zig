@@ -29,10 +29,10 @@ pub fn Im(X: type) type {
         .real => return X,
         .complex => return types.Scalar(X),
         .custom => {
-            if (comptime !types.hasMethod(X, "Im", fn (type) type, &.{X}))
-                @compileError("zml.numeric.im: " ++ @typeName(X) ++ " must implement `fn Im(type) type`");
+            if (comptime !types.hasMethod(X, "ZmlIm", fn (type) type, &.{X}))
+                @compileError("zml.numeric.im: " ++ @typeName(X) ++ " must implement `fn ZmlIm(type) type`");
 
-            return X.Im(X);
+            return X.ZmlIm(X);
         },
     }
 }
@@ -47,51 +47,31 @@ pub fn Im(X: type) type {
 /// ## Arguments
 /// * `x` (`anytype`): The numeric value to get the imaginary part of.
 /// * `ctx` (`anytype`): A context struct providing necessary resources and
-///   configuration for the operation. The required fields depend on `X`. If the
-///   context is missing required fields or contains unnecessary or wrongly
-///   typed fields, the compiler will emit a detailed error message describing
-///   the expected structure.
-///
-/// ### Context structure
-/// The fields of `ctx` depend on `numeric.Im(X)`.
-///
-/// #### `numeric.Im(X)` is not allocated
-/// The context must be empty.
-///
-/// #### `numeric.Im(X)` is allocated and `X.has_simple_im` exists and is true
-/// * `allocator: std.mem.Allocator` (optional): The allocator to use for the
-///   output value. If not provided, a read-only view will be returned.
-///
-/// #### `numeric.Im(X)` is allocated and `X.has_simple_im` does not exist or is false
-/// * `allocator: std.mem.Allocator`: The allocator to use for the output value.
+///   configuration for the operation.
 ///
 /// ## Returns
-/// `numeric.Im(@TypeOf(x))`: The imaginary part of `x`.
+/// `numeric.Im(@TypeOf(x))`: The imaginary of `x`.
 ///
 /// ## Errors
-/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails. Can
-///   only happen if `numeric.Im(X)` is allocated and an allocator is provided.
+/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
 ///
 /// ## Custom type support
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` must implement the required `Im` method. The expected signature and
-/// behavior of `Im` are as follows:
-/// * `fn Im(type) type`: Returns the return type of `im` for the custom
-///   numeric type.
+/// `X` must implement the required `ZmlIm` method. The expected signature and
+/// behavior of `ZmlIm` are as follows:
+/// * `fn ZmlIm(type) type`: Returns the type of the imaginary part of `x`.
 ///
-/// Let us denote the return type `numeric.Im(X)` as `R`. Then, `R` or `X` must
-/// implement the required `im` method. The expected signatures and behavior of
-/// `im` are as follows:
-/// * `R` is not allocated: `fn im(X) R`: Returns the imaginary part of `x`.
-/// * `R` is allocated:
-///   * `X.has_simple_im` exists and is true: `fn im(?std.mem.Allocator, X) !R`:
-///     Returns the imaginary part of `x` as a newly allocated value, if the
-///     allocator is provided, or a read-only view if not. If not provided, it
-///     must not fail.
-///   * `X.has_simple_im` does not exist or is false: `fn im(std.mem.Allocator, X) !R`:
-///     Returns the imaginary part of `x` as a newly allocated value.
+/// `numeric.Im(X)` or `X` must implement the required `zmlIm` method. The
+/// expected signature and behavior of `zmlIm` are as follows:
+/// * `fn zmlIm(X, anytype) !numeric.Im(X)`: Returns the imaginary part of `x`,
+///   potentially using the provided context for necessary resources. This
+///   function is responsible for validating the context.
+///
+/// Custom allocated types can optionally declare `zml_has_simple_im` as `true`
+/// to indicate that their `zmlIm` implementation can be called without an
+/// allocator in the context, instead returning a view and never erroring.
 pub inline fn im(x: anytype, ctx: anytype) !numeric.Im(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Im(X);
@@ -100,7 +80,7 @@ pub inline fn im(x: anytype, ctx: anytype) !numeric.Im(@TypeOf(x)) {
         .bool => {
             comptime types.validateContext(@TypeOf(ctx), .{});
 
-            return false;
+            return x;
         },
         .int => {
             comptime types.validateContext(@TypeOf(ctx), .{});
@@ -134,7 +114,7 @@ pub inline fn im(x: anytype, ctx: anytype) !numeric.Im(@TypeOf(x)) {
                 },
             );
 
-            return constants.zero(R, ctx);
+            return constants.zero(integer.Integer, ctx);
         },
         .rational => {
             comptime types.validateContext(
@@ -148,71 +128,20 @@ pub inline fn im(x: anytype, ctx: anytype) !numeric.Im(@TypeOf(x)) {
                 },
             );
 
-            return constants.zero(R, ctx);
+            return constants.zero(rational.Rational, ctx);
         },
         .real => @compileError("zml.numeric.im: not implemented for " ++ @typeName(X) ++ " yet."),
         .complex => @compileError("zml.numeric.im: not implemented for " ++ @typeName(X) ++ " yet."),
         .custom => {
-            if (comptime types.isAllocated(R)) {
-                if (comptime @hasDecl(X, "has_simple_im") and X.has_simple_im) {
-                    const Impl: type = comptime types.anyHasMethod(
-                        &.{ R, X },
-                        "im",
-                        fn (?std.mem.Allocator, X) anyerror!R,
-                        &.{ std.mem.Allocator, X },
-                    ) orelse
-                        @compileError("zml.numeric.im: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn im(?std.mem.Allocator, " ++ @typeName(X) ++ ") !" ++ @typeName(R) ++ "`");
+            const Impl: type = comptime types.anyHasMethod(
+                &.{ R, X },
+                "zmlIm",
+                fn (X, anytype) anyerror!numeric.Im(X),
+                &.{ X, @TypeOf(ctx) },
+            ) orelse
+                @compileError("zml.numeric.im: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlIm(" ++ @typeName(X) ++ ", anytype) !" ++ @typeName(R) ++ "`");
 
-                    comptime types.validateContext(
-                        @TypeOf(ctx),
-                        .{
-                            .allocator = .{
-                                .type = std.mem.Allocator,
-                                .required = false,
-                                .description = "The allocator to use for the custom numeric's memory allocation. If not provided, a view will be returned.",
-                            },
-                        },
-                    );
-
-                    return if (comptime types.ctxHasField(@TypeOf(ctx), "allocator", std.mem.Allocator))
-                        Impl.im(ctx.allocator, x)
-                    else
-                        Impl.im(null, x) catch unreachable;
-                } else {
-                    const Impl: type = comptime types.anyHasMethod(
-                        &.{ R, X },
-                        "im",
-                        fn (std.mem.Allocator, X) anyerror!R,
-                        &.{ std.mem.Allocator, X },
-                    ) orelse
-                        @compileError("zml.numeric.im: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn im(std.mem.Allocator, " ++ @typeName(X) ++ ") !" ++ @typeName(R) ++ "`");
-
-                    comptime types.validateContext(
-                        @TypeOf(ctx),
-                        .{
-                            .allocator = .{
-                                .type = std.mem.Allocator,
-                                .required = true,
-                                .description = "The allocator to use for the custom numeric's memory allocation.",
-                            },
-                        },
-                    );
-
-                    return Impl.im(ctx.allocator, x);
-                }
-            } else {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X },
-                    "im",
-                    fn (X) R,
-                    &.{X},
-                ) orelse
-                    @compileError("zml.numeric.im: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn im(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
-
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return Impl.im(x);
-            }
+            return Impl.zmlIm(x, ctx);
         },
     }
 }

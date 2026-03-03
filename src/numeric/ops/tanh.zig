@@ -27,10 +27,10 @@ pub fn Tanh(X: type) type {
         .real => @compileError("zml.numeric.tanh: not implemented for " ++ @typeName(X) ++ " yet."),
         .complex => @compileError("zml.numeric.tanh: not implemented for " ++ @typeName(X) ++ " yet."),
         .custom => {
-            if (comptime !types.hasMethod(X, "Tanh", fn (type) type, &.{X}))
-                @compileError("zml.numeric.tanh: " ++ @typeName(X) ++ " must implement `fn Tanh(type) type`");
+            if (comptime !types.hasMethod(X, "ZmlTanh", fn (type) type, &.{X}))
+                @compileError("zml.numeric.tanh: " ++ @typeName(X) ++ " must implement `fn ZmlTanh(type) type`");
 
-            return X.Tanh(X);
+            return X.ZmlTanh(X);
         },
     }
 }
@@ -45,43 +45,27 @@ pub fn Tanh(X: type) type {
 /// ## Arguments
 /// * `x` (`anytype`): The numeric value to get the hyperbolic tangent of.
 /// * `ctx` (`anytype`): A context struct providing necessary resources and
-///   configuration for the operation. The required fields depend on `X`. If the
-///   context is missing required fields or contains unnecessary or wrongly
-///   typed fields, the compiler will emit a detailed error message describing
-///   the expected structure.
-///
-/// ### Context structure
-/// The fields of `ctx` depend on `numeric.Tanh(X)`.
-///
-/// #### `numeric.Tanh(X)` is not allocated
-/// The context must be empty.
-///
-/// #### `numeric.Tanh(X)` is allocated
-/// * `allocator: std.mem.Allocator` The allocator to use for the output value.
+///   configuration for the operation.
 ///
 /// ## Returns
 /// `numeric.Tanh(@TypeOf(x))`: The hyperbolic tangent of `x`.
 ///
 /// ## Errors
-/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails. Can
-///   only happen if `numeric.Tanh(X)` is allocated.
+/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
 ///
 /// ## Custom type support
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` must implement the required `Tanh` method. The expected signature and
-/// behavior of `Tanh` are as follows:
-/// * `fn Tanh(type) type`: Returns the return type of `tanh` for the custom
-///   numeric type.
+/// `X` must implement the required `ZmlTanh` method. The expected signature and
+/// behavior of `ZmlTanh` are as follows:
+/// * `fn ZmlTanh(type) type`: Returns the type of the hyperbolic tangent of `x`.
 ///
-/// Let us denote the return type `numeric.Tanh(X)` as `R`. Then, `R` or `X`
-/// must implement the required `tanh` method. The expected signatures and
-/// behavior of `tanh` are as follows:
-/// * `R` is not allocated: `fn tanh(X) R`: Returns the hyperbolic tangent of
-///   `x`.
-/// * `R` is allocated: `fn tanh(std.mem.Allocator, X) !R`: Returns the
-///   hyperbolic tangent of `x` as a newly allocated value.
+/// `numeric.Tanh(X)` or `X` must implement the required `zmlTanh` method. The
+/// expected signature and behavior of `zmlTanh` are as follows:
+/// * `fn zmlTanh(X, anytype) !numeric.Tanh(X)`: Returns the hyperbolic tangent
+///   of `x`, potentially using the provided context for necessary resources.
+///   This function is responsible for validating the context.
 pub inline fn tanh(x: anytype, ctx: anytype) !numeric.Tanh(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Tanh(X);
@@ -102,51 +86,26 @@ pub inline fn tanh(x: anytype, ctx: anytype) !numeric.Tanh(@TypeOf(x)) {
 
             return float.tanh(x);
         },
-        .dyadic => @compileError("zml.numeric.tanh: not implemented for " ++ @typeName(X) ++ " yet."),
+        .dyadic => unreachable,
         .cfloat => {
             comptime types.validateContext(@TypeOf(ctx), .{});
 
             return cfloat.tanh(x);
         },
-        .integer => @compileError("zml.numeric.tanh: not implemented for " ++ @typeName(X) ++ " yet."),
-        .rational => @compileError("zml.numeric.tanh: not implemented for " ++ @typeName(X) ++ " yet."),
-        .real => @compileError("zml.numeric.tanh: not implemented for " ++ @typeName(X) ++ " yet."),
-        .complex => @compileError("zml.numeric.tanh: not implemented for " ++ @typeName(X) ++ " yet."),
+        .integer => unreachable,
+        .rational => unreachable,
+        .real => unreachable,
+        .complex => unreachable,
         .custom => {
-            if (comptime types.isAllocated(R)) {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X },
-                    "tanh",
-                    fn (std.mem.Allocator, X) anyerror!R,
-                    &.{ std.mem.Allocator, X },
-                ) orelse
-                    @compileError("zml.numeric.tanh: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn tanh(std.mem.Allocator, " ++ @typeName(X) ++ ") !" ++ @typeName(R) ++ "`");
+            const Impl: type = comptime types.anyHasMethod(
+                &.{ R, X },
+                "zmlTanh",
+                fn (X, anytype) anyerror!numeric.Tanh(X),
+                &.{ X, @TypeOf(ctx) },
+            ) orelse
+                @compileError("zml.numeric.tanh: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlTanh(" ++ @typeName(X) ++ ", anytype) !" ++ @typeName(R) ++ "`");
 
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the custom numeric's memory allocation.",
-                        },
-                    },
-                );
-
-                return Impl.tanh(ctx.allocator, x);
-            } else {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X },
-                    "tanh",
-                    fn (X) R,
-                    &.{X},
-                ) orelse
-                    @compileError("zml.numeric.tanh: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn tanh(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
-
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return Impl.tanh(x);
-            }
+            return Impl.zmlTanh(x, ctx);
         },
     }
 }

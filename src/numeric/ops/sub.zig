@@ -20,24 +20,24 @@ pub fn Sub(X: type, Y: type) type {
         if (comptime types.isCustomType(Y)) { // X and Y both custom
             const Impl: type = comptime types.anyHasMethod(
                 &.{ X, Y },
-                "Sub",
+                "ZmlSub",
                 fn (type, type) type,
                 &.{ X, Y },
             ) orelse
-                @compileError("zml.numeric.sub: " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn Sub(type, type) type`");
+                @compileError("zml.numeric.sub: " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn ZmlSub(type, type) type`");
 
-            return Impl.Sub(X, Y);
+            return Impl.ZmlSub(X, Y);
         } else { // only X custom
-            comptime if (!types.hasMethod(X, "Sub", fn (type, type) type, &.{ X, Y }))
-                @compileError("zml.numeric.sub: " ++ @typeName(X) ++ " must implement `fn Sub(type, type) type`");
+            comptime if (!types.hasMethod(X, "ZmlSub", fn (type, type) type, &.{ X, Y }))
+                @compileError("zml.numeric.sub: " ++ @typeName(X) ++ " must implement `fn ZmlSub(type, type) type`");
 
-            return X.Sub(X, Y);
+            return X.ZmlSub(X, Y);
         }
     } else if (comptime types.isCustomType(Y)) { // only Y custom
-        comptime if (!types.hasMethod(Y, "Sub", fn (type, type) type, &.{ X, Y }))
-            @compileError("zml.numeric.sub: " ++ @typeName(Y) ++ " must implement `fn Sub(type, type) type`");
+        comptime if (!types.hasMethod(Y, "ZmlSub", fn (type, type) type, &.{ X, Y }))
+            @compileError("zml.numeric.sub: " ++ @typeName(Y) ++ " must implement `fn ZmlSub(type, type) type`");
 
-        return Y.Sub(X, Y);
+        return Y.ZmlSub(X, Y);
     }
 
     switch (comptime types.numericType(X)) {
@@ -131,43 +131,27 @@ pub fn Sub(X: type, Y: type) type {
 /// * `x` (`anytype`): The left operand.
 /// * `y` (`anytype`): The right operand.
 /// * `ctx` (`anytype`): A context struct providing necessary resources and
-///   configuration for the operation. The required fields depend on `X` and
-///   `Y`. If the context is missing required fields or contains unnecessary or
-///   wrongly typed fields, the compiler will emit a detailed error message
-///   describing the expected structure.
-///
-/// ### Context structure
-/// The fields of `ctx` depend on `numeric.Sub(X, Y)`.
-///
-/// #### `numeric.Sub(X, Y)` is not allocated
-/// The context must be empty.
-///
-/// #### `numeric.Sub(X, Y)` is allocated
-/// * `allocator: std.mem.Allocator`: The allocator to use for the output value.
+///   configuration for the operation.
 ///
 /// ## Returns
 /// `numeric.Sub(@TypeOf(x), @TypeOf(y))`: The result of the subtraction.
 ///
 /// ## Errors
-/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails. Can
-///   only happen if `numeric.Sub(X, Y)` is allocated.
+/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
 ///
 /// ## Custom type support
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` or `Y` must implement the required `Sub` method. The expected signature
-/// and behavior of `Sub` are as follows:
-/// * `fn Sub(type, type) type`: Returns the return type of `sub` for the input
-///   types.
+/// `X` or `Y` must implement the required `ZmlSub` method. The expected signature
+/// and behavior of `ZmlSub` are as follows:
+/// * `fn ZmlSub(type, type) type`: Returns the type of `x + y`.
 ///
-/// Let us denote the return type `numeric.Sub(X, Y)` as `R`. Then, `R`, `X` or
-/// `Y` must implement the required `sub` method. The expected signatures and
-/// behavior of `sub` are as follows:
-/// * `R` is not allocated: `fn sub(X, Y) R`: Returns the subtraction of `x` and
-///   `y`.
-/// * `R` is allocated: `fn sub(std.mem.Allocator, X, Y) !R`: Returns the
-///   sub of `x` and `y` as a newly allocated value.
+/// `numeric.Sub(X, Y)`, `X` or `Y` must implement the required `zmlSub` method.
+/// The expected signatures and behavior of `zmlSub` are as follows:
+/// * `fn zmlSub(X, Y, anytype) !numeric.Sub(X, Y)`: Returns the subtraction of
+///   `x` and `y`, potentially using the provided context for necessary
+///   resources. This function is responsible for validating the context.
 pub inline fn sub(x: anytype, y: anytype, ctx: anytype) !numeric.Sub(@TypeOf(x), @TypeOf(y)) {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
@@ -175,111 +159,36 @@ pub inline fn sub(x: anytype, y: anytype, ctx: anytype) !numeric.Sub(@TypeOf(x),
 
     if (comptime types.isCustomType(X)) {
         if (comptime types.isCustomType(Y)) { // X and Y both custom
-            if (comptime types.isAllocated(R)) {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X, Y },
-                    "sub",
-                    fn (std.mem.Allocator, X, Y) anyerror!R,
-                    &.{ std.mem.Allocator, X, Y },
-                ) orelse
-                    @compileError("zml.numeric.sub: " ++ @typeName(R) ++ ", " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn sub(std.mem.Allocator, " ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") !" ++ @typeName(R) ++ "`");
+            const Impl: type = comptime types.anyHasMethod(
+                &.{ R, X, Y },
+                "zmlSub",
+                fn (X, Y, anytype) anyerror!R,
+                &.{ X, Y, @TypeOf(ctx) },
+            ) orelse
+                @compileError("zml.numeric.sub: " ++ @typeName(R) ++ ", " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn zmlSub(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ", anytype) !" ++ @typeName(R) ++ "`");
 
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the custom numeric's memory allocation.",
-                        },
-                    },
-                );
-
-                return Impl.sub(ctx.allocator, x, y);
-            } else {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X, Y },
-                    "sub",
-                    fn (X, Y) R,
-                    &.{ X, Y },
-                ) orelse
-                    @compileError("zml.numeric.sub: " ++ @typeName(R) ++ ", " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn sub(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
-
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return Impl.sub(x, y);
-            }
+            return Impl.zmlSub(x, y, ctx);
         } else { // only X custom
-            if (comptime types.isAllocated(R)) {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X },
-                    "sub",
-                    fn (std.mem.Allocator, X, Y) anyerror!R,
-                    &.{ std.mem.Allocator, X, Y },
-                ) orelse
-                    @compileError("zml.numeric.sub: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn sub(std.mem.Allocator, " ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") !" ++ @typeName(R) ++ "`");
+            const Impl: type = comptime types.anyHasMethod(
+                &.{ R, X },
+                "zmlSub",
+                fn (X, Y, anytype) anyerror!R,
+                &.{ X, Y, @TypeOf(ctx) },
+            ) orelse
+                @compileError("zml.numeric.sub: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlSub(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ", anytype) !" ++ @typeName(R) ++ "`");
 
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the custom numeric's memory allocation.",
-                        },
-                    },
-                );
-
-                return Impl.sub(ctx.allocator, x, y);
-            } else {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X },
-                    "sub",
-                    fn (X, Y) R,
-                    &.{ X, Y },
-                ) orelse
-                    @compileError("zml.numeric.sub: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn sub(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
-
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return Impl.sub(x, y);
-            }
+            return Impl.zmlSub(x, y, ctx);
         }
     } else if (comptime types.isCustomType(Y)) { // only Y custom
-        if (comptime types.isAllocated(R)) {
-            const Impl: type = comptime types.anyHasMethod(
-                &.{ R, Y },
-                "sub",
-                fn (std.mem.Allocator, X, Y) anyerror!R,
-                &.{ std.mem.Allocator, X, Y },
-            ) orelse
-                @compileError("zml.numeric.sub: " ++ @typeName(R) ++ " or " ++ @typeName(Y) ++ " must implement `fn sub(std.mem.Allocator, " ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") !" ++ @typeName(R) ++ "`");
+        const Impl: type = comptime types.anyHasMethod(
+            &.{ R, Y },
+            "zmlSub",
+            fn (X, Y, anytype) anyerror!R,
+            &.{ X, Y, @TypeOf(ctx) },
+        ) orelse
+            @compileError("zml.numeric.sub: " ++ @typeName(R) ++ " or " ++ @typeName(Y) ++ " must implement `fn zmlSub(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ", anytype) !" ++ @typeName(R) ++ "`");
 
-            comptime types.validateContext(
-                @TypeOf(ctx),
-                .{
-                    .allocator = .{
-                        .type = std.mem.Allocator,
-                        .required = true,
-                        .description = "The allocator to use for the custom numeric's memory allocation.",
-                    },
-                },
-            );
-
-            return Impl.sub(ctx.allocator, x, y);
-        } else {
-            const Impl: type = comptime types.anyHasMethod(
-                &.{ R, Y },
-                "sub",
-                fn (X, Y) R,
-                &.{ X, Y },
-            ) orelse
-                @compileError("zml.numeric.sub: " ++ @typeName(R) ++ " or " ++ @typeName(Y) ++ " must implement `fn sub(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
-
-            comptime types.validateContext(@TypeOf(ctx), .{});
-
-            return Impl.sub(x, y);
-        }
+        return Impl.zmlSub(x, y, ctx);
     }
 
     switch (comptime types.numericType(X)) {

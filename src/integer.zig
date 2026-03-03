@@ -557,6 +557,7 @@ pub const ge = @import("integer/ge.zig").ge;
 pub const abs = @import("integer/abs.zig").abs;
 pub const abs_ = @import("integer/abs_.zig").abs_;
 pub const neg = @import("integer/neg.zig").neg;
+pub const neg_ = @import("integer/neg_.zig").neg_;
 
 pub const gcd = @import("integer/gcd.zig").gcd;
 

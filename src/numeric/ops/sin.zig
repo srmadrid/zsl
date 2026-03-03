@@ -27,10 +27,10 @@ pub fn Sin(X: type) type {
         .real => @compileError("zml.numeric.sin: not implemented for " ++ @typeName(X) ++ " yet."),
         .complex => @compileError("zml.numeric.sin: not implemented for " ++ @typeName(X) ++ " yet."),
         .custom => {
-            if (comptime !types.hasMethod(X, "Sin", fn (type) type, &.{X}))
-                @compileError("zml.numeric.sin: " ++ @typeName(X) ++ " must implement `fn Sin(type) type`");
+            if (comptime !types.hasMethod(X, "ZmlSin", fn (type) type, &.{X}))
+                @compileError("zml.numeric.sin: " ++ @typeName(X) ++ " must implement `fn ZmlSin(type) type`");
 
-            return X.Sin(X);
+            return X.ZmlSin(X);
         },
     }
 }
@@ -45,42 +45,27 @@ pub fn Sin(X: type) type {
 /// ## Arguments
 /// * `x` (`anytype`): The numeric value to get the sine of.
 /// * `ctx` (`anytype`): A context struct providing necessary resources and
-///   configuration for the operation. The required fields depend on `X`. If the
-///   context is missing required fields or contains unnecessary or wrongly
-///   typed fields, the compiler will emit a detailed error message describing
-///   the expected structure.
-///
-/// ### Context structure
-/// The fields of `ctx` depend on `numeric.Sin(X)`.
-///
-/// #### `numeric.Sin(X)` is not allocated
-/// The context must be empty.
-///
-/// #### `numeric.Sin(X)` is allocated
-/// * `allocator: std.mem.Allocator` The allocator to use for the output value.
+///   configuration for the operation.
 ///
 /// ## Returns
 /// `numeric.Sin(@TypeOf(x))`: The sine of `x`.
 ///
 /// ## Errors
-/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails. Can
-///   only happen if `numeric.Sin(X)` is allocated.
+/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
 ///
 /// ## Custom type support
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` must implement the required `Sin` method. The expected signature and
-/// behavior of `Sin` are as follows:
-/// * `fn Sin(type) type`: Returns the return type of `sin` for the custom
-///   numeric type.
+/// `X` must implement the required `ZmlSin` method. The expected signature and
+/// behavior of `ZmlSin` are as follows:
+/// * `fn ZmlSin(type) type`: Returns the type of the sine of `x`.
 ///
-/// Let us denote the return type `numeric.Sin(X)` as `R`. Then, `R` or `X`
-/// must implement the required `sin` method. The expected signatures and
-/// behavior of `sin` are as follows:
-/// * `R` is not allocated: `fn sin(X) R`: Returns the sine of `x`.
-/// * `R` is allocated: `fn sin(std.mem.Allocator, X) !R`: Returns the sine of
-///   `x` as a newly allocated value.
+/// `numeric.Sin(X)` or `X` must implement the required `zmlSin` method. The
+/// expected signature and behavior of `zmlSin` are as follows:
+/// * `fn zmlSin(X, anytype) !numeric.Sin(X)`: Returns the sine of `x`,
+///   potentially using the provided context for necessary resources. This
+///   function is responsible for validating the context.
 pub inline fn sin(x: anytype, ctx: anytype) !numeric.Sin(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Sin(X);
@@ -101,51 +86,26 @@ pub inline fn sin(x: anytype, ctx: anytype) !numeric.Sin(@TypeOf(x)) {
 
             return float.sin(x);
         },
-        .dyadic => @compileError("zml.numeric.sin: not implemented for " ++ @typeName(X) ++ " yet."),
+        .dyadic => unreachable,
         .cfloat => {
             comptime types.validateContext(@TypeOf(ctx), .{});
 
             return cfloat.sin(x);
         },
-        .integer => @compileError("zml.numeric.sin: not implemented for " ++ @typeName(X) ++ " yet."),
-        .rational => @compileError("zml.numeric.sin: not implemented for " ++ @typeName(X) ++ " yet."),
-        .real => @compileError("zml.numeric.sin: not implemented for " ++ @typeName(X) ++ " yet."),
-        .complex => @compileError("zml.numeric.sin: not implemented for " ++ @typeName(X) ++ " yet."),
+        .integer => unreachable,
+        .rational => unreachable,
+        .real => unreachable,
+        .complex => unreachable,
         .custom => {
-            if (comptime types.isAllocated(R)) {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X },
-                    "sin",
-                    fn (std.mem.Allocator, X) anyerror!R,
-                    &.{ std.mem.Allocator, X },
-                ) orelse
-                    @compileError("zml.numeric.sin: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn sin(std.mem.Allocator, " ++ @typeName(X) ++ ") !" ++ @typeName(R) ++ "`");
+            const Impl: type = comptime types.anyHasMethod(
+                &.{ R, X },
+                "zmlSin",
+                fn (X, anytype) anyerror!numeric.Sin(X),
+                &.{ X, @TypeOf(ctx) },
+            ) orelse
+                @compileError("zml.numeric.sin: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlSin(" ++ @typeName(X) ++ ", anytype) !" ++ @typeName(R) ++ "`");
 
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the custom numeric's memory allocation.",
-                        },
-                    },
-                );
-
-                return Impl.sin(ctx.allocator, x);
-            } else {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X },
-                    "sin",
-                    fn (X) R,
-                    &.{X},
-                ) orelse
-                    @compileError("zml.numeric.sin: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn sin(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
-
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return Impl.sin(x);
-            }
+            return Impl.zmlSin(x, ctx);
         },
     }
 }

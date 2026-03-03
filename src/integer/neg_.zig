@@ -1,22 +1,22 @@
 const std = @import("std");
 
 const types = @import("../types.zig");
-const rational = @import("../rational.zig");
-const Rational = rational.Rational;
+const integer = @import("../integer.zig");
+const Integer = integer.Integer;
 
 const check_aliasing = @import("check_aliasing.zig").check_aliasing;
 
-/// Performs in-place computation of the absolute value of a rational.
+/// Performs in-place computation of the negation of an integer.
 ///
-/// If the allocator is not provided, `o` and `x` must be the same rational, and
+/// If the allocator is not provided, `o` and `x` must be the same integer, and
 /// the operation will simply set the `positive` field of `o` to `true`.
 ///
 /// ## Arguments
 /// * `allocator` (`?std.mem.Allocator`): The allocator to use for memory
 ///   allocations. If provided, must be the same allocator used to initialize
 ///   `o`.
-/// * `o` (`*Rational`): The output operand.
-/// * `x` (`Rational`): The rational value to get the absolute value of.
+/// * `o` (`*Integer`): The output operand.
+/// * `x` (`Integer`): The integer value to get the negation of.
 ///
 /// ## Returns
 /// `void`
@@ -24,16 +24,16 @@ const check_aliasing = @import("check_aliasing.zig").check_aliasing;
 /// ## Errors
 /// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails. Can
 ///   only happen if an allocator is provided and `o` and `x` are different
-///   rationals.
-/// * `rational.Error.AllocatorRequired`: If `o` and `x` are different rationals
+///   integers.
+/// * `integer.Error.AllocatorRequired`: If `o` and `x` are different integers
 ///   and no allocator is provided.
-pub fn abs_(allocator: ?std.mem.Allocator, o: *Rational, x: Rational) !void {
+pub fn neg_(allocator: ?std.mem.Allocator, o: *Integer, x: Integer) !void {
     if (check_aliasing(o, x)) {
-        o.num.positive = true;
+        o.positive = !x.positive;
     } else {
         if (allocator) |a|
-            try o.set(a, rational.abs(null, x) catch unreachable, 1)
+            try o.set(a, integer.neg(null, x) catch unreachable)
         else
-            return rational.Error.AllocatorRequired;
+            return integer.Error.AllocatorRequired;
     }
 }

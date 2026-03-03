@@ -709,6 +709,7 @@ pub const ge = @import("rational/ge.zig").ge;
 pub const abs = @import("rational/abs.zig").abs;
 pub const abs_ = @import("rational/abs_.zig").abs_;
 pub const neg = @import("rational/neg.zig").neg;
+pub const neg_ = @import("rational/neg_.zig").neg_;
 
 pub const Error = error{
     ZeroDenominator,

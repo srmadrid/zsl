@@ -27,15 +27,15 @@ pub fn Acosh(X: type) type {
         .real => @compileError("zml.numeric.acosh: not implemented for " ++ @typeName(X) ++ " yet."),
         .complex => @compileError("zml.numeric.acosh: not implemented for " ++ @typeName(X) ++ " yet."),
         .custom => {
-            if (comptime !types.hasMethod(X, "Acosh", fn (type) type, &.{X}))
-                @compileError("zml.numeric.acosh: " ++ @typeName(X) ++ " must implement `fn Acosh(type) type`");
+            if (comptime !types.hasMethod(X, "ZmlAcosh", fn (type) type, &.{X}))
+                @compileError("zml.numeric.acosh: " ++ @typeName(X) ++ " must implement `fn ZmlAcosh(type) type`");
 
-            return X.Acosh(X);
+            return X.ZmlAcosh(X);
         },
     }
 }
 
-/// Returns the hyperbolic arccosine `cosh⁻¹(x)` of a numeric `x`.
+/// Returns the hyperbolic arccosine `cos⁻¹(x)` of a numeric `x`.
 ///
 /// ## Signature
 /// ```zig
@@ -45,43 +45,28 @@ pub fn Acosh(X: type) type {
 /// ## Arguments
 /// * `x` (`anytype`): The numeric value to get the hyperbolic arccosine of.
 /// * `ctx` (`anytype`): A context struct providing necessary resources and
-///   configuration for the operation. The required fields depend on `X`. If the
-///   context is missing required fields or contains unnecessary or wrongly
-///   typed fields, the compiler will emit a detailed error message describing
-///   the expected structure.
-///
-/// ### Context structure
-/// The fields of `ctx` depend on `numeric.Acosh(X)`.
-///
-/// #### `numeric.Acosh(X)` is not allocated
-/// The context must be empty.
-///
-/// #### `numeric.Acosh(X)` is allocated
-/// * `allocator: std.mem.Allocator` The allocator to use for the output value.
+///   configuration for the operation.
 ///
 /// ## Returns
 /// `numeric.Acosh(@TypeOf(x))`: The hyperbolic arccosine of `x`.
 ///
 /// ## Errors
-/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails. Can
-///   only happen if `numeric.Acosh(X)` is allocated.
+/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
 ///
 /// ## Custom type support
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` must implement the required `Acosh` method. The expected signature and
-/// behavior of `Acosh` are as follows:
-/// * `fn Acosh(type) type`: Returns the return type of `acosh` for the custom
-///   numeric type.
-///
-/// Let us denote the return type `numeric.Acosh(X)` as `R`. Then, `R` or `X`
-/// must implement the required `acosh` method. The expected signatures and
-/// behavior of `acosh` are as follows:
-/// * `R` is not allocated: `fn acosh(X) R`: Returns the hyperbolic arccosine of
+/// `X` must implement the required `ZmlAcosh` method. The expected signature and
+/// behavior of `ZmlAcosh` are as follows:
+/// * `fn ZmlAcosh(type) type`: Returns the type of the hyperbolic arccosine of
 ///   `x`.
-/// * `R` is allocated: `fn acosh(std.mem.Allocator, X) !R`: Returns the
-///   hyperbolic arccosine of `x` as a newly allocated value.
+///
+/// `numeric.Acosh(X)` or `X` must implement the required `zmlAcosh` method. The
+/// expected signature and behavior of `zmlAcosh` are as follows:
+/// * `fn zmlAcosh(X, anytype) !numeric.Acosh(X)`: Returns the hyperbolic
+///   arccosine of `x`, potentially using the provided context for necessary
+///   resources. This function is responsible for validating the context.
 pub inline fn acosh(x: anytype, ctx: anytype) !numeric.Acosh(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Acosh(X);
@@ -102,51 +87,26 @@ pub inline fn acosh(x: anytype, ctx: anytype) !numeric.Acosh(@TypeOf(x)) {
 
             return float.acosh(x);
         },
-        .dyadic => @compileError("zml.numeric.acosh: not implemented for " ++ @typeName(X) ++ " yet."),
+        .dyadic => unreachable,
         .cfloat => {
             comptime types.validateContext(@TypeOf(ctx), .{});
 
             return cfloat.acosh(x);
         },
-        .integer => @compileError("zml.numeric.acosh: not implemented for " ++ @typeName(X) ++ " yet."),
-        .rational => @compileError("zml.numeric.acosh: not implemented for " ++ @typeName(X) ++ " yet."),
-        .real => @compileError("zml.numeric.acosh: not implemented for " ++ @typeName(X) ++ " yet."),
-        .complex => @compileError("zml.numeric.acosh: not implemented for " ++ @typeName(X) ++ " yet."),
+        .integer => unreachable,
+        .rational => unreachable,
+        .real => unreachable,
+        .complex => unreachable,
         .custom => {
-            if (comptime types.isAllocated(R)) {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X },
-                    "acosh",
-                    fn (std.mem.Allocator, X) anyerror!R,
-                    &.{ std.mem.Allocator, X },
-                ) orelse
-                    @compileError("zml.numeric.acosh: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn acosh(std.mem.Allocator, " ++ @typeName(X) ++ ") !" ++ @typeName(R) ++ "`");
+            const Impl: type = comptime types.anyHasMethod(
+                &.{ R, X },
+                "zmlAcosh",
+                fn (X, anytype) anyerror!numeric.Acosh(X),
+                &.{ X, @TypeOf(ctx) },
+            ) orelse
+                @compileError("zml.numeric.acosh: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlAcosh(" ++ @typeName(X) ++ ", anytype) !" ++ @typeName(R) ++ "`");
 
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the custom numeric's memory allocation.",
-                        },
-                    },
-                );
-
-                return Impl.acosh(ctx.allocator, x);
-            } else {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X },
-                    "acosh",
-                    fn (X) R,
-                    &.{X},
-                ) orelse
-                    @compileError("zml.numeric.acosh: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn acosh(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
-
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return Impl.acosh(x);
-            }
+            return Impl.zmlAcosh(x, ctx);
         },
     }
 }

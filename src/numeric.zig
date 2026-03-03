@@ -38,8 +38,7 @@ pub const conj = numops.conj;
 pub const conj_ = numops.conj_;
 pub const Sign = numops.Sign;
 pub const sign = numops.sign;
-pub const sign_ = numops.sign_;
-pub const copysign = numops.copysign;
+// pub const copysign = numops.copysign;
 
 // Arithmetic operations
 pub const Add = numops.Add;
@@ -57,24 +56,12 @@ pub const div_ = numops.div_;
 
 // Comparison operations
 pub const cmp = numops.cmp;
-pub const Eq = numops.Eq;
 pub const eq = numops.eq;
-pub const eq_ = numops.eq_;
-pub const Ne = numops.Ne;
 pub const ne = numops.ne;
-pub const ne_ = numops.ne_;
-pub const Lt = numops.Lt;
 pub const lt = numops.lt;
-pub const lt_ = numops.lt_;
-pub const Le = numops.Le;
 pub const le = numops.le;
-pub const le_ = numops.le_;
-pub const Gt = numops.Gt;
 pub const gt = numops.gt;
-pub const gt_ = numops.gt_;
-pub const Ge = numops.Ge;
 pub const ge = numops.ge;
-pub const ge_ = numops.ge_;
 pub const Max = numops.Max;
 pub const max = numops.max;
 pub const max_ = numops.max_;
