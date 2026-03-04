@@ -20,24 +20,24 @@ pub fn Pow(X: type, Y: type) type {
         if (comptime types.isCustomType(Y)) { // X and Y both custom
             const Impl: type = comptime types.anyHasMethod(
                 &.{ X, Y },
-                "Pow",
+                "ZmlPow",
                 fn (type, type) type,
                 &.{ X, Y },
             ) orelse
-                @compileError("zml.numeric.pow: " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn Pow(type, type) type`");
+                @compileError("zml.numeric.pow: " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn ZmlPow(type, type) type`");
 
-            return Impl.Pow(X, Y);
+            return Impl.ZmlPow(X, Y);
         } else { // only X custom
-            comptime if (!types.hasMethod(X, "Pow", fn (type, type) type, &.{ X, Y }))
-                @compileError("zml.numeric.pow: " ++ @typeName(X) ++ " must implement `fn Pow(type, type) type`");
+            comptime if (!types.hasMethod(X, "ZmlPow", fn (type, type) type, &.{ X, Y }))
+                @compileError("zml.numeric.pow: " ++ @typeName(X) ++ " must implement `fn ZmlPow(type, type) type`");
 
-            return X.Pow(X, Y);
+            return X.ZmlPow(X, Y);
         }
     } else if (comptime types.isCustomType(Y)) { // only Y custom
-        comptime if (!types.hasMethod(Y, "Pow", fn (type, type) type, &.{ X, Y }))
-            @compileError("zml.numeric.pow: " ++ @typeName(Y) ++ " must implement `fn Pow(type, type) type`");
+        comptime if (!types.hasMethod(Y, "ZmlPow", fn (type, type) type, &.{ X, Y }))
+            @compileError("zml.numeric.pow: " ++ @typeName(Y) ++ " must implement `fn ZmlPow(type, type) type`");
 
-        return Y.Pow(X, Y);
+        return Y.ZmlPow(X, Y);
     }
 
     switch (comptime types.numericType(X)) {
@@ -131,43 +131,28 @@ pub fn Pow(X: type, Y: type) type {
 /// * `x` (`anytype`): The left operand.
 /// * `y` (`anytype`): The right operand.
 /// * `ctx` (`anytype`): A context struct providing necessary resources and
-///   configuration for the operation. The required fields depend on `X` and
-///   `Y`. If the context is missing required fields or contains unnecessary or
-///   wrongly typed fields, the compiler will emit a detailed error message
-///   describing the expected structure.
-///
-/// ### Context structure
-/// The fields of `ctx` depend on `numeric.Pow(X, Y)`.
-///
-/// #### `numeric.Pow(X, Y)` is not allocated
-/// The context must be empty.
-///
-/// #### `numeric.Pow(X, Y)` is allocated
-/// * `allocator: std.mem.Allocator`: The allocator to use for the output value.
+///   configuration for the operation.
 ///
 /// ## Returns
 /// `numeric.Pow(@TypeOf(x), @TypeOf(y))`: The result of the exponentiation.
 ///
 /// ## Errors
-/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails. Can
-///   only happen if `numeric.Pow(X, Y)` is allocated.
+/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
 ///
 /// ## Custom type support
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` or `Y` must implement the required `Pow` method. The expected signature
-/// and behavior of `Pow` are as follows:
-/// * `fn Pow(type, type) type`: Returns the return type of `pow` for the input
-///   types.
+/// `X` or `Y` must implement ZmlPow required `ZmlPow` method. The expected
+/// signature and behavior of `Pow` are as follows:
+/// * `fn ZmlPow(type, type) type`: Returns the type of `xʸ`.
 ///
-/// Let us denote the return type `numeric.Pow(X, Y)` as `R`. Then, `R`, `X` or
-/// `Y` must implement the required `pow` method. The expected signatures and
-/// behavior of `pow` are as follows:
-/// * `R` is not allocated: `fn pow(X, Y) R`: Returns the exponentiation of `x`
-///   and `y`.
-/// * `R` is allocated: `fn pow(std.mem.Allocator, X, Y) !R`: Returns the
-///   exponentiation of `x` and `y` as a newly allocated value.
+/// `numeric.Pow(X, Y)`, `X` or `Y` must implement the required `zmlPow` method.
+/// The expected signatures and behavior of `zmlPow` are as follows:
+/// * `fn zmlPow(X, Y, anytype) !numeric.Pow(X, Y)`: Returns the exponentiation
+///   of `x` to the power `y`, potentially using the provided context for
+///   necessary resources. This function is responsible for validating the
+///   context.
 pub inline fn pow(x: anytype, y: anytype, ctx: anytype) !numeric.Pow(@TypeOf(x), @TypeOf(y)) {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
@@ -175,111 +160,36 @@ pub inline fn pow(x: anytype, y: anytype, ctx: anytype) !numeric.Pow(@TypeOf(x),
 
     if (comptime types.isCustomType(X)) {
         if (comptime types.isCustomType(Y)) { // X and Y both custom
-            if (comptime types.isAllocated(R)) {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X, Y },
-                    "pow",
-                    fn (std.mem.Allocator, X, Y) anyerror!R,
-                    &.{ std.mem.Allocator, X, Y },
-                ) orelse
-                    @compileError("zml.numeric.pow: " ++ @typeName(R) ++ ", " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn pow(std.mem.Allocator, " ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") !" ++ @typeName(R) ++ "`");
+            const Impl: type = comptime types.anyHasMethod(
+                &.{ R, X, Y },
+                "zmlPow",
+                fn (X, Y, anytype) anyerror!R,
+                &.{ X, Y, @TypeOf(ctx) },
+            ) orelse
+                @compileError("zml.numeric.pow: " ++ @typeName(R) ++ ", " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn zmlPow(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ", anytype) !" ++ @typeName(R) ++ "`");
 
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the custom numeric's memory allocation.",
-                        },
-                    },
-                );
-
-                return Impl.pow(ctx.allocator, x, y);
-            } else {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X, Y },
-                    "pow",
-                    fn (X, Y) R,
-                    &.{ X, Y },
-                ) orelse
-                    @compileError("zml.numeric.pow: " ++ @typeName(R) ++ ", " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn pow(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
-
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return Impl.pow(x, y);
-            }
+            return Impl.zmlPow(x, y, ctx);
         } else { // only X custom
-            if (comptime types.isAllocated(R)) {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X },
-                    "pow",
-                    fn (std.mem.Allocator, X, Y) anyerror!R,
-                    &.{ std.mem.Allocator, X, Y },
-                ) orelse
-                    @compileError("zml.numeric.pow: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn pow(std.mem.Allocator, " ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") !" ++ @typeName(R) ++ "`");
+            const Impl: type = comptime types.anyHasMethod(
+                &.{ R, X },
+                "zmlPow",
+                fn (X, Y, anytype) anyerror!R,
+                &.{ X, Y, @TypeOf(ctx) },
+            ) orelse
+                @compileError("zml.numeric.pow: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlPow(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ", anytype) !" ++ @typeName(R) ++ "`");
 
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the custom numeric's memory allocation.",
-                        },
-                    },
-                );
-
-                return Impl.pow(ctx.allocator, x, y);
-            } else {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X },
-                    "pow",
-                    fn (X, Y) R,
-                    &.{ X, Y },
-                ) orelse
-                    @compileError("zml.numeric.pow: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn pow(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
-
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return Impl.pow(x, y);
-            }
+            return Impl.zmlPow(x, y, ctx);
         }
     } else if (comptime types.isCustomType(Y)) { // only Y custom
-        if (comptime types.isAllocated(R)) {
-            const Impl: type = comptime types.anyHasMethod(
-                &.{ R, Y },
-                "pow",
-                fn (std.mem.Allocator, X, Y) anyerror!R,
-                &.{ std.mem.Allocator, X, Y },
-            ) orelse
-                @compileError("zml.numeric.pow: " ++ @typeName(R) ++ " or " ++ @typeName(Y) ++ " must implement `fn pow(std.mem.Allocator, " ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") !" ++ @typeName(R) ++ "`");
+        const Impl: type = comptime types.anyHasMethod(
+            &.{ R, Y },
+            "zmlPow",
+            fn (X, Y, anytype) anyerror!R,
+            &.{ X, Y, @TypeOf(ctx) },
+        ) orelse
+            @compileError("zml.numeric.pow: " ++ @typeName(R) ++ " or " ++ @typeName(Y) ++ " must implement `fn zmlPow(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ", anytype) !" ++ @typeName(R) ++ "`");
 
-            comptime types.validateContext(
-                @TypeOf(ctx),
-                .{
-                    .allocator = .{
-                        .type = std.mem.Allocator,
-                        .required = true,
-                        .description = "The allocator to use for the custom numeric's memory allocation.",
-                    },
-                },
-            );
-
-            return Impl.pow(ctx.allocator, x, y);
-        } else {
-            const Impl: type = comptime types.anyHasMethod(
-                &.{ R, Y },
-                "pow",
-                fn (X, Y) R,
-                &.{ X, Y },
-            ) orelse
-                @compileError("zml.numeric.pow: " ++ @typeName(R) ++ " or " ++ @typeName(Y) ++ " must implement `fn pow(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
-
-            comptime types.validateContext(@TypeOf(ctx), .{});
-
-            return Impl.pow(x, y);
-        }
+        return Impl.zmlPow(x, y, ctx);
     }
 
     switch (comptime types.numericType(X)) {

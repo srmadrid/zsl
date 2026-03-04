@@ -3,15 +3,7 @@ zig-out/
 zig-cache/
 .zig-cache/
 
-# IDE files
-.idea
-.vscode
-
 lines.sh
-
-# Brian Gladman, Vincenzo Innocente, John Mather, Paul Zimmermann. Accuracy of Mathematical
-# Functions in Single, Double, Double Extended, and Quadruple Precision. 2025. hal-03141101v8
-src/float/accuracy.pdf
 
 TODO.md
 

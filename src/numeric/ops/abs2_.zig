@@ -34,34 +34,34 @@ const numeric = @import("../../numeric.zig");
 ///
 /// #### `O` is not allocated and `X` is not allocated
 /// The context must be empty.
-/// 
+///
 /// #### `O` is not allocated and `X` is allocated
-/// * `buffer_allocator: std.mem.Allocator`: The allocator to use for the 
+/// * `buffer_allocator: std.mem.Allocator`: The allocator to use for the
 ///   operation's temporary buffer allocation.
-/// * `buffer: numeric.Abs2(X)` (optional): A persistent buffer that can be used 
-///   for the operation's temporary storage. If not provided, the operation will 
-///   initialize a new buffer and deinitialize it before returning. Providing a 
-///   buffer can be more efficient if the caller is performing multiple 
+/// * `buffer: numeric.Abs2(X)` (optional): A persistent buffer that can be used
+///   for the operation's temporary storage. If not provided, the operation will
+///   initialize a new buffer and deinitialize it before returning. Providing a
+///   buffer can be more efficient if the caller is performing multiple
 ///   operations in a row and can reuse the same buffer for all of them.
 ///
 /// #### `O` is allocated and `X` is not allocated
 /// * `allocator: std.mem.Allocator`: The allocator to use for the output value.
-/// 
+///
 /// #### `O` is allocated, `X` is allocated and `O == X`
 /// * `allocator: std.mem.Allocator`: The allocator to use for the output value.
-///   The operation will perform the computation in-place, so no additional 
+///   The operation will perform the computation in-place, so no additional
 ///   buffer is needed.
-/// 
+///
 /// #### `O` is allocated, `X` is allocated and `O != X`
 /// * `allocator: std.mem.Allocator`: The allocator to use for the output value.
-/// * `buffer_allocator: std.mem.Allocator` (optional): The allocator to use for 
-///   the operation's temporary buffer allocation. If not provided, the 
-///   operation will use the output allocator for the temporary buffer 
+/// * `buffer_allocator: std.mem.Allocator` (optional): The allocator to use for
+///   the operation's temporary buffer allocation. If not provided, the
+///   operation will use the output allocator for the temporary buffer
 ///   allocation as well.
 /// * `buffer: numeric.Abs2(X)` (optional): A persistent buffer that can be used
 ///   for the operation's temporary storage. If not provided, the operation will
 ///   initialize a new buffer and deinitialize it before returning. Providing a
-///   buffer can be more efficient if the caller is performing multiple 
+///   buffer can be more efficient if the caller is performing multiple
 ///   operations in a row and can reuse the same buffer for all of them.
 ///
 /// ## Returns
@@ -99,198 +99,21 @@ pub inline fn abs2_(o: anytype, x: anytype, ctx: anytype) !void {
 
     if (comptime types.isCustomType(O)) {
         if (comptime types.isCustomType(X)) { // O and X both custom
-            if (comptime types.isAllocated(O)) {
-                const Impl: ?type = comptime types.anyHasMethod(
-                    &.{ O, X },
-                    "abs2_",
-                    fn (std.mem.Allocator, *O, X) anyerror!void,
-                    &.{ std.mem.Allocator, *O, X },
-                );
-
-                if (comptime Impl != null) {
-                    comptime types.validateContext(
-                        @TypeOf(ctx),
-                        .{
-                            .allocator = .{
-                                .type = std.mem.Allocator,
-                                .required = true,
-                                .description = "The allocator to use for the custom numeric's memory allocation.",
-                            },
-                        },
-                    );
-
-                    try Impl.?.abs2_(ctx.allocator, o, x);
-                } else {
-                    comptime if (types.isAllocated(numeric.Abs2(X)))
-                        types.validateContext(
-                            @TypeOf(ctx),
-                            .{
-                                .allocator = .{
-                                    .type = std.mem.Allocator,
-                                    .required = true,
-                                    .description = "The allocator to use for the custom numeric's memory allocation.",
-                                },
-                                .buffer_allocator = .{
-                                    .type = std.mem.Allocator,
-                                    .required = false,
-                                    .description = "The allocator to use for the operation's temporary buffer allocation. If not provided, the operation will use the custom numeric allocator for the temporary buffer allocation as well.",
-                                },
-                            },
-                        )
-                    else
-                        types.validateContext(@TypeOf(ctx), .{
-                            .allocator = .{
-                                .type = std.mem.Allocator,
-                                .required = true,
-                                .description = "The allocator to use for the custom numeric's memory allocation.",
-                            },
-                        });
-
-                    const abs2_ctx = if (comptime types.isAllocated(numeric.Abs2(X)))
-                        if (comptime types.ctxHasField(@TypeOf(ctx), "buffer_allocator", std.mem.Allocator))
-                            types.keepRenameStructFields(ctx, .{ .buffer_allocator = "allocator" })
-                        else
-                            ctx
-                    else
-                        .{};
-
-                    var abs2 = try numeric.abs2(x, abs2_ctx);
-                    defer numeric.deinit(&abs2, abs2_ctx);
-
-                    try numeric.set(
-                        o,
-                        abs2,
-                        types.keepStructFields(ctx, .{"allocator"}),
-                    );
-                }
-
-                return;
-
-                FROM HERE, ALSO EDIT ABS_ AND THE REST OF THE OPERATIONS THAT LOOK FOR A SIMPLE VERSION
-            } else {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ O, X },
-                    "abs2_",
-                    fn (*O, X) void,
-                    &.{ *O, X },
-                ) orelse {
-                    var abs2 = try numeric.abs2(x, ctx);
-                    defer numeric.deinit(&abs2, ctx);
-
-                    numeric.set(
-                        o,
-                        abs2,
-                        .{},
-                    ) catch unreachable;
-
-                    return;
-                };
-
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                Impl.abs2_(o, x);
-
-                return;
-            }
-        } else { // only O custom
-            if (comptime types.isAllocated(O)) {
-                if (comptime !types.hasMethod(O, "abs2_", fn (std.mem.Allocator, *O, X) anyerror!void, &.{ std.mem.Allocator, *O, X })) {
-                    var abs2 = try numeric.abs2(x, if (types.isAllocated(numeric.Abs2(X))) ctx else .{});
-                    defer numeric.deinit(&abs2, if (types.isAllocated(numeric.Abs2(X))) ctx else .{});
-
-                    try numeric.set(
-                        o,
-                        abs2,
-                        ctx,
-                    );
-
-                    return;
-                }
-
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the custom numeric's memory allocation.",
-                        },
-                    },
-                );
-
-                try O.abs2_(ctx.allocator, o, x);
-
-                return;
-            } else {
-                if (comptime !types.hasMethod(O, "abs2_", fn (*O, X) void, &.{ *O, X })) {
-                    var abs2 = try numeric.abs2(x, ctx);
-                    defer numeric.deinit(&abs2, ctx);
-
-                    numeric.set(
-                        o,
-                        abs2,
-                        .{},
-                    ) catch unreachable;
-
-                    return;
-                }
-
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                O.abs2_(o, x);
-
-                return;
-            }
-        }
-    } else if (comptime types.isCustomType(X)) { // only X custom
-        if (comptime types.isAllocated(O)) {
-            if (comptime !types.hasMethod(X, "abs2_", fn (std.mem.Allocator, *O, X) anyerror!void, &.{ std.mem.Allocator, *O, X })) {
-                var abs2 = try numeric.abs2(x, if (types.isAllocated(numeric.Abs2(X))) ctx else .{});
-                defer numeric.deinit(&abs2, if (types.isAllocated(numeric.Abs2(X))) ctx else .{});
-
-                try numeric.set(
-                    o,
-                    abs2,
-                    ctx,
-                );
-
-                return;
-            }
-
-            comptime types.validateContext(
-                @TypeOf(ctx),
-                .{
-                    .allocator = .{
-                        .type = std.mem.Allocator,
-                        .required = true,
-                        .description = "The allocator to use for the custom numeric's memory allocation.",
-                    },
-                },
+            const Impl: ?type = comptime types.anyHasMethod(
+                &.{ O, X },
+                "zmlAbs2_",
+                fn (*O, X, anytype) anyerror!void,
+                &.{ *O, X, @TypeOf(ctx) },
             );
 
-            try X.abs2_(ctx.allocator, o, x);
+            if (comptime Impl != null) {
+                return Impl.?.zmlAbs2_(o, x, ctx);
+            } else {}
+        } else { // only O custom
 
-            return;
-        } else {
-            if (comptime !types.hasMethod(X, "abs2_", fn (*O, X) void, &.{ *O, X })) {
-                var abs2 = try numeric.abs2(x, ctx);
-                defer numeric.deinit(&abs2, ctx);
-
-                numeric.set(
-                    o,
-                    abs2,
-                    .{},
-                ) catch unreachable;
-
-                return;
-            }
-
-            comptime types.validateContext(@TypeOf(ctx), .{});
-
-            X.abs2_(o, x);
-
-            return;
         }
+    } else if (comptime types.isCustomType(X)) { // only X custom
+
     }
 
     switch (comptime types.numericType(O)) {

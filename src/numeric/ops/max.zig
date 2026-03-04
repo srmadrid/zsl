@@ -20,24 +20,24 @@ pub fn Max(X: type, Y: type) type {
         if (comptime types.isCustomType(Y)) { // X and Y both custom
             const Impl: type = comptime types.anyHasMethod(
                 &.{ X, Y },
-                "Max",
+                "ZmlMax",
                 fn (type, type) type,
                 &.{ X, Y },
             ) orelse
-                @compileError("zml.numeric.max: " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn Max(type, type) type`");
+                @compileError("zml.numeric.max: " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn ZmlMax(type, type) type`");
 
-            return Impl.Max(X, Y);
+            return Impl.ZmlMax(X, Y);
         } else { // only X custom
-            comptime if (!types.hasMethod(X, "Max", fn (type, type) type, &.{ X, Y }))
-                @compileError("zml.numeric.max: " ++ @typeName(X) ++ " must implement `fn Max(type, type) type`");
+            comptime if (!types.hasMethod(X, "ZmlMax", fn (type, type) type, &.{ X, Y }))
+                @compileError("zml.numeric.max: " ++ @typeName(X) ++ " must implement `fn ZmlMax(type, type) type`");
 
-            return X.Max(X, Y);
+            return X.ZmlMax(X, Y);
         }
     } else if (comptime types.isCustomType(Y)) { // only Y custom
-        comptime if (!types.hasMethod(Y, "Max", fn (type, type) type, &.{ X, Y }))
-            @compileError("zml.numeric.max: " ++ @typeName(Y) ++ " must implement `fn Max(type, type) type`");
+        comptime if (!types.hasMethod(Y, "ZmlMax", fn (type, type) type, &.{ X, Y }))
+            @compileError("zml.numeric.max: " ++ @typeName(Y) ++ " must implement `fn ZmlMax(type, type) type`");
 
-        return Y.Max(X, Y);
+        return Y.ZmlMax(X, Y);
     }
 
     switch (comptime types.numericType(X)) {
@@ -123,52 +123,32 @@ pub fn Max(X: type, Y: type) type {
 /// * `x` (`anytype`): The left operand.
 /// * `y` (`anytype`): The right operand.
 /// * `ctx` (`anytype`): A context struct providing necessary resources and
-///   configuration for the operation. The required fields depend on `X` and
-///   `Y`. If the context is missing required fields or contains unnecessary or
-///   wrongly typed fields, the compiler will emit a detailed error message
-///   describing the expected structure.
-///
-/// ### Context structure
-/// The fields of `ctx` depend on `numeric.Max(X, Y)`.
-///
-/// #### `numeric.Max(X, Y)` is not allocated
-/// The context must be empty.
-///
-/// #### `numeric.Max(X, Y)` is allocated and `X != Y`
-/// * `allocator: std.mem.Allocator`: The allocator to use for the output value.
-///
-/// #### `numeric.Max(X, Y)` is allocated and `X == Y`
-/// * `allocator: std.mem.Allocator` (optional): The allocator to use for the
-///   output value. If not provided, a read-only view will be returned.
+///   configuration for the operation.
 ///
 /// ## Returns
 /// `numeric.Max(@TypeOf(x), @TypeOf(y))`: The maximum between `x` and `y`.
 ///
 /// ## Errors
-/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails. Can
-///   only happen if `numeric.Max(X, Y)` is allocated and an allocator is
-///   provided.
+/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
 ///
 /// ## Custom type support
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` or `Y` must implement the required `Max` method. The expected signature
-/// and behavior of `Max` are as follows:
-/// * `fn Max(type, type) type`: Returns the return type of `max` for the input
-///   types.
+/// `X` or `Y` must implement the required `ZmlMax` method. The expected signature
+/// and behavior of `ZmlMax` are as follows:
+/// * `fn ZmlMax(type, type) type`: Returns the type of the maximum of `x` and `y`.
 ///
-/// Let us denote the return type `numeric.Max(X, Y)` as `R`. Then, `R`, `X` or
-/// `Y` must implement the required `max` method. The expected signatures and
-/// behavior of `max` are as follows:
-/// * `R` is not allocated: `fn max(X, Y) R`: Returns the maximum between `x`
-///   and `y`.
-/// * `R` is allocated and `X != Y`: `fn max(std.mem.Allocator, X, Y) !R`:
-///   Returns the maximum between `x` and `y` as a newly allocated value.
-/// * `R` is allocated and `X == Y`: `fn max(?std.mem.Allocator, X, Y) !R`:
-///   Returns the maximum between `x` and `y` as a newly allocated value, if the
-///   allocator is provided, or as a read-only view if not. If not provided, it
-///   must not fail.
+/// `numeric.Max(X, Y)`, `X` or `Y` must implement the required `zmlMax` method.
+/// The expected signatures and behavior of `zmlMax` are as follows:
+/// * `fn zmlMax(X, Y, anytype) !numeric.Max(X, Y)`: Returns the maximum of `x`
+///   and `y`, potentially using the provided context for necessary resources.
+///   This function is responsible for validating the context.
+///
+/// Custom allocated types can optionally declare `zml_has_simple_max` as `true`
+/// to indicate that their `zmlMax` implementation can be called without an
+/// allocator in the context (particularly when `X == Y`), instead returning a
+/// view and never erroring.
 pub inline fn max(x: anytype, y: anytype, ctx: anytype) !numeric.Max(@TypeOf(x), @TypeOf(y)) {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
@@ -176,137 +156,36 @@ pub inline fn max(x: anytype, y: anytype, ctx: anytype) !numeric.Max(@TypeOf(x),
 
     if (comptime types.isCustomType(X)) {
         if (comptime types.isCustomType(Y)) { // X and Y both custom
-            if (comptime types.isAllocated(R)) {
-                if (comptime X == Y) {
-                    const Impl: type = comptime types.anyHasMethod(
-                        &.{ R, X },
-                        "max",
-                        fn (?std.mem.Allocator, X, Y) anyerror!R,
-                        &.{ ?std.mem.Allocator, X, Y },
-                    ) orelse
-                        @compileError("zml.numeric.max: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn max(?std.mem.Allocator, " ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") !" ++ @typeName(R) ++ "`");
+            const Impl: type = comptime types.anyHasMethod(
+                &.{ R, X, Y },
+                "zmlMax",
+                fn (X, Y, anytype) anyerror!R,
+                &.{ X, Y, @TypeOf(ctx) },
+            ) orelse
+                @compileError("zml.numeric.max: " ++ @typeName(R) ++ ", " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn zmlMax(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ", anytype) !" ++ @typeName(R) ++ "`");
 
-                    comptime types.validateContext(
-                        @TypeOf(ctx),
-                        .{
-                            .allocator = .{
-                                .type = std.mem.Allocator,
-                                .required = false,
-                                .description = "The allocator to use for the custom numeric's memory allocation. If not provided, a read-only view will be returned.",
-                            },
-                        },
-                    );
-
-                    return if (comptime types.ctxHasField(@TypeOf(ctx), "allocator", std.mem.Allocator))
-                        Impl.max(ctx.allocator, x, y)
-                    else
-                        Impl.max(null, x, y) catch unreachable;
-                } else {
-                    const Impl: type = comptime types.anyHasMethod(
-                        &.{ R, X, Y },
-                        "max",
-                        fn (std.mem.Allocator, X, Y) anyerror!R,
-                        &.{ std.mem.Allocator, X, Y },
-                    ) orelse
-                        @compileError("zml.numeric.max: " ++ @typeName(R) ++ ", " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn max(std.mem.Allocator, " ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") !" ++ @typeName(R) ++ "`");
-
-                    comptime types.validateContext(
-                        @TypeOf(ctx),
-                        .{
-                            .allocator = .{
-                                .type = std.mem.Allocator,
-                                .required = true,
-                                .description = "The allocator to use for the custom numeric's memory allocation.",
-                            },
-                        },
-                    );
-
-                    return Impl.max(ctx.allocator, x, y);
-                }
-            } else {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X, Y },
-                    "max",
-                    fn (X, Y) R,
-                    &.{ X, Y },
-                ) orelse
-                    @compileError("zml.numeric.max: " ++ @typeName(R) ++ ", " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn max(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
-
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return Impl.max(x, y);
-            }
+            return Impl.zmlMax(x, y, ctx);
         } else { // only X custom
-            if (comptime types.isAllocated(R)) {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X },
-                    "max",
-                    fn (std.mem.Allocator, X, Y) anyerror!R,
-                    &.{ std.mem.Allocator, X, Y },
-                ) orelse
-                    @compileError("zml.numeric.max: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn max(std.mem.Allocator, " ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") !" ++ @typeName(R) ++ "`");
+            const Impl: type = comptime types.anyHasMethod(
+                &.{ R, X },
+                "zmlMax",
+                fn (X, Y, anytype) anyerror!R,
+                &.{ X, Y, @TypeOf(ctx) },
+            ) orelse
+                @compileError("zml.numeric.max: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlMax(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ", anytype) !" ++ @typeName(R) ++ "`");
 
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the custom numeric's memory allocation.",
-                        },
-                    },
-                );
-
-                return Impl.max(ctx.allocator, x, y);
-            } else {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X },
-                    "max",
-                    fn (X, Y) R,
-                    &.{ X, Y },
-                ) orelse
-                    @compileError("zml.numeric.max: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn max(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
-
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return Impl.max(x, y);
-            }
+            return Impl.zmlMax(x, y, ctx);
         }
     } else if (comptime types.isCustomType(Y)) { // only Y custom
-        if (comptime types.isAllocated(R)) {
-            const Impl: type = comptime types.anyHasMethod(
-                &.{ R, Y },
-                "max",
-                fn (std.mem.Allocator, X, Y) anyerror!R,
-                &.{ std.mem.Allocator, X, Y },
-            ) orelse
-                @compileError("zml.numeric.max: " ++ @typeName(R) ++ " or " ++ @typeName(Y) ++ " must implement `fn max(std.mem.Allocator, " ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") !" ++ @typeName(R) ++ "`");
+        const Impl: type = comptime types.anyHasMethod(
+            &.{ R, Y },
+            "zmlMax",
+            fn (X, Y, anytype) anyerror!R,
+            &.{ X, Y, @TypeOf(ctx) },
+        ) orelse
+            @compileError("zml.numeric.max: " ++ @typeName(R) ++ " or " ++ @typeName(Y) ++ " must implement `fn zmlMax(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ", anytype) !" ++ @typeName(R) ++ "`");
 
-            comptime types.validateContext(
-                @TypeOf(ctx),
-                .{
-                    .allocator = .{
-                        .type = std.mem.Allocator,
-                        .required = true,
-                        .description = "The allocator to use for the custom numeric's memory allocation.",
-                    },
-                },
-            );
-
-            return Impl.max(ctx.allocator, x, y);
-        } else {
-            const Impl: type = comptime types.anyHasMethod(
-                &.{ R, Y },
-                "max",
-                fn (X, Y) R,
-                &.{ X, Y },
-            ) orelse
-                @compileError("zml.numeric.max: " ++ @typeName(R) ++ " or " ++ @typeName(Y) ++ " must implement `fn max(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
-
-            comptime types.validateContext(@TypeOf(ctx), .{});
-
-            return Impl.max(x, y);
-        }
+        return Impl.zmlMax(x, y, ctx);
     }
 
     switch (comptime types.numericType(X)) {

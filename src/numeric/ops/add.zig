@@ -143,8 +143,8 @@ pub fn Add(X: type, Y: type) type {
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` or `Y` must implement the required `ZmlAdd` method. The expected signature
-/// and behavior of `ZmlAdd` are as follows:
+/// `X` or `Y` must implement the required `ZmlAdd` method. The expected
+/// signature and behavior of `ZmlAdd` are as follows:
 /// * `fn ZmlAdd(type, type) type`: Returns the type of `x + y`.
 ///
 /// `numeric.Add(X, Y)`, `X` or `Y` must implement the required `zmlAdd` method.

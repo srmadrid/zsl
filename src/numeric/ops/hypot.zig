@@ -20,24 +20,24 @@ pub fn Hypot(X: type, Y: type) type {
         if (comptime types.isCustomType(Y)) { // X and Y both custom
             const Impl: type = comptime types.anyHasMethod(
                 &.{ X, Y },
-                "Hypot",
+                "ZmlHypot",
                 fn (type, type) type,
                 &.{ X, Y },
             ) orelse
-                @compileError("zml.numeric.hypot: " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn Hypot(type, type) type`");
+                @compileError("zml.numeric.hypot: " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn ZmlHypot(type, type) type`");
 
-            return Impl.Hypot(X, Y);
+            return Impl.ZmlHypot(X, Y);
         } else { // only X custom
-            comptime if (!types.hasMethod(X, "Hypot", fn (type, type) type, &.{ X, Y }))
-                @compileError("zml.numeric.hypot: " ++ @typeName(X) ++ " must implement `fn Hypot(type, type) type`");
+            comptime if (!types.hasMethod(X, "ZmlHypot", fn (type, type) type, &.{ X, Y }))
+                @compileError("zml.numeric.hypot: " ++ @typeName(X) ++ " must implement `fn ZmlHypot(type, type) type`");
 
-            return X.Hypot(X, Y);
+            return X.ZmlHypot(X, Y);
         }
     } else if (comptime types.isCustomType(Y)) { // only Y custom
-        comptime if (!types.hasMethod(Y, "Hypot", fn (type, type) type, &.{ X, Y }))
-            @compileError("zml.numeric.hypot: " ++ @typeName(Y) ++ " must implement `fn Hypot(type, type) type`");
+        comptime if (!types.hasMethod(Y, "ZmlHypot", fn (type, type) type, &.{ X, Y }))
+            @compileError("zml.numeric.hypot: " ++ @typeName(Y) ++ " must implement `fn ZmlHypot(type, type) type`");
 
-        return Y.Hypot(X, Y);
+        return Y.ZmlHypot(X, Y);
     }
 
     switch (comptime types.numericType(X)) {
@@ -92,43 +92,27 @@ pub fn Hypot(X: type, Y: type) type {
 /// * `x` (`anytype`): The left operand.
 /// * `y` (`anytype`): The right operand.
 /// * `ctx` (`anytype`): A context struct providing necessary resources and
-///   configuration for the operation. The required fields depend on `X` and
-///   `Y`. If the context is missing required fields or contains unnecessary or
-///   wrongly typed fields, the compiler will emit a detailed error message
-///   describing the expected structure.
-///
-/// ### Context structure
-/// The fields of `ctx` depend on `numeric.Hypot(X, Y)`.
-///
-/// #### `numeric.Hypot(X, Y)` is not allocated
-/// The context must be empty.
-///
-/// #### `numeric.Hypot(X, Y)` is allocated
-/// * `allocator: std.mem.Allocator`: The allocator to use for the output value.
+///   configuration for the operation.
 ///
 /// ## Returns
 /// `numeric.Hypot(@TypeOf(x), @TypeOf(y))`: The hypotenuse of `x` and `y`.
 ///
 /// ## Errors
-/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails. Can
-///   only happen if `numeric.Hypot(X)` is allocated.
+/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
 ///
 /// ## Custom type support
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` or `Y` must implement the required `Hypot` method. The expected
-/// signature and behavior of `Hypot` are as follows:
-/// * `fn Hypot(type, type) type`: Returns the return type of `hypot` for the
-///   input types.
+/// `X` or `Y` must implement the required `ZmlHypot` method. The expected
+/// signature and behavior of `ZmlHypot` are as follows:
+/// * `fn ZmlHypot(type, type) type`: Returns the type of `√(x² + y²)`.
 ///
-/// Let us denote the return type `numeric.Hypot(X, Y)` as `R`. Then, `R`, `X`
-/// or `Y` must implement the required `hypot` method. The expected signatures
-/// and behavior of `hypot` are as follows:
-/// * `R` is not allocated: `fn hypot(X, Y) R`: Returns the hypotenuse of `x`
-///   and `y`.
-/// * `R` is allocated: `fn hypot(std.mem.Allocator, X, Y) !R`: Returns the
-///   hypotenuse of `x` and `y` as a newly allocated value.
+/// `numeric.Hypot(X, Y)`, `X` or `Y` must implement the required `zmlHypot`
+/// method. The expected signatures and behavior of `zmlHypot` are as follows:
+/// * `fn zmlHypot(X, Y, anytype) !numeric.Hypot(X, Y)`: Returns the hypotenuse
+///   of `x` and `y`, potentially using the provided context for necessary
+///   resources. This function is responsible for validating the context.
 pub inline fn hypot(x: anytype, y: anytype, ctx: anytype) !numeric.Hypot(@TypeOf(x), @TypeOf(y)) {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
@@ -136,111 +120,36 @@ pub inline fn hypot(x: anytype, y: anytype, ctx: anytype) !numeric.Hypot(@TypeOf
 
     if (comptime types.isCustomType(X)) {
         if (comptime types.isCustomType(Y)) { // X and Y both custom
-            if (comptime types.isAllocated(R)) {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X, Y },
-                    "hypot",
-                    fn (std.mem.Allocator, X, Y) anyerror!R,
-                    &.{ std.mem.Allocator, X, Y },
-                ) orelse
-                    @compileError("zml.numeric.hypot: " ++ @typeName(R) ++ ", " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn hypot(std.mem.Allocator, " ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") !" ++ @typeName(R) ++ "`");
+            const Impl: type = comptime types.anyHasMethod(
+                &.{ R, X, Y },
+                "zmlHypot",
+                fn (X, Y, anytype) anyerror!R,
+                &.{ X, Y, @TypeOf(ctx) },
+            ) orelse
+                @compileError("zml.numeric.hypot: " ++ @typeName(R) ++ ", " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn zmlHypot(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ", anytype) !" ++ @typeName(R) ++ "`");
 
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the custom numeric's memory allocation.",
-                        },
-                    },
-                );
-
-                return Impl.hypot(ctx.allocator, x, y);
-            } else {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X, Y },
-                    "hypot",
-                    fn (X, Y) R,
-                    &.{ X, Y },
-                ) orelse
-                    @compileError("zml.numeric.hypot: " ++ @typeName(R) ++ ", " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn hypot(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
-
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return Impl.hypot(x, y);
-            }
+            return Impl.zmlHypot(x, y, ctx);
         } else { // only X custom
-            if (comptime types.isAllocated(R)) {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X },
-                    "hypot",
-                    fn (std.mem.Allocator, X, Y) anyerror!R,
-                    &.{ std.mem.Allocator, X, Y },
-                ) orelse
-                    @compileError("zml.numeric.hypot: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn hypot(std.mem.Allocator, " ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") !" ++ @typeName(R) ++ "`");
+            const Impl: type = comptime types.anyHasMethod(
+                &.{ R, X },
+                "zmlHypot",
+                fn (X, Y, anytype) anyerror!R,
+                &.{ X, Y, @TypeOf(ctx) },
+            ) orelse
+                @compileError("zml.numeric.hypot: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlHypot(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ", anytype) !" ++ @typeName(R) ++ "`");
 
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the custom numeric's memory allocation.",
-                        },
-                    },
-                );
-
-                return Impl.hypot(ctx.allocator, x, y);
-            } else {
-                const Impl: type = comptime types.anyHasMethod(
-                    &.{ R, X },
-                    "hypot",
-                    fn (X, Y) R,
-                    &.{ X, Y },
-                ) orelse
-                    @compileError("zml.numeric.hypot: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn hypot(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
-
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return Impl.hypot(x, y);
-            }
+            return Impl.zmlHypot(x, y, ctx);
         }
     } else if (comptime types.isCustomType(Y)) { // only Y custom
-        if (comptime types.isAllocated(R)) {
-            const Impl: type = comptime types.anyHasMethod(
-                &.{ R, Y },
-                "hypot",
-                fn (std.mem.Allocator, X, Y) anyerror!R,
-                &.{ std.mem.Allocator, X, Y },
-            ) orelse
-                @compileError("zml.numeric.hypot: " ++ @typeName(R) ++ " or " ++ @typeName(Y) ++ " must implement `fn hypot(std.mem.Allocator, " ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") !" ++ @typeName(R) ++ "`");
+        const Impl: type = comptime types.anyHasMethod(
+            &.{ R, Y },
+            "zmlHypot",
+            fn (X, Y, anytype) anyerror!R,
+            &.{ X, Y, @TypeOf(ctx) },
+        ) orelse
+            @compileError("zml.numeric.hypot: " ++ @typeName(R) ++ " or " ++ @typeName(Y) ++ " must implement `fn zmlHypot(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ", anytype) !" ++ @typeName(R) ++ "`");
 
-            comptime types.validateContext(
-                @TypeOf(ctx),
-                .{
-                    .allocator = .{
-                        .type = std.mem.Allocator,
-                        .required = true,
-                        .description = "The allocator to use for the custom numeric's memory allocation.",
-                    },
-                },
-            );
-
-            return Impl.hypot(ctx.allocator, x, y);
-        } else {
-            const Impl: type = comptime types.anyHasMethod(
-                &.{ R, Y },
-                "hypot",
-                fn (X, Y) R,
-                &.{ X, Y },
-            ) orelse
-                @compileError("zml.numeric.hypot: " ++ @typeName(R) ++ " or " ++ @typeName(Y) ++ " must implement `fn hypot(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
-
-            comptime types.validateContext(@TypeOf(ctx), .{});
-
-            return Impl.hypot(x, y);
-        }
+        return Impl.zmlHypot(x, y, ctx);
     }
 
     switch (comptime types.numericType(X)) {
