@@ -20,21 +20,22 @@ pub const comptime_cfloat = Cfloat(comptime_float);
 
 pub fn Cfloat(comptime N: type) type {
     if (!types.isNumeric(N) or types.isAllocated(N) or types.isIntegral(N))
-        @compileError("zml.Cfloat: N must be a non-integral non-allocated numeric type, got \n\tN: " ++ @typeName(N) ++ "\n");
+        @compileError("zml.Cfloat: N must be a non-integral and non-allocated numeric type, got \n\tN: " ++ @typeName(N) ++ "\n");
 
     return struct {
         re: N,
         im: N,
 
         /// Type signature
-        pub const is_numeric = true;
-        pub const is_cfloat = true;
-        pub const is_complex_type = true;
-        pub const is_signed = true;
-        pub const is_custom = types.isCustomType(N);
+        pub const zml_is_numeric = true;
+        pub const zml_is_cfloat = true;
+        pub const zml_is_complex_type = true;
+        pub const zml_is_signed = true;
+        pub const zml_is_allocated = true;
+        pub const zml_is_custom = types.isCustomType(N);
 
         /// Scalar type
-        pub const Scalar = N;
+        pub const ZmlScalar = N;
 
         pub fn init(re: N, im: N) Cfloat(N) {
             return .{

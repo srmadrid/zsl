@@ -67,9 +67,9 @@ pub fn Conj(X: type) type {
 ///   of `x`, potentially using the provided context for necessary resources.
 ///   This function is responsible for validating the context.
 ///
-/// Custom allocated types can optionally declare `zml_has_simple_conj` as `true`
-/// to indicate that their `zmlConj` implementation can be called without an
-/// allocator in the context, instead returning a view and never erroring.
+/// Custom types can optionally declare `zml_has_simple_conj` as `true` to
+/// indicate that their `zmlConj` implementation can be called with an empty
+/// context, returning a view and never erroring.
 pub inline fn conj(x: anytype, ctx: anytype) !numeric.Conj(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Conj(X);

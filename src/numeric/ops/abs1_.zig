@@ -12,17 +12,17 @@ const complex = @import("../../complex.zig");
 
 const numeric = @import("../../numeric.zig");
 
-/// Performs in-place computation of the absolute value of a numeric `x` into
-/// a numeric `o`.
+/// Performs in-place computation of the 1-norm value of a numeric `x` into a
+/// numeric `o`.
 ///
 /// ## Signature
 /// ```zig
-/// numeric.abs_(o: *O, x: X, ctx: anytype) !void
+/// numeric.abs1_(o: *O, x: X, ctx: anytype) !void
 /// ```
 ///
 /// ## Arguments
 /// * `o` (`anytype`): The output operand.
-/// * `x` (`anytype`): The numeric value to get the absolute value of.
+/// * `x` (`anytype`): The numeric value to get the 1-norm value of.
 /// * `ctx` (`anytype`): A context struct providing necessary resources and
 ///   configuration for the operation.
 ///
@@ -40,30 +40,30 @@ const numeric = @import("../../numeric.zig");
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `O` or `X` should implement the required `zmlAbs_` method. The expected
-/// signature and behavior of `zmlAbs_` are as follows:
-/// * `fn zmlAbs_(*O, X, anytype) !void`: Computes the absolute value of `x` and
+/// `O` or `X` should implement the required `zmlAbs1_` method. The expected
+/// signature and behavior of `zmlAbs1_` are as follows:
+/// * `fn zmlAbs1_(*O, X, anytype) !void`: Computes the 1-norm value of `x` and
 ///   stores it in `o`, potentially using the provided context for necessary
 ///   resources. This function is responsible for validating the context.
 ///
-/// Custom types can optionally declare `zml_has_simple_abs` as `true` to
-/// indicate that their `zmlAbs_` implementation can be called with an empty
+/// Custom types can optionally declare `zml_has_simple_abs1` as `true` to
+/// indicate that their `zmlAbs1_` implementation can be called with an empty
 /// context (particularly when `O == X` and `o` and `x` are the same instance),
 /// instead performing the operation in-place and never erroring.
 ///
-/// If neither `O` nor `X` implement the required `zmlAbs_` method, the function
-/// will fall back to using `numeric.set` with the result of `numeric.abs`,
+/// If neither `O` nor `X` implement the required `zmlAbs1_` method, the function
+/// will fall back to using `numeric.set` with the result of `numeric.abs1`,
 /// resulting in a less efficient implementation as it may involve unnecessary
 /// allocations and copying. In this case, `O`, `X` and `ctx`  must adhere to
 /// the requirements of these functions.
-pub inline fn abs_(o: anytype, x: anytype, ctx: anytype) !void {
+pub inline fn abs1_(o: anytype, x: anytype, ctx: anytype) !void {
     comptime var O: type = @TypeOf(o);
     const X: type = @TypeOf(x);
 
     comptime if (!types.isPointer(O) or types.isConstPointer(O) or
         !types.isNumeric(types.Child(O)) or
         !types.isNumeric(X))
-        @compileError("zml.numeric.abs_: o must be a mutable one-item pointer to a numeric, and x must be a numeric, got \n\to: " ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n");
+        @compileError("zml.numeric.abs1_: o must be a mutable one-item pointer to a numeric, and x must be a numeric, got \n\to: " ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n");
 
     O = types.Child(O);
 
@@ -71,47 +71,47 @@ pub inline fn abs_(o: anytype, x: anytype, ctx: anytype) !void {
         if (comptime types.isCustomType(X)) { // O and X both custom
             const Impl: ?type = comptime types.anyHasMethod(
                 &.{ O, X },
-                "zmlAbs_",
+                "zmlAbs1_",
                 fn (*O, X, anytype) anyerror!void,
                 &.{ *O, X, @TypeOf(ctx) },
             );
 
             if (comptime Impl != null) {
-                return Impl.?.zmlAbs_(o, x, ctx);
+                return Impl.?.zmlAbs1_(o, x, ctx);
             } else {
-                var abs = try numeric.abs(x, ctx);
-                defer numeric.deinit(&abs, ctx);
+                var abs1 = try numeric.abs1(x, ctx);
+                defer numeric.deinit(&abs1, ctx);
 
                 return numeric.set(
                     o,
-                    abs,
+                    abs1,
                     ctx,
                 );
             }
         } else { // only O custom
-            if (comptime types.hasMethod(O, "zmlAbs_", fn (*O, X, anytype) anyerror!void, &.{ *O, X, @TypeOf(ctx) })) {
-                return O.zmlAbs_(o, x, ctx);
+            if (comptime types.hasMethod(O, "zmlAbs1_", fn (*O, X, anytype) anyerror!void, &.{ *O, X, @TypeOf(ctx) })) {
+                return O.zmlAbs1_(o, x, ctx);
             } else {
-                var abs = try numeric.abs(x, ctx);
-                defer numeric.deinit(&abs, ctx);
+                var abs1 = try numeric.abs1(x, ctx);
+                defer numeric.deinit(&abs1, ctx);
 
                 return numeric.set(
                     o,
-                    abs,
+                    abs1,
                     ctx,
                 );
             }
         }
     } else if (comptime types.isCustomType(X)) { // only X custom
-        if (comptime types.hasMethod(X, "zmlAbs_", fn (*O, X, anytype) anyerror!void, &.{ *O, X, @TypeOf(ctx) })) {
-            return X.zmlAbs_(o, x, ctx);
+        if (comptime types.hasMethod(X, "zmlAbs1_", fn (*O, X, anytype) anyerror!void, &.{ *O, X, @TypeOf(ctx) })) {
+            return X.zmlAbs1_(o, x, ctx);
         } else {
-            var abs = try numeric.abs(x, ctx);
-            defer numeric.deinit(&abs, ctx);
+            var abs1 = try numeric.abs1(x, ctx);
+            defer numeric.deinit(&abs1, ctx);
 
             return numeric.set(
                 o,
-                abs,
+                abs1,
                 ctx,
             );
         }
@@ -160,7 +160,7 @@ pub inline fn abs_(o: anytype, x: anytype, ctx: anytype) !void {
 
                 return numeric.set(
                     o,
-                    cfloat.abs(x),
+                    cfloat.abs1(x),
                     ctx,
                 ) catch unreachable;
             },
@@ -182,8 +182,8 @@ pub inline fn abs_(o: anytype, x: anytype, ctx: anytype) !void {
                     ctx,
                 ) catch unreachable;
             },
-            .real => @compileError("zml.numeric.abs_: not implemented for " ++ @typeName(O) ++ " and " ++ @typeName(X) ++ " yet."),
-            .complex => @compileError("zml.numeric.abs_: not implemented for " ++ @typeName(O) ++ " and " ++ @typeName(X) ++ " yet."),
+            .real => @compileError("zml.numeric.abs1_: not implemented for " ++ @typeName(O) ++ " and " ++ @typeName(X) ++ " yet."),
+            .complex => @compileError("zml.numeric.abs1_: not implemented for " ++ @typeName(O) ++ " and " ++ @typeName(X) ++ " yet."),
             .custom => unreachable,
         },
         .integer => switch (comptime types.numericType(X)) {
@@ -273,7 +273,7 @@ pub inline fn abs_(o: anytype, x: anytype, ctx: anytype) !void {
 
                 return numeric.set(
                     o,
-                    cfloat.abs(x),
+                    cfloat.abs1(x),
                     ctx,
                 );
             },
@@ -312,8 +312,8 @@ pub inline fn abs_(o: anytype, x: anytype, ctx: anytype) !void {
                     ctx,
                 );
             },
-            .real => @compileError("zml.numeric.abs_: not implemented for " ++ @typeName(O) ++ " and " ++ @typeName(X) ++ " yet."),
-            .complex => @compileError("zml.numeric.abs_: not implemented for " ++ @typeName(O) ++ " and " ++ @typeName(X) ++ " yet."),
+            .real => @compileError("zml.numeric.abs1_: not implemented for " ++ @typeName(O) ++ " and " ++ @typeName(X) ++ " yet."),
+            .complex => @compileError("zml.numeric.abs1_: not implemented for " ++ @typeName(O) ++ " and " ++ @typeName(X) ++ " yet."),
             .custom => unreachable,
         },
         .rational => switch (comptime types.numericType(X)) {
@@ -403,7 +403,7 @@ pub inline fn abs_(o: anytype, x: anytype, ctx: anytype) !void {
 
                 return numeric.set(
                     o,
-                    cfloat.abs(x),
+                    cfloat.abs1(x),
                     ctx,
                 );
             },
@@ -442,12 +442,12 @@ pub inline fn abs_(o: anytype, x: anytype, ctx: anytype) !void {
                 else
                     rational.abs_(null, o, x);
             },
-            .real => @compileError("zml.numeric.abs_: not implemented for " ++ @typeName(O) ++ " and " ++ @typeName(X) ++ " yet."),
-            .complex => @compileError("zml.numeric.abs_: not implemented for " ++ @typeName(O) ++ " and " ++ @typeName(X) ++ " yet."),
+            .real => @compileError("zml.numeric.abs1_: not implemented for " ++ @typeName(O) ++ " and " ++ @typeName(X) ++ " yet."),
+            .complex => @compileError("zml.numeric.abs1_: not implemented for " ++ @typeName(O) ++ " and " ++ @typeName(X) ++ " yet."),
             .custom => unreachable,
         },
-        .real => @compileError("zml.numeric.abs_: not implemented for " ++ @typeName(O) ++ " and " ++ @typeName(X) ++ " yet."),
-        .complex => @compileError("zml.numeric.abs_: not implemented for " ++ @typeName(O) ++ " and " ++ @typeName(X) ++ " yet."),
+        .real => @compileError("zml.numeric.abs1_: not implemented for " ++ @typeName(O) ++ " and " ++ @typeName(X) ++ " yet."),
+        .complex => @compileError("zml.numeric.abs1_: not implemented for " ++ @typeName(O) ++ " and " ++ @typeName(X) ++ " yet."),
         .custom => unreachable,
     }
 }

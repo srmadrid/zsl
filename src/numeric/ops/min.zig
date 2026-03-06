@@ -145,10 +145,10 @@ pub fn Min(X: type, Y: type) type {
 ///   and `y`, potentially using the provided context for necessary resources.
 ///   This function is responsible for validating the context.
 ///
-/// Custom allocated types can optionally declare `zml_has_simple_min` as `true`
-/// to indicate that their `zmlMin` implementation can be called without an
-/// allocator in the context (particularly when `X == Y`), instead returning a
-/// view and never erroring.
+/// Custom types can optionally declare `zml_has_simple_min` as `true` to
+/// indicate that their `zmlMin` implementation can be called with an empty
+/// context (particularly when `X == Y`), instead returning a view and never
+/// erroring.
 pub inline fn min(x: anytype, y: anytype, ctx: anytype) !numeric.Min(@TypeOf(x), @TypeOf(y)) {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);

@@ -7,7 +7,7 @@ pub const copy = @import("ops/copy.zig").copy;
 // Basic operations
 pub const Abs = @import("ops/abs.zig").Abs;
 pub const abs = @import("ops/abs.zig").abs;
-pub const abs_ = @import("ops/abs_.zig").abs_; // Not done yet: unclear how to manage functions that have simple versions
+pub const abs_ = @import("ops/abs_.zig").abs_;
 pub const Abs1 = @import("ops/abs1.zig").Abs1;
 pub const abs1 = @import("ops/abs1.zig").abs1;
 pub const abs1_ = @import("ops/abs1_.zig").abs1_;

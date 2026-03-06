@@ -24,68 +24,30 @@ const numeric = @import("../../numeric.zig");
 /// * `o` (`anytype`): The output operand.
 /// * `x` (`anytype`): The numeric value to get the squared absolute value of.
 /// * `ctx` (`anytype`): A context struct providing necessary resources and
-///   configuration for the operation. The required fields depend on `X` and
-///   `Y`. If the context is missing required fields or contains unnecessary or
-///   wrongly typed fields, the compiler will emit a detailed error message
-///   describing the expected structure.
-///
-/// ### Context structure
-/// The fields of `ctx` depend on `O` and `X`.
-///
-/// #### `O` is not allocated and `X` is not allocated
-/// The context must be empty.
-///
-/// #### `O` is not allocated and `X` is allocated
-/// * `buffer_allocator: std.mem.Allocator`: The allocator to use for the
-///   operation's temporary buffer allocation.
-/// * `buffer: numeric.Abs2(X)` (optional): A persistent buffer that can be used
-///   for the operation's temporary storage. If not provided, the operation will
-///   initialize a new buffer and deinitialize it before returning. Providing a
-///   buffer can be more efficient if the caller is performing multiple
-///   operations in a row and can reuse the same buffer for all of them.
-///
-/// #### `O` is allocated and `X` is not allocated
-/// * `allocator: std.mem.Allocator`: The allocator to use for the output value.
-///
-/// #### `O` is allocated, `X` is allocated and `O == X`
-/// * `allocator: std.mem.Allocator`: The allocator to use for the output value.
-///   The operation will perform the computation in-place, so no additional
-///   buffer is needed.
-///
-/// #### `O` is allocated, `X` is allocated and `O != X`
-/// * `allocator: std.mem.Allocator`: The allocator to use for the output value.
-/// * `buffer_allocator: std.mem.Allocator` (optional): The allocator to use for
-///   the operation's temporary buffer allocation. If not provided, the
-///   operation will use the output allocator for the temporary buffer
-///   allocation as well.
-/// * `buffer: numeric.Abs2(X)` (optional): A persistent buffer that can be used
-///   for the operation's temporary storage. If not provided, the operation will
-///   initialize a new buffer and deinitialize it before returning. Providing a
-///   buffer can be more efficient if the caller is performing multiple
-///   operations in a row and can reuse the same buffer for all of them.
+///   configuration for the operation.
 ///
 /// ## Returns
 /// `void`
 ///
 /// ## Errors
-/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails. Can
-///   only happen if `O` is allocated and an allocator is provided.
+/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
 ///
 /// ## Custom type support
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `O` or `X` should implement the required `abs2_` method. The expected
-/// signature and behavior of `abs2_` are as follows:
-/// * `O` is not allocated: `fn abs2_(*O, X) void`: Computes the squared
-///   absolute value of `x` and stores it in `o`.
-/// * `O` is allocated: `fn abs2_(std.mem.Allocator, *O, X) !void`: Computes the
-///   squared absolute value of `x` and stores it in `o`.
+/// `O` or `X` should implement the required `zmlAbs2_` method. The expected
+/// signature and behavior of `zmlAbs2_` are as follows:
+/// * `fn zmlAbs2_(*O, X, anytype) !void`: Computes the squared absolute value
+///   of `x` and stores it in `o`, potentially using the provided context for
+///   necessary resources. This function is responsible for validating the
+///   context.
 ///
-/// If neither `O` nor `X` implement the required `abs2_` method, the function
-/// will fall back to using `numeric.set` with the result of `numeric.abs2`. In
-/// this case, `O`, `X` and `ctx`  must adhere to the requirements of these
-/// functions.
+/// If neither `O` nor `X` implement the required `zmlAbs2_` method, the
+/// function will fall back to using `numeric.set` with the result of
+/// `numeric.abs2`, resulting in a less efficient implementation as it may
+/// involve unnecessary allocations and copying. In this case, `O`, `X` and
+/// `ctx`  must adhere to the requirements of these functions.
 pub inline fn abs2_(o: anytype, x: anytype, ctx: anytype) !void {
     comptime var O: type = @TypeOf(o);
     const X: type = @TypeOf(x);
@@ -108,12 +70,43 @@ pub inline fn abs2_(o: anytype, x: anytype, ctx: anytype) !void {
 
             if (comptime Impl != null) {
                 return Impl.?.zmlAbs2_(o, x, ctx);
-            } else {}
-        } else { // only O custom
+            } else {
+                var abs2 = try numeric.abs2(x, ctx);
+                defer numeric.deinit(&abs2, ctx);
 
+                return numeric.set(
+                    o,
+                    abs2,
+                    ctx,
+                );
+            }
+        } else { // only O custom
+            if (comptime types.hasMethod(O, "zmlAbs2_", fn (*O, X, anytype) anyerror!void, &.{ *O, X, @TypeOf(ctx) })) {
+                return O.zmlAbs2_(o, x, ctx);
+            } else {
+                var abs2 = try numeric.abs2(x, ctx);
+                defer numeric.deinit(&abs2, ctx);
+
+                return numeric.set(
+                    o,
+                    abs2,
+                    ctx,
+                );
+            }
         }
     } else if (comptime types.isCustomType(X)) { // only X custom
+        if (comptime types.hasMethod(X, "zmlAbs2_", fn (*O, X, anytype) anyerror!void, &.{ *O, X, @TypeOf(ctx) })) {
+            return X.zmlAbs2_(o, x, ctx);
+        } else {
+            var abs2 = try numeric.abs2(x, ctx);
+            defer numeric.deinit(&abs2, ctx);
 
+            return numeric.set(
+                o,
+                abs2,
+                ctx,
+            );
+        }
     }
 
     switch (comptime types.numericType(O)) {
@@ -121,7 +114,7 @@ pub inline fn abs2_(o: anytype, x: anytype, ctx: anytype) !void {
             .bool => {
                 comptime types.validateContext(@TypeOf(ctx), .{});
 
-                numeric.set(
+                return numeric.set(
                     o,
                     x,
                     ctx,
@@ -130,7 +123,7 @@ pub inline fn abs2_(o: anytype, x: anytype, ctx: anytype) !void {
             .int => {
                 comptime types.validateContext(@TypeOf(ctx), .{});
 
-                numeric.set(
+                return numeric.set(
                     o,
                     int.mul(x, x),
                     ctx,
@@ -139,7 +132,7 @@ pub inline fn abs2_(o: anytype, x: anytype, ctx: anytype) !void {
             .float => {
                 comptime types.validateContext(@TypeOf(ctx), .{});
 
-                numeric.set(
+                return numeric.set(
                     o,
                     float.mul(x, x),
                     ctx,
@@ -148,7 +141,7 @@ pub inline fn abs2_(o: anytype, x: anytype, ctx: anytype) !void {
             .dyadic => {
                 comptime types.validateContext(@TypeOf(ctx), .{});
 
-                numeric.set(
+                return numeric.set(
                     o,
                     dyadic.mul(x, x),
                     ctx,
@@ -157,7 +150,7 @@ pub inline fn abs2_(o: anytype, x: anytype, ctx: anytype) !void {
             .cfloat => {
                 comptime types.validateContext(@TypeOf(ctx), .{});
 
-                numeric.set(
+                return numeric.set(
                     o,
                     cfloat.abs2(x),
                     ctx,
@@ -171,16 +164,16 @@ pub inline fn abs2_(o: anytype, x: anytype, ctx: anytype) !void {
                         .description = "The allocator to use for the operation's temporary integer buffer allocation.",
                     },
                     .buffer = .{
-                        .type = ?*integer.Integer,
+                        .type = *integer.Integer,
                         .required = false,
                         .description = "A pointer to a persistent integer buffer that can be used for the operation's temporary allocations. If not provided, the operation will initialize a new buffer and deinitialize it before returning. Providing a buffer can be more efficient if the caller is performing multiple operations in a row and can reuse the same buffer for all of them.",
                     },
                 });
 
-                if (comptime types.ctxHasField(@TypeOf(ctx), "buffer", ?*integer.Integer)) {
+                if (comptime types.ctxHasField(@TypeOf(ctx), "buffer", *integer.Integer)) {
                     try integer.mul_(ctx.buffer_allocator, ctx.buffer, x, x);
 
-                    numeric.set(
+                    return numeric.set(
                         o,
                         ctx.buffer.*,
                         ctx,
@@ -189,7 +182,7 @@ pub inline fn abs2_(o: anytype, x: anytype, ctx: anytype) !void {
                     var abs2 = try integer.mul(ctx.buffer_allocator, x, x);
                     defer abs2.deinit(ctx.buffer_allocator);
 
-                    numeric.set(
+                    return numeric.set(
                         o,
                         abs2,
                         ctx,
@@ -204,16 +197,16 @@ pub inline fn abs2_(o: anytype, x: anytype, ctx: anytype) !void {
                         .description = "The allocator to use for the operation's temporary rational buffer allocation.",
                     },
                     .buffer = .{
-                        .type = ?*rational.Rational,
+                        .type = *rational.Rational,
                         .required = false,
                         .description = "A pointer to a persistent rational buffer that can be used for the operation's temporary allocations. If not provided, the operation will initialize a new buffer and deinitialize it before returning. Providing a buffer can be more efficient if the caller is performing multiple operations in a row and can reuse the same buffer for all of them.",
                     },
                 });
 
-                if (comptime types.ctxHasField(@TypeOf(ctx), "buffer", ?*rational.Rational)) {
+                if (comptime types.ctxHasField(@TypeOf(ctx), "buffer", *rational.Rational)) {
                     try rational.mul_(ctx.buffer_allocator, ctx.buffer, x, x);
 
-                    numeric.set(
+                    return numeric.set(
                         o,
                         ctx.buffer.*,
                         ctx,
@@ -222,7 +215,7 @@ pub inline fn abs2_(o: anytype, x: anytype, ctx: anytype) !void {
                     var abs2 = try rational.mul(ctx.buffer_allocator, x, x);
                     defer abs2.deinit(ctx.buffer_allocator);
 
-                    numeric.set(
+                    return numeric.set(
                         o,
                         abs2,
                         ctx,
@@ -246,7 +239,7 @@ pub inline fn abs2_(o: anytype, x: anytype, ctx: anytype) !void {
                     },
                 );
 
-                try numeric.set(
+                return numeric.set(
                     o,
                     x,
                     ctx,
@@ -264,7 +257,7 @@ pub inline fn abs2_(o: anytype, x: anytype, ctx: anytype) !void {
                     },
                 );
 
-                try numeric.set(
+                return numeric.set(
                     o,
                     int.mul(x, x),
                     ctx,
@@ -282,7 +275,7 @@ pub inline fn abs2_(o: anytype, x: anytype, ctx: anytype) !void {
                     },
                 );
 
-                try numeric.set(
+                return numeric.set(
                     o,
                     float.mul(x, x),
                     ctx,
@@ -300,7 +293,7 @@ pub inline fn abs2_(o: anytype, x: anytype, ctx: anytype) !void {
                     },
                 );
 
-                try numeric.set(
+                return numeric.set(
                     o,
                     dyadic.mul(x, x),
                     ctx,
@@ -318,7 +311,7 @@ pub inline fn abs2_(o: anytype, x: anytype, ctx: anytype) !void {
                     },
                 );
 
-                try numeric.set(
+                return numeric.set(
                     o,
                     cfloat.abs2(x),
                     ctx,
@@ -336,7 +329,7 @@ pub inline fn abs2_(o: anytype, x: anytype, ctx: anytype) !void {
                     },
                 );
 
-                try integer.mul_(ctx.allocator, o, x, x);
+                return integer.mul_(ctx.allocator, o, x, x);
             },
             .rational => {
                 comptime types.validateContext(
@@ -353,30 +346,50 @@ pub inline fn abs2_(o: anytype, x: anytype, ctx: anytype) !void {
                             .description = "The allocator to use for the operation's temporary rational buffer allocation. If not provided, the operation will use the integer allocator for the rational's temporary buffer allocation as well.",
                         },
                         .buffer = .{
-                            .type = ?*rational.Rational,
+                            .type = *rational.Rational,
                             .required = false,
                             .description = "A pointer to a persistent rational buffer that can be used for the operation's temporary allocations. If not provided, the operation will initialize a new buffer and deinitialize it before returning. Providing a buffer can be more efficient if the caller is performing multiple operations in a row and can reuse the same buffer for all of them.",
                         },
                     },
                 );
 
-                if (comptime types.ctxHasField(@TypeOf(ctx), "buffer", ?*rational.Rational)) {
-                    try rational.mul_(ctx.buffer_allocator orelse ctx.allocator, ctx.buffer, x, x);
+                if (comptime types.ctxHasField(@TypeOf(ctx), "buffer", *rational.Rational)) {
+                    try rational.mul_(
+                        if (comptime types.ctxHasField(@TypeOf(ctx), "buffer_allocator", std.mem.Allocator))
+                            ctx.buffer_allocator
+                        else
+                            ctx.allocator,
+                        ctx.buffer,
+                        x,
+                        x,
+                    );
 
-                    numeric.set(
+                    return numeric.set(
                         o,
                         ctx.buffer.*,
                         ctx,
-                    ) catch unreachable;
+                    );
                 } else {
-                    var abs2 = try rational.mul(ctx.buffer_allocator orelse ctx.allocator, x, x);
-                    defer abs2.deinit(ctx.buffer_allocator orelse ctx.allocator);
+                    var abs2 = try rational.mul(
+                        if (comptime types.ctxHasField(@TypeOf(ctx), "buffer_allocator", std.mem.Allocator))
+                            ctx.buffer_allocator
+                        else
+                            ctx.allocator,
+                        x,
+                        x,
+                    );
+                    defer abs2.deinit(
+                        if (comptime types.ctxHasField(@TypeOf(ctx), "buffer_allocator", std.mem.Allocator))
+                            ctx.buffer_allocator
+                        else
+                            ctx.allocator,
+                    );
 
-                    numeric.set(
+                    return numeric.set(
                         o,
                         abs2,
                         ctx,
-                    ) catch unreachable;
+                    );
                 }
             },
             .real => @compileError("zml.numeric.abs2_: not implemented for " ++ @typeName(O) ++ " and " ++ @typeName(X) ++ " yet."),
@@ -396,7 +409,7 @@ pub inline fn abs2_(o: anytype, x: anytype, ctx: anytype) !void {
                     },
                 );
 
-                try numeric.set(
+                return numeric.set(
                     o,
                     x,
                     ctx,
@@ -414,9 +427,9 @@ pub inline fn abs2_(o: anytype, x: anytype, ctx: anytype) !void {
                     },
                 );
 
-                try numeric.set(
+                return numeric.set(
                     o,
-                    int.abs(x),
+                    int.mul(x, x),
                     ctx,
                 );
             },
@@ -432,9 +445,9 @@ pub inline fn abs2_(o: anytype, x: anytype, ctx: anytype) !void {
                     },
                 );
 
-                try numeric.set(
+                return numeric.set(
                     o,
-                    float.abs(x),
+                    float.mul(x, x),
                     ctx,
                 );
             },
@@ -450,9 +463,9 @@ pub inline fn abs2_(o: anytype, x: anytype, ctx: anytype) !void {
                     },
                 );
 
-                try numeric.set(
+                return numeric.set(
                     o,
-                    dyadic.abs(x),
+                    dyadic.mul(x, x),
                     ctx,
                 );
             },
@@ -468,9 +481,9 @@ pub inline fn abs2_(o: anytype, x: anytype, ctx: anytype) !void {
                     },
                 );
 
-                try numeric.set(
+                return numeric.set(
                     o,
-                    cfloat.abs(x),
+                    cfloat.abs2(x),
                     ctx,
                 );
             },
@@ -483,14 +496,57 @@ pub inline fn abs2_(o: anytype, x: anytype, ctx: anytype) !void {
                             .required = true,
                             .description = "The allocator to use for the rational's memory allocation.",
                         },
+                        .buffer_allocator = .{
+                            .type = std.mem.Allocator,
+                            .required = false,
+                            .description = "The allocator to use for the operation's temporary integer buffer allocation. If not provided, the operation will use the rational allocator for the integer's temporary buffer allocation as well.",
+                        },
+                        .buffer = .{
+                            .type = *integer.Integer,
+                            .required = false,
+                            .description = "A pointer to a persistent integer buffer that can be used for the operation's temporary allocations. If not provided, the operation will initialize a new buffer and deinitialize it before returning. Providing a buffer can be more efficient if the caller is performing multiple operations in a row and can reuse the same buffer for all of them.",
+                        },
                     },
                 );
 
-                try numeric.set(
-                    o,
-                    integer.abs(null, x) catch unreachable,
-                    ctx,
-                );
+                if (comptime types.ctxHasField(@TypeOf(ctx), "buffer", *integer.Integer)) {
+                    try integer.mul_(
+                        if (comptime types.ctxHasField(@TypeOf(ctx), "buffer_allocator", std.mem.Allocator))
+                            ctx.buffer_allocator
+                        else
+                            ctx.allocator,
+                        ctx.buffer,
+                        x,
+                        x,
+                    );
+
+                    return numeric.set(
+                        o,
+                        ctx.buffer.*,
+                        ctx,
+                    );
+                } else {
+                    var abs2 = try integer.mul(
+                        if (comptime types.ctxHasField(@TypeOf(ctx), "buffer_allocator", std.mem.Allocator))
+                            ctx.buffer_allocator
+                        else
+                            ctx.allocator,
+                        x,
+                        x,
+                    );
+                    defer abs2.deinit(
+                        if (comptime types.ctxHasField(@TypeOf(ctx), "buffer_allocator", std.mem.Allocator))
+                            ctx.buffer_allocator
+                        else
+                            ctx.allocator,
+                    );
+
+                    return numeric.set(
+                        o,
+                        abs2,
+                        ctx,
+                    );
+                }
             },
             .rational => {
                 comptime types.validateContext(
@@ -498,23 +554,20 @@ pub inline fn abs2_(o: anytype, x: anytype, ctx: anytype) !void {
                     .{
                         .allocator = .{
                             .type = std.mem.Allocator,
-                            .required = false,
-                            .description = "The allocator for the rational's memory allocation. If not provided, the operation will return an error unless o and x refer to the same rational.",
+                            .required = true,
+                            .description = "The allocator to use for the rational's memory allocation.",
                         },
                     },
                 );
 
-                if (comptime types.ctxHasField(@TypeOf(ctx), "allocator", std.mem.Allocator))
-                    try rational.abs_(ctx.allocator, o, x)
-                else
-                    try rational.abs_(null, o, x);
+                return rational.mul_(ctx.allocator, o, x, x);
             },
-            .real => @compileError("zml.numeric.abs_: not implemented for " ++ @typeName(O) ++ " and " ++ @typeName(X) ++ " yet."),
-            .complex => @compileError("zml.numeric.abs_: not implemented for " ++ @typeName(O) ++ " and " ++ @typeName(X) ++ " yet."),
+            .real => @compileError("zml.numeric.abs2_: not implemented for " ++ @typeName(O) ++ " and " ++ @typeName(X) ++ " yet."),
+            .complex => @compileError("zml.numeric.abs2_: not implemented for " ++ @typeName(O) ++ " and " ++ @typeName(X) ++ " yet."),
             .custom => unreachable,
         },
-        .real => @compileError("zml.numeric.abs_: not implemented for " ++ @typeName(O) ++ " and " ++ @typeName(X) ++ " yet."),
-        .complex => @compileError("zml.numeric.abs_: not implemented for " ++ @typeName(O) ++ " and " ++ @typeName(X) ++ " yet."),
+        .real => @compileError("zml.numeric.abs2_: not implemented for " ++ @typeName(O) ++ " and " ++ @typeName(X) ++ " yet."),
+        .complex => @compileError("zml.numeric.abs2_: not implemented for " ++ @typeName(O) ++ " and " ++ @typeName(X) ++ " yet."),
         .custom => unreachable,
     }
 }

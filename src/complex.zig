@@ -11,7 +11,7 @@ const _real = @import("real.zig");
 /// allocated numeric values (e.g., `Rational`, `Real`).
 pub fn Complex(comptime N: type) type {
     if (!types.isNumeric(N) or !types.isAllocated(N) or types.isIntegral(N))
-        @compileError("zml.Complex: N must be a non-integral allocated numeric type, got \n\tN: " ++ @typeName(N) ++ "\n");
+        @compileError("zml.Complex: N must be a non-integral and allocated numeric type, got \n\tN: " ++ @typeName(N) ++ "\n");
 
     return struct {
         re: N,
@@ -19,18 +19,22 @@ pub fn Complex(comptime N: type) type {
         flags: Flags,
 
         /// Type flags
-        pub const is_numeric = true;
-        pub const is_complex = true;
-        pub const is_complex_type = true;
-        pub const is_signed = true;
-        pub const is_allocated = true;
-        pub const is_custom = types.isCustomType(N);
+        pub const zml_is_numeric = true;
+        pub const zml_is_complex = true;
+        pub const zml_is_complex_type = true;
+        pub const zml_is_signed = true;
+        pub const zml_is_allocated = true;
+        pub const zml_is_custom = types.isCustomType(N);
 
         /// Operation flags
-        pub const has_simple_abs = false;
+        pub const zml_has_simple_neg = true;
+        pub const zml_has_simple_re = true;
+        pub const zml_has_simple_im = true;
+        pub const zml_has_simple_conj = true;
+        pub const zml_has_simple_sign = true;
 
         /// Scalar type
-        pub const Scalar = N;
+        pub const ZmlScalar = N;
 
         pub const empty: Complex(N) = .{
             .re = .empty,

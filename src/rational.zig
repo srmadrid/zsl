@@ -25,14 +25,20 @@ pub const Rational = struct {
     flags: Flags,
 
     /// Type flags
-    pub const is_numeric = true;
-    pub const is_rational = true;
-    pub const is_real_type = true;
-    pub const is_signed = true;
-    pub const is_allocated = true;
+    pub const zml_is_numeric = true;
+    pub const zml_is_rational = true;
+    pub const zml_is_real_type = true;
+    pub const zml_is_signed = true;
+    pub const zml_is_allocated = true;
 
     /// Operation flags
-    pub const has_simple_abs = true;
+    pub const zml_has_simple_abs = true;
+    pub const zml_has_simple_abs1 = true;
+    pub const zml_has_simple_neg = true;
+    pub const zml_has_simple_re = true;
+    pub const zml_has_simple_im = true;
+    pub const zml_has_simple_conj = true;
+    pub const zml_has_simple_sign = true;
 
     pub const empty: Rational = .{
         .num = .empty,
@@ -482,6 +488,9 @@ pub const Rational = struct {
                     .int => {
                         if (denominator == 0)
                             return Error.ZeroDenominator;
+
+                        if (denominator == 1 and @import("rational/check_aliasing.zig").check_aliasing(self, numerator))
+                            return;
 
                         var dvalue = @import("int/asRational.zig").asRational(denominator);
                         dvalue[0].num.limbs = &dvalue[1];

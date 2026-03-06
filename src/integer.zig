@@ -24,15 +24,21 @@ pub const Integer = struct {
     flags: Flags,
 
     /// Type flags
-    pub const is_numeric = true;
-    pub const is_integer = true;
-    pub const is_integral = true;
-    pub const is_real_type = true;
-    pub const is_signed = true;
-    pub const is_allocated = true;
+    pub const zml_is_numeric = true;
+    pub const zml_is_integer = true;
+    pub const zml_is_integral = true;
+    pub const zml_is_real_type = true;
+    pub const zml_is_signed = true;
+    pub const zml_is_allocated = true;
 
     /// Operation flags
-    pub const has_simple_abs = true;
+    pub const zml_has_simple_abs = true;
+    pub const zml_has_simple_abs1 = true;
+    pub const zml_has_simple_neg = true;
+    pub const zml_has_simple_re = true;
+    pub const zml_has_simple_im = true;
+    pub const zml_has_simple_conj = true;
+    pub const zml_has_simple_sign = true;
 
     pub const empty: Integer = .{
         .limbs = &.{},
@@ -245,6 +251,9 @@ pub const Integer = struct {
                 .dyadic => @compileError("zml.Integer.set: Dyadic types not supported yet"),
                 .cfloat => return self.set(allocator, value.re),
                 .integer => {
+                    if (@import("integer/check_aliasing.zig").check_aliasing(self, value))
+                        return;
+
                     if (self.flags.owns_data)
                         try self.reserve(allocator, value.size)
                     else if (self._llen < value.size)

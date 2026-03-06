@@ -144,13 +144,9 @@ fn formatPartialSpecCtxMismatch(
     );
 }
 
-pub fn ctxHasField(
-    comptime T: type,
-    comptime field_name: []const u8,
-    comptime FieldType: type,
-) bool {
-    if (@hasField(T, field_name)) {
-        if (comptime typesMatch(@FieldType(T, field_name), FieldType))
+pub fn ctxHasField(comptime Ctx: type, comptime field_name: []const u8, comptime FieldType: type) bool {
+    if (@hasField(Ctx, field_name)) {
+        if (comptime typesMatch(@FieldType(Ctx, field_name), FieldType))
             return true;
     }
 

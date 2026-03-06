@@ -19,81 +19,27 @@ const _two: u32 = 2;
 /// ## Arguments
 /// * `N` (`comptime type`): The type to generate the zero value for.
 /// * `ctx` (`anytype`): A context struct providing necessary resources and
-///   configuration for the operation. The required fields depend on `N`. If the
-///   context is missing required fields or contains unnecessary or wrongly
-///   typed fields, the compiler will emit a detailed error message describing
-///   the expected structure.
-///
-/// ### Context structure
-/// The fields of `ctx` depend on `N`.
-///
-/// #### `N` is not allocated
-/// The context must be empty.
-///
-/// #### `N` is allocated
-/// * `allocator: std.mem.Allocator` (optional): The allocator to use for the
-///   output value. If not provided, a read-only view will be returned.
+///   configuration for the operation.
 ///
 /// ## Returns
 /// `N`: The zero value.
 ///
 /// ## Errors
-/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails. Can
-///   only happen if `N` is an allocated type and an allocator is provided in
-///   the context.
+/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
 ///
 /// ## Custom type support
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `N` must implement the required `zero` method. The expected signature and
-/// behavior of `zero` are as follows:
-/// * Non-allocated: `fn zero() N`: Returns the zero value.
-/// * Allocated: `fn zero(?std.mem.Allocator) !N`: Returns the zero as a newly
-///   allocated value, if the allocator is provided, or a read-only view if not.
+/// `N` must implement the required `zmlZero` method. The expected signature and
+/// behavior of `zmlZero` are as follows:
+/// * `fn zmlZero(anytype) !N`: Returns the zero, potentially using the provided
+///   context for necessary resources. This function is responsible for
+///   validating the context.
 ///
-/// ## Examples
-/// * Non-allocated type:
-/// ```zig
-/// const zero = zml.zero(f64, .{}) catch unreachable;
-/// ```
-/// * Allocated type (without allocator):
-/// ```zig
-/// const zero = zml.zero(zml.Integer, .{}) catch unreachable;
-/// ```
-/// * Allocated type (with allocator):
-/// ```zig
-/// var zero = try zml.zero(zml.Integer, .{ .allocator = allocator });
-/// defer zero.deinit(allocator);
-/// ```
-/// * Non-allocated custom type (with `zero` method):
-/// ```zig
-/// const zero = zml.zero(Custom, .{}) catch unreachable;
-/// ```
-/// * Non-allocated custom type (without `zero` method):
-/// ```zig
-/// const zero = zml.zero(Custom, .{ .zero = zeroFn }) catch unreachable;
-/// ```
-/// * Allocated custom type (without allocator, with `zero` method):
-/// ```zig
-/// var zero = zml.zero(Custom, .{}) catch unreachable;
-/// defer zero.deinit(allocator);
-/// ```
-/// * Allocated custom type (with allocator, with `zero` method):
-/// ```zig
-/// var zero = try zml.zero(Custom, .{ .allocator = allocator });
-/// defer zero.deinit(allocator);
-/// ```
-/// * Allocated custom type (without allocator, without `zero` method):
-/// ```zig
-/// var zero = try zml.zero(Custom, .{ .zero = zeroFn }) catch unreachable;
-/// defer zero.deinit(allocator);
-/// ```
-/// * Allocated custom type (with allocator, without `zero` method):
-/// ```zig
-/// var zero = try zml.zero(Custom, .{ .allocator = allocator, .zero = zeroFn });
-/// defer zero.deinit(allocator);
-/// ```
+/// Custom types can optionally declare `zml_has_simple_zero` as `true` to
+/// indicate that their `zmlZero` implementation can be called with an empty
+/// context, returning a view and never erroring.
 pub inline fn zero(
     comptime N: type,
     ctx: anytype,
@@ -217,33 +163,10 @@ pub inline fn zero(
             }
         },
         .custom => {
-            if (comptime types.isAllocated(N)) {
-                comptime if (!types.hasMethod(N, "zero", fn (?std.mem.Allocator) anyerror!N, &.{std.mem.Allocator}))
-                    @compileError("zml.zero: " ++ @typeName(N) ++ " must implement `fn zero(?std.mem.Allocator) !" ++ @typeName(N) ++ "`");
+            comptime if (!types.hasMethod(N, "zmlZero", fn (anytype) anyerror!N, &.{@TypeOf(ctx)}))
+                @compileError("zml.zero: " ++ @typeName(N) ++ " must implement `fn zmlZero(anytype) !" ++ @typeName(N) ++ "`");
 
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = false,
-                            .description = "The allocator to use for the custom numeric's memory allocation. If not provided, a read-only view will be returned.",
-                        },
-                    },
-                );
-
-                return if (comptime types.ctxHasField(@TypeOf(ctx), "allocator", std.mem.Allocator))
-                    N.zero(ctx.allocator)
-                else
-                    N.zero(null);
-            } else {
-                comptime if (!types.hasMethod(N, "zero", fn () N, &.{}))
-                    @compileError("zml.zero: " ++ @typeName(N) ++ " must implement `fn zero() " ++ @typeName(N) ++ "`");
-
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return N.zero();
-            }
+            return N.zmlZero(ctx);
         },
     }
 }
@@ -253,81 +176,27 @@ pub inline fn zero(
 /// ## Arguments
 /// * `N` (`comptime type`): The type to generate the one value for.
 /// * `ctx` (`anytype`): A context struct providing necessary resources and
-///   configuration for the operation. The required fields depend on `N`. If the
-///   context is missing required fields or contains unnecessary or wrongly
-///   typed fields, the compiler will emit a detailed error message describing
-///   the expected structure.
-///
-/// ### Context structure
-/// The fields of `ctx` depend on `N`.
-///
-/// #### `N` is not allocated
-/// The context must be empty.
-///
-/// #### `N` is allocated
-/// * `allocator: std.mem.Allocator` (optional): The allocator to use for the
-///   output value. If not provided, a read-only view will be returned.
+///   configuration for the operation.
 ///
 /// ## Returns
-/// * `N`: The one value.
+/// `N`: The one value.
 ///
 /// ## Errors
-/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails. Can
-///   only happen if `N` is an allocated type and an allocator is provided in
-///   the context.
+/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
 ///
 /// ## Custom type support
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `N` must implement the required `one` method. The expected signature and
-/// behavior of `one` are as follows:
-/// * Non-allocated: `fn one() N`: Returns the one value.
-/// * Allocated: `fn one(?std.mem.Allocator) !N`: Returns the one as a newly
-///   allocated value, if the allocator is provided, or a read-only view if not.
+/// `N` must implement the required `zmlOne` method. The expected signature and
+/// behavior of `zmlOne` are as follows:
+/// * `fn zmlOne(anytype) !N`: Returns the one, potentially using the provided
+///   context for necessary resources. This function is responsible for
+///   validating the context.
 ///
-/// ## Examples
-/// * Non-allocated type:
-/// ```zig
-/// const one = zml.one(f64, .{}) catch unreachable;
-/// ```
-/// * Allocated type (without allocator):
-/// ```zig
-/// const one = zml.one(zml.Integer, .{}) catch unreachable;
-/// ```
-/// * Allocated type (with allocator):
-/// ```zig
-/// var one = try zml.one(zml.Integer, .{ .allocator = allocator });
-/// defer one.deinit(allocator);
-/// ```
-/// * Non-allocated custom type (with `one` method):
-/// ```zig
-/// const one = zml.one(Custom, .{}) catch unreachable;
-/// ```
-/// * Non-allocated custom type (without `one` method):
-/// ```zig
-/// const one = zml.one(Custom, .{ .one = oneFn }) catch unreachable;
-/// ```
-/// * Allocated custom type (without allocator, with `one` method):
-/// ```zig
-/// var one = try zml.one(Custom, .{}) catch unreachable;
-/// defer one.deinit(allocator);
-/// ```
-/// * Allocated custom type (with allocator, with `one` method):
-/// ```zig
-/// var one = try zml.one(Custom, .{ .allocator = allocator });
-/// defer one.deinit(allocator);
-/// ```
-/// * Allocated custom type (without allocator, without `one` method):
-/// ```zig
-/// var one = try zml.one(Custom, .{ .one = oneFn }) catch unreachable;
-/// defer one.deinit(allocator);
-/// ```
-/// * Allocated custom type (with allocator, without `one` method):
-/// ```zig
-/// var one = try zml.one(Custom, .{ .allocator = allocator, .one = oneFn });
-/// defer one.deinit(allocator);
-/// ```
+/// Custom types can optionally declare `zml_has_simple_one` as `true` to
+/// indicate that their `zmlOne` implementation can be called with an empty
+/// context, returning a view and never erroring.
 pub inline fn one(
     comptime N: type,
     ctx: anytype,
@@ -447,33 +316,10 @@ pub inline fn one(
             }
         },
         .custom => {
-            if (comptime types.isAllocated(N)) {
-                comptime if (!types.hasMethod(N, "one", fn (?std.mem.Allocator) anyerror!N, &.{std.mem.Allocator}))
-                    @compileError("zml.one: " ++ @typeName(N) ++ " must implement `fn one(?std.mem.Allocator) !" ++ @typeName(N) ++ "`");
+            comptime if (!types.hasMethod(N, "zmlOne", fn (anytype) anyerror!N, &.{@TypeOf(ctx)}))
+                @compileError("zml.one: " ++ @typeName(N) ++ " must implement `fn zmlOne(anytype) !" ++ @typeName(N) ++ "`");
 
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = false,
-                            .description = "The allocator to use for the custom numeric's memory allocation. If not provided, a read-only view will be returned.",
-                        },
-                    },
-                );
-
-                return if (comptime types.ctxHasField(@TypeOf(ctx), "allocator", std.mem.Allocator))
-                    N.one(ctx.allocator)
-                else
-                    N.one(null);
-            } else {
-                comptime if (!types.hasMethod(N, "one", fn () N, &.{}))
-                    @compileError("zml.one: " ++ @typeName(N) ++ " must implement `fn one() " ++ @typeName(N) ++ "`");
-
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return N.one();
-            }
+            return N.zmlOne(ctx);
         },
     }
 }
@@ -483,81 +329,27 @@ pub inline fn one(
 /// ## Arguments
 /// * `N` (`comptime type`): The type to generate the two value for.
 /// * `ctx` (`anytype`): A context struct providing necessary resources and
-///   configuration for the operation. The required fields depend on `N`. If the
-///   context is missing required fields or contains unnecessary or wrongly
-///   typed fields, the compiler will emit a detailed error message describing
-///   the expected structure.
-///
-/// ### Context structure
-/// The fields of `ctx` depend on `N`.
-///
-/// #### `N` is not allocated
-/// The context must be empty.
-///
-/// #### `N` is allocated
-/// * `allocator: std.mem.Allocator` (optional): The allocator to use for the
-///   output value. If not provided, a read-only view will be returned.
+///   configuration for the operation.
 ///
 /// ## Returns
-/// * `N`: The two value.
+/// `N`: The two value.
 ///
 /// ## Errors
-/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails. Can
-///   only happen if `N` is an allocated type and an allocator is provided in
-///   the context.
+/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
 ///
 /// ## Custom type support
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `N` must implement the required `two` method. The expected signature and
-/// behavior of `two` are as follows:
-/// * Non-allocated: `fn two() N`: Returns the two value.
-/// * Allocated: `fn two(?std.mem.Allocator) !N`: Returns the two as a newly
-///   allocated value, if the allocator is provided, or a read-only view if not.
+/// `N` must implement the required `zmlTwo` method. The expected signature and
+/// behavior of `zmlTwo` are as follows:
+/// * `fn zmlTwo(anytype) !N`: Returns the two, potentially using the provided
+///   context for necessary resources. This function is responsible for
+///   validating the context.
 ///
-/// ## Examples
-/// * Non-allocated type:
-/// ```zig
-/// const two = zml.two(f64, .{}) catch unreachable;
-/// ```
-/// * Allocated type (without allocator):
-/// ```zig
-/// const two = zml.two(zml.Integer, .{}) catch unreachable;
-/// ```
-/// * Allocated type (with allocator):
-/// ```zig
-/// var two = try zml.two(zml.Integer, .{ .allocator = allocator });
-/// defer two.deinit(allocator);
-/// ```
-/// * Non-allocated custom type (with `two` method):
-/// ```zig
-/// const two = zml.two(Custom, .{}) catch unreachable;
-/// ```
-/// * Non-allocated custom type (without `two` method):
-/// ```zig
-/// const two = zml.two(Custom, .{ .two = twoFn }) catch unreachable;
-/// ```
-/// * Allocated custom type (without allocator, with `two` method):
-/// ```zig
-/// var two = try zml.two(Custom, .{}) catch unreachable;
-/// defer two.deinit(allocator);
-/// ```
-/// * Allocated custom type (with allocator, with `two` method):
-/// ```zig
-/// var two = try zml.two(Custom, .{ .allocator = allocator });
-/// defer two.deinit(allocator);
-/// ```
-/// * Allocated custom type (without allocator, without `two` method):
-/// ```zig
-/// var two = try zml.two(Custom, .{ .two = twoFn }) catch unreachable;
-/// defer two.deinit(allocator);
-/// ```
-/// * Allocated custom type (with allocator, without `two` method):
-/// ```zig
-/// var two = try zml.two(Custom, .{ .allocator = allocator, .two = twoFn });
-/// defer two.deinit(allocator);
-/// ```
+/// Custom types can optionally declare `zml_has_simple_two` as `true` to
+/// indicate that their `zmlTwo` implementation can be called with an empty
+/// context, returning a view and never erroring.
 pub inline fn two(
     comptime N: type,
     ctx: anytype,
@@ -677,33 +469,10 @@ pub inline fn two(
             }
         },
         .custom => {
-            if (comptime types.isAllocated(N)) {
-                comptime if (!types.hasMethod(N, "two", fn (?std.mem.Allocator) anyerror!N, &.{std.mem.Allocator}))
-                    @compileError("zml.two: " ++ @typeName(N) ++ " must implement `fn two(?std.mem.Allocator) !" ++ @typeName(N) ++ "`");
+            comptime if (!types.hasMethod(N, "zmlTwo", fn (anytype) anyerror!N, &.{@TypeOf(ctx)}))
+                @compileError("zml.two: " ++ @typeName(N) ++ " must implement `fn zmlTwo(anytype) !" ++ @typeName(N) ++ "`");
 
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = ?std.mem.Allocator,
-                            .required = false,
-                            .description = "The allocator to use for the custom numeric's memory allocation. If not provided, a read-only view will be returned.",
-                        },
-                    },
-                );
-
-                return if (comptime types.ctxHasField(@TypeOf(ctx), "allocator", std.mem.Allocator))
-                    N.two(ctx.allocator)
-                else
-                    N.two(null);
-            } else {
-                comptime if (!types.hasMethod(N, "two", fn () N, &.{}))
-                    @compileError("zml.two: " ++ @typeName(N) ++ " must implement `fn two() " ++ @typeName(N) ++ "`");
-
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return N.two();
-            }
+            return N.zmlTwo(ctx);
         },
     }
 }

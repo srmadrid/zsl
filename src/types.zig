@@ -353,8 +353,8 @@ pub fn empty(comptime T: type) T {
             .real => return .empty,
             .complex => return .empty,
             .custom => {
-                if (comptime !@hasDecl(T, "empty"))
-                    @compileError("zml.types.empty: custom numeric type " ++ @typeName(T) ++ " must have an `empty` declaration");
+                if (comptime !@hasDecl(T, "zmlEmpty"))
+                    @compileError("zml.types.empty: custom numeric type " ++ @typeName(T) ++ " must have a `zmlEmpty` declaration");
 
                 return .empty;
             },
@@ -409,30 +409,30 @@ pub inline fn numericType(comptime N: type) NumericType {
         .int, .comptime_int => return .int,
         .float, .comptime_float => return .float,
         .@"struct" => {
-            if (comptime !@hasDecl(N, "is_numeric") or !N.is_numeric)
+            if (comptime !@hasDecl(N, "zml_is_numeric") or !N.zml_is_numeric)
                 @compileError("zml.types.numericType: " ++ @typeName(N) ++ " is not a supported numeric type");
 
-            if (comptime @hasDecl(N, "is_custom") and N.is_custom)
+            if (comptime @hasDecl(N, "zml_is_custom") and N.zml_is_custom)
                 return .custom;
 
-            if (comptime @hasDecl(N, "is_dyadic") and N.is_dyadic)
+            if (comptime @hasDecl(N, "zml_is_dyadic") and N.zml_is_dyadic)
                 return .dyadic;
 
-            if (comptime (@hasDecl(N, "is_cfloat") and N.is_cfloat) or
+            if (comptime (@hasDecl(N, "zml_is_cfloat") and N.zml_is_cfloat) or
                 N == std.math.Complex(f16) or N == std.math.Complex(f32) or N == std.math.Complex(f64) or
                 N == std.math.Complex(f80) or N == std.math.Complex(f128) or N == std.math.Complex(comptime_float))
                 return .cfloat;
 
-            if (comptime @hasDecl(N, "is_integer") and N.is_integer)
+            if (comptime @hasDecl(N, "zml_is_integer") and N.zml_is_integer)
                 return .integer;
 
-            if (comptime @hasDecl(N, "is_rational") and N.is_rational)
+            if (comptime @hasDecl(N, "zml_is_rational") and N.zml_is_rational)
                 return .rational;
 
-            if (comptime @hasDecl(N, "is_real") and N.is_real)
+            if (comptime @hasDecl(N, "zml_is_real") and N.zml_is_real)
                 return .real;
 
-            if (comptime @hasDecl(N, "is_complex") and N.is_complex)
+            if (comptime @hasDecl(N, "zml_is_complex") and N.zml_is_complex)
                 return .complex;
 
             @compileError("zml.types.numericType: " ++ @typeName(N) ++ " is not a supported numeric type");
@@ -657,17 +657,17 @@ pub fn Scalar(comptime T: type) type {
                 std.math.Complex(f80) => return f80,
                 std.math.Complex(f128) => return f128,
                 std.math.Complex(comptime_float) => return comptime_float,
-                else => return T.Scalar,
+                else => return T.ZmlScalar,
             },
             .integer => return Integer,
             .rational => return Rational,
             .real => return Real,
-            .complex => return T.Scalar,
+            .complex => return T.ZmlScalar,
             .custom => {
-                if (comptime !@hasDecl(T, "Scalar"))
-                    @compileError("zml.types.Scalar: custom numeric type " ++ @typeName(T) ++ " must have a `Scalar` declaration");
+                if (comptime !@hasDecl(T, "ZmlScalar"))
+                    @compileError("zml.types.Scalar: custom numeric type " ++ @typeName(T) ++ " must have a `ZmlScalar` declaration");
 
-                return T.Scalar;
+                return T.ZmlScalar;
             },
         },
         .vector => return Numeric(T),
@@ -701,10 +701,10 @@ pub fn Numeric(comptime T: type) type {
             .dense => return T.Numeric,
             .sparse => return T.Numeric,
             .custom => {
-                if (comptime !@hasDecl(T, "Numeric"))
-                    @compileError("zml.types.Numeric: custom vector type " ++ @typeName(T) ++ " must have a `Numeric` declaration");
+                if (comptime !@hasDecl(T, "ZmlNumeric"))
+                    @compileError("zml.types.Numeric: custom vector type " ++ @typeName(T) ++ " must have a `ZmlNumeric` declaration");
 
-                return T.Numeric;
+                return T.ZmlNumeric;
             },
             .numeric => return T,
         },
@@ -720,10 +720,10 @@ pub fn Numeric(comptime T: type) type {
             .diagonal => return T.Numeric,
             .permutation => return T.Numeric,
             .custom => {
-                if (comptime !@hasDecl(T, "Numeric"))
-                    @compileError("zml.types.Numeric: custom matrix type " ++ @typeName(T) ++ " must have a `Numeric` declaration");
+                if (comptime !@hasDecl(T, "ZmlNumeric"))
+                    @compileError("zml.types.Numeric: custom matrix type " ++ @typeName(T) ++ " must have a `ZmlNumeric` declaration");
 
-                return T.Numeric;
+                return T.ZmlNumeric;
             },
             .numeric => return T,
         },
@@ -732,10 +732,10 @@ pub fn Numeric(comptime T: type) type {
             .strided => return T.Numeric,
             .sparse => return T.Numeric,
             .custom => {
-                if (comptime !@hasDecl(T, "Numeric"))
-                    @compileError("zml.types.Numeric: custom array type " ++ @typeName(T) ++ " must have a `Numeric` declaration");
+                if (comptime !@hasDecl(T, "ZmlNumeric"))
+                    @compileError("zml.types.Numeric: custom array type " ++ @typeName(T) ++ " must have a `ZmlNumeric` declaration");
 
-                return T.Numeric;
+                return T.ZmlNumeric;
             },
             .numeric => return T,
         },
@@ -760,10 +760,10 @@ pub fn layoutOf(comptime T: type) Layout {
             .diagonal => return T.storage_layout,
             .permutation => return T.storage_layout,
             .custom => {
-                if (comptime !@hasDecl(T, "storage_layout"))
-                    @compileError("zml.types.layoutOf: custom matrix type " ++ @typeName(T) ++ " must have a `storage_layout` declaration");
+                if (comptime !@hasDecl(T, "zml_storage_layout"))
+                    @compileError("zml.types.layoutOf: custom matrix type " ++ @typeName(T) ++ " must have a `zml_storage_layout` declaration");
 
-                return T.storage_layout;
+                return T.zml_storage_layout;
             },
             .numeric => unreachable,
         },
@@ -772,10 +772,10 @@ pub fn layoutOf(comptime T: type) Layout {
             .strided => return T.storage_layout,
             .sparse => return T.storage_layout,
             .custom => {
-                if (comptime !@hasDecl(T, "storage_layout"))
-                    @compileError("zml.types.layoutOf: custom array type " ++ @typeName(T) ++ " must have a `storage_layout` declaration");
+                if (comptime !@hasDecl(T, "zml_storage_layout"))
+                    @compileError("zml.types.layoutOf: custom array type " ++ @typeName(T) ++ " must have a `zml_storage_layout` declaration");
 
-                return T.storage_layout;
+                return T.zml_storage_layout;
             },
             .numeric => unreachable,
         },
@@ -800,10 +800,10 @@ pub fn uploOf(comptime T: type) Uplo {
             .diagonal => return default_uplo,
             .permutation => return default_uplo,
             .custom => {
-                if (comptime !@hasDecl(T, "storage_uplo"))
-                    @compileError("zml.types.uploOf: custom matrix type " ++ @typeName(T) ++ " must have a `storage_uplo` declaration");
+                if (comptime !@hasDecl(T, "zml_storage_uplo"))
+                    @compileError("zml.types.uploOf: custom matrix type " ++ @typeName(T) ++ " must have a `zml_storage_uplo` declaration");
 
-                return T.storage_uplo;
+                return T.zml_storage_uplo;
             },
             .numeric => unreachable,
         },
@@ -828,10 +828,10 @@ pub fn diagOf(comptime T: type) Diag {
             .diagonal => return default_diag,
             .permutation => return default_diag,
             .custom => {
-                if (comptime !@hasDecl(T, "storage_diag"))
-                    @compileError("zml.types.diagOf: custom matrix type " ++ @typeName(T) ++ " must have a `storage_diag` declaration");
+                if (comptime !@hasDecl(T, "zml_storage_diag"))
+                    @compileError("zml.types.diagOf: custom matrix type " ++ @typeName(T) ++ " must have a `zml_storage_diag` declaration");
 
-                return T.storage_diag;
+                return T.zml_storage_diag;
             },
             .numeric => unreachable,
         },

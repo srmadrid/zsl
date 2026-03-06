@@ -67,9 +67,9 @@ pub fn Re(X: type) type {
 ///   potentially using the provided context for necessary resources. This
 ///   function is responsible for validating the context.
 ///
-/// Custom allocated types can optionally declare `zml_has_simple_re` as `true`
-/// to indicate that their `zmlRe` implementation can be called without an
-/// allocator in the context, instead returning a view and never erroring.
+/// Custom types can optionally declare `zml_has_simple_re` as `true` to
+/// indicate that their `zmlRe` implementation can be called with an empty
+/// context, returning a view and never erroring.
 pub inline fn re(x: anytype, ctx: anytype) !numeric.Re(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Re(X);
