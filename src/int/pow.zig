@@ -34,7 +34,7 @@ pub fn Pow(comptime X: type, comptime Y: type) type {
 ///
 /// ## Errors
 /// * `error.NegativeExponent`: If `y` is negative.
-pub inline fn pow(x: anytype, y: anytype) !int.Pow(@TypeOf(x), @TypeOf(y)) {
+pub inline fn pow(x: anytype, y: anytype) int.Pow(@TypeOf(x), @TypeOf(y)) {
     const R: type = int.Pow(@TypeOf(x), @TypeOf(y));
 
     if (comptime R == comptime_int) {
@@ -43,7 +43,7 @@ pub inline fn pow(x: anytype, y: anytype) !int.Pow(@TypeOf(x), @TypeOf(y)) {
         comptime var exponent: R = types.scast(R, y);
 
         if (exponent < 0)
-            return error.NegativeExponent;
+            return 0;
 
         inline while (exponent != 0) : (exponent >>= 1) {
             if ((exponent & 1) != 0)
@@ -59,7 +59,7 @@ pub inline fn pow(x: anytype, y: anytype) !int.Pow(@TypeOf(x), @TypeOf(y)) {
         var exponent: R = types.scast(R, y);
 
         if (exponent < 0)
-            return error.NegativeExponent;
+            return 0;
 
         while (exponent != 0) : (exponent >>= 1) {
             if ((exponent & 1) != 0)

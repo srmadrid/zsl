@@ -1,13 +1,9 @@
-const std = @import("std");
-
 const types = @import("../../types.zig");
+
 const int = @import("../../int.zig");
+const rational = @import("../../rational.zig");
 const float = @import("../../float.zig");
 const dyadic = @import("../../dyadic.zig");
-const cfloat = @import("../../cfloat.zig");
-const integer = @import("../../integer.zig");
-const rational = @import("../../rational.zig");
-const real = @import("../../real.zig");
 const complex = @import("../../complex.zig");
 
 const numeric = @import("../../numeric.zig");
@@ -19,12 +15,9 @@ pub fn Abs(X: type) type {
     switch (comptime types.numericType(X)) {
         .bool => return X,
         .int => return X,
+        .rational => return X,
         .float => return X,
         .dyadic => return X,
-        .cfloat => return cfloat.Abs(X),
-        .integer => return X,
-        .rational => return X,
-        .real => return X,
         .complex => return complex.Abs(X),
         .custom => {
             if (comptime !types.hasMethod(X, "ZmlAbs", fn (type) type, &.{X}))
@@ -39,19 +32,14 @@ pub fn Abs(X: type) type {
 ///
 /// ## Signature
 /// ```zig
-/// numeric.abs(x: X, ctx: anytype) !numeric.Abs(X)
+/// numeric.abs(x: X) numeric.Abs(X)
 /// ```
 ///
 /// ## Arguments
 /// * `x` (`anytype`): The numeric value to get the absolute value of.
-/// * `ctx` (`anytype`): A context struct providing necessary resources and
-///   configuration for the operation.
 ///
 /// ## Returns
 /// `numeric.Abs(@TypeOf(x))`: The absolute value of `x`.
-///
-/// ## Errors
-/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
 ///
 /// ## Custom type support
 /// This function supports custom numeric types via specific method
@@ -63,89 +51,28 @@ pub fn Abs(X: type) type {
 ///
 /// `numeric.Abs(X)` or `X` must implement the required `zmlAbs` method. The
 /// expected signature and behavior of `zmlAbs` are as follows:
-/// * `fn zmlAbs(X, anytype) !numeric.Abs(X)`: Returns the absolute value of
-///   `x`, potentially using the provided context for necessary resources. This
-///   function is responsible for validating the context.
-///
-/// Custom types can optionally declare `zml_has_simple_abs` as `true` to
-/// indicate that their `zmlAbs` implementation can be called with an empty
-/// context, returning a view and never erroring.
-pub inline fn abs(x: anytype, ctx: anytype) !numeric.Abs(@TypeOf(x)) {
+/// * `fn zmlAbs(X) numeric.Abs(X)`: Returns the absolute value of `x`.
+pub inline fn abs(x: anytype) numeric.Abs(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Abs(X);
 
     switch (comptime types.numericType(X)) {
-        .bool => {
-            comptime types.validateContext(@TypeOf(ctx), .{});
-
-            return x;
-        },
-        .int => {
-            comptime types.validateContext(@TypeOf(ctx), .{});
-
-            return int.abs(x);
-        },
-        .float => {
-            comptime types.validateContext(@TypeOf(ctx), .{});
-
-            return float.abs(x);
-        },
-        .dyadic => {
-            comptime types.validateContext(@TypeOf(ctx), .{});
-
-            return dyadic.abs(x);
-        },
-        .cfloat => {
-            comptime types.validateContext(@TypeOf(ctx), .{});
-
-            return cfloat.abs(x);
-        },
-        .integer => {
-            comptime types.validateContext(
-                @TypeOf(ctx),
-                .{
-                    .allocator = .{
-                        .type = std.mem.Allocator,
-                        .required = false,
-                        .description = "The allocator to use for the integer's memory allocation. If not provided, a view will be returned.",
-                    },
-                },
-            );
-
-            return if (comptime types.ctxHasField(@TypeOf(ctx), "allocator", std.mem.Allocator))
-                integer.abs(ctx.allocator, x)
-            else
-                integer.abs(null, x) catch unreachable;
-        },
-        .rational => {
-            comptime types.validateContext(
-                @TypeOf(ctx),
-                .{
-                    .allocator = .{
-                        .type = std.mem.Allocator,
-                        .required = false,
-                        .description = "The allocator to use for the rational's memory allocation. If not provided, a view will be returned.",
-                    },
-                },
-            );
-
-            return if (comptime types.ctxHasField(@TypeOf(ctx), "allocator", std.mem.Allocator))
-                rational.abs(ctx.allocator, x)
-            else
-                rational.abs(null, x) catch unreachable;
-        },
-        .real => @compileError("zml.numeric.abs: not implemented for " ++ @typeName(X) ++ " yet."),
-        .complex => @compileError("zml.numeric.abs: not implemented for " ++ @typeName(X) ++ " yet."),
+        .bool => return x,
+        .int => return int.abs(x),
+        .rational => return rational.abs(x),
+        .float => return float.abs(x),
+        .dyadic => return dyadic.abs(x),
+        .complex => return complex.abs(x),
         .custom => {
             const Impl: type = comptime types.anyHasMethod(
                 &.{ R, X },
                 "zmlAbs",
-                fn (X, anytype) anyerror!numeric.Abs(X),
-                &.{ X, @TypeOf(ctx) },
+                fn (X) numeric.Abs(X),
+                &.{X},
             ) orelse
-                @compileError("zml.numeric.abs: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlAbs(" ++ @typeName(X) ++ ", anytype) !" ++ @typeName(R) ++ "`");
+                @compileError("zml.numeric.abs: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlAbs(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
 
-            return Impl.zmlAbs(x, ctx);
+            return Impl.zmlAbs(x);
         },
     }
 }

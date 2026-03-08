@@ -1,12 +1,7 @@
 # Build files
 zig-out/
-zig-cache/
 .zig-cache/
 
 lines.sh
 
 TODO.md
-
-comment_test.py
-test.ipynb
-test_to_array.py

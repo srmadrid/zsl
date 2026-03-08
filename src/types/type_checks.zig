@@ -60,7 +60,7 @@ pub fn isPointer(comptime T: type) bool {
 ///
 /// ## Returns
 /// `bool`: `true` if the type is a many-item pointer, `false` otherwise.
-pub fn isManyPointer(comptime T: type) bool {
+pub fn isManyItemPointer(comptime T: type) bool {
     switch (comptime @typeInfo(T)) {
         .pointer => |info| {
             if (info.size != .many and
@@ -553,24 +553,6 @@ pub fn isExpression(comptime T: type) bool {
     // return T == Expression;
 }
 
-/// Checks if the input numeric type requires allocation.
-///
-/// ## Arguments
-/// * `N` (`comptime type`): The type to check. Must be a supported numeric
-///   type.
-///
-/// ## Returns
-/// `bool`: `true` if the type requires allocation, `false` otherwise.
-pub fn isAllocated(comptime N: type) bool {
-    if (comptime !types.isNumeric(N))
-        @compileError("zml.types.isAllocated: " ++ @typeName(N) ++ " is not a supported numeric type");
-
-    switch (comptime @typeInfo(N)) {
-        .@"struct" => return @hasDecl(N, "zml_is_allocated") and N.zml_is_allocated,
-        else => return false,
-    }
-}
-
 /// Checks if the input numeric type is integral.
 ///
 /// ## Arguments
@@ -614,15 +596,15 @@ pub fn isNonIntegral(comptime N: type) bool {
 ///
 /// ## Returns
 /// `bool`: `true` if the type is real, `false` otherwise.
-pub fn isRealType(comptime N: type) bool {
+pub fn isReal(comptime N: type) bool {
     if (comptime !types.isNumeric(N))
-        @compileError("zml.types.isRealType: " ++ @typeName(N) ++ " is not a supported numeric type");
+        @compileError("zml.types.isReal: " ++ @typeName(N) ++ " is not a supported numeric type");
 
     switch (comptime types.numericType(N)) {
         .bool => return true,
         .int => return true,
         .float => return true,
-        else => return @hasDecl(N, "zml_is_real_type") and N.zml_is_real_type,
+        else => return @hasDecl(N, "zml_is_real") and N.zml_is_real,
     }
 }
 
@@ -634,15 +616,15 @@ pub fn isRealType(comptime N: type) bool {
 ///
 /// ## Returns
 /// `bool`: `true` if the type is complex, `false` otherwise.
-pub fn isComplexType(comptime N: type) bool {
+pub fn isComplex(comptime N: type) bool {
     if (comptime !types.isNumeric(N))
-        @compileError("zml.types.isComplexType: " ++ @typeName(N) ++ " is not a supported numeric type");
+        @compileError("zml.types.isComplex: " ++ @typeName(N) ++ " is not a supported numeric type");
 
     switch (comptime types.numericType(N)) {
         .bool => return false,
         .int => return false,
         .float => return false,
-        else => return @hasDecl(N, "zml_is_complex_type") and N.zml_is_complex_type,
+        else => return @hasDecl(N, "zml_is_complex") and N.zml_is_complex,
     }
 }
 

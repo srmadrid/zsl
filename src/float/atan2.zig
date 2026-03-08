@@ -27,12 +27,12 @@ pub fn Atan2(comptime X: type, comptime Y: type) type {
 /// ```
 ///
 /// ## Arguments
-/// * `x` (`anytype`): The `x` coordinate.
 /// * `y` (`anytype`): The `y` coordinate.
+/// * `x` (`anytype`): The `x` coordinate.
 ///
 /// ## Returns
 /// `float.Atan2(@TypeOf(x), @TypeOf(y))`: The arctangent at `(x, y)`.
-pub inline fn atan2(x: anytype, y: anytype) float.Atan2(@TypeOf(x), @TypeOf(y)) {
+pub inline fn atan2(y: anytype, x: anytype) float.Atan2(@TypeOf(x), @TypeOf(y)) {
     switch (float.Atan2(@TypeOf(x), @TypeOf(y))) {
         f16 => return types.scast(f16, atan2_32(types.scast(f32, x), types.scast(f32, y))),
         f32 => {

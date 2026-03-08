@@ -1,13 +1,9 @@
-const std = @import("std");
-
 const types = @import("../../types.zig");
+
 const int = @import("../../int.zig");
+const rational = @import("../../rational.zig");
 const float = @import("../../float.zig");
 const dyadic = @import("../../dyadic.zig");
-const cfloat = @import("../../cfloat.zig");
-const integer = @import("../../integer.zig");
-const rational = @import("../../rational.zig");
-const real = @import("../../real.zig");
 const complex = @import("../../complex.zig");
 
 const numeric = @import("../../numeric.zig");
@@ -17,15 +13,12 @@ pub fn Cbrt(X: type) type {
         @compileError("zml.numeric.cbrt: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
 
     switch (comptime types.numericType(X)) {
-        .bool => return float.Cbrt(X),
-        .int => return float.Cbrt(X),
-        .float => return float.Cbrt(X),
-        .dyadic => @compileError("zml.numeric.cbrt: not implemented for " ++ @typeName(X) ++ " yet."),
-        .cfloat => @compileError("zml.numeric.cbrt: not implemented for " ++ @typeName(X) ++ " yet."),
-        .integer => @compileError("zml.numeric.cbrt: not implemented for " ++ @typeName(X) ++ " yet."),
-        .rational => @compileError("zml.numeric.cbrt: not implemented for " ++ @typeName(X) ++ " yet."),
-        .real => @compileError("zml.numeric.cbrt: not implemented for " ++ @typeName(X) ++ " yet."),
-        .complex => @compileError("zml.numeric.cbrt: not implemented for " ++ @typeName(X) ++ " yet."),
+        .bool => @compileError("zml.numeric.cbrt: not defined for " ++ @typeName(X) ++ "."),
+        .int => @compileError("zml.numeric.cbrt: not defined for " ++ @typeName(X) ++ "."),
+        .rational => return X,
+        .float => return X,
+        .dyadic => return X,
+        .complex => return X,
         .custom => {
             if (comptime !types.hasMethod(X, "ZmlCbrt", fn (type) type, &.{X}))
                 @compileError("zml.numeric.cbrt: " ++ @typeName(X) ++ " must implement `fn ZmlCbrt(type) type`");
@@ -39,19 +32,14 @@ pub fn Cbrt(X: type) type {
 ///
 /// ## Signature
 /// ```zig
-/// numeric.cbrt(x: X, ctx: anytype) !numeric.Cbrt(X)
+/// numeric.cbrt(x: X) numeric.Cbrt(X)
 /// ```
 ///
 /// ## Arguments
 /// * `x` (`anytype`): The numeric value to get the cube root of.
-/// * `ctx` (`anytype`): A context struct providing necessary resources and
-///   configuration for the operation.
 ///
 /// ## Returns
 /// `numeric.Cbrt(@TypeOf(x))`: The cube root of `x`.
-///
-/// ## Errors
-/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
 ///
 /// ## Custom type support
 /// This function supports custom numeric types via specific method
@@ -63,45 +51,28 @@ pub fn Cbrt(X: type) type {
 ///
 /// `numeric.Cbrt(X)` or `X` must implement the required `zmlCbrt` method. The
 /// expected signature and behavior of `zmlCbrt` are as follows:
-/// * `fn zmlCbrt(X, anytype) !numeric.Cbrt(X)`: Returns the cube root of `x`,
-///   potentially using the provided context for necessary resources. This
-///   function is responsible for validating the context.
-pub inline fn cbrt(x: anytype, ctx: anytype) !numeric.Cbrt(@TypeOf(x)) {
+/// * `fn zmlCbrt(X) numeric.Cbrt(X)`: Returns the cube root of `x`.
+pub inline fn cbrt(x: anytype) numeric.Cbrt(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Cbrt(X);
 
     switch (comptime types.numericType(X)) {
-        .bool => {
-            comptime types.validateContext(@TypeOf(ctx), .{});
-
-            return float.cbrt(x);
-        },
-        .int => {
-            comptime types.validateContext(@TypeOf(ctx), .{});
-
-            return float.cbrt(x);
-        },
-        .float => {
-            comptime types.validateContext(@TypeOf(ctx), .{});
-
-            return float.cbrt(x);
-        },
-        .dyadic => unreachable,
-        .cfloat => unreachable,
-        .integer => unreachable,
-        .rational => unreachable,
-        .real => unreachable,
-        .complex => unreachable,
+        .bool => unreachable,
+        .int => unreachable,
+        .rational => return rational.cbrt(x),
+        .float => return float.cbrt(x),
+        .dyadic => return dyadic.cbrt(x),
+        .complex => return complex.cbrt(x),
         .custom => {
             const Impl: type = comptime types.anyHasMethod(
                 &.{ R, X },
                 "zmlCbrt",
-                fn (X, anytype) anyerror!numeric.Cbrt(X),
-                &.{ X, @TypeOf(ctx) },
+                fn (X) numeric.Cbrt(X),
+                &.{X},
             ) orelse
-                @compileError("zml.numeric.cbrt: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlCbrt(" ++ @typeName(X) ++ ", anytype) !" ++ @typeName(R) ++ "`");
+                @compileError("zml.numeric.cbrt: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlCbrt(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
 
-            return Impl.zmlCbrt(x, ctx);
+            return Impl.zmlCbrt(x);
         },
     }
 }

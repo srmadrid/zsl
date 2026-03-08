@@ -1,8 +1,5 @@
 // Utilities
-pub const init = @import("ops/init.zig").init;
-pub const deinit = @import("ops/deinit.zig").deinit;
 pub const set = @import("ops/set.zig").set;
-pub const copy = @import("ops/copy.zig").copy;
 
 // Basic operations
 pub const Abs = @import("ops/abs.zig").Abs;
@@ -61,18 +58,12 @@ pub const min_ = @import("ops/min_.zig").min_;
 pub const Exp = @import("ops/exp.zig").Exp;
 pub const exp = @import("ops/exp.zig").exp;
 pub const exp_ = @import("ops/exp_.zig").exp_;
-pub const Exp2 = @import("ops/exp2.zig").Exp2;
-pub const exp2 = @import("ops/exp2.zig").exp2;
-pub const exp2_ = @import("ops/exp2_.zig").exp2_;
-pub const Log = @import("ops/log.zig").Log;
-pub const log = @import("ops/log.zig").log;
-pub const log_ = @import("ops/log_.zig").log_;
-pub const Log10 = @import("ops/log10.zig").Log10;
-pub const log10 = @import("ops/log10.zig").log10;
-pub const log10_ = @import("ops/log10_.zig").log10_;
-pub const Log2 = @import("ops/log2.zig").Log2;
-pub const log2 = @import("ops/log2.zig").log2;
-pub const log2_ = @import("ops/log2_.zig").log2_;
+pub const Ln = @import("ops/ln.zig").Ln;
+pub const ln = @import("ops/ln.zig").ln;
+pub const ln_ = @import("ops/ln_.zig").ln_;
+// pub const Log = numops.Log;
+// pub const log = numops.log;
+// pub const log_ = numops.log_;
 
 // Power functions
 pub const Pow = @import("ops/pow.zig").Pow;

@@ -23,8 +23,8 @@ pub fn build(b: *std.Build) void {
     const opt_link_lapacke = b.option([]const u8, "link_lapacke", "Link LAPACKE implementation");
     options.addOption(?[]const u8, "link_lapacke", opt_link_lapacke);
 
-    const module = b.addModule("zml", .{
-        .root_source_file = b.path("src/zml.zig"),
+    const module = b.addModule("zsl", .{
+        .root_source_file = b.path("src/zsl.zig"),
         .target = target,
         .optimize = optimize,
     });
@@ -40,7 +40,7 @@ pub fn build(b: *std.Build) void {
         }),
     });
 
-    exe.root_module.addImport("zml", module);
+    exe.root_module.addImport("zsl", module);
 
     if (opt_link_cblas != null or opt_link_lapacke != null) {
         exe.linkLibC();
@@ -70,7 +70,7 @@ pub fn build(b: *std.Build) void {
         }),
     });
 
-    cblas_lib.root_module.addImport("zml", module);
+    cblas_lib.root_module.addImport("zsl", module);
 
     const cblas_install = b.addInstallArtifact(cblas_lib, .{});
 
@@ -83,13 +83,13 @@ pub fn build(b: *std.Build) void {
 
     const lib_unit_tests = b.addTest(.{
         .root_module = b.createModule(.{
-            .root_source_file = b.path("test/zml.zig"),
+            .root_source_file = b.path("test/zsl.zig"),
             .target = target,
             .optimize = optimize,
         }),
     });
 
-    lib_unit_tests.root_module.addImport("zml", module);
+    lib_unit_tests.root_module.addImport("zsl", module);
 
     if (opt_link_cblas != null or opt_link_lapacke != null) {
         lib_unit_tests.linkLibC();
@@ -107,7 +107,7 @@ pub fn build(b: *std.Build) void {
 
     // Documentation
     const lib = b.addLibrary(.{
-        .name = "zml",
+        .name = "zsl",
         .root_module = module,
     });
 

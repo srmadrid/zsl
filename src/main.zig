@@ -1,5 +1,5 @@
 const std = @import("std");
-const zml = @import("zml");
+const zsl = @import("zsl");
 const ci = @cImport({
     @cInclude("lapacke.h");
 });
@@ -9,15 +9,15 @@ fn avg(values: []const f64) f64 {
     for (values) |value| {
         sum += value;
     }
-    return zml.float.div(sum, values.len);
+    return zsl.float.div(sum, values.len);
 }
 
-fn avg_complex(values: []const zml.cf64) f64 {
+fn avg_complex(values: []const zsl.cf64) f64 {
     var sum: f64 = 0;
     for (values) |value| {
-        sum += zml.cfloat.abs(value);
+        sum += zsl.cfloat.abs(value);
     }
-    return zml.float.div(sum, values.len);
+    return zsl.float.div(sum, values.len);
 }
 
 fn random_buffer(
@@ -47,14 +47,14 @@ fn random_buffer_fill(
 }
 
 fn random_buffer_fill_complex(
-    buffer: []zml.cf64,
+    buffer: []zsl.cf64,
 ) void {
     //var prng = std.Random.DefaultPrng.init(@bitCast(std.time.timestamp()));
     var prng = std.Random.DefaultPrng.init(2); // fixed seed for reproducibility
     const rand = prng.random();
 
     for (0..buffer.len) |i| {
-        buffer[i] = zml.cf64.init(rand.float(f64), rand.float(f64));
+        buffer[i] = zsl.cf64.init(rand.float(f64), rand.float(f64));
     }
 }
 
@@ -64,7 +64,7 @@ pub fn random_matrix(
     m: u32,
     n: u32,
     kappa: f64,
-    order: zml.Order,
+    order: zsl.Layout,
 ) ![]f64 {
     // - `allocator`: memory allocator
     // - `m`, `n`: dimensions
@@ -78,13 +78,13 @@ pub fn random_matrix(
     // 4. Form A = Q₁ * diag(σ) * Q₂ᵀ.
     //     - Compute B = diag(σ) * Q₂ᵀ.
     //     - Then A = Q₁ × B.
-    const r = zml.int.min(m, n);
+    const r = zsl.int.min(m, n);
 
     // 1) geometric singular values σ[i]
     var sig = try allocator.alloc(f64, r);
     defer allocator.free(sig);
     for (0..r) |i| {
-        sig[i] = zml.float.pow(kappa, zml.float.div(zml.scast(f64, i), r - 1));
+        sig[i] = zsl.float.pow(kappa, zsl.float.div(zsl.scast(f64, i), r - 1));
     }
 
     // 2) random X: m×r → QR → Q₁
@@ -94,19 +94,19 @@ pub fn random_matrix(
     defer allocator.free(tauX);
     _ = ci.LAPACKE_dgeqrf(
         order.toCInt(),
-        zml.scast(c_int, m),
-        zml.scast(c_int, r),
+        zsl.scast(c_int, m),
+        zsl.scast(c_int, r),
         X.ptr,
-        zml.scast(c_int, if (order == .col_major) m else r),
+        zsl.scast(c_int, if (order == .col_major) m else r),
         tauX.ptr,
     );
     _ = ci.LAPACKE_dorgqr(
         order.toCInt(),
-        zml.scast(c_int, m),
-        zml.scast(c_int, r),
-        zml.scast(c_int, r),
+        zsl.scast(c_int, m),
+        zsl.scast(c_int, r),
+        zsl.scast(c_int, r),
         X.ptr,
-        zml.scast(c_int, if (order == .col_major) m else r),
+        zsl.scast(c_int, if (order == .col_major) m else r),
         tauX.ptr,
     );
     // X now holds Q₁
@@ -118,19 +118,19 @@ pub fn random_matrix(
     defer allocator.free(tauY);
     _ = ci.LAPACKE_dgeqrf(
         order.toCInt(),
-        zml.scast(c_int, n),
-        zml.scast(c_int, r),
+        zsl.scast(c_int, n),
+        zsl.scast(c_int, r),
         Y.ptr,
-        zml.scast(c_int, if (order == .col_major) n else r),
+        zsl.scast(c_int, if (order == .col_major) n else r),
         tauY.ptr,
     );
     _ = ci.LAPACKE_dorgqr(
         order.toCInt(),
-        zml.scast(c_int, n),
-        zml.scast(c_int, r),
-        zml.scast(c_int, r),
+        zsl.scast(c_int, n),
+        zsl.scast(c_int, r),
+        zsl.scast(c_int, r),
         Y.ptr,
-        zml.scast(c_int, if (order == .col_major) n else r),
+        zsl.scast(c_int, if (order == .col_major) n else r),
         tauY.ptr,
     );
     // Y now holds Q₂
@@ -155,21 +155,21 @@ pub fn random_matrix(
 
     // 4b) A = Q1 (m×r) × B (r×n) → A (m×n)
     const A = try allocator.alloc(f64, m * n);
-    zml.linalg.blas.dgemm(
+    zsl.linalg.blas.dgemm(
         order,
         .no_trans,
         .no_trans,
-        zml.scast(i32, m),
-        zml.scast(i32, n),
-        zml.scast(i32, r),
+        zsl.scast(i32, m),
+        zsl.scast(i32, n),
+        zsl.scast(i32, r),
         1,
         X.ptr,
-        zml.scast(i32, if (order == .col_major) m else r),
+        zsl.scast(i32, if (order == .col_major) m else r),
         B.ptr,
-        zml.scast(i32, if (order == .col_major) r else n),
+        zsl.scast(i32, if (order == .col_major) r else n),
         0,
         A.ptr,
-        zml.scast(i32, if (order == .col_major) m else n),
+        zsl.scast(i32, if (order == .col_major) m else n),
     );
 
     return A;
@@ -181,7 +181,7 @@ pub fn random_matrix_buffer(
     n: u32,
     kappa: f64,
     A: []f64,
-    order: zml.Order,
+    order: zsl.Order,
 ) !void {
     // - `allocator`: memory allocator
     // - `m`, `n`: dimensions
@@ -195,13 +195,13 @@ pub fn random_matrix_buffer(
     // 4. Form A = Q₁ * diag(σ) * Q₂ᵀ.
     //     - Compute B = diag(σ) * Q₂ᵀ.
     //     - Then A = Q₁ × B.
-    const r = zml.int.min(m, n);
+    const r = zsl.int.min(m, n);
 
     // 1) geometric singular values σ[i]
     var sig = try allocator.alloc(f64, r);
     defer allocator.free(sig);
     for (0..r) |i| {
-        sig[i] = zml.float.pow(kappa, zml.float.div(zml.scast(f64, i), r - 1));
+        sig[i] = zsl.float.pow(kappa, zsl.float.div(zsl.scast(f64, i), r - 1));
     }
 
     // 2) random X: m×r → QR → Q₁
@@ -211,19 +211,19 @@ pub fn random_matrix_buffer(
     defer allocator.free(tauX);
     _ = ci.LAPACKE_dgeqrf(
         order.toCInt(),
-        zml.scast(c_int, m),
-        zml.scast(c_int, r),
+        zsl.scast(c_int, m),
+        zsl.scast(c_int, r),
         X.ptr,
-        zml.scast(c_int, if (order == .col_major) m else r),
+        zsl.scast(c_int, if (order == .col_major) m else r),
         tauX.ptr,
     );
     _ = ci.LAPACKE_dorgqr(
         order.toCInt(),
-        zml.scast(c_int, m),
-        zml.scast(c_int, r),
-        zml.scast(c_int, r),
+        zsl.scast(c_int, m),
+        zsl.scast(c_int, r),
+        zsl.scast(c_int, r),
         X.ptr,
-        zml.scast(c_int, if (order == .col_major) m else r),
+        zsl.scast(c_int, if (order == .col_major) m else r),
         tauX.ptr,
     );
     // X now holds Q₁
@@ -235,19 +235,19 @@ pub fn random_matrix_buffer(
     defer allocator.free(tauY);
     _ = ci.LAPACKE_dgeqrf(
         order.toCInt(),
-        zml.scast(c_int, n),
-        zml.scast(c_int, r),
+        zsl.scast(c_int, n),
+        zsl.scast(c_int, r),
         Y.ptr,
-        zml.scast(c_int, if (order == .col_major) n else r),
+        zsl.scast(c_int, if (order == .col_major) n else r),
         tauY.ptr,
     );
     _ = ci.LAPACKE_dorgqr(
         order.toCInt(),
-        zml.scast(c_int, n),
-        zml.scast(c_int, r),
-        zml.scast(c_int, r),
+        zsl.scast(c_int, n),
+        zsl.scast(c_int, r),
+        zsl.scast(c_int, r),
         Y.ptr,
-        zml.scast(c_int, if (order == .col_major) n else r),
+        zsl.scast(c_int, if (order == .col_major) n else r),
         tauY.ptr,
     );
     // Y now holds Q₂
@@ -271,21 +271,21 @@ pub fn random_matrix_buffer(
     }
 
     // 4b) A = Q1 (m×r) × B (r×n) → A (m×n)
-    zml.linalg.blas.dgemm(
+    zsl.linalg.blas.dgemm(
         order,
         .no_trans,
         .no_trans,
-        zml.scast(i32, m),
-        zml.scast(i32, n),
-        zml.scast(i32, r),
+        zsl.scast(i32, m),
+        zsl.scast(i32, n),
+        zsl.scast(i32, r),
         1,
         X.ptr,
-        zml.scast(i32, if (order == .col_major) m else r),
+        zsl.scast(i32, if (order == .col_major) m else r),
         B.ptr,
-        zml.scast(i32, if (order == .col_major) r else n),
+        zsl.scast(i32, if (order == .col_major) r else n),
         0,
         A.ptr,
-        zml.scast(i32, if (order == .col_major) m else n),
+        zsl.scast(i32, if (order == .col_major) m else n),
     );
 }
 
@@ -300,7 +300,7 @@ fn max_difference(a: []const f64, b: []const f64) struct {
 
     var i: u32 = 0;
     while (i < a.len) : (i += 1) {
-        const diff = zml.float.abs(a[i] - b[i]);
+        const diff = zsl.float.abs(a[i] - b[i]);
         if (diff > max_diff) {
             max_diff = diff;
             max_index = i;
@@ -343,7 +343,7 @@ fn random_symmetric_positive_definite_matrix(
     const l_min = 1;
     const l_max = cond_target;
     for (0..size) |i| {
-        lambdas[i] = l_min * zml.float.pow(l_max / l_min, zml.float.div(zml.scast(f64, i), size - 1));
+        lambdas[i] = l_min * zsl.float.pow(l_max / l_min, zsl.float.div(zsl.scast(f64, i), size - 1));
     }
 
     // 2) random X, then QR -> get Q (n×n)
@@ -353,20 +353,20 @@ fn random_symmetric_positive_definite_matrix(
     defer allocator.free(tau);
     // QR factorization in-place: X = Q*R
     _ = ci.LAPACKE_dgeqrf(
-        zml.Order.col_major.toCInt(),
-        zml.scast(c_int, size),
-        zml.scast(c_int, size),
+        zsl.Order.col_major.toCInt(),
+        zsl.scast(c_int, size),
+        zsl.scast(c_int, size),
         X.ptr,
-        zml.scast(c_int, size),
+        zsl.scast(c_int, size),
         tau.ptr,
     );
     _ = ci.LAPACKE_dorgqr(
-        zml.Order.col_major.toCInt(),
-        zml.scast(c_int, size),
-        zml.scast(c_int, size),
-        zml.scast(c_int, size),
+        zsl.Order.col_major.toCInt(),
+        zsl.scast(c_int, size),
+        zsl.scast(c_int, size),
+        zsl.scast(c_int, size),
         X.ptr,
-        zml.scast(c_int, size),
+        zsl.scast(c_int, size),
         tau.ptr,
     );
     // now X holds Q
@@ -381,26 +381,26 @@ fn random_symmetric_positive_definite_matrix(
     }
     // scale row i of B by λ_i
     for (0..size) |i| {
-        zml.linalg.blas.dscal(zml.scast(i32, size), lambdas[i], B.ptr + i * size, 1);
+        zsl.linalg.blas.dscal(zsl.scast(i32, size), lambdas[i], B.ptr + i * size, 1);
     }
 
     // 4) Assemble A = Q * D * Q^T as A = Q * B
     const A = try allocator.alloc(f64, size * size);
-    zml.linalg.blas.dgemm(
+    zsl.linalg.blas.dgemm(
         .col_major,
         .no_trans,
         .no_trans,
-        zml.scast(i32, size),
-        zml.scast(i32, size),
-        zml.scast(i32, size),
+        zsl.scast(i32, size),
+        zsl.scast(i32, size),
+        zsl.scast(i32, size),
         1,
         X.ptr,
-        zml.scast(i32, size),
+        zsl.scast(i32, size),
         B.ptr,
-        zml.scast(i32, size),
+        zsl.scast(i32, size),
         0,
         A.ptr,
-        zml.scast(i32, size),
+        zsl.scast(i32, size),
     );
 
     return A;
@@ -414,21 +414,21 @@ fn frobernius_norm_difference(a: []const f64, b: []const f64) f64 {
         const diff = a[i] - b[i];
         norm += diff * diff;
     }
-    return zml.float.sqrt(norm);
+    return zsl.float.sqrt(norm);
 }
 
 fn frobernius_norm_difference_matrix(a: anytype, b: anytype) !f64 {
-    const m = if (comptime zml.types.isSymmetricMatrix(@TypeOf(a)) or
-        zml.types.isHermitianMatrix(@TypeOf(a)) or
-        zml.types.isTridiagonalMatrix(@TypeOf(a)) or
-        zml.types.isPermutationMatrix(@TypeOf(a)))
+    const m = if (comptime zsl.types.isSymmetricMatrix(@TypeOf(a)) or
+        zsl.types.isHermitianMatrix(@TypeOf(a)) or
+        zsl.types.isTridiagonalMatrix(@TypeOf(a)) or
+        zsl.types.isPermutationMatrix(@TypeOf(a)))
         a.size
     else
         a.rows;
-    const n = if (comptime zml.types.isSymmetricMatrix(@TypeOf(a)) or
-        zml.types.isHermitianMatrix(@TypeOf(a)) or
-        zml.types.isTridiagonalMatrix(@TypeOf(a)) or
-        zml.types.isPermutationMatrix(@TypeOf(a)))
+    const n = if (comptime zsl.types.isSymmetricMatrix(@TypeOf(a)) or
+        zsl.types.isHermitianMatrix(@TypeOf(a)) or
+        zsl.types.isTridiagonalMatrix(@TypeOf(a)) or
+        zsl.types.isPermutationMatrix(@TypeOf(a)))
         a.size
     else
         a.cols;
@@ -439,17 +439,17 @@ fn frobernius_norm_difference_matrix(a: anytype, b: anytype) !f64 {
     while (i < m) : (i += 1) {
         var j: u32 = 0;
         while (j < n) : (j += 1) {
-            if (comptime !zml.types.isComplex(zml.types.Numeric(@TypeOf(a))) and !zml.types.isComplex(zml.types.Numeric(@TypeOf(b)))) {
+            if (comptime !zsl.types.isComplex(zsl.types.Numeric(@TypeOf(a))) and !zsl.types.isComplex(zsl.types.Numeric(@TypeOf(b)))) {
                 const diff = try a.get(i, j) - try b.get(i, j);
                 norm += diff * diff;
             } else {
-                const diff = try zml.sub(try a.get(i, j), try b.get(i, j), .{});
-                norm += try zml.abs2(diff, .{});
+                const diff = try zsl.sub(try a.get(i, j), try b.get(i, j), .{});
+                norm += try zsl.abs2(diff, .{});
             }
         }
     }
 
-    return zml.float.sqrt(norm);
+    return zsl.float.sqrt(norm);
 }
 
 fn is_symmetric(a: []const f64, size: u32) bool {
@@ -468,13 +468,13 @@ fn random_complex_matrix(
     rows: u32,
     cols: u32,
     factor: f64,
-) ![]zml.cf64 {
+) ![]zsl.cf64 {
     var prng = std.Random.DefaultPrng.init(@bitCast(std.time.timestamp()));
     const rand = prng.random();
 
-    const matrix = try allocator.alloc(zml.cf64, rows * cols);
+    const matrix = try allocator.alloc(zsl.cf64, rows * cols);
     for (0..matrix.len) |i| {
-        matrix[i] = zml.cf64.init(rand.float(f64) * factor, rand.float(f64) * factor);
+        matrix[i] = zsl.cf64.init(rand.float(f64) * factor, rand.float(f64) * factor);
     }
     return matrix;
 }
@@ -483,46 +483,46 @@ fn random_complex_hermitian_positive_definite_matrix(
     allocator: std.mem.Allocator,
     size: u32,
     factor: f64,
-) ![]zml.cf64 {
+) ![]zsl.cf64 {
     // allocate M
     const M = try random_complex_matrix(allocator, size, size, factor);
     // allocate A = M M^H
-    const A = try allocator.alloc(zml.cf64, size * size);
+    const A = try allocator.alloc(zsl.cf64, size * size);
 
     // A = M × M^H
-    zml.linalg.blas.zgemm(
+    zsl.linalg.blas.zgemm(
         .row_major,
         .no_trans,
         .conj_trans,
-        zml.scast(i32, size),
-        zml.scast(i32, size),
-        zml.scast(i32, size),
-        zml.cf64.init(1, 0),
+        zsl.scast(i32, size),
+        zsl.scast(i32, size),
+        zsl.scast(i32, size),
+        zsl.cf64.init(1, 0),
         M.ptr,
-        zml.scast(i32, size),
+        zsl.scast(i32, size),
         M.ptr,
-        zml.scast(i32, size),
-        zml.cf64.init(0, 0),
+        zsl.scast(i32, size),
+        zsl.cf64.init(0, 0),
         A.ptr,
-        zml.scast(i32, size),
+        zsl.scast(i32, size),
     );
 
     allocator.free(M);
     return A;
 }
 
-fn frobenius_norm_complex_difference(a: []const zml.cf64, b: []const zml.cf64) f64 {
+fn frobenius_norm_complex_difference(a: []const zsl.cf64, b: []const zsl.cf64) f64 {
     std.debug.assert(a.len == b.len);
 
     var norm: f64 = 0;
     for (0..a.len) |i| {
-        const diff = zml.cfloat.sub(a[i], b[i]);
+        const diff = zsl.cfloat.sub(a[i], b[i]);
         norm += diff.re * diff.re + diff.im * diff.im;
     }
-    return zml.float.sqrt(norm);
+    return zsl.float.sqrt(norm);
 }
 
-fn is_hermitian(a: []const zml.cf64, size: u32) bool {
+fn is_hermitian(a: []const zsl.cf64, size: u32) bool {
     for (0..size) |i| {
         for (i + 1..size) |j| {
             if (!std.math.approxEqRel(f64, a[i * size + j].re, a[j * size + i].re, 1e-9) or
@@ -535,7 +535,7 @@ fn is_hermitian(a: []const zml.cf64, size: u32) bool {
     return true;
 }
 
-fn print_complex_matrix(desc: []const u8, m: u32, n: u32, a: []zml.cf64, lda: u32, order: zml.Order) void {
+fn print_complex_matrix(desc: []const u8, m: u32, n: u32, a: []zsl.cf64, lda: u32, order: zsl.Order) void {
     std.debug.print("\n{s}\n", .{desc});
     if (order == .row_major) {
         var i: u32 = 0;
@@ -564,25 +564,25 @@ pub fn main() !void {
     // defer _ = gpa.deinit();
     // const a = gpa.allocator();
 
-    // var zero = try zml.zero(zml.autodiff.Dual(zml.Integer), .{ .allocator = a, .zero = zml.autodiff.Dual(zml.Integer)._zeroAllocated });
-    // defer zml.deinit(&zero, .{ .allocator = a });
+    // var zero = try zsl.zero(zsl.autodiff.Dual(zsl.Integer), .{ .allocator = a, .zero = zsl.autodiff.Dual(zsl.Integer)._zeroAllocated });
+    // defer zsl.deinit(&zero, .{ .allocator = a });
     // std.debug.print("zero: {}\n", .{zero});
 
     const z: f64 = 1.234567890123456789;
-    const a: zml.autodiff.Dual(zml.cf32) = zml.scast(zml.autodiff.Dual(zml.cf32), z);
-    const b: zml.cf64 = zml.scast(zml.cf64, a);
+    const a: zsl.autodiff.Dual(zsl.cf32) = zsl.scast(zsl.autodiff.Dual(zsl.cf32), z);
+    const b: zsl.cf64 = zsl.scast(zsl.cf64, a);
     std.debug.print("z: {d}\n", .{z});
     std.debug.print("a: {} + {}ε\n", .{ a.val, a.eps });
     std.debug.print("b: {}\n", .{b});
 
     // const a: u64 = 1000;
     // const b: f64 = 1000;
-    // const c = zml.add(a, b, .{}) catch unreachable;
+    // const c = zsl.add(a, b, .{}) catch unreachable;
 
     // std.debug.print("{d} + {d} = {d}\n", .{ a, b, c });
     // std.debug.print("@TypeOf(c) = {s}\n", .{@typeName(@TypeOf(c))});
 
-    // const s = zml.types.mixStructs(.{ .a = a, .b = b }, .{ .c = c });
+    // const s = zsl.types.mixStructs(.{ .a = a, .b = b }, .{ .c = c });
     // std.debug.print("Mixed struct: {}\n", .{s});
     // std.debug.print("Type of s: {s}\n", .{@typeName(@TypeOf(s))});
     // std.debug.print("Fields of s: \n", .{});
@@ -590,7 +590,7 @@ pub fn main() !void {
     //     std.debug.print("\t{s}: {s}\n", .{ field.name, @typeName(field.type) });
     // }
 
-    // const t = zml.types.stripStruct(s, &.{ "a", "c" });
+    // const t = zsl.types.stripStruct(s, &.{ "a", "c" });
     // std.debug.print("Stripped struct: {}\n", .{t});
     // std.debug.print("Type of t: {s}\n", .{@typeName(@TypeOf(t))});
     // std.debug.print("Fields of t: \n", .{});
@@ -627,28 +627,28 @@ fn ask_user(default: u32) !u32 {
 }
 
 fn fill(a: anytype, factor: u32) void {
-    const A: type = zml.types.Numeric(@TypeOf(a));
-    if (comptime zml.types.isVector(@TypeOf(a))) {
+    const A: type = zsl.types.Numeric(@TypeOf(a));
+    if (comptime zsl.types.isVector(@TypeOf(a))) {
         var i: u32 = 0;
         while (i < a.len) : (i += 1) {
-            if (comptime zml.types.isComplex(A)) {
-                a.data[i] = A.init(zml.scast(zml.types.Scalar(A), i + factor), zml.scast(zml.types.Scalar(A), i + factor));
+            if (comptime zsl.types.isComplex(A)) {
+                a.data[i] = A.init(zsl.scast(zsl.types.Scalar(A), i + factor), zsl.scast(zsl.types.Scalar(A), i + factor));
             } else {
-                a.data[i] = zml.scast(A, i + factor);
+                a.data[i] = zsl.scast(A, i + factor);
             }
         }
 
         return;
     }
 
-    switch (comptime zml.types.matrixType(@TypeOf(a))) {
+    switch (comptime zsl.types.matrixType(@TypeOf(a))) {
         .general, .triangular => {
             var i: u32 = 0;
             while (i < a.rows * a.cols) : (i += 1) {
-                if (comptime zml.types.isComplex(A)) {
-                    a.data[i] = A.init(zml.scast(zml.types.Scalar(A), i + factor), zml.scast(zml.types.Scalar(A), i + factor));
+                if (comptime zsl.types.isComplex(A)) {
+                    a.data[i] = A.init(zsl.scast(zsl.types.Scalar(A), i + factor), zsl.scast(zsl.types.Scalar(A), i + factor));
                 } else {
-                    a.data[i] = zml.scast(A, i + factor);
+                    a.data[i] = zsl.scast(A, i + factor);
                 }
             }
         },
@@ -656,47 +656,47 @@ fn fill(a: anytype, factor: u32) void {
             var i: u32 = 0;
             while (i < a.size * a.size) : (i += 1) {
                 if (i % (a.size + 1) == 0) {
-                    if (comptime zml.types.isComplex(A)) {
-                        a.data[i] = A.init(zml.scast(zml.types.Scalar(A), i + factor), if (comptime zml.types.isHermitianMatrix(@TypeOf(a))) 0 else zml.scast(zml.types.Scalar(A), i + factor));
+                    if (comptime zsl.types.isComplex(A)) {
+                        a.data[i] = A.init(zsl.scast(zsl.types.Scalar(A), i + factor), if (comptime zsl.types.isHermitianMatrix(@TypeOf(a))) 0 else zsl.scast(zsl.types.Scalar(A), i + factor));
                     } else {
-                        a.data[i] = zml.scast(A, i + factor);
+                        a.data[i] = zsl.scast(A, i + factor);
                     }
                 } else {
-                    if (comptime zml.types.isComplex(A)) {
-                        a.data[i] = A.init(zml.scast(zml.types.Scalar(A), i + factor), zml.scast(zml.types.Scalar(A), i + factor));
+                    if (comptime zsl.types.isComplex(A)) {
+                        a.data[i] = A.init(zsl.scast(zsl.types.Scalar(A), i + factor), zsl.scast(zsl.types.Scalar(A), i + factor));
                     } else {
-                        a.data[i] = zml.scast(A, i + factor);
+                        a.data[i] = zsl.scast(A, i + factor);
                     }
                 }
             }
         },
         .diagonal => {
             var i: u32 = 0;
-            while (i < zml.int.min(a.rows, a.cols)) : (i += 1) {
-                if (comptime zml.types.isComplex(A)) {
-                    a.data[i] = A.init(zml.scast(zml.types.Scalar(A), i + factor), zml.scast(zml.types.Scalar(A), i + factor));
+            while (i < zsl.int.min(a.rows, a.cols)) : (i += 1) {
+                if (comptime zsl.types.isComplex(A)) {
+                    a.data[i] = A.init(zsl.scast(zsl.types.Scalar(A), i + factor), zsl.scast(zsl.types.Scalar(A), i + factor));
                 } else {
-                    a.data[i] = zml.scast(A, i + factor);
+                    a.data[i] = zsl.scast(A, i + factor);
                 }
             }
         },
         .banded => {
             var i: u32 = 0;
-            while (i < (a.lower + a.upper + 1) * if (zml.types.orderOf(@TypeOf(a)) == .col_major) a.cols else a.rows) : (i += 1) {
-                if (comptime zml.types.isComplex(A)) {
-                    a.data[i] = A.init(zml.scast(zml.types.Scalar(A), i + factor), zml.scast(zml.types.Scalar(A), i + factor));
+            while (i < (a.lower + a.upper + 1) * if (zsl.types.orderOf(@TypeOf(a)) == .col_major) a.cols else a.rows) : (i += 1) {
+                if (comptime zsl.types.isComplex(A)) {
+                    a.data[i] = A.init(zsl.scast(zsl.types.Scalar(A), i + factor), zsl.scast(zsl.types.Scalar(A), i + factor));
                 } else {
-                    a.data[i] = zml.scast(A, i + factor);
+                    a.data[i] = zsl.scast(A, i + factor);
                 }
             }
         },
         .tridiagonal => {
             var i: u32 = 0;
             while (i < (3 * a.size - 2)) : (i += 1) {
-                if (comptime zml.types.isComplex(A)) {
-                    a.data[i] = A.init(zml.scast(zml.types.Scalar(A), i + factor), zml.scast(zml.types.Scalar(A), i + factor));
+                if (comptime zsl.types.isComplex(A)) {
+                    a.data[i] = A.init(zsl.scast(zsl.types.Scalar(A), i + factor), zsl.scast(zsl.types.Scalar(A), i + factor));
                 } else {
-                    a.data[i] = zml.scast(A, i + factor);
+                    a.data[i] = zsl.scast(A, i + factor);
                 }
             }
         },
@@ -708,11 +708,11 @@ fn fill(a: anytype, factor: u32) void {
 }
 
 fn print(name: []const u8, a: anytype) void {
-    if (comptime zml.types.isVector(@TypeOf(a))) {
+    if (comptime zsl.types.isVector(@TypeOf(a))) {
         std.debug.print("Vector {s}:\n", .{name});
         var i: u32 = 0;
         while (i < a.len) : (i += 1) {
-            if (comptime zml.types.isComplex(zml.types.Numeric(@TypeOf(a)))) {
+            if (comptime zsl.types.isComplex(zsl.types.Numeric(@TypeOf(a)))) {
                 std.debug.print("{d:3} + {d:3}i\n", .{ (a.get(i) catch unreachable).re, (a.get(i) catch unreachable).im });
             } else {
                 std.debug.print("{d:3}\n", .{a.get(i) catch unreachable});
@@ -720,12 +720,12 @@ fn print(name: []const u8, a: anytype) void {
         }
     } else {
         std.debug.print("Matrix {s}:\n", .{name});
-        if (comptime zml.types.isSymmetricDenseMatrix(@TypeOf(a)) or zml.types.isHermitianDenseMatrix(@TypeOf(a)) or zml.types.isTridiagonalDenseMatrix(@TypeOf(a)) or zml.types.isSymmetricSparseMatrix(@TypeOf(a)) or zml.types.isHermitianSparseMatrix(@TypeOf(a)) or zml.types.isSymmetricBlockSparseMatrix(@TypeOf(a)) or zml.types.isHermitianBlockSparseMatrix(@TypeOf(a))) {
+        if (comptime zsl.types.isSymmetricDenseMatrix(@TypeOf(a)) or zsl.types.isHermitianDenseMatrix(@TypeOf(a)) or zsl.types.isTridiagonalDenseMatrix(@TypeOf(a)) or zsl.types.isSymmetricSparseMatrix(@TypeOf(a)) or zsl.types.isHermitianSparseMatrix(@TypeOf(a)) or zsl.types.isSymmetricBlockSparseMatrix(@TypeOf(a)) or zsl.types.isHermitianBlockSparseMatrix(@TypeOf(a))) {
             var i: u32 = 0;
             while (i < a.size) : (i += 1) {
                 var j: u32 = 0;
                 while (j < a.size) : (j += 1) {
-                    if (comptime zml.types.isComplex(zml.types.Numeric(@TypeOf(a)))) {
+                    if (comptime zsl.types.isComplex(zsl.types.Numeric(@TypeOf(a)))) {
                         std.debug.print("{d:8.4} + {d:8.4}i  ", .{ (a.get(i, j) catch unreachable).re, (a.get(i, j) catch unreachable).im });
                     } else {
                         std.debug.print("{d:8.4}  ", .{a.get(i, j) catch unreachable});
@@ -734,12 +734,12 @@ fn print(name: []const u8, a: anytype) void {
                 std.debug.print("\n", .{});
             }
             std.debug.print("\n", .{});
-        } else if (comptime zml.types.isPermutationSparseMatrix(@TypeOf(a))) {
+        } else if (comptime zsl.types.isPermutationSparseMatrix(@TypeOf(a))) {
             var i: u32 = 0;
             while (i < a.size) : (i += 1) {
                 var j: u32 = 0;
                 while (j < a.size) : (j += 1) {
-                    if (comptime zml.types.isComplex(zml.types.Numeric(@TypeOf(a)))) {
+                    if (comptime zsl.types.isComplex(zsl.types.Numeric(@TypeOf(a)))) {
                         std.debug.print("{d}  ", .{(a.get(i, j) catch unreachable).re});
                     } else {
                         std.debug.print("{d}  ", .{a.get(i, j) catch unreachable});
@@ -753,7 +753,7 @@ fn print(name: []const u8, a: anytype) void {
             while (i < a.rows) : (i += 1) {
                 var j: u32 = 0;
                 while (j < a.cols) : (j += 1) {
-                    if (comptime zml.types.isComplex(zml.types.Numeric(@TypeOf(a)))) {
+                    if (comptime zsl.types.isComplex(zsl.types.Numeric(@TypeOf(a)))) {
                         std.debug.print("{d:8.4} + {d:8.4}i  ", .{ (a.get(i, j) catch unreachable).re, (a.get(i, j) catch unreachable).im });
                     } else {
                         std.debug.print("{d:8.4}  ", .{a.get(i, j) catch unreachable});
@@ -779,7 +779,7 @@ fn randomPermutation(data: []u32) void {
     }
 
     // Shuffle using Fisher-Yates algorithm
-    i = zml.scast(u32, data.len - 1);
+    i = zsl.scast(u32, data.len - 1);
     while (i > 0) : (i -= 1) {
         const j = rand.intRangeAtMost(u32, 0, i);
         const temp = data[i];
@@ -791,24 +791,24 @@ fn randomPermutation(data: []u32) void {
 fn binopPerfTesting(a: std.mem.Allocator) !void {
     const print_mats: bool = true;
 
-    var A: zml.matrix.General(f64, .col_major) = try .init(a, 8, 8);
+    var A: zsl.matrix.General(f64, .col_major) = try .init(a, 8, 8);
     defer A.deinit(a);
 
     fill(A, 1);
     if (print_mats) print("A", A);
 
-    var B: zml.matrix.Permutation(f64) = try .init(a, 8);
+    var B: zsl.matrix.Permutation(f64) = try .init(a, 8);
     defer B.deinit(a);
 
     fill(B, 2);
     if (print_mats) print("B", B.transpose());
 
     const start_time = std.time.nanoTimestamp();
-    var C = try zml.mul(A, B.transpose(), .{ .matrix_allocator = a });
+    var C = try zsl.mul(A, B.transpose(), .{ .matrix_allocator = a });
     const end_time: i128 = std.time.nanoTimestamp();
     defer C.deinit(a);
 
-    std.debug.print("Took: {d} seconds\n\n", .{zml.float.div(end_time - start_time, 1e9)});
+    std.debug.print("Took: {d} seconds\n\n", .{zsl.float.div(end_time - start_time, 1e9)});
 
     if (print_mats) print("C = A * B", C);
 }
@@ -816,24 +816,24 @@ fn binopPerfTesting(a: std.mem.Allocator) !void {
 fn decompPerfTesting(a: std.mem.Allocator) !void {
     const print_mats: bool = false;
 
-    var A: zml.matrix.General(zml.cf64, .row_major) = try .init(a, 2000, 1000);
+    var A: zsl.matrix.General(zsl.cf64, .row_major) = try .init(a, 2000, 1000);
     defer A.deinit(a);
 
     //fill(A, 2);
     random_buffer_fill_complex(A.data[0 .. A.rows * A.cols]);
     if (print_mats) print("A", A);
 
-    const tau: []zml.cf64 = try a.alloc(zml.cf64, zml.int.min(A.rows, A.cols));
+    const tau: []zsl.cf64 = try a.alloc(zsl.cf64, zsl.int.min(A.rows, A.cols));
     defer a.free(tau);
-    const work: []zml.cf64 = try a.alloc(zml.cf64, A.cols * 32);
+    const work: []zsl.cf64 = try a.alloc(zsl.cf64, A.cols * 32);
     defer a.free(work);
 
     var start_time = std.time.nanoTimestamp();
-    var qr = try zml.linalg.qr(a, A, .{});
+    var qr = try zsl.linalg.qr(a, A, .{});
     var end_time: i128 = std.time.nanoTimestamp();
     defer qr.deinit(a);
 
-    std.debug.print("Decomposition took: {d} seconds\n\n", .{zml.float.div(end_time - start_time, 1e9)});
+    std.debug.print("Decomposition took: {d} seconds\n\n", .{zsl.float.div(end_time - start_time, 1e9)});
 
     var q = try qr.q(a, .full, .{});
     defer q.deinit(a);
@@ -843,11 +843,11 @@ fn decompPerfTesting(a: std.mem.Allocator) !void {
     if (print_mats) print("R", r);
 
     start_time = std.time.nanoTimestamp();
-    var A_reconstructed = try zml.mul(q, r, .{ .matrix_allocator = a });
+    var A_reconstructed = try zsl.mul(q, r, .{ .matrix_allocator = a });
     defer A_reconstructed.deinit(a);
     end_time = std.time.nanoTimestamp();
 
-    std.debug.print("Reconstruction took: {d} seconds\n\n", .{zml.float.div(end_time - start_time, 1e9)});
+    std.debug.print("Reconstruction took: {d} seconds\n\n", .{zsl.float.div(end_time - start_time, 1e9)});
 
     if (print_mats) print("A reconstructed", A_reconstructed);
 
@@ -861,7 +861,7 @@ fn random_matrix_t(
     rows: u32,
     cols: u32,
 ) !T {
-    switch (comptime zml.types.matrixType(T)) {
+    switch (comptime zsl.types.matrixType(T)) {
         .general_dense => {
             var result: T = try .init(allocator, rows, cols);
 
@@ -869,26 +869,26 @@ fn random_matrix_t(
             while (i < rows) : (i += 1) {
                 var j: u32 = 0;
                 while (j < cols) : (j += 1) {
-                    if (comptime !zml.types.isArbitraryPrecision(zml.types.Numeric(T))) {
-                        if (comptime zml.types.isComplex(zml.types.Numeric(T))) {
-                            result.set(i, j, zml.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
+                    if (comptime !zsl.types.isArbitraryPrecision(zsl.types.Numeric(T))) {
+                        if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
+                            result.set(i, j, zsl.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
                         } else {
-                            result.set(i, j, rand.float(zml.types.Numeric(T))) catch unreachable;
+                            result.set(i, j, rand.float(zsl.types.Numeric(T))) catch unreachable;
                         }
                     } else {
-                        if (comptime zml.types.isComplex(zml.types.Numeric(T))) {
-                            var re: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                        if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
+                            var re: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                             re.num.positive = rand.boolean();
-                            var im: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                            var im: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                             im.num.positive = rand.boolean();
-                            const complex: zml.Complex(zml.Rational) = zml.Complex(zml.Rational){
+                            const complex: zsl.Complex(zsl.Rational) = zsl.Complex(zsl.Rational){
                                 .re = re,
                                 .im = im,
                                 .flags = .{ .owns_data = true, .writable = true },
                             };
                             result.set(i, j, complex) catch unreachable;
                         } else {
-                            var rational: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                            var rational: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                             rational.num.positive = rand.float(f64) < 0.5;
                             result.set(i, j, rational) catch unreachable;
                         }
@@ -901,38 +901,38 @@ fn random_matrix_t(
         .symmetric_dense, .hermitian_dense => {
             var result: T = try .init(allocator, rows);
 
-            if (comptime zml.types.uploOf(T) == .upper) {
+            if (comptime zsl.types.uploOf(T) == .upper) {
                 var i: u32 = 0;
                 while (i < rows) : (i += 1) {
                     var j: u32 = i;
                     while (j < rows) : (j += 1) {
-                        if (comptime !zml.types.isArbitraryPrecision(zml.types.Numeric(T))) {
-                            if (comptime zml.types.isComplex(zml.types.Numeric(T))) {
-                                if ((comptime zml.types.isHermitianDenseMatrix(T)) and i == j) {
-                                    result.set(i, j, zml.types.Numeric(T).init(rand.float(f64), 0)) catch unreachable;
+                        if (comptime !zsl.types.isArbitraryPrecision(zsl.types.Numeric(T))) {
+                            if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
+                                if ((comptime zsl.types.isHermitianDenseMatrix(T)) and i == j) {
+                                    result.set(i, j, zsl.types.Numeric(T).init(rand.float(f64), 0)) catch unreachable;
                                 } else {
-                                    result.set(i, j, zml.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
+                                    result.set(i, j, zsl.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
                                 }
                             } else {
-                                result.set(i, j, rand.float(zml.types.Numeric(T))) catch unreachable;
+                                result.set(i, j, rand.float(zsl.types.Numeric(T))) catch unreachable;
                             }
                         } else {
-                            if (comptime zml.types.isComplex(zml.types.Numeric(T))) {
-                                if ((comptime zml.types.isHermitianDenseMatrix(T)) and i == j) {
-                                    var re: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                            if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
+                                if ((comptime zsl.types.isHermitianDenseMatrix(T)) and i == j) {
+                                    var re: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                                     re.num.positive = rand.boolean();
-                                    const complex: zml.Complex(zml.Rational) = zml.Complex(zml.Rational){
+                                    const complex: zsl.Complex(zsl.Rational) = zsl.Complex(zsl.Rational){
                                         .re = re,
-                                        .im = zml.zero(zml.Rational, .{}) catch unreachable,
+                                        .im = zsl.zero(zsl.Rational, .{}) catch unreachable,
                                         .flags = .{ .owns_data = true, .writable = true },
                                     };
                                     result.set(i, j, complex) catch unreachable;
                                 } else {
-                                    var re: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                                    var re: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                                     re.num.positive = rand.boolean();
-                                    var im: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                                    var im: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                                     im.num.positive = rand.boolean();
-                                    const complex: zml.Complex(zml.Rational) = zml.Complex(zml.Rational){
+                                    const complex: zsl.Complex(zsl.Rational) = zsl.Complex(zsl.Rational){
                                         .re = re,
                                         .im = im,
                                         .flags = .{ .owns_data = true, .writable = true },
@@ -940,7 +940,7 @@ fn random_matrix_t(
                                     result.set(i, j, complex) catch unreachable;
                                 }
                             } else {
-                                var rational: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                                var rational: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                                 rational.num.positive = rand.float(f64) < 0.5;
                                 result.set(i, j, rational) catch unreachable;
                             }
@@ -952,33 +952,33 @@ fn random_matrix_t(
                 while (i < rows) : (i += 1) {
                     var j: u32 = 0;
                     while (j < rows) : (j += 1) {
-                        if (comptime !zml.types.isArbitraryPrecision(zml.types.Numeric(T))) {
-                            if (comptime zml.types.isComplex(zml.types.Numeric(T))) {
-                                if ((comptime zml.types.isHermitianDenseMatrix(T)) and i == j) {
-                                    result.set(i, j, zml.types.Numeric(T).init(rand.float(f64), 0)) catch unreachable;
+                        if (comptime !zsl.types.isArbitraryPrecision(zsl.types.Numeric(T))) {
+                            if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
+                                if ((comptime zsl.types.isHermitianDenseMatrix(T)) and i == j) {
+                                    result.set(i, j, zsl.types.Numeric(T).init(rand.float(f64), 0)) catch unreachable;
                                 } else {
-                                    result.set(i, j, zml.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
+                                    result.set(i, j, zsl.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
                                 }
                             } else {
-                                result.set(i, j, rand.float(zml.types.Numeric(T))) catch unreachable;
+                                result.set(i, j, rand.float(zsl.types.Numeric(T))) catch unreachable;
                             }
                         } else {
-                            if (comptime zml.types.isComplex(zml.types.Numeric(T))) {
-                                if ((comptime zml.types.isHermitianDenseMatrix(T)) and i == j) {
-                                    var re: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                            if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
+                                if ((comptime zsl.types.isHermitianDenseMatrix(T)) and i == j) {
+                                    var re: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                                     re.num.positive = rand.boolean();
-                                    const complex: zml.Complex(zml.Rational) = zml.Complex(zml.Rational){
+                                    const complex: zsl.Complex(zsl.Rational) = zsl.Complex(zsl.Rational){
                                         .re = re,
-                                        .im = zml.zero(zml.Rational, .{}) catch unreachable,
+                                        .im = zsl.zero(zsl.Rational, .{}) catch unreachable,
                                         .flags = .{ .owns_data = true, .writable = true },
                                     };
                                     result.set(i, j, complex) catch unreachable;
                                 } else {
-                                    var re: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                                    var re: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                                     re.num.positive = rand.boolean();
-                                    var im: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                                    var im: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                                     im.num.positive = rand.boolean();
-                                    const complex: zml.Complex(zml.Rational) = zml.Complex(zml.Rational){
+                                    const complex: zsl.Complex(zsl.Rational) = zsl.Complex(zsl.Rational){
                                         .re = re,
                                         .im = im,
                                         .flags = .{ .owns_data = true, .writable = true },
@@ -986,7 +986,7 @@ fn random_matrix_t(
                                     result.set(i, j, complex) catch unreachable;
                                 }
                             } else {
-                                var rational: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                                var rational: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                                 rational.num.positive = rand.float(f64) < 0.5;
                                 result.set(i, j, rational) catch unreachable;
                             }
@@ -1000,30 +1000,30 @@ fn random_matrix_t(
         .triangular_dense => {
             var result: T = try T.init(allocator, rows, cols);
 
-            if (comptime zml.types.uploOf(T) == .upper) {
+            if (comptime zsl.types.uploOf(T) == .upper) {
                 var i: u32 = 0;
-                while (i < zml.int.min(rows, cols)) : (i += 1) {
-                    if (comptime zml.types.diagOf(T) == .non_unit) {
-                        if (comptime !zml.types.isArbitraryPrecision(zml.types.Numeric(T))) {
-                            if (comptime zml.types.isComplex(zml.types.Numeric(T))) {
-                                result.set(i, i, zml.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
+                while (i < zsl.int.min(rows, cols)) : (i += 1) {
+                    if (comptime zsl.types.diagOf(T) == .non_unit) {
+                        if (comptime !zsl.types.isArbitraryPrecision(zsl.types.Numeric(T))) {
+                            if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
+                                result.set(i, i, zsl.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
                             } else {
-                                result.set(i, i, rand.float(zml.types.Numeric(T))) catch unreachable;
+                                result.set(i, i, rand.float(zsl.types.Numeric(T))) catch unreachable;
                             }
                         } else {
-                            if (comptime zml.types.isComplex(zml.types.Numeric(T))) {
-                                var re: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                            if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
+                                var re: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                                 re.num.positive = rand.boolean();
-                                var im: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                                var im: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                                 im.num.positive = rand.boolean();
-                                const complex: zml.Complex(zml.Rational) = zml.Complex(zml.Rational){
+                                const complex: zsl.Complex(zsl.Rational) = zsl.Complex(zsl.Rational){
                                     .re = re,
                                     .im = im,
                                     .flags = .{ .owns_data = true, .writable = true },
                                 };
                                 result.set(i, i, complex) catch unreachable;
                             } else {
-                                var rational: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                                var rational: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                                 rational.num.positive = rand.float(f64) < 0.5;
                                 result.set(i, i, rational) catch unreachable;
                             }
@@ -1032,26 +1032,26 @@ fn random_matrix_t(
 
                     var j: u32 = i + 1;
                     while (j < cols) : (j += 1) {
-                        if (comptime !zml.types.isArbitraryPrecision(zml.types.Numeric(T))) {
-                            if (comptime zml.types.isComplex(zml.types.Numeric(T))) {
-                                result.set(i, j, zml.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
+                        if (comptime !zsl.types.isArbitraryPrecision(zsl.types.Numeric(T))) {
+                            if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
+                                result.set(i, j, zsl.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
                             } else {
-                                result.set(i, j, rand.float(zml.types.Numeric(T))) catch unreachable;
+                                result.set(i, j, rand.float(zsl.types.Numeric(T))) catch unreachable;
                             }
                         } else {
-                            if (comptime zml.types.isComplex(zml.types.Numeric(T))) {
-                                var re: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                            if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
+                                var re: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                                 re.num.positive = rand.boolean();
-                                var im: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                                var im: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                                 im.num.positive = rand.boolean();
-                                const complex: zml.Complex(zml.Rational) = zml.Complex(zml.Rational){
+                                const complex: zsl.Complex(zsl.Rational) = zsl.Complex(zsl.Rational){
                                     .re = re,
                                     .im = im,
                                     .flags = .{ .owns_data = true, .writable = true },
                                 };
                                 result.set(i, j, complex) catch unreachable;
                             } else {
-                                var rational: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                                var rational: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                                 rational.num.positive = rand.float(f64) < 0.5;
                                 result.set(i, j, rational) catch unreachable;
                             }
@@ -1063,53 +1063,53 @@ fn random_matrix_t(
                 while (i < rows) : (i += 1) {
                     var j: u32 = 0;
                     while (j < i and j < cols) : (j += 1) {
-                        if (comptime !zml.types.isArbitraryPrecision(zml.types.Numeric(T))) {
-                            if (comptime zml.types.isComplex(zml.types.Numeric(T))) {
-                                result.set(i, j, zml.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
+                        if (comptime !zsl.types.isArbitraryPrecision(zsl.types.Numeric(T))) {
+                            if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
+                                result.set(i, j, zsl.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
                             } else {
-                                result.set(i, j, rand.float(zml.types.Numeric(T))) catch unreachable;
+                                result.set(i, j, rand.float(zsl.types.Numeric(T))) catch unreachable;
                             }
                         } else {
-                            if (comptime zml.types.isComplex(zml.types.Numeric(T))) {
-                                var re: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                            if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
+                                var re: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                                 re.num.positive = rand.boolean();
-                                var im: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                                var im: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                                 im.num.positive = rand.boolean();
-                                const complex: zml.Complex(zml.Rational) = zml.Complex(zml.Rational){
+                                const complex: zsl.Complex(zsl.Rational) = zsl.Complex(zsl.Rational){
                                     .re = re,
                                     .im = im,
                                     .flags = .{ .owns_data = true, .writable = true },
                                 };
                                 result.set(i, j, complex) catch unreachable;
                             } else {
-                                var rational: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                                var rational: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                                 rational.num.positive = rand.float(f64) < 0.5;
                                 result.set(i, j, rational) catch unreachable;
                             }
                         }
                     }
 
-                    if ((comptime zml.types.diagOf(T) == .non_unit) and i < cols) {
-                        if (comptime !zml.types.isArbitraryPrecision(zml.types.Numeric(T))) {
-                            if (comptime zml.types.isComplex(zml.types.Numeric(T))) {
-                                result.set(i, i, zml.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
+                    if ((comptime zsl.types.diagOf(T) == .non_unit) and i < cols) {
+                        if (comptime !zsl.types.isArbitraryPrecision(zsl.types.Numeric(T))) {
+                            if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
+                                result.set(i, i, zsl.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
                             } else {
-                                result.set(i, i, rand.float(zml.types.Numeric(T))) catch unreachable;
+                                result.set(i, i, rand.float(zsl.types.Numeric(T))) catch unreachable;
                             }
                         } else {
-                            if (comptime zml.types.isComplex(zml.types.Numeric(T))) {
-                                var re: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                            if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
+                                var re: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                                 re.num.positive = rand.boolean();
-                                var im: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                                var im: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                                 im.num.positive = rand.boolean();
-                                const complex: zml.Complex(zml.Rational) = zml.Complex(zml.Rational){
+                                const complex: zsl.Complex(zsl.Rational) = zsl.Complex(zsl.Rational){
                                     .re = re,
                                     .im = im,
                                     .flags = .{ .owns_data = true, .writable = true },
                                 };
                                 result.set(i, i, complex) catch unreachable;
                             } else {
-                                var rational: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                                var rational: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                                 rational.num.positive = rand.float(f64) < 0.5;
                                 result.set(i, i, rational) catch unreachable;
                             }
@@ -1129,29 +1129,29 @@ fn random_matrix_t(
             var i: u32 = 0;
             while (i < rows) : (i += 1) {
                 const j_start = if (i >= lower) i - lower else 0;
-                const j_end = zml.int.min(cols, i + upper + 1);
+                const j_end = zsl.int.min(cols, i + upper + 1);
                 var j: u32 = j_start;
                 while (j < j_end) : (j += 1) {
-                    if (comptime !zml.types.isArbitraryPrecision(zml.types.Numeric(T))) {
-                        if (comptime zml.types.isComplex(zml.types.Numeric(T))) {
-                            result.set(i, j, zml.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
+                    if (comptime !zsl.types.isArbitraryPrecision(zsl.types.Numeric(T))) {
+                        if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
+                            result.set(i, j, zsl.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
                         } else {
-                            result.set(i, j, rand.float(zml.types.Numeric(T))) catch unreachable;
+                            result.set(i, j, rand.float(zsl.types.Numeric(T))) catch unreachable;
                         }
                     } else {
-                        if (comptime zml.types.isComplex(zml.types.Numeric(T))) {
-                            var re: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                        if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
+                            var re: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                             re.num.positive = rand.boolean();
-                            var im: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                            var im: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                             im.num.positive = rand.boolean();
-                            const complex: zml.Complex(zml.Rational) = zml.Complex(zml.Rational){
+                            const complex: zsl.Complex(zsl.Rational) = zsl.Complex(zsl.Rational){
                                 .re = re,
                                 .im = im,
                                 .flags = .{ .owns_data = true, .writable = true },
                             };
                             result.set(i, j, complex) catch unreachable;
                         } else {
-                            var rational: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                            var rational: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                             rational.num.positive = rand.float(f64) < 0.5;
                             result.set(i, j, rational) catch unreachable;
                         }
@@ -1166,27 +1166,27 @@ fn random_matrix_t(
             errdefer result.deinit(allocator);
 
             var i: u32 = 0;
-            while (i < zml.int.min(rows, cols)) : (i += 1) {
-                if (comptime !zml.types.isArbitraryPrecision(zml.types.Numeric(T))) {
-                    if (comptime zml.types.isComplex(zml.types.Numeric(T))) {
-                        result.set(i, i, zml.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
+            while (i < zsl.int.min(rows, cols)) : (i += 1) {
+                if (comptime !zsl.types.isArbitraryPrecision(zsl.types.Numeric(T))) {
+                    if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
+                        result.set(i, i, zsl.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
                     } else {
-                        result.set(i, i, rand.float(zml.types.Numeric(T))) catch unreachable;
+                        result.set(i, i, rand.float(zsl.types.Numeric(T))) catch unreachable;
                     }
                 } else {
-                    if (comptime zml.types.isComplex(zml.types.Numeric(T))) {
-                        var re: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                    if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
+                        var re: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                         re.num.positive = rand.boolean();
-                        var im: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                        var im: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                         im.num.positive = rand.boolean();
-                        const complex: zml.Complex(zml.Rational) = zml.Complex(zml.Rational){
+                        const complex: zsl.Complex(zsl.Rational) = zsl.Complex(zsl.Rational){
                             .re = re,
                             .im = im,
                             .flags = .{ .owns_data = true, .writable = true },
                         };
                         result.set(i, i, complex) catch unreachable;
                     } else {
-                        var rational: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                        var rational: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                         rational.num.positive = rand.float(f64) < 0.5;
                         result.set(i, i, rational) catch unreachable;
                     }
@@ -1202,78 +1202,78 @@ fn random_matrix_t(
             var i: u32 = 0;
             while (i < rows) : (i += 1) {
                 if (i > 0) {
-                    if (comptime !zml.types.isArbitraryPrecision(zml.types.Numeric(T))) {
-                        if (comptime zml.types.isComplex(zml.types.Numeric(T))) {
-                            result.set(i, i - 1, zml.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
+                    if (comptime !zsl.types.isArbitraryPrecision(zsl.types.Numeric(T))) {
+                        if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
+                            result.set(i, i - 1, zsl.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
                         } else {
-                            result.set(i, i - 1, rand.float(zml.types.Numeric(T))) catch unreachable;
+                            result.set(i, i - 1, rand.float(zsl.types.Numeric(T))) catch unreachable;
                         }
                     } else {
-                        if (comptime zml.types.isComplex(zml.types.Numeric(T))) {
-                            var re: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                        if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
+                            var re: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                             re.num.positive = rand.boolean();
-                            var im: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                            var im: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                             im.num.positive = rand.boolean();
-                            const complex: zml.Complex(zml.Rational) = zml.Complex(zml.Rational){
+                            const complex: zsl.Complex(zsl.Rational) = zsl.Complex(zsl.Rational){
                                 .re = re,
                                 .im = im,
                                 .flags = .{ .owns_data = true, .writable = true },
                             };
                             result.set(i, i - 1, complex) catch unreachable;
                         } else {
-                            var rational: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                            var rational: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                             rational.num.positive = rand.float(f64) < 0.5;
                             result.set(i, i - 1, rational) catch unreachable;
                         }
                     }
                 }
 
-                if (comptime !zml.types.isArbitraryPrecision(zml.types.Numeric(T))) {
-                    if (comptime zml.types.isComplex(zml.types.Numeric(T))) {
-                        result.set(i, i, zml.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
+                if (comptime !zsl.types.isArbitraryPrecision(zsl.types.Numeric(T))) {
+                    if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
+                        result.set(i, i, zsl.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
                     } else {
-                        result.set(i, i, rand.float(zml.types.Numeric(T))) catch unreachable;
+                        result.set(i, i, rand.float(zsl.types.Numeric(T))) catch unreachable;
                     }
                 } else {
-                    if (comptime zml.types.isComplex(zml.types.Numeric(T))) {
-                        var re: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                    if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
+                        var re: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                         re.num.positive = rand.boolean();
-                        var im: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                        var im: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                         im.num.positive = rand.boolean();
-                        const complex: zml.Complex(zml.Rational) = zml.Complex(zml.Rational){
+                        const complex: zsl.Complex(zsl.Rational) = zsl.Complex(zsl.Rational){
                             .re = re,
                             .im = im,
                             .flags = .{ .owns_data = true, .writable = true },
                         };
                         result.set(i, i, complex) catch unreachable;
                     } else {
-                        var rational: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                        var rational: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                         rational.num.positive = rand.float(f64) < 0.5;
                         result.set(i, i, rational) catch unreachable;
                     }
                 }
 
                 if (i + 1 < cols) {
-                    if (comptime !zml.types.isArbitraryPrecision(zml.types.Numeric(T))) {
-                        if (comptime zml.types.isComplex(zml.types.Numeric(T))) {
-                            result.set(i, i + 1, zml.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
+                    if (comptime !zsl.types.isArbitraryPrecision(zsl.types.Numeric(T))) {
+                        if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
+                            result.set(i, i + 1, zsl.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
                         } else {
-                            result.set(i, i + 1, rand.float(zml.types.Numeric(T))) catch unreachable;
+                            result.set(i, i + 1, rand.float(zsl.types.Numeric(T))) catch unreachable;
                         }
                     } else {
-                        if (comptime zml.types.isComplex(zml.types.Numeric(T))) {
-                            var re: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                        if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
+                            var re: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                             re.num.positive = rand.boolean();
-                            var im: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                            var im: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                             im.num.positive = rand.boolean();
-                            const complex: zml.Complex(zml.Rational) = zml.Complex(zml.Rational){
+                            const complex: zsl.Complex(zsl.Rational) = zsl.Complex(zsl.Rational){
                                 .re = re,
                                 .im = im,
                                 .flags = .{ .owns_data = true, .writable = true },
                             };
                             result.set(i, i + 1, complex) catch unreachable;
                         } else {
-                            var rational: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                            var rational: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                             rational.num.positive = rand.float(f64) < 0.5;
                             result.set(i, i + 1, rational) catch unreachable;
                         }
@@ -1292,9 +1292,9 @@ fn random_matrix_t(
             return result;
         },
         .general_sparse => {
-            const nnz: u32 = rand.intRangeAtMost(u32, zml.int.max(rows, cols), rows * cols / 2);
+            const nnz: u32 = rand.intRangeAtMost(u32, zsl.int.max(rows, cols), rows * cols / 2);
 
-            var builder: zml.matrix.builder.Sparse(zml.types.Numeric(T), zml.types.orderOf(T)) = try .init(allocator, rows, cols, nnz);
+            var builder: zsl.matrix.builder.Sparse(zsl.types.Numeric(T), zsl.types.orderOf(T)) = try .init(allocator, rows, cols, nnz);
             errdefer builder.deinit(allocator);
 
             // generate random (i, j) pairs
@@ -1306,26 +1306,26 @@ fn random_matrix_t(
                 const j = rand.intRangeAtMost(u32, 0, cols - 1);
                 if (!used.contains(.{ i, j })) {
                     try used.put(.{ i, j }, {});
-                    if (comptime !zml.types.isArbitraryPrecision(zml.types.Numeric(T))) {
-                        if (comptime zml.types.isComplex(zml.types.Numeric(T))) {
-                            builder.set(allocator, i, j, zml.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
+                    if (comptime !zsl.types.isArbitraryPrecision(zsl.types.Numeric(T))) {
+                        if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
+                            builder.set(allocator, i, j, zsl.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
                         } else {
-                            builder.set(allocator, i, j, rand.float(zml.types.Numeric(T))) catch unreachable;
+                            builder.set(allocator, i, j, rand.float(zsl.types.Numeric(T))) catch unreachable;
                         }
                     } else {
-                        if (comptime zml.types.isComplex(zml.types.Numeric(T))) {
-                            var re: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                        if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
+                            var re: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                             re.num.positive = rand.boolean();
-                            var im: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                            var im: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                             im.num.positive = rand.boolean();
-                            const complex: zml.Complex(zml.Rational) = zml.Complex(zml.Rational){
+                            const complex: zsl.Complex(zsl.Rational) = zsl.Complex(zsl.Rational){
                                 .re = re,
                                 .im = im,
                                 .flags = .{ .owns_data = true, .writable = true },
                             };
                             builder.set(allocator, i, j, complex) catch unreachable;
                         } else {
-                            var rational: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                            var rational: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                             rational.num.positive = rand.float(f64) < 0.5;
                             builder.set(allocator, i, j, rational) catch unreachable;
                         }
@@ -1338,9 +1338,9 @@ fn random_matrix_t(
             return try builder.compile(allocator);
         },
         .symmetric_sparse, .hermitian_sparse => {
-            const nnz: u32 = rand.intRangeAtMost(u32, zml.int.max(rows, rows) / 2, (rows * rows / 2) / 2);
+            const nnz: u32 = rand.intRangeAtMost(u32, zsl.int.max(rows, rows) / 2, (rows * rows / 2) / 2);
 
-            var builder: zml.matrix.builder.Sparse(zml.types.Numeric(T), zml.types.orderOf(T)) = try .init(allocator, rows, rows, nnz);
+            var builder: zsl.matrix.builder.Sparse(zsl.types.Numeric(T), zsl.types.orderOf(T)) = try .init(allocator, rows, rows, nnz);
             errdefer builder.deinit(allocator);
 
             // generate random (i, j) pairs
@@ -1351,31 +1351,31 @@ fn random_matrix_t(
                 const i = rand.intRangeAtMost(u32, 0, rows - 1);
                 const j = rand.intRangeAtMost(
                     u32,
-                    if (comptime zml.types.uploOf(T) == .upper) 0 else 0,
-                    if (comptime zml.types.uploOf(T) == .upper) rows - 1 else i,
+                    if (comptime zsl.types.uploOf(T) == .upper) 0 else 0,
+                    if (comptime zsl.types.uploOf(T) == .upper) rows - 1 else i,
                 );
                 if (!used.contains(.{ i, j })) {
                     try used.put(.{ i, j }, {});
-                    if (comptime !zml.types.isArbitraryPrecision(zml.types.Numeric(T))) {
-                        if (comptime zml.types.isComplex(zml.types.Numeric(T))) {
-                            builder.set(allocator, i, j, zml.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
+                    if (comptime !zsl.types.isArbitraryPrecision(zsl.types.Numeric(T))) {
+                        if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
+                            builder.set(allocator, i, j, zsl.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
                         } else {
-                            builder.set(allocator, i, j, rand.float(zml.types.Numeric(T))) catch unreachable;
+                            builder.set(allocator, i, j, rand.float(zsl.types.Numeric(T))) catch unreachable;
                         }
                     } else {
-                        if (comptime zml.types.isComplex(zml.types.Numeric(T))) {
-                            var re: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                        if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
+                            var re: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                             re.num.positive = rand.boolean();
-                            var im: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                            var im: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                             im.num.positive = rand.boolean();
-                            const complex: zml.Complex(zml.Rational) = zml.Complex(zml.Rational){
+                            const complex: zsl.Complex(zsl.Rational) = zsl.Complex(zsl.Rational){
                                 .re = re,
                                 .im = im,
                                 .flags = .{ .owns_data = true, .writable = true },
                             };
                             builder.set(allocator, i, j, complex) catch unreachable;
                         } else {
-                            var rational: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                            var rational: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                             rational.num.positive = rand.float(f64) < 0.5;
                             builder.set(allocator, i, j, rational) catch unreachable;
                         }
@@ -1385,14 +1385,14 @@ fn random_matrix_t(
                 }
             }
 
-            return if (comptime zml.types.isSymmetricSparseMatrix(T))
-                try builder.compileSymmetric(allocator, zml.types.uploOf(T), .{ .element_allocator = allocator })
+            return if (comptime zsl.types.isSymmetricSparseMatrix(T))
+                try builder.compileSymmetric(allocator, zsl.types.uploOf(T), .{ .element_allocator = allocator })
             else
-                try builder.compileHermitian(allocator, zml.types.uploOf(T), .{ .element_allocator = allocator });
+                try builder.compileHermitian(allocator, zsl.types.uploOf(T), .{ .element_allocator = allocator });
         },
         .triangular_sparse => {
-            const nnz: u32 = rand.intRangeAtMost(u32, zml.int.max(rows, cols) / 2, (rows * cols / 2) / 2);
-            var builder: zml.matrix.builder.Sparse(zml.types.Numeric(T), zml.types.orderOf(T)) = try .init(allocator, rows, cols, nnz);
+            const nnz: u32 = rand.intRangeAtMost(u32, zsl.int.max(rows, cols) / 2, (rows * cols / 2) / 2);
+            var builder: zsl.matrix.builder.Sparse(zsl.types.Numeric(T), zsl.types.orderOf(T)) = try .init(allocator, rows, cols, nnz);
             errdefer builder.deinit(allocator);
 
             // generate random (i, j) pairs
@@ -1403,37 +1403,37 @@ fn random_matrix_t(
                 const i = rand.intRangeAtMost(u32, 0, rows - 1);
                 const j = rand.intRangeAtMost(
                     u32,
-                    if (comptime zml.types.uploOf(T) == .upper) i else 0,
-                    if (comptime zml.types.uploOf(T) == .upper) cols - 1 else zml.int.min(i, cols - 1),
+                    if (comptime zsl.types.uploOf(T) == .upper) i else 0,
+                    if (comptime zsl.types.uploOf(T) == .upper) cols - 1 else zsl.int.min(i, cols - 1),
                 );
 
-                if ((comptime zml.types.diagOf(T) == .unit) and i == j) {
+                if ((comptime zsl.types.diagOf(T) == .unit) and i == j) {
                     count -|= 1; // skip diagonal elements for unit triangular
                     continue;
                 }
 
                 if (!used.contains(.{ i, j })) {
                     try used.put(.{ i, j }, {});
-                    if (comptime !zml.types.isArbitraryPrecision(zml.types.Numeric(T))) {
-                        if (comptime zml.types.isComplex(zml.types.Numeric(T))) {
-                            builder.set(allocator, i, j, zml.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
+                    if (comptime !zsl.types.isArbitraryPrecision(zsl.types.Numeric(T))) {
+                        if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
+                            builder.set(allocator, i, j, zsl.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
                         } else {
-                            builder.set(allocator, i, j, rand.float(zml.types.Numeric(T))) catch unreachable;
+                            builder.set(allocator, i, j, rand.float(zsl.types.Numeric(T))) catch unreachable;
                         }
                     } else {
-                        if (comptime zml.types.isComplex(zml.types.Numeric(T))) {
-                            var re: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                        if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
+                            var re: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                             re.num.positive = rand.boolean();
-                            var im: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                            var im: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                             im.num.positive = rand.boolean();
-                            const complex: zml.Complex(zml.Rational) = zml.Complex(zml.Rational){
+                            const complex: zsl.Complex(zsl.Rational) = zsl.Complex(zsl.Rational){
                                 .re = re,
                                 .im = im,
                                 .flags = .{ .owns_data = true, .writable = true },
                             };
                             builder.set(allocator, i, j, complex) catch unreachable;
                         } else {
-                            var rational: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                            var rational: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                             rational.num.positive = rand.float(f64) < 0.5;
                             builder.set(allocator, i, j, rational) catch unreachable;
                         }
@@ -1443,14 +1443,14 @@ fn random_matrix_t(
                 }
             }
 
-            return try builder.compileTriangular(allocator, zml.types.uploOf(T), zml.types.diagOf(T), .{ .element_allocator = allocator });
+            return try builder.compileTriangular(allocator, zsl.types.uploOf(T), zsl.types.diagOf(T), .{ .element_allocator = allocator });
         },
         .general_block => {
-            var bsize: u32 = if (rows < 4 or cols < 4) 1 else rand.intRangeAtMost(u32, 2, zml.int.min(rows, cols) / 2);
-            while (rows % bsize != 0 or cols % bsize != 0) : (bsize = rand.intRangeAtMost(u32, 2, zml.int.min(rows, cols) / 2)) {}
+            var bsize: u32 = if (rows < 4 or cols < 4) 1 else rand.intRangeAtMost(u32, 2, zsl.int.min(rows, cols) / 2);
+            while (rows % bsize != 0 or cols % bsize != 0) : (bsize = rand.intRangeAtMost(u32, 2, zsl.int.min(rows, cols) / 2)) {}
             const nnzb: u32 = rand.intRangeAtMost(u32, (rows / bsize + cols / bsize) / 2, (rows / bsize) * (cols / bsize) / 2);
 
-            var builder: zml.matrix.builder.Block(zml.types.Numeric(T), zml.types.borderOf(T), zml.types.orderOf(T)) = try .init(allocator, bsize, rows, cols, nnzb);
+            var builder: zsl.matrix.builder.Block(zsl.types.Numeric(T), zsl.types.borderOf(T), zsl.types.orderOf(T)) = try .init(allocator, bsize, rows, cols, nnzb);
             errdefer builder.deinit(allocator);
 
             // generate random (i, j) pairs
@@ -1463,7 +1463,7 @@ fn random_matrix_t(
                 if (!used.contains(.{ i, j })) {
                     try used.put(.{ i, j }, {});
                     var block = try random_matrix_t(
-                        zml.matrix.general.Dense(zml.types.Numeric(T), zml.types.borderOf(T)),
+                        zsl.matrix.general.Dense(zsl.types.Numeric(T), zsl.types.borderOf(T)),
                         allocator,
                         rand,
                         bsize,
@@ -1486,11 +1486,11 @@ fn random_matrix_t(
 fn print_matrix(a: std.mem.Allocator, desc: []const u8, A: anytype) !void {
     std.debug.print("\nMatrix {s}:\n\n", .{desc});
 
-    const rows = if (comptime zml.types.isSquareMatrix(@TypeOf(A)))
+    const rows = if (comptime zsl.types.isSquareMatrix(@TypeOf(A)))
         A.size
     else
         A.rows;
-    const cols = if (comptime zml.types.isSquareMatrix(@TypeOf(A)))
+    const cols = if (comptime zsl.types.isSquareMatrix(@TypeOf(A)))
         A.size
     else
         A.cols;
@@ -1501,18 +1501,18 @@ fn print_matrix(a: std.mem.Allocator, desc: []const u8, A: anytype) !void {
 
         var j: u32 = 0;
         while (j < cols) : (j += 1) {
-            if ((comptime zml.types.isGeneralBlockMatrix(@TypeOf(A))) and j % A.bsize == 0 and j != 0) {
+            if ((comptime zsl.types.isGeneralBlockMatrix(@TypeOf(A))) and j % A.bsize == 0 and j != 0) {
                 std.debug.print("    ", .{});
             }
 
-            if (comptime !zml.types.isArbitraryPrecision(zml.types.Numeric(@TypeOf(A)))) {
-                if (comptime zml.types.isComplex(zml.types.Numeric(@TypeOf(A)))) {
+            if (comptime !zsl.types.isArbitraryPrecision(zsl.types.Numeric(@TypeOf(A)))) {
+                if (comptime zsl.types.isComplex(zsl.types.Numeric(@TypeOf(A)))) {
                     std.debug.print("{d:7.4} + {d:7.4}i,  ", .{ (A.get(i, j) catch unreachable).re, (A.get(i, j) catch unreachable).im });
                 } else {
                     std.debug.print("{d:5.4},  ", .{A.get(i, j) catch unreachable});
                 }
             } else {
-                if (comptime zml.types.isComplex(zml.types.Numeric(@TypeOf(A)))) {
+                if (comptime zsl.types.isComplex(zsl.types.Numeric(@TypeOf(A)))) {
                     std.debug.print("(", .{});
                     try printRational(a, (A.get(i, j) catch unreachable).re, 20);
                     std.debug.print(") + i * (", .{});
@@ -1525,7 +1525,7 @@ fn print_matrix(a: std.mem.Allocator, desc: []const u8, A: anytype) !void {
             }
         }
         std.debug.print("\n", .{});
-        if ((comptime zml.types.isGeneralBlockMatrix(@TypeOf(A))) and i % A.bsize == A.bsize - 1 and i != rows - 1) {
+        if ((comptime zsl.types.isGeneralBlockMatrix(@TypeOf(A))) and i % A.bsize == A.bsize - 1 and i != rows - 1) {
             std.debug.print("\n", .{});
         }
     }
@@ -1537,7 +1537,7 @@ fn matrixTesting(a: std.mem.Allocator) !void {
     const rand = prng.random();
 
     var A = try random_matrix_t(
-        zml.matrix.general.Dense(f64, .row_major),
+        zsl.matrix.general.Dense(f64, .row_major),
         a,
         rand,
         8,
@@ -1548,7 +1548,7 @@ fn matrixTesting(a: std.mem.Allocator) !void {
     print_matrix("A", A);
 
     var B = try random_matrix_t(
-        zml.matrix.general.Dense(f64, .col_major),
+        zsl.matrix.general.Dense(f64, .col_major),
         a,
         rand,
         8,
@@ -1558,19 +1558,19 @@ fn matrixTesting(a: std.mem.Allocator) !void {
 
     print_matrix("B", B);
 
-    var R = try zml.add(A, B, .{ .matrix_allocator = a });
+    var R = try zsl.add(A, B, .{ .matrix_allocator = a });
     defer R.deinit(a);
 
     print_matrix("R = B + C", R);
 }
 
-// fn printBigint(a: std.mem.Allocator, x: zml.Integer) !void {
+// fn printBigint(a: std.mem.Allocator, x: zsl.Integer) !void {
 //     if (x.size == 0) {
 //         std.debug.print("0\n", .{});
 //         return;
 //     }
 
-//     var tmp: zml.Integer = try zml.abs(x, .{ .allocator = a });
+//     var tmp: zsl.Integer = try zsl.abs(x, .{ .allocator = a });
 
 //     const BASE10: u64 = 1000000000; // 1e9 chunks
 //     var dec_chunks: []u32 = try a.alloc(u32, 0);
@@ -1580,13 +1580,13 @@ fn matrixTesting(a: std.mem.Allocator) !void {
 //     var dec_cap: u32 = 0;
 //     while (tmp.size != 0) {
 //         // Divide tmp by 1e9, get remainder
-//         var q: zml.Integer = try .init(a, tmp.size);
+//         var q: zsl.Integer = try .init(a, tmp.size);
 //         var rem: u64 = 0;
 
-//         var i: i32 = zml.scast(i32, tmp.size);
+//         var i: i32 = zsl.scast(i32, tmp.size);
 //         while (i >= 0) : (i -= 1) {
-//             const cur: u64 = (rem << 32) | zml.scast(u64, tmp.limbs[zml.scast(u32, i)]);
-//             q.limbs[zml.scast(u32, i)] = zml.scast(u32, cur / BASE10);
+//             const cur: u64 = (rem << 32) | zsl.scast(u64, tmp.limbs[zsl.scast(u32, i)]);
+//             q.limbs[zsl.scast(u32, i)] = zsl.scast(u32, cur / BASE10);
 //             rem = cur % BASE10;
 //         }
 
@@ -1596,7 +1596,7 @@ fn matrixTesting(a: std.mem.Allocator) !void {
 //             dec_chunks = try a.realloc(dec_chunks, dec_cap);
 //         }
 
-//         dec_chunks[dec_len] = zml.scast(u32, rem);
+//         dec_chunks[dec_len] = zsl.scast(u32, rem);
 //         dec_len += 1;
 
 //         tmp.deinit(a);
@@ -1610,22 +1610,22 @@ fn matrixTesting(a: std.mem.Allocator) !void {
 
 //     // Print highest chunk normally, others padded with zeros
 //     std.debug.print("{}", .{dec_chunks[dec_len - 1]});
-//     var i: i32 = zml.scast(i32, dec_len - 1);
+//     var i: i32 = zsl.scast(i32, dec_len - 1);
 //     while (i >= 0) : (i -= 1)
-//         std.debug.print("{d:0>9}", .{dec_chunks[zml.scast(u32, i)]});
+//         std.debug.print("{d:0>9}", .{dec_chunks[zsl.scast(u32, i)]});
 
 //     std.debug.print("\n", .{});
 
 //     tmp.deinit(a);
 // }
 
-fn printBigint(a: std.mem.Allocator, x: zml.Integer) !void {
+fn printBigint(a: std.mem.Allocator, x: zsl.Integer) !void {
     if (x.size == 0) {
         std.debug.print("0", .{});
         return;
     }
 
-    var tmp: zml.Integer = try zml.abs(x, .{ .allocator = a });
+    var tmp: zsl.Integer = try zsl.abs(x, .{ .allocator = a });
     defer tmp.deinit(a);
 
     if (!x.positive)
@@ -1635,7 +1635,7 @@ fn printBigint(a: std.mem.Allocator, x: zml.Integer) !void {
     var len: u32 = 0;
     while (tmp.size != 0) {
         const remainder: u32 = divide_by_10(&tmp);
-        buf[len] = zml.scast(u8, remainder + '0');
+        buf[len] = zsl.scast(u8, remainder + '0');
         len += 1;
     }
 
@@ -1645,16 +1645,16 @@ fn printBigint(a: std.mem.Allocator, x: zml.Integer) !void {
     std.debug.print("{c}", .{buf[len]});
 }
 
-fn divide_by_10(x: *zml.Integer) u32 {
+fn divide_by_10(x: *zsl.Integer) u32 {
     var remainder: u32 = 0;
 
-    var i: i32 = zml.scast(i32, x.size - 1);
+    var i: i32 = zsl.scast(i32, x.size - 1);
     while (i >= 0) : (i -= 1) {
         // Current value is remainder * 2^32 + limbs[i]
-        const current: u64 = zml.scast(u64, remainder) * 0x100000000 + x.limbs[zml.scast(u32, i)];
-        x.limbs[zml.scast(u32, i)] = zml.scast(u32, current / 10);
+        const current: u64 = zsl.scast(u64, remainder) * 0x100000000 + x.limbs[zsl.scast(u32, i)];
+        x.limbs[zsl.scast(u32, i)] = zsl.scast(u32, current / 10);
 
-        remainder = zml.scast(u32, current % 10);
+        remainder = zsl.scast(u32, current % 10);
     }
 
     while (x.size > 0 and x.limbs[x.size - 1] == 0) {
@@ -1664,26 +1664,26 @@ fn divide_by_10(x: *zml.Integer) u32 {
     return remainder;
 }
 
-fn printRational(a: std.mem.Allocator, r: zml.Rational, decimals: u32) !void {
+fn printRational(a: std.mem.Allocator, r: zsl.Rational, decimals: u32) !void {
     // Handle sign
     if (!r.num.positive and r.num.size != 0)
         std.debug.print("-", .{});
 
     // Absolute values
-    var num: zml.Integer = try zml.abs(r.num, .{ .allocator = a });
+    var num: zsl.Integer = try zsl.abs(r.num, .{ .allocator = a });
     defer num.deinit(a);
 
-    var den: zml.Integer = try zml.abs(r.den, .{ .allocator = a });
+    var den: zsl.Integer = try zsl.abs(r.den, .{ .allocator = a });
     defer den.deinit(a);
 
     // Integer division: q = num / den, rem = num % den
-    var q: zml.Integer = try zml.div(num, den, .{ .allocator = a });
+    var q: zsl.Integer = try zsl.div(num, den, .{ .allocator = a });
     defer q.deinit(a);
 
-    var prod: zml.Integer = try zml.mul(q, den, .{ .allocator = a });
+    var prod: zsl.Integer = try zsl.mul(q, den, .{ .allocator = a });
     defer prod.deinit(a);
 
-    var rem: zml.Integer = try zml.sub(num, prod, .{ .allocator = a });
+    var rem: zsl.Integer = try zsl.sub(num, prod, .{ .allocator = a });
     defer rem.deinit(a);
 
     // Print integer part
@@ -1699,17 +1699,17 @@ fn printRational(a: std.mem.Allocator, r: zml.Rational, decimals: u32) !void {
     var i: u32 = 0;
     while (i < decimals and rem.size != 0) : (i += 1) {
         // rem = rem * 10
-        var rem_times_10: zml.Integer = try zml.mul(rem, 10, .{ .allocator = a });
+        var rem_times_10: zsl.Integer = try zsl.mul(rem, 10, .{ .allocator = a });
         defer rem_times_10.deinit(a);
 
         // digit = rem / den
-        var digit: zml.Integer = try zml.div(rem_times_10, den, .{ .allocator = a });
+        var digit: zsl.Integer = try zsl.div(rem_times_10, den, .{ .allocator = a });
         defer digit.deinit(a);
 
         // rem = rem % den
-        try zml.mul_(&prod, digit, den, .{ .allocator = a });
+        try zsl.mul_(&prod, digit, den, .{ .allocator = a });
 
-        const new_rem: zml.Integer = try zml.sub(rem_times_10, prod, .{ .allocator = a });
+        const new_rem: zsl.Integer = try zsl.sub(rem_times_10, prod, .{ .allocator = a });
 
         // Print digit
         std.debug.print("{d}", .{if (digit.size == 0) 0 else digit.limbs[0]});
@@ -1724,7 +1724,7 @@ fn bigintTesting(a: std.mem.Allocator) !void {
     std.debug.print("aa1: {d}\n", .{aa1});
     const aa2: comptime_int = 19465187510498475189640985160943818237598150218932461028917543890757545138;
     std.debug.print("aa2: {d}\n\n", .{aa2});
-    var ia: zml.Rational = try .initSet(a, aa1, aa2);
+    var ia: zsl.Rational = try .initSet(a, aa1, aa2);
     defer ia.deinit(a);
     std.debug.print("ia: ", .{});
     try printRational(a, ia, 100);
@@ -1739,7 +1739,7 @@ fn bigintTesting(a: std.mem.Allocator) !void {
     std.debug.print("bb1: {d}\n", .{bb1});
     const bb2: comptime_int = 19465187510498475189640985160943818237598150218932461028917543890757545138;
     std.debug.print("bb2: {d}\n\n", .{bb2});
-    var ib: zml.Rational = try .initSet(a, bb1, bb2);
+    var ib: zsl.Rational = try .initSet(a, bb1, bb2);
     defer ib.deinit(a);
     std.debug.print("ib: ", .{});
     try printRational(a, ib, 100);
@@ -1750,7 +1750,7 @@ fn bigintTesting(a: std.mem.Allocator) !void {
     try printBigint(a, ib.den);
     std.debug.print("\n\n", .{});
 
-    var ic: zml.Rational = try zml.add(ia, ib, .{ .allocator = a });
+    var ic: zsl.Rational = try zsl.add(ia, ib, .{ .allocator = a });
     defer ic.deinit(a);
     std.debug.print("ic: ", .{});
     try printRational(a, ic, 50);
@@ -1765,14 +1765,14 @@ fn bigintTesting(a: std.mem.Allocator) !void {
     defer _ = gpa2.deinit();
     const a2 = gpa2.allocator();
 
-    var buf: zml.Rational = try .init(a2, 1, 1);
+    var buf: zsl.Rational = try .init(a2, 1, 1);
     defer buf.deinit(a2);
-    try zml.abs2_(&ic, ic, .{ .allocator = a });
+    try zsl.abs2_(&ic, ic, .{ .allocator = a });
     std.debug.print("||ic||^2: ", .{});
     try printRational(a, ic, 50);
     std.debug.print("\n\n", .{});
 
-    std.debug.print("2^16: {}\n", .{try zml.int.pow(@as(u128, 2), @as(u128, 32))});
+    std.debug.print("2^16: {}\n", .{try zsl.int.pow(@as(u128, 2), @as(u128, 32))});
 }
 
 fn random_vector_t(
@@ -1781,32 +1781,32 @@ fn random_vector_t(
     rand: std.Random,
     len: u32,
 ) !T {
-    switch (comptime zml.types.vectorType(T)) {
+    switch (comptime zsl.types.vectorType(T)) {
         .dense => {
             var result: T = try .init(allocator, len);
 
             var i: u32 = 0;
             while (i < len) : (i += 1) {
-                if (comptime !zml.types.isArbitraryPrecision(zml.types.Numeric(T))) {
-                    if (comptime zml.types.isComplex(zml.types.Numeric(T))) {
-                        result.set(i, zml.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
+                if (comptime !zsl.types.isArbitraryPrecision(zsl.types.Numeric(T))) {
+                    if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
+                        result.set(i, zsl.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
                     } else {
-                        result.set(i, rand.float(zml.types.Numeric(T))) catch unreachable;
+                        result.set(i, rand.float(zsl.types.Numeric(T))) catch unreachable;
                     }
                 } else {
-                    if (comptime zml.types.isComplex(zml.types.Numeric(T))) {
-                        var re: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                    if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
+                        var re: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                         re.num.positive = rand.boolean();
-                        var im: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                        var im: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                         im.num.positive = rand.boolean();
-                        const complex: zml.Complex(zml.Rational) = zml.Complex(zml.Rational){
+                        const complex: zsl.Complex(zsl.Rational) = zsl.Complex(zsl.Rational){
                             .re = re,
                             .im = im,
                             .flags = .{ .owns_data = true, .writable = true },
                         };
                         result.set(i, complex) catch unreachable;
                     } else {
-                        var rational: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                        var rational: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                         rational.num.positive = rand.float(f64) < 0.5;
                         result.set(i, rational) catch unreachable;
                     }
@@ -1816,9 +1816,9 @@ fn random_vector_t(
             return result;
         },
         .sparse => {
-            const nnz: u32 = zml.int.max(1, rand.intRangeAtMost(u32, len / 10, len / 2));
+            const nnz: u32 = zsl.int.max(1, rand.intRangeAtMost(u32, len / 10, len / 2));
 
-            var result: zml.vector.Sparse(zml.types.Numeric(T)) = try .init(allocator, len, nnz);
+            var result: zsl.vector.Sparse(zsl.types.Numeric(T)) = try .init(allocator, len, nnz);
             errdefer result.deinit(allocator);
 
             // generate random indices
@@ -1829,26 +1829,26 @@ fn random_vector_t(
                 const i = rand.intRangeAtMost(u32, 0, len - 1);
                 if (!used.contains(i)) {
                     try used.put(i, {});
-                    if (comptime !zml.types.isArbitraryPrecision(zml.types.Numeric(T))) {
-                        if (comptime zml.types.isComplex(zml.types.Numeric(T))) {
-                            try result.set(allocator, i, zml.types.Numeric(T).init(rand.float(f64), rand.float(f64)));
+                    if (comptime !zsl.types.isArbitraryPrecision(zsl.types.Numeric(T))) {
+                        if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
+                            try result.set(allocator, i, zsl.types.Numeric(T).init(rand.float(f64), rand.float(f64)));
                         } else {
-                            try result.set(allocator, i, rand.float(zml.types.Numeric(T)));
+                            try result.set(allocator, i, rand.float(zsl.types.Numeric(T)));
                         }
                     } else {
-                        if (comptime zml.types.isComplex(zml.types.Numeric(T))) {
-                            var re: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                        if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
+                            var re: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                             re.num.positive = rand.boolean();
-                            var im: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                            var im: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                             im.num.positive = rand.boolean();
-                            const complex: zml.Complex(zml.Rational) = zml.Complex(zml.Rational){
+                            const complex: zsl.Complex(zsl.Rational) = zsl.Complex(zsl.Rational){
                                 .re = re,
                                 .im = im,
                                 .flags = .{ .owns_data = true, .writable = true },
                             };
                             try result.set(allocator, i, complex);
                         } else {
-                            var rational: zml.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
+                            var rational: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
                             rational.num.positive = rand.float(f64) < 0.5;
                             try result.set(allocator, i, rational);
                         }
@@ -1869,14 +1869,14 @@ fn print_vector(a: std.mem.Allocator, desc: []const u8, v: anytype) !void {
 
     var i: u32 = 0;
     while (i < v.len) : (i += 1) {
-        if (comptime !zml.types.isArbitraryPrecision(zml.types.Numeric(@TypeOf(v)))) {
-            if (comptime zml.types.isComplex(zml.types.Numeric(@TypeOf(v)))) {
+        if (comptime !zsl.types.isArbitraryPrecision(zsl.types.Numeric(@TypeOf(v)))) {
+            if (comptime zsl.types.isComplex(zsl.types.Numeric(@TypeOf(v)))) {
                 std.debug.print("{d:7.4} + {d:7.4}i\n", .{ (v.get(i) catch unreachable).re, (v.get(i) catch unreachable).im });
             } else {
                 std.debug.print("{d:5.4}\n", .{v.get(i) catch unreachable});
             }
         } else {
-            if (comptime zml.types.isComplex(zml.types.Numeric(@TypeOf(v)))) {
+            if (comptime zsl.types.isComplex(zsl.types.Numeric(@TypeOf(v)))) {
                 std.debug.print("(", .{});
                 try printRational(a, (v.get(i) catch unreachable).re, 20);
                 std.debug.print(") + i * (", .{});
@@ -1896,13 +1896,13 @@ fn vectorTesting(a: std.mem.Allocator) !void {
     const rand = prng.random();
 
     var A = try random_matrix_t(
-        zml.matrix.general.Dense(zml.Rational, .col_major),
+        zsl.matrix.general.Dense(zsl.Rational, .col_major),
         a,
         rand,
         12,
         10,
     );
-    // var A: zml.matrix.Tridiagonal(zml.Rational) =
+    // var A: zsl.matrix.Tridiagonal(zsl.Rational) =
     //     try .eye(a, 6, .{ .element_allocator = a });
     defer A.deinit(a);
     defer A.cleanup(.{ .element_allocator = a });
@@ -1910,7 +1910,7 @@ fn vectorTesting(a: std.mem.Allocator) !void {
     try print_matrix(a, "A", A);
 
     // var u = try random_vector_t(
-    //     zml.vector.Sparse(f64),
+    //     zsl.vector.Sparse(f64),
     //     a,
     //     rand,
     //     10,
@@ -1920,7 +1920,7 @@ fn vectorTesting(a: std.mem.Allocator) !void {
 
     // try print_vector(a, "u", u);
 
-    // var w = try zml.add(v, u, .{ .vector_allocator = a, .element_allocator = a });
+    // var w = try zsl.add(v, u, .{ .vector_allocator = a, .element_allocator = a });
     // defer w.deinit(a);
     // defer w.cleanup(.{ .element_allocator = a });
 
@@ -1929,11 +1929,11 @@ fn vectorTesting(a: std.mem.Allocator) !void {
 
 fn symbolicTesting(a: std.mem.Allocator) !void {
     // Does not work, just for design.
-    //const x = try zml.Variable.init(a, "x", &zml.Set.RealNumbers);
-    //const S = try zml.Set.init.builder(a, "S", x, &[_]zml.Expression{zml.Expression.init.fromString(a, "sin(x) = 0", &[_]*zml.Symbol{&x})});
+    //const x = try zsl.Variable.init(a, "x", &zsl.Set.RealNumbers);
+    //const S = try zsl.Set.init.builder(a, "S", x, &[_]zsl.Expression{zsl.Expression.init.fromString(a, "sin(x) = 0", &[_]*zsl.Symbol{&x})});
     //_ = S;
     const expr = "S = \\{x\\in\\mathbb{R}\\mid x > 0, \\arcsin(x) = 2\\pi k, \\forall k\\in\\mathbb{N}\\}";
-    const arr = try zml.Expression.tokenize(a, expr);
+    const arr = try zsl.Expression.tokenize(a, expr);
     std.debug.print("{s}\n\nTokenized:\n", .{expr});
     for (arr.items) |token| {
         std.debug.print("<string = {s}, type = {}>\n", .{ token.string, token.type });

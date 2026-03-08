@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const zml = @import("zml");
+const zsl = @import("zsl");
 
 pub fn isSubnormal(x: anytype) bool {
     return !std.math.isNormal(x) and
@@ -121,13 +121,13 @@ fn processPrecision(
 
     std.mem.sort(f128, &ulps, {}, std.sort.asc(f128));
 
-    const mean_ulp: f128 = sum_ulp / zml.scast(f128, zml.int.sub(data.len, subnormal_count));
-    const p99_index: u32 = zml.int.min(
-        zml.scast(u32, std.math.ceil(zml.scast(f128, data.len) * 0.99)) - 1,
+    const mean_ulp: f128 = sum_ulp / zsl.cast(f128, zsl.int.sub(data.len, subnormal_count));
+    const p99_index: u32 = zsl.int.min(
+        zsl.cast(u32, std.math.ceil(zsl.scast(f128, data.len) * 0.99)) - 1,
         data.len - 1,
     );
     const p99_ulp: f128 = ulps[p99_index];
-    const exact_percentage: f128 = (zml.scast(f128, exact_count) / zml.scast(f128, data.len)) * 100.0;
+    const exact_percentage: f128 = (zsl.scast(f128, exact_count) / zsl.scast(f128, data.len)) * 100.0;
     const status: []const u8 =
         if (max_ulp <= 2.0)
             "\x1b[32mPASS\x1b[0m"
@@ -149,7 +149,7 @@ fn processPrecision(
     std.debug.print(
         "      {d} |     {d:.2} |      {d} |",
         .{
-            zml.scast(u128, max_ulp),
+            zsl.scast(u128, max_ulp),
             mean_ulp,
             p99_ulp,
         },

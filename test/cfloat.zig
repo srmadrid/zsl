@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const zml = @import("zml");
+const zsl = @import("zsl");
 
 const float = @import("float.zig");
 
@@ -23,10 +23,10 @@ pub fn printReport(
     std.debug.print("|-------|---------|----------|--------|---------|--------|\n", .{});
 
     // We process each precision block sequentially
-    processPrecision(zml.cf32, data_cf32, results_cf32);
-    processPrecision(zml.cf64, data_cf64, results_cf64);
-    processPrecision(zml.cf80, data_cf80, results_cf80);
-    processPrecision(zml.cf128, data_cf128, results_cf128);
+    processPrecision(zsl.cf32, data_cf32, results_cf32);
+    processPrecision(zsl.cf64, data_cf64, results_cf64);
+    processPrecision(zsl.cf80, data_cf80, results_cf80);
+    processPrecision(zsl.cf128, data_cf128, results_cf128);
 
     std.debug.print("----------------------------------------------------------\n", .{});
 }
@@ -37,14 +37,14 @@ fn processPrecision(
     results: anytype,
 ) void {
     const data_fields: comptime_int = @typeInfo(@TypeOf(data[0])).@"struct".fields.len;
-    var ulps: [data.len * (if (zml.types.isComplex(@TypeOf(results[0]))) 2 else 1)]f128 = undefined;
+    var ulps: [data.len * (if (zsl.types.isComplex(@TypeOf(results[0]))) 2 else 1)]f128 = undefined;
 
     var sum_ulp: f128 = 0.0;
     var max_ulp: f128 = 0;
     var exact_count: u32 = 0;
     var subnormal_count: u32 = 0;
 
-    if (comptime zml.types.isComplex(@TypeOf(results[0]))) {
+    if (comptime zsl.types.isComplex(@TypeOf(results[0]))) {
         for (0..data.len) |i| {
             var ulp: f128 = undefined;
             if (float.isSubnormal(data[i][1].re) or // input 1 real part
@@ -108,13 +108,13 @@ fn processPrecision(
 
     std.mem.sort(f128, &ulps, {}, std.sort.asc(f128));
 
-    const mean_ulp: f128 = sum_ulp / zml.scast(f128, zml.int.sub(ulps.len, subnormal_count));
-    const p99_index: u32 = zml.int.min(
-        zml.scast(u32, std.math.ceil(zml.scast(f128, ulps.len) * 0.99)) - 1,
+    const mean_ulp: f128 = sum_ulp / zsl.scast(f128, zsl.int.sub(ulps.len, subnormal_count));
+    const p99_index: u32 = zsl.int.min(
+        zsl.scast(u32, std.math.ceil(zsl.scast(f128, ulps.len) * 0.99)) - 1,
         ulps.len - 1,
     );
     const p99_ulp: f128 = ulps[p99_index];
-    const exact_percentage: f128 = (zml.scast(f128, exact_count) / zml.scast(f128, ulps.len)) * 100.0;
+    const exact_percentage: f128 = (zsl.scast(f128, exact_count) / zsl.scast(f128, ulps.len)) * 100.0;
     const status: []const u8 =
         if (max_ulp <= 2.0)
             "\x1b[32mPASS\x1b[0m"
@@ -127,10 +127,10 @@ fn processPrecision(
         "| {s} |",
         .{
             switch (T) {
-                zml.cf32 => "cf32 ",
-                zml.cf64 => "cf64 ",
-                zml.cf80 => "cf80 ",
-                zml.cf128 => "cf128",
+                zsl.cf32 => "cf32 ",
+                zsl.cf64 => "cf64 ",
+                zsl.cf80 => "cf80 ",
+                zsl.cf128 => "cf128",
                 else => unreachable,
             },
         },
@@ -142,7 +142,7 @@ fn processPrecision(
     std.debug.print(
         "      {d} |     {d:.2} |      {d} |",
         .{
-            zml.scast(u128, max_ulp),
+            zsl.scast(u128, max_ulp),
             mean_ulp,
             p99_ulp,
         },

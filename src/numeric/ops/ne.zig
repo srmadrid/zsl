@@ -1,11 +1,9 @@
 const types = @import("../../types.zig");
+
 const int = @import("../../int.zig");
+const rational = @import("../../rational.zig");
 const float = @import("../../float.zig");
 const dyadic = @import("../../dyadic.zig");
-const cfloat = @import("../../cfloat.zig");
-const integer = @import("../../integer.zig");
-const rational = @import("../../rational.zig");
-const real = @import("../../real.zig");
 const complex = @import("../../complex.zig");
 
 const numeric = @import("../../numeric.zig");
@@ -61,75 +59,42 @@ pub inline fn ne(x: anytype, y: anytype) bool {
 
     switch (comptime types.numericType(X)) {
         .bool => switch (comptime types.numericType(Y)) {
-            .bool => return x != y,
+            .bool => return x == y,
             .int => return int.ne(x, y),
+            .rational => return rational.ne(x, y),
             .float => return float.ne(x, y),
             .dyadic => return dyadic.ne(x, y),
-            .cfloat => return cfloat.ne(x, y),
-            .integer => return integer.ne(x, y),
-            .rational => return rational.ne(x, y),
-            .real => return real.ne(x, y),
             .complex => return complex.ne(x, y),
             .custom => unreachable,
         },
         .int => switch (comptime types.numericType(Y)) {
             .bool, .int => return int.ne(x, y),
+            .rational => return rational.ne(x, y),
             .float => return float.ne(x, y),
             .dyadic => return dyadic.ne(x, y),
-            .cfloat => return cfloat.ne(x, y),
-            .integer => return integer.ne(x, y),
-            .rational => return rational.ne(x, y),
-            .real => return real.ne(x, y),
-            .complex => return complex.ne(x, y),
-            .custom => unreachable,
-        },
-        .float => switch (comptime types.numericType(Y)) {
-            .bool, .int, .float => return float.ne(x, y),
-            .dyadic => return dyadic.ne(x, y),
-            .cfloat => return cfloat.ne(x, y),
-            .integer => return integer.ne(x, y),
-            .rational => return rational.ne(x, y),
-            .real => return real.ne(x, y),
-            .complex => return complex.ne(x, y),
-            .custom => unreachable,
-        },
-        .dyadic => switch (comptime types.numericType(Y)) {
-            .bool, .int, .float, .dyadic => return dyadic.ne(x, y),
-            .cfloat => return cfloat.ne(x, y),
-            .integer => return integer.ne(x, y),
-            .rational => return rational.ne(x, y),
-            .real => return real.ne(x, y),
-            .complex => return complex.ne(x, y),
-            .custom => unreachable,
-        },
-        .cfloat => switch (comptime types.numericType(Y)) {
-            .bool, .int, .float, .dyadic, .cfloat => return cfloat.ne(x, y),
-            .integer => return integer.ne(x, y),
-            .rational => return rational.ne(x, y),
-            .real => return real.ne(x, y),
-            .complex => return complex.ne(x, y),
-            .custom => unreachable,
-        },
-        .integer => switch (comptime types.numericType(Y)) {
-            .bool, .int, .float, .dyadic, .cfloat, .integer => return integer.ne(x, y),
-            .rational => return rational.ne(x, y),
-            .real => return real.ne(x, y),
             .complex => return complex.ne(x, y),
             .custom => unreachable,
         },
         .rational => switch (comptime types.numericType(Y)) {
-            .bool, .int, .float, .dyadic, .cfloat, .integer, .rational => return rational.ne(x, y),
-            .real => return real.ne(x, y),
+            .bool, .int, .rational => return rational.ne(x, y),
+            .float => return float.ne(x, y),
+            .dyadic => return dyadic.ne(x, y),
             .complex => return complex.ne(x, y),
             .custom => unreachable,
         },
-        .real => switch (comptime types.numericType(Y)) {
-            .bool, .int, .float, .dyadic, .cfloat, .integer, .rational, .real => return real.ne(x, y),
+        .float => switch (comptime types.numericType(Y)) {
+            .bool, .int, .rational, .float => return float.ne(x, y),
+            .dyadic => return dyadic.ne(x, y),
+            .complex => return complex.ne(x, y),
+            .custom => unreachable,
+        },
+        .dyadic => switch (comptime types.numericType(Y)) {
+            .bool, .int, .rational, .float, .dyadic => return dyadic.ne(x, y),
             .complex => return complex.ne(x, y),
             .custom => unreachable,
         },
         .complex => switch (comptime types.numericType(Y)) {
-            .bool, .int, .float, .dyadic, .cfloat, .integer, .rational, .real, .complex => return complex.ne(x, y),
+            .bool, .int, .rational, .float, .dyadic, .complex => return complex.ne(x, y),
             .custom => unreachable,
         },
         .custom => unreachable,

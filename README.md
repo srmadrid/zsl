@@ -1,4 +1,4 @@
-# zml: zig mathematics library
+# zsl: zig scientific library
 
 A generic numerical and symbolic mathematics library for Zig.
 
@@ -12,9 +12,9 @@ This library is in the early stages of development and might return incorrect re
   - Math:
     - Accurate math functions for all floating point types
   - Types:
+    - Rationals
     - Dyadic rationals
-    - Complex floats
-    - Arbitrary precision integers, rationals, reals, and complex numbers: reals not implemented yet
+    - Complexes
 - Vectors (`vector`):
   - Two storage formats:
     - `Dense`
@@ -63,14 +63,14 @@ This library is in the early stages of development and might return incorrect re
 To use this library in your project, run
 
 ```bash
-zig fetch --save git+https://github.com/srmadrid/zml
+zig fetch --save git+https://github.com/srmadrid/zsl
 ```
 
 and add it to your build.zig file:
 
 ```zig
-const zml = b.dependency("zml", .{});
-exe.root_module.addImport("zml", zml.module("zml"));
+const zsl = b.dependency("zsl", .{});
+exe.root_module.addImport("zsl", zsl.module("zsl"));
 ```
 
 ## Notes

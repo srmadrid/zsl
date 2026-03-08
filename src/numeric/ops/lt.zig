@@ -1,11 +1,9 @@
 const types = @import("../../types.zig");
+
 const int = @import("../../int.zig");
+const rational = @import("../../rational.zig");
 const float = @import("../../float.zig");
 const dyadic = @import("../../dyadic.zig");
-const cfloat = @import("../../cfloat.zig");
-const integer = @import("../../integer.zig");
-const rational = @import("../../rational.zig");
-const real = @import("../../real.zig");
 const complex = @import("../../complex.zig");
 
 const numeric = @import("../../numeric.zig");
@@ -63,68 +61,39 @@ pub inline fn lt(x: anytype, y: anytype) bool {
         .bool => switch (comptime types.numericType(Y)) {
             .bool => return !x and y,
             .int => return int.lt(x, y),
+            .rational => return rational.lt(x, y),
             .float => return float.lt(x, y),
             .dyadic => return dyadic.lt(x, y),
-            .cfloat => @compileError("zml.numeric.lt: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
-            .integer => return integer.lt(x, y),
-            .rational => return rational.lt(x, y),
-            .real => return real.lt(x, y),
-            .complex => @compileError("zml.numeric.lt: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+            .complex => @compileError("zml.numeric.lt: not defiltd for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
         .int => switch (comptime types.numericType(Y)) {
             .bool, .int => return int.lt(x, y),
+            .rational => return rational.lt(x, y),
             .float => return float.lt(x, y),
             .dyadic => return dyadic.lt(x, y),
-            .cfloat => @compileError("zml.numeric.lt: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
-            .integer => return integer.lt(x, y),
-            .rational => return rational.lt(x, y),
-            .real => return real.lt(x, y),
-            .complex => @compileError("zml.numeric.lt: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
-            .custom => unreachable,
-        },
-        .float => switch (comptime types.numericType(Y)) {
-            .bool, .int, .float => return float.lt(x, y),
-            .dyadic => return dyadic.lt(x, y),
-            .cfloat => @compileError("zml.numeric.lt: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
-            .integer => return integer.lt(x, y),
-            .rational => return rational.lt(x, y),
-            .real => return real.lt(x, y),
-            .complex => @compileError("zml.numeric.lt: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
-            .custom => unreachable,
-        },
-        .dyadic => switch (comptime types.numericType(Y)) {
-            .bool, .int, .float, .dyadic => return dyadic.lt(x, y),
-            .cfloat => @compileError("zml.numeric.lt: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
-            .integer => return integer.lt(x, y),
-            .rational => return rational.lt(x, y),
-            .real => return real.lt(x, y),
-            .complex => @compileError("zml.numeric.lt: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
-            .custom => unreachable,
-        },
-        .cfloat => @compileError("zml.numeric.lt: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
-        .integer => switch (comptime types.numericType(Y)) {
-            .bool, .int, .float, .dyadic, .integer => return integer.lt(x, y),
-            .cfloat => @compileError("zml.numeric.lt: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
-            .rational => return rational.lt(x, y),
-            .real => return real.lt(x, y),
-            .complex => @compileError("zml.numeric.lt: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+            .complex => @compileError("zml.numeric.lt: not defiltd for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
         .rational => switch (comptime types.numericType(Y)) {
-            .bool, .int, .float, .dyadic, .integer, .rational => return rational.lt(x, y),
-            .cfloat => @compileError("zml.numeric.lt: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
-            .real => return real.lt(x, y),
-            .complex => @compileError("zml.numeric.lt: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+            .bool, .int, .rational => return rational.lt(x, y),
+            .float => return float.lt(x, y),
+            .dyadic => return dyadic.lt(x, y),
+            .complex => @compileError("zml.numeric.lt: not defiltd for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
-        .real => switch (comptime types.numericType(Y)) {
-            .bool, .int, .float, .dyadic, .integer, .rational, .real => return real.lt(x, y),
-            .cfloat => @compileError("zml.numeric.lt: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
-            .complex => @compileError("zml.numeric.lt: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+        .float => switch (comptime types.numericType(Y)) {
+            .bool, .int, .rational, .float => return float.lt(x, y),
+            .dyadic => return dyadic.lt(x, y),
+            .complex => @compileError("zml.numeric.lt: not defiltd for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
-        .complex => @compileError("zml.numeric.lt: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+        .dyadic => switch (comptime types.numericType(Y)) {
+            .bool, .int, .rational, .float, .dyadic => return dyadic.lt(x, y),
+            .complex => @compileError("zml.numeric.lt: not defiltd for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+            .custom => unreachable,
+        },
+        .complex => @compileError("zml.numeric.lt: not defiltd for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
         .custom => unreachable,
     }
 }

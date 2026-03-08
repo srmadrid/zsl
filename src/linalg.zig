@@ -19,7 +19,7 @@ pub inline fn dot(x: anytype, y: anytype, ctx: anytype) !Coerce(Numeric(@TypeOf(
         @compileError("dot: both arguments must be vectors, got " ++ @typeName(X) ++ " and " ++ @typeName(Y));
 
     comptime if (types.isArbitraryPrecision(C)) {
-        @compileError("zml.linalg.blas.dotc not implemented for arbitrary precision types yet");
+        @compileError("zsl.linalg.blas.dotc not implemented for arbitrary precision types yet");
     } else {
         types.validateContext(@TypeOf(ctx), .{});
     };

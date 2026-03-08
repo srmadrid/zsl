@@ -1,13 +1,9 @@
-const std = @import("std");
-
 const types = @import("../../types.zig");
+
 const int = @import("../../int.zig");
+const rational = @import("../../rational.zig");
 const float = @import("../../float.zig");
 const dyadic = @import("../../dyadic.zig");
-const cfloat = @import("../../cfloat.zig");
-const integer = @import("../../integer.zig");
-const rational = @import("../../rational.zig");
-const real = @import("../../real.zig");
 const complex = @import("../../complex.zig");
 
 const numeric = @import("../../numeric.zig");
@@ -44,76 +40,40 @@ pub fn Add(X: type, Y: type) type {
         .bool => switch (comptime types.numericType(Y)) {
             .bool => @compileError("zml.numeric.add: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .int => return int.Add(X, Y),
+            .rational => return rational.Add(X, Y),
             .float => return float.Add(X, Y),
             .dyadic => return dyadic.Add(X, Y),
-            .cfloat => return cfloat.Add(X, Y),
-            .integer => return integer.Integer,
-            .rational => return rational.Rational,
-            .real => return real.Real,
             .complex => return complex.Add(X, Y),
             .custom => unreachable,
         },
         .int => switch (comptime types.numericType(Y)) {
             .bool, .int => return int.Add(X, Y),
+            .rational => return rational.Add(X, Y),
             .float => return float.Add(X, Y),
             .dyadic => return dyadic.Add(X, Y),
-            .cfloat => return cfloat.Add(X, Y),
-            .integer => return integer.Integer,
-            .rational => return rational.Rational,
-            .real => return real.Real,
-            .complex => return complex.Add(X, Y),
-            .custom => unreachable,
-        },
-        .float => switch (comptime types.numericType(Y)) {
-            .bool, .int, .float => return float.Add(X, Y),
-            .dyadic => return dyadic.Add(X, Y),
-            .cfloat => return cfloat.Add(X, Y),
-            .integer, .rational => return rational.Rational,
-            .real => return real.Real,
-            .complex => return complex.Add(X, Y),
-            .custom => unreachable,
-        },
-        .dyadic => switch (comptime types.numericType(Y)) {
-            .bool, .int, .float, .dyadic => return dyadic.Add(X, Y),
-            .cfloat => return cfloat.Add(X, Y),
-            .integer, .rational => return rational.Rational,
-            .real => return real.Real,
-            .complex => return complex.Add(X, Y),
-            .custom => unreachable,
-        },
-        .cfloat => switch (comptime types.numericType(Y)) {
-            .bool, .int, .float, .dyadic, .cfloat => return cfloat.Add(X, Y),
-            .integer, .rational, .real => return complex.Add(complex.Complex(rational.Rational), Y),
-            .complex => return complex.Add(X, Y),
-            .custom => unreachable,
-        },
-        .integer => switch (comptime types.numericType(Y)) {
-            .bool, .int => return integer.Integer,
-            .float, .dyadic => return rational.Rational,
-            .cfloat => return complex.Add(complex.Complex(rational.Rational), Y),
-            .integer => return integer.Integer,
-            .rational => return rational.Rational,
-            .real => return real.Real,
             .complex => return complex.Add(X, Y),
             .custom => unreachable,
         },
         .rational => switch (comptime types.numericType(Y)) {
-            .bool, .int, .float, .dyadic => return rational.Rational,
-            .cfloat => return complex.Add(complex.Complex(rational.Rational), Y),
-            .integer, .rational => return rational.Rational,
-            .real => return real.Real,
+            .bool, .int, .rational => return rational.Add(X, Y),
+            .float => return float.Add(X, Y),
+            .dyadic => return dyadic.Add(X, Y),
             .complex => return complex.Add(X, Y),
             .custom => unreachable,
         },
-        .real => switch (comptime types.numericType(Y)) {
-            .bool, .int, .float, .dyadic => return real.Real,
-            .cfloat => return complex.Add(complex.Complex(rational.Rational), Y),
-            .integer, .rational, .real => return real.Real,
+        .float => switch (comptime types.numericType(Y)) {
+            .bool, .int, .rational, .float => return float.Add(X, Y),
+            .dyadic => return dyadic.Add(X, Y),
+            .complex => return complex.Add(X, Y),
+            .custom => unreachable,
+        },
+        .dyadic => switch (comptime types.numericType(Y)) {
+            .bool, .int, .rational, .float, .dyadic => return dyadic.Add(X, Y),
             .complex => return complex.Add(X, Y),
             .custom => unreachable,
         },
         .complex => switch (comptime types.numericType(Y)) {
-            .bool, .int, .float, .dyadic, .cfloat, .integer, .rational, .real, .complex => return complex.Add(X, Y),
+            .bool, .int, .rational, .float, .dyadic, .complex => return complex.Add(X, Y),
             .custom => unreachable,
         },
         .custom => unreachable,
@@ -124,20 +84,15 @@ pub fn Add(X: type, Y: type) type {
 ///
 /// ## Signature
 /// ```zig
-/// numeric.add(x: X, y: Y, ctx: anytype) !numeric.Add(X, Y)
+/// numeric.add(x: X, y: Y) numeric.Add(X, Y)
 /// ```
 ///
 /// ## Arguments
 /// * `x` (`anytype`): The left operand.
 /// * `y` (`anytype`): The right operand.
-/// * `ctx` (`anytype`): A context struct providing necessary resources and
-///   configuration for the operation.
 ///
 /// ## Returns
 /// `numeric.Add(@TypeOf(x), @TypeOf(y))`: The result of the addition.
-///
-/// ## Errors
-/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
 ///
 /// ## Custom type support
 /// This function supports custom numeric types via specific method
@@ -149,10 +104,8 @@ pub fn Add(X: type, Y: type) type {
 ///
 /// `numeric.Add(X, Y)`, `X` or `Y` must implement the required `zmlAdd` method.
 /// The expected signatures and behavior of `zmlAdd` are as follows:
-/// * `fn zmlAdd(X, Y, anytype) !numeric.Add(X, Y)`: Returns the addition of `x`
-///   and `y`, potentially using the provided context for necessary resources.
-///   This function is responsible for validating the context.
-pub inline fn add(x: anytype, y: anytype, ctx: anytype) !numeric.Add(@TypeOf(x), @TypeOf(y)) {
+/// * `fn zmlAdd(X, Y) numeric.Add(X, Y)`: Returns the addition of `x` and `y`.
+pub inline fn add(x: anytype, y: anytype) numeric.Add(@TypeOf(x), @TypeOf(y)) {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
     const R: type = numeric.Add(X, Y);
@@ -162,622 +115,73 @@ pub inline fn add(x: anytype, y: anytype, ctx: anytype) !numeric.Add(@TypeOf(x),
             const Impl: type = comptime types.anyHasMethod(
                 &.{ R, X, Y },
                 "zmlAdd",
-                fn (X, Y, anytype) anyerror!R,
-                &.{ X, Y, @TypeOf(ctx) },
+                fn (X, Y) R,
+                &.{ X, Y },
             ) orelse
-                @compileError("zml.numeric.add: " ++ @typeName(R) ++ ", " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn zmlAdd(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ", anytype) !" ++ @typeName(R) ++ "`");
+                @compileError("zml.numeric.add: " ++ @typeName(R) ++ ", " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn zmlAdd(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
 
-            return Impl.zmlAdd(x, y, ctx);
+            return Impl.zmlAdd(x, y);
         } else { // only X custom
             const Impl: type = comptime types.anyHasMethod(
                 &.{ R, X },
                 "zmlAdd",
-                fn (X, Y, anytype) anyerror!R,
-                &.{ X, Y, @TypeOf(ctx) },
+                fn (X, Y) R,
+                &.{ X, Y },
             ) orelse
-                @compileError("zml.numeric.add: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlAdd(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ", anytype) !" ++ @typeName(R) ++ "`");
+                @compileError("zml.numeric.add: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlAdd(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
 
-            return Impl.zmlAdd(x, y, ctx);
+            return Impl.zmlAdd(x, y);
         }
     } else if (comptime types.isCustomType(Y)) { // only Y custom
         const Impl: type = comptime types.anyHasMethod(
             &.{ R, Y },
             "zmlAdd",
-            fn (X, Y, anytype) anyerror!R,
-            &.{ X, Y, @TypeOf(ctx) },
+            fn (X, Y) R,
+            &.{ X, Y },
         ) orelse
-            @compileError("zml.numeric.add: " ++ @typeName(R) ++ " or " ++ @typeName(Y) ++ " must implement `fn zmlAdd(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ", anytype) !" ++ @typeName(R) ++ "`");
+            @compileError("zml.numeric.add: " ++ @typeName(R) ++ " or " ++ @typeName(Y) ++ " must implement `fn zmlAdd(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
 
-        return Impl.zmlAdd(x, y, ctx);
+        return Impl.zmlAdd(x, y);
     }
 
     switch (comptime types.numericType(X)) {
         .bool => switch (comptime types.numericType(Y)) {
             .bool => unreachable,
-            .int => {
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return int.add(x, y);
-            },
-            .float => {
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return float.add(x, y);
-            },
-            .dyadic => {
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return dyadic.add(x, y);
-            },
-            .cfloat => {
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return cfloat.add(x, y);
-            },
-            .integer => {
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the integer's memory allocation.",
-                        },
-                    },
-                );
-
-                return integer.add(ctx.allocator, x, y);
-            },
-            .rational => {
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the rational's memory allocation.",
-                        },
-                    },
-                );
-
-                return rational.add(ctx.allocator, x, y);
-            },
-            .real => {
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the real's memory allocation.",
-                        },
-                    },
-                );
-
-                return real.add(ctx.allocator, x, y);
-            },
-            .complex => {
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the complex's memory allocation.",
-                        },
-                    },
-                );
-
-                return complex.add(ctx.allocator, x, y);
-            },
+            .int => return int.add(x, y),
+            .rational => return rational.add(x, y),
+            .float => return float.add(x, y),
+            .dyadic => return dyadic.add(x, y),
+            .complex => return complex.add(x, y),
             .custom => unreachable,
         },
         .int => switch (comptime types.numericType(Y)) {
-            .bool, .int => {
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return int.add(x, y);
-            },
-            .float => {
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return float.add(x, y);
-            },
-            .dyadic => {
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return dyadic.add(x, y);
-            },
-            .cfloat => {
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return cfloat.add(x, y);
-            },
-            .integer => {
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the integer's memory allocation.",
-                        },
-                    },
-                );
-
-                return integer.add(ctx.allocator, x, y);
-            },
-            .rational => {
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the rational's memory allocation.",
-                        },
-                    },
-                );
-
-                return rational.add(ctx.allocator, x, y);
-            },
-            .real => {
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the real's memory allocation.",
-                        },
-                    },
-                );
-
-                return real.add(ctx.allocator, x, y);
-            },
-            .complex => {
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the complex's memory allocation.",
-                        },
-                    },
-                );
-
-                return complex.add(ctx.allocator, x, y);
-            },
-            .custom => unreachable,
-        },
-        .float => switch (comptime types.numericType(Y)) {
-            .bool, .int, .float => {
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return float.add(x, y);
-            },
-            .dyadic => {
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return dyadic.add(x, y);
-            },
-            .cfloat => {
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return cfloat.add(x, y);
-            },
-            .integer => {
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the rational's memory allocation.",
-                        },
-                    },
-                );
-
-                return rational.add(ctx.allocator, x, y.asRational());
-            },
-            .rational => {
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the rational's memory allocation.",
-                        },
-                    },
-                );
-
-                return rational.add(ctx.allocator, x, y);
-            },
-            .real => {
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the real's memory allocation.",
-                        },
-                    },
-                );
-
-                return real.add(ctx.allocator, x, y);
-            },
-            .complex => {
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the complex's memory allocation.",
-                        },
-                    },
-                );
-
-                return complex.add(ctx.allocator, x, y);
-            },
-            .custom => unreachable,
-        },
-        .dyadic => switch (comptime types.numericType(Y)) {
-            .bool, .int, .float, .dyadic => {
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return dyadic.add(x, y);
-            },
-            .cfloat => {
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return cfloat.add(x, y);
-            },
-            .integer => {
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the rational's memory allocation.",
-                        },
-                    },
-                );
-
-                return rational.add(ctx.allocator, x, y.asRational());
-            },
-            .rational => {
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the rational's memory allocation.",
-                        },
-                    },
-                );
-
-                return rational.add(ctx.allocator, x, y);
-            },
-            .real => {
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the real's memory allocation.",
-                        },
-                    },
-                );
-
-                return real.add(ctx.allocator, x, y);
-            },
-            .complex => {
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the complex's memory allocation.",
-                        },
-                    },
-                );
-
-                return complex.add(ctx.allocator, x, y);
-            },
-            .custom => unreachable,
-        },
-        .cfloat => switch (comptime types.numericType(Y)) {
-            .bool, .int, .float, .dyadic, .cfloat => {
-                comptime types.validateContext(@TypeOf(ctx), .{});
-
-                return cfloat.add(x, y);
-            },
-            .integer, .rational, .real => {
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the complex's memory allocation.",
-                        },
-                    },
-                );
-
-                return complex.add(ctx.allocator, x, y.asComplex());
-            },
-            .complex => {
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the complex's memory allocation.",
-                        },
-                    },
-                );
-
-                return complex.add(ctx.allocator, x, y);
-            },
-            .custom => unreachable,
-        },
-        .integer => switch (comptime types.numericType(Y)) {
-            .bool, .int => {
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the integer's memory allocation.",
-                        },
-                    },
-                );
-
-                return integer.add(ctx.allocator, x, y);
-            },
-            .float, .dyadic => {
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the rational's memory allocation.",
-                        },
-                    },
-                );
-
-                return rational.add(ctx.allocator, x.asRational(), y);
-            },
-            .cfloat => {
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the complex's memory allocation.",
-                        },
-                    },
-                );
-
-                return complex.add(ctx.allocator, x.asComplex(), y);
-            },
-            .integer => {
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the integer's memory allocation.",
-                        },
-                    },
-                );
-
-                return integer.add(ctx.allocator, x, y);
-            },
-            .rational => {
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the rational's memory allocation.",
-                        },
-                    },
-                );
-
-                return rational.add(ctx.allocator, x, y);
-            },
-            .real => {
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the real's memory allocation.",
-                        },
-                    },
-                );
-
-                return real.add(ctx.allocator, x, y);
-            },
-            .complex => {
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the complex's memory allocation.",
-                        },
-                    },
-                );
-
-                return complex.add(ctx.allocator, x, y);
-            },
+            .bool, .int => return int.add(x, y),
+            .rational => return rational.add(x, y),
+            .float => return float.add(x, y),
+            .dyadic => return dyadic.add(x, y),
+            .complex => return complex.add(x, y),
             .custom => unreachable,
         },
         .rational => switch (comptime types.numericType(Y)) {
-            .bool, .int, .float, .dyadic => {
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the rational's memory allocation.",
-                        },
-                    },
-                );
-
-                return rational.add(ctx.allocator, x, y);
-            },
-            .cfloat => {
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the complex's memory allocation.",
-                        },
-                    },
-                );
-
-                return complex.add(ctx.allocator, x.asComplex(), y);
-            },
-            .integer, .rational => {
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the rational's memory allocation.",
-                        },
-                    },
-                );
-
-                return rational.add(ctx.allocator, x, y);
-            },
-            .real => {
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the real's memory allocation.",
-                        },
-                    },
-                );
-
-                return real.add(ctx.allocator, x, y);
-            },
-            .complex => {
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the complex's memory allocation.",
-                        },
-                    },
-                );
-
-                return complex.add(ctx.allocator, x, y);
-            },
+            .bool, .int, .rational => return rational.add(x, y),
+            .float => return float.add(x, y),
+            .dyadic => return dyadic.add(x, y),
+            .complex => return complex.add(x, y),
             .custom => unreachable,
         },
-        .real => switch (comptime types.numericType(Y)) {
-            .bool, .int, .float, .dyadic => {
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the real's memory allocation.",
-                        },
-                    },
-                );
-
-                return real.add(ctx.allocator, x, y);
-            },
-            .cfloat => {
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the complex's memory allocation.",
-                        },
-                    },
-                );
-
-                return complex.add(ctx.allocator, x.asComplex(), y);
-            },
-            .integer, .rational, .real => {
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the real's memory allocation.",
-                        },
-                    },
-                );
-
-                return real.add(ctx.allocator, x, y);
-            },
-            .complex => {
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the complex's memory allocation.",
-                        },
-                    },
-                );
-
-                return complex.add(ctx.allocator, x, y);
-            },
+        .float => switch (comptime types.numericType(Y)) {
+            .bool, .int, .rational, .float => return float.add(x, y),
+            .dyadic => return dyadic.add(x, y),
+            .complex => return complex.add(x, y),
+            .custom => unreachable,
+        },
+        .dyadic => switch (comptime types.numericType(Y)) {
+            .bool, .int, .rational, .float, .dyadic => return dyadic.add(x, y),
+            .complex => return complex.add(x, y),
             .custom => unreachable,
         },
         .complex => switch (comptime types.numericType(Y)) {
-            .bool, .int, .float, .dyadic, .cfloat, .integer, .rational, .real, .complex => {
-                comptime types.validateContext(
-                    @TypeOf(ctx),
-                    .{
-                        .allocator = .{
-                            .type = std.mem.Allocator,
-                            .required = true,
-                            .description = "The allocator to use for the complex's memory allocation.",
-                        },
-                    },
-                );
-
-                return complex.add(ctx.allocator, x, y);
-            },
+            .bool, .int, .rational, .float, .dyadic, .complex => return complex.add(x, y),
             .custom => unreachable,
         },
         .custom => unreachable,

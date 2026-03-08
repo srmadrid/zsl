@@ -1,12 +1,7 @@
-//! Namespace for type definitions and utilities.
+//! Namespace for type utilities.
 
 const std = @import("std");
 
-const constants = @import("constants.zig");
-
-pub const default_uint = u32;
-pub const default_int = i32;
-pub const default_float = f64;
 pub const default_layout = Layout.col_major;
 pub const default_uplo = Uplo.upper;
 pub const default_diag = Diag.non_unit;
@@ -18,30 +13,6 @@ pub const standard_integer_types: [10]type = .{
     i16,  i32,
     i64,  i128,
 };
-
-const dyadic = @import("dyadic.zig");
-const Dyadic = dyadic.Dyadic;
-const cfloat = @import("cfloat.zig");
-const Cfloat = cfloat.Cfloat;
-const cf16 = @import("cfloat.zig").cf16;
-const cf32 = @import("cfloat.zig").cf32;
-const cf64 = @import("cfloat.zig").cf64;
-const cf80 = @import("cfloat.zig").cf80;
-const cf128 = @import("cfloat.zig").cf128;
-const comptime_cfloat = @import("cfloat.zig").comptime_cfloat;
-const integer = @import("integer.zig");
-const Integer = integer.Integer;
-const rational = @import("rational.zig");
-const Rational = rational.Rational;
-const real = @import("real.zig");
-const Real = real.Real;
-const complex = @import("complex.zig");
-const Complex = complex.Complex;
-
-const vector = @import("vector.zig");
-const matrix = @import("matrix.zig");
-const array = @import("array.zig");
-const Expression = @import("expression.zig").Expression;
 
 pub const Cmp = enum(u2) {
     gt,
@@ -179,11 +150,6 @@ pub const IterationOrder = enum {
 /// properties and capabilities, such as whether they are integers, floats,
 /// complex numbers, etc.
 ///
-/// This enum is used in various places in the library to determine how to
-/// handle different types of numeric data. It allows for type checking and
-/// coercion between different numeric types, ensuring that operations are
-/// performed correctly and efficiently.
-///
 /// ## Values
 /// * `bool`: Represents the boolean type (`bool`).
 /// * `int`: Represents integer types:
@@ -191,29 +157,23 @@ pub const IterationOrder = enum {
 ///   * `isize`, `i8`, `i16`, `i32`, `i64`, `i128`
 ///   * `uX`, `iX` (where X is any bit size)
 ///   * `comptime_int`
-/// * `float`: Represents floating*point types:
+/// * `rational`:Represents rational types (`Rational`).
+/// * `float`: Represents floating point types:
 ///   * `f16`, `f32`, `f64`, `f80`, `f128`
 ///   * `comptime_float`
 /// * `dyadic`: Represents dyadic rational types (`Dyadic`).
-/// * `cfloat`: Represents complex floating*point types:
+/// * `complex`: Represents complex types:
 ///   * `cf16`, `cf32`, `cf64`, `cf80`, `cf128`
-///   * `Cfloat(Dyadic(...))`
-///   * `comptime_cfloat`
-/// * `integer`: Represents the arbitrary precision integer type (`Integer`).
-/// * `rational`: Represents the arbitrary precision rational type (`Rational`).
-/// * `real`: Represents the arbitrary precision real type (`Real`).
-/// * `complex`: Represents complex arbitrary precision types:
-///   * `Complex(Rational)`
-///   * `Complex(Real)`
+///   * `Complex(Dyadic(...))`
+///   * `Complex(Rational(...))`
+///   * `comptime_complex`
+/// * `custom`: Represents custom user-defined numeric types.
 pub const NumericType = enum {
     bool,
     int,
+    rational,
     float,
     dyadic,
-    cfloat,
-    integer,
-    rational,
-    real,
     complex,
     custom,
 
@@ -339,22 +299,19 @@ fn free(context: *anyopaque, memory: []u8, alignment: std.mem.Alignment, ra: usi
 
 pub fn empty(comptime T: type) T {
     if (comptime !isSupportedType(T))
-        @compileError("zml.types.empty: " ++ @typeName(T) ++ " is not a supported type");
+        @compileError("zsl.types.empty: " ++ @typeName(T) ++ " is not a supported type");
 
     switch (comptime domain(T)) {
         .numeric => switch (comptime numericType(T)) {
             .bool => return false,
             .int => return 0,
+            .rational => return .zero,
             .float => return 0.0,
             .dyadic => return .zero,
-            .cfloat => return .{ .re = 0.0, .im = 0.0 },
-            .integer => return .empty,
-            .rational => return .empty,
-            .real => return .empty,
-            .complex => return .empty,
+            .complex => return .zero,
             .custom => {
-                if (comptime !@hasDecl(T, "zmlEmpty"))
-                    @compileError("zml.types.empty: custom numeric type " ++ @typeName(T) ++ " must have a `zmlEmpty` declaration");
+                if (comptime !@hasDecl(T, "empty"))
+                    @compileError("zsl.types.empty: custom numeric type " ++ @typeName(T) ++ " must have a `empty` declaration");
 
                 return .empty;
             },
@@ -363,7 +320,7 @@ pub fn empty(comptime T: type) T {
             else => return .empty,
             .custom => {
                 if (comptime !@hasDecl(T, "empty"))
-                    @compileError("zml.types.empty: custom vector type " ++ @typeName(T) ++ " must have an `empty` declaration");
+                    @compileError("zsl.types.empty: custom vector type " ++ @typeName(T) ++ " must have an `empty` declaration");
 
                 return .empty;
             },
@@ -372,7 +329,7 @@ pub fn empty(comptime T: type) T {
             else => return .empty,
             .custom => {
                 if (comptime !@hasDecl(T, "empty"))
-                    @compileError("zml.types.empty: custom matrix type " ++ @typeName(T) ++ " must have an `empty` declaration");
+                    @compileError("zsl.types.empty: custom matrix type " ++ @typeName(T) ++ " must have an `empty` declaration");
 
                 return .empty;
             },
@@ -381,7 +338,7 @@ pub fn empty(comptime T: type) T {
             else => return .empty,
             .custom => {
                 if (comptime !@hasDecl(T, "empty"))
-                    @compileError("zml.types.empty: custom array type " ++ @typeName(T) ++ " must have an `empty` declaration");
+                    @compileError("zsl.types.empty: custom array type " ++ @typeName(T) ++ " must have an `empty` declaration");
 
                 return .empty;
             },
@@ -409,35 +366,26 @@ pub inline fn numericType(comptime N: type) NumericType {
         .int, .comptime_int => return .int,
         .float, .comptime_float => return .float,
         .@"struct" => {
-            if (comptime !@hasDecl(N, "zml_is_numeric") or !N.zml_is_numeric)
-                @compileError("zml.types.numericType: " ++ @typeName(N) ++ " is not a supported numeric type");
+            if (comptime !@hasDecl(N, "is_numeric") or !N.is_numeric)
+                @compileError("zsl.types.numericType: " ++ @typeName(N) ++ " is not a supported numeric type");
 
-            if (comptime @hasDecl(N, "zml_is_custom") and N.zml_is_custom)
+            if (comptime @hasDecl(N, "is_custom") and N.is_custom)
                 return .custom;
 
-            if (comptime @hasDecl(N, "zml_is_dyadic") and N.zml_is_dyadic)
-                return .dyadic;
-
-            if (comptime (@hasDecl(N, "zml_is_cfloat") and N.zml_is_cfloat) or
-                N == std.math.Complex(f16) or N == std.math.Complex(f32) or N == std.math.Complex(f64) or
-                N == std.math.Complex(f80) or N == std.math.Complex(f128) or N == std.math.Complex(comptime_float))
-                return .cfloat;
-
-            if (comptime @hasDecl(N, "zml_is_integer") and N.zml_is_integer)
-                return .integer;
-
-            if (comptime @hasDecl(N, "zml_is_rational") and N.zml_is_rational)
+            if (comptime @hasDecl(N, "is_rational") and N.is_rational)
                 return .rational;
 
-            if (comptime @hasDecl(N, "zml_is_real") and N.zml_is_real)
-                return .real;
+            if (comptime @hasDecl(N, "is_dyadic") and N.is_dyadic)
+                return .dyadic;
 
-            if (comptime @hasDecl(N, "zml_is_complex") and N.zml_is_complex)
+            if (comptime (@hasDecl(N, "is_complex") and N.is_complex) or
+                N == std.math.Complex(f16) or N == std.math.Complex(f32) or N == std.math.Complex(f64) or
+                N == std.math.Complex(f80) or N == std.math.Complex(f128) or N == std.math.Complex(comptime_float))
                 return .complex;
 
-            @compileError("zml.types.numericType: " ++ @typeName(N) ++ " is not a supported numeric type");
+            @compileError("zsl.types.numericType: " ++ @typeName(N) ++ " is not a supported numeric type");
         },
-        else => @compileError("zml.types.numericType: " ++ @typeName(N) ++ " is not a supported numeric type"),
+        else => @compileError("zsl.types.numericType: " ++ @typeName(N) ++ " is not a supported numeric type"),
     }
 }
 
@@ -449,14 +397,14 @@ pub inline fn numericType(comptime N: type) NumericType {
 /// ## Returns
 /// `types.VectorType`: The corresponding `types.VectorType` enum value.
 pub inline fn vectorType(comptime V: type) VectorType {
+    if (comptime isCustomVector(V))
+        return .custom;
+
     if (comptime isDenseVector(V))
         return .dense;
 
     if (comptime isSparseVector(V))
         return .sparse;
-
-    if (comptime isCustomVector(V))
-        return .custom;
 
     return .numeric; // Fallback for numeric types that are not vectors
 }
@@ -469,6 +417,9 @@ pub inline fn vectorType(comptime V: type) VectorType {
 /// ## Returns
 /// `types.MatrixType`: The corresponding `types.MatrixType` enum value.
 pub inline fn matrixType(comptime M: type) MatrixType {
+    if (comptime isCustomMatrix(M))
+        return .custom;
+
     if (comptime isGeneralDenseMatrix(M))
         return .general_dense;
 
@@ -499,9 +450,6 @@ pub inline fn matrixType(comptime M: type) MatrixType {
     if (comptime isPermutationMatrix(M))
         return .permutation;
 
-    if (comptime isCustomMatrix(M))
-        return .custom;
-
     return .numeric; // Fallback for numeric types that are not matrices
 }
 
@@ -513,6 +461,9 @@ pub inline fn matrixType(comptime M: type) MatrixType {
 /// ## Returns
 /// `types.ArrayType`: The corresponding `types.ArrayType` enum value.
 pub inline fn arrayType(comptime A: type) ArrayType {
+    if (comptime isCustomArray(A))
+        return .custom;
+
     if (comptime isDenseArray(A))
         return .dense;
 
@@ -521,9 +472,6 @@ pub inline fn arrayType(comptime A: type) ArrayType {
 
     if (comptime isSparseArray(A))
         return .sparse;
-
-    if (comptime isCustomArray(A))
-        return .custom;
 
     return .numeric; // Fallback for numeric types that are not arrays
 }
@@ -551,14 +499,14 @@ pub inline fn domain(comptime T: type) Domain {
     if (comptime isExpression(T))
         return .expression;
 
-    @compileError("zml.types.domain: " ++ @typeName(T) ++ " does not belong to any supported domain");
+    @compileError("zsl.types.domain: " ++ @typeName(T) ++ " does not belong to any supported domain");
 }
 
 const type_checks = @import("types/type_checks.zig");
 pub const isSupportedType = type_checks.isSupportedType;
 pub const isCustomType = type_checks.isCustomType;
 pub const isPointer = type_checks.isPointer;
-pub const isManyPointer = type_checks.isManyPointer;
+pub const isManyItemPointer = type_checks.isManyItemPointer;
 pub const isConstPointer = type_checks.isConstPointer;
 pub const isSlice = type_checks.isSlice;
 pub const isSimdVector = type_checks.isSimdVector;
@@ -593,11 +541,10 @@ pub const isStridedArray = type_checks.isStridedArray;
 pub const isSparseArray = type_checks.isSparseArray;
 pub const isCustomArray = type_checks.isCustomArray;
 pub const isExpression = type_checks.isExpression;
-pub const isAllocated = type_checks.isAllocated;
 pub const isIntegral = type_checks.isIntegral;
 pub const isNonIntegral = type_checks.isNonIntegral;
-pub const isRealType = type_checks.isRealType;
-pub const isComplexType = type_checks.isComplexType;
+pub const isReal = type_checks.isReal;
+pub const isComplex = type_checks.isComplex;
 pub const isSigned = type_checks.isSigned;
 pub const isUnsigned = type_checks.isUnsigned;
 
@@ -612,7 +559,6 @@ pub const EnsureArray = coercion.EnsureArray;
 pub const EnsureFloat = coercion.EnsureFloat;
 
 const casting = @import("types/casting.zig");
-pub const scast = casting.scast;
 pub const cast = casting.cast;
 
 /// Returns the input type as is, without any modifications.
@@ -642,38 +588,35 @@ pub fn Identity(comptime T: type) type {
 /// `type`: The scalar type of the input type.
 pub fn Scalar(comptime T: type) type {
     if (comptime !isSupportedType(T))
-        @compileError("zml.types.Scalar: " ++ @typeName(T) ++ " is not a supported type");
+        @compileError("zsl.types.Scalar: " ++ @typeName(T) ++ " is not a supported type");
 
     switch (comptime domain(T)) {
         .numeric => switch (comptime numericType(T)) {
             .bool => return T,
             .int => return T,
+            .rational => return T,
             .float => return T,
             .dyadic => return T,
-            .cfloat => switch (T) {
+            .complex => switch (T) {
                 std.math.Complex(f16) => return f16,
                 std.math.Complex(f32) => return f32,
                 std.math.Complex(f64) => return f64,
                 std.math.Complex(f80) => return f80,
                 std.math.Complex(f128) => return f128,
                 std.math.Complex(comptime_float) => return comptime_float,
-                else => return T.ZmlScalar,
+                else => return T.Scalar,
             },
-            .integer => return Integer,
-            .rational => return Rational,
-            .real => return Real,
-            .complex => return T.ZmlScalar,
             .custom => {
-                if (comptime !@hasDecl(T, "ZmlScalar"))
-                    @compileError("zml.types.Scalar: custom numeric type " ++ @typeName(T) ++ " must have a `ZmlScalar` declaration");
+                if (comptime !@hasDecl(T, "Scalar"))
+                    @compileError("zsl.types.Scalar: custom numeric type " ++ @typeName(T) ++ " must have a `Scalar` declaration");
 
-                return T.ZmlScalar;
+                return T.Scalar;
             },
         },
         .vector => return Numeric(T),
         .matrix => return Numeric(T),
         .array => return Numeric(T),
-        .expression => return Expression,
+        .expression => return T,
     }
 }
 
@@ -693,7 +636,7 @@ pub fn Scalar(comptime T: type) type {
 /// `type`: The underlying numeric type of the input type.
 pub fn Numeric(comptime T: type) type {
     if (comptime !isSupportedType(T))
-        @compileError("zml.types.Numeric: " ++ @typeName(T) ++ " is not a supported type");
+        @compileError("zsl.types.Numeric: " ++ @typeName(T) ++ " is not a supported type");
 
     switch (comptime domain(T)) {
         .numeric => return T,
@@ -701,10 +644,10 @@ pub fn Numeric(comptime T: type) type {
             .dense => return T.Numeric,
             .sparse => return T.Numeric,
             .custom => {
-                if (comptime !@hasDecl(T, "ZmlNumeric"))
-                    @compileError("zml.types.Numeric: custom vector type " ++ @typeName(T) ++ " must have a `ZmlNumeric` declaration");
+                if (comptime !@hasDecl(T, "Numeric"))
+                    @compileError("zsl.types.Numeric: custom vector type " ++ @typeName(T) ++ " must have a `Numeric` declaration");
 
-                return T.ZmlNumeric;
+                return T.Numeric;
             },
             .numeric => return T,
         },
@@ -720,10 +663,10 @@ pub fn Numeric(comptime T: type) type {
             .diagonal => return T.Numeric,
             .permutation => return T.Numeric,
             .custom => {
-                if (comptime !@hasDecl(T, "ZmlNumeric"))
-                    @compileError("zml.types.Numeric: custom matrix type " ++ @typeName(T) ++ " must have a `ZmlNumeric` declaration");
+                if (comptime !@hasDecl(T, "Numeric"))
+                    @compileError("zsl.types.Numeric: custom matrix type " ++ @typeName(T) ++ " must have a `Numeric` declaration");
 
-                return T.ZmlNumeric;
+                return T.Numeric;
             },
             .numeric => return T,
         },
@@ -732,20 +675,20 @@ pub fn Numeric(comptime T: type) type {
             .strided => return T.Numeric,
             .sparse => return T.Numeric,
             .custom => {
-                if (comptime !@hasDecl(T, "ZmlNumeric"))
-                    @compileError("zml.types.Numeric: custom array type " ++ @typeName(T) ++ " must have a `ZmlNumeric` declaration");
+                if (comptime !@hasDecl(T, "Numeric"))
+                    @compileError("zsl.types.Numeric: custom array type " ++ @typeName(T) ++ " must have a `Numeric` declaration");
 
-                return T.ZmlNumeric;
+                return T.Numeric;
             },
             .numeric => return T,
         },
-        .expression => return Expression,
+        .expression => return T,
     }
 }
 
 pub fn layoutOf(comptime T: type) Layout {
     if (comptime !isSupportedType(T))
-        @compileError("zml.types.layoutOf: " ++ @typeName(T) ++ " is not a supported type");
+        @compileError("zsl.types.layoutOf: " ++ @typeName(T) ++ " is not a supported type");
 
     switch (comptime domain(T)) {
         .matrix => switch (comptime matrixType(T)) {
@@ -760,10 +703,10 @@ pub fn layoutOf(comptime T: type) Layout {
             .diagonal => return T.storage_layout,
             .permutation => return T.storage_layout,
             .custom => {
-                if (comptime !@hasDecl(T, "zml_storage_layout"))
-                    @compileError("zml.types.layoutOf: custom matrix type " ++ @typeName(T) ++ " must have a `zml_storage_layout` declaration");
+                if (comptime !@hasDecl(T, "storage_layout"))
+                    @compileError("zsl.types.layoutOf: custom matrix type " ++ @typeName(T) ++ " must have a `storage_layout` declaration");
 
-                return T.zml_storage_layout;
+                return T.storage_layout;
             },
             .numeric => unreachable,
         },
@@ -772,20 +715,20 @@ pub fn layoutOf(comptime T: type) Layout {
             .strided => return T.storage_layout,
             .sparse => return T.storage_layout,
             .custom => {
-                if (comptime !@hasDecl(T, "zml_storage_layout"))
-                    @compileError("zml.types.layoutOf: custom array type " ++ @typeName(T) ++ " must have a `zml_storage_layout` declaration");
+                if (comptime !@hasDecl(T, "storage_layout"))
+                    @compileError("zsl.types.layoutOf: custom array type " ++ @typeName(T) ++ " must have a `storage_layout` declaration");
 
-                return T.zml_storage_layout;
+                return T.storage_layout;
             },
             .numeric => unreachable,
         },
-        else => @compileError("zml.types.layoutOf: T must be a matrix or array type, got " ++ @typeName(T)),
+        else => @compileError("zsl.types.layoutOf: T must be a matrix or array type, got " ++ @typeName(T)),
     }
 }
 
 pub fn uploOf(comptime T: type) Uplo {
     if (comptime !isSupportedType(T))
-        @compileError("zml.types.uploOf: " ++ @typeName(T) ++ " is not a supported type");
+        @compileError("zsl.types.uploOf: " ++ @typeName(T) ++ " is not a supported type");
 
     switch (comptime domain(T)) {
         .matrix => switch (comptime matrixType(T)) {
@@ -800,20 +743,20 @@ pub fn uploOf(comptime T: type) Uplo {
             .diagonal => return default_uplo,
             .permutation => return default_uplo,
             .custom => {
-                if (comptime !@hasDecl(T, "zml_storage_uplo"))
-                    @compileError("zml.types.uploOf: custom matrix type " ++ @typeName(T) ++ " must have a `zml_storage_uplo` declaration");
+                if (comptime !@hasDecl(T, "storage_uplo"))
+                    @compileError("zsl.types.uploOf: custom matrix type " ++ @typeName(T) ++ " must have a `storage_uplo` declaration");
 
-                return T.zml_storage_uplo;
+                return T.storage_uplo;
             },
             .numeric => unreachable,
         },
-        else => @compileError("zml.types.uploOf: T must be a matrix type, got " ++ @typeName(T)),
+        else => @compileError("zsl.types.uploOf: T must be a matrix type, got " ++ @typeName(T)),
     }
 }
 
 pub fn diagOf(comptime T: type) Diag {
     if (comptime !isSupportedType(T))
-        @compileError("zml.types.diagOf: " ++ @typeName(T) ++ " is not a supported type");
+        @compileError("zsl.types.diagOf: " ++ @typeName(T) ++ " is not a supported type");
 
     switch (comptime domain(T)) {
         .matrix => switch (comptime matrixType(T)) {
@@ -828,14 +771,14 @@ pub fn diagOf(comptime T: type) Diag {
             .diagonal => return default_diag,
             .permutation => return default_diag,
             .custom => {
-                if (comptime !@hasDecl(T, "zml_storage_diag"))
-                    @compileError("zml.types.diagOf: custom matrix type " ++ @typeName(T) ++ " must have a `zml_storage_diag` declaration");
+                if (comptime !@hasDecl(T, "storage_diag"))
+                    @compileError("zsl.types.diagOf: custom matrix type " ++ @typeName(T) ++ " must have a `storage_diag` declaration");
 
-                return T.zml_storage_diag;
+                return T.storage_diag;
             },
             .numeric => unreachable,
         },
-        else => @compileError("zml.types.diagOf: T must be a matrix type, got " ++ @typeName(T)),
+        else => @compileError("zsl.types.diagOf: T must be a matrix type, got " ++ @typeName(T)),
     }
 }
 
@@ -859,22 +802,6 @@ pub fn Child(comptime T: type) type {
         else => return T,
     }
 }
-
-const context_checks = @import("types/context_checks.zig");
-pub const validateContext = context_checks.validateContext;
-pub const partialValidateContext = context_checks.partialValidateContext;
-pub const ctxHasField = context_checks.ctxHasField;
-pub const getFieldOrDefault = context_checks.getFieldOrDefault;
-pub const MixStructFields = context_checks.MixStructFields;
-pub const mixStructFields = context_checks.mixStructFields;
-pub const StripStructFields = context_checks.StripStructFields;
-pub const stripStructFields = context_checks.stripStructFields;
-pub const RenameStructFields = context_checks.RenameStructFields;
-pub const renameStructFields = context_checks.renameStructFields;
-pub const KeepStructFields = context_checks.KeepStructFields;
-pub const keepStructFields = context_checks.keepStructFields;
-pub const KeepRenameStructFields = context_checks.KeepRenameStructFields;
-pub const keepRenameStructFields = context_checks.keepRenameStructFields;
 
 /// Returns the return type of a function when called with the given input
 /// types. If the return type does not depend on the input types, it is returned
@@ -917,12 +844,12 @@ pub fn ReturnTypeFromInputs(
                 corrected_input_types[i] = type;
 
             if (info_param.optional.child != input_types[i])
-                @compileError("zml.types.ReturnTypeFromInputs: input type " ++ @typeName(input_types[i]) ++ " does not match the non-optional type " ++ @typeName(info_param.optional.child) ++ " of the corresponding parameter in the function type");
+                @compileError("zsl.types.ReturnTypeFromInputs: input type " ++ @typeName(input_types[i]) ++ " does not match the non-optional type " ++ @typeName(info_param.optional.child) ++ " of the corresponding parameter in the function type");
 
             corrected_input_types[i] = input_types[i];
         } else {
             if (func_param.type.? != input_types[i])
-                @compileError("zml.types.ReturnTypeFromInputs: input type " ++ @typeName(input_types[i]) ++ " does not match the type " ++ @typeName(func_param.type.?) ++ " of the corresponding parameter in the function type");
+                @compileError("zsl.types.ReturnTypeFromInputs: input type " ++ @typeName(input_types[i]) ++ " does not match the type " ++ @typeName(func_param.type.?) ++ " of the corresponding parameter in the function type");
 
             corrected_input_types[i] = input_types[i];
         }
@@ -949,7 +876,7 @@ pub fn ReturnTypeFromInputs(
         3 => return @TypeOf(func(inputs[0], inputs[1], inputs[2])),
         4 => return @TypeOf(func(inputs[0], inputs[1], inputs[2], inputs[3])),
         5 => return @TypeOf(func(inputs[0], inputs[1], inputs[2], inputs[3], inputs[4])),
-        else => @compileError("zml.types.ReturnTypeFromInputs: functions with more than 5 parameters are not supported"),
+        else => @compileError("zsl.types.ReturnTypeFromInputs: functions with more than 5 parameters are not supported"),
     }
 }
 
@@ -979,7 +906,7 @@ pub fn hasMethod(
     comptime input_types: []const type,
 ) bool {
     if (comptime !isSupportedType(T))
-        @compileError("zml.types.hasMethod: " ++ @typeName(T) ++ " is not a supported type");
+        @compileError("zsl.types.hasMethod: " ++ @typeName(T) ++ " is not a supported type");
 
     if (comptime !@hasDecl(T, method_name))
         return false;
@@ -987,7 +914,7 @@ pub fn hasMethod(
     // Test that the method has the correct type
     const info_spec = @typeInfo(method_type);
     if (comptime info_spec != .@"fn")
-        @compileError("zml.types.hasMethod: method_type must be a function type");
+        @compileError("zsl.types.hasMethod: method_type must be a function type");
 
     const info_method = @typeInfo(@TypeOf(@field(T, method_name)));
     if (comptime info_method != .@"fn")
@@ -1034,7 +961,7 @@ pub fn hasMethod(
 
             return true;
         },
-        else => @compileError("zml.types.hasMethod: only implemented for numeric types so far"),
+        else => @compileError("zsl.types.hasMethod: only implemented for numeric types so far"),
     }
 }
 

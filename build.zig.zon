@@ -1,15 +1,16 @@
 .{
-    .name = .zml,
+    .name = .zsl,
     .version = "0.0.0",
     .minimum_zig_version = "0.15.1",
     .dependencies = .{},
     .paths = .{
         "build.zig",
         "build.zig.zon",
+        "include",
         "src",
         "test",
         "LICENSE",
         "README.md",
     },
-    .fingerprint = 0x32700c0d526752ae,
+    .fingerprint = 0xe63133d2fb139167,
 }

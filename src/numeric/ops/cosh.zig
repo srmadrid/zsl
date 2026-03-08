@@ -1,13 +1,9 @@
-const std = @import("std");
-
 const types = @import("../../types.zig");
+
 const int = @import("../../int.zig");
+const rational = @import("../../rational.zig");
 const float = @import("../../float.zig");
 const dyadic = @import("../../dyadic.zig");
-const cfloat = @import("../../cfloat.zig");
-const integer = @import("../../integer.zig");
-const rational = @import("../../rational.zig");
-const real = @import("../../real.zig");
 const complex = @import("../../complex.zig");
 
 const numeric = @import("../../numeric.zig");
@@ -17,15 +13,12 @@ pub fn Cosh(X: type) type {
         @compileError("zml.numeric.cosh: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
 
     switch (comptime types.numericType(X)) {
-        .bool => return float.Cosh(X),
-        .int => return float.Cosh(X),
-        .float => return float.Cosh(X),
-        .dyadic => @compileError("zml.numeric.cosh: not implemented for " ++ @typeName(X) ++ " yet."),
-        .cfloat => return X,
-        .integer => @compileError("zml.numeric.cosh: not implemented for " ++ @typeName(X) ++ " yet."),
-        .rational => @compileError("zml.numeric.cosh: not implemented for " ++ @typeName(X) ++ " yet."),
-        .real => @compileError("zml.numeric.cosh: not implemented for " ++ @typeName(X) ++ " yet."),
-        .complex => @compileError("zml.numeric.cosh: not implemented for " ++ @typeName(X) ++ " yet."),
+        .bool => @compileError("zml.numeric.cosh: not defined for " ++ @typeName(X) ++ "."),
+        .int => @compileError("zml.numeric.cosh: not defined for " ++ @typeName(X) ++ "."),
+        .rational => return X,
+        .float => return X,
+        .dyadic => return X,
+        .complex => return X,
         .custom => {
             if (comptime !types.hasMethod(X, "ZmlCosh", fn (type) type, &.{X}))
                 @compileError("zml.numeric.cosh: " ++ @typeName(X) ++ " must implement `fn ZmlCosh(type) type`");
@@ -39,19 +32,14 @@ pub fn Cosh(X: type) type {
 ///
 /// ## Signature
 /// ```zig
-/// numeric.cosh(x: X, ctx: anytype) !numeric.Cosh(X)
+/// numeric.cosh(x: X) numeric.Cosh(X)
 /// ```
 ///
 /// ## Arguments
 /// * `x` (`anytype`): The numeric value to get the hyperbolic cosine of.
-/// * `ctx` (`anytype`): A context struct providing necessary resources and
-///   configuration for the operation.
 ///
 /// ## Returns
 /// `numeric.Cosh(@TypeOf(x))`: The hyperbolic cosine of `x`.
-///
-/// ## Errors
-/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
 ///
 /// ## Custom type support
 /// This function supports custom numeric types via specific method
@@ -63,49 +51,28 @@ pub fn Cosh(X: type) type {
 ///
 /// `numeric.Cosh(X)` or `X` must implement the required `zmlCosh` method. The
 /// expected signature and behavior of `zmlCosh` are as follows:
-/// * `fn Cosh(X, anytype) !numeric.Cosh(X)`: Returns the hyperbolic cosine of
-///   `x`, potentially using the provided context for necessary resources. This
-///   function is responsible for validating the context.
-pub inline fn cosh(x: anytype, ctx: anytype) !numeric.Cosh(@TypeOf(x)) {
+/// * `fn Cosh(X) numeric.Cosh(X)`: Returns the hyperbolic cosine of `x`.
+pub inline fn cosh(x: anytype) numeric.Cosh(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Cosh(X);
 
     switch (comptime types.numericType(X)) {
-        .bool => {
-            comptime types.validateContext(@TypeOf(ctx), .{});
-
-            return float.cosh(x);
-        },
-        .int => {
-            comptime types.validateContext(@TypeOf(ctx), .{});
-
-            return float.cosh(x);
-        },
-        .float => {
-            comptime types.validateContext(@TypeOf(ctx), .{});
-
-            return float.cosh(x);
-        },
-        .dyadic => unreachable,
-        .cfloat => {
-            comptime types.validateContext(@TypeOf(ctx), .{});
-
-            return cfloat.cosh(x);
-        },
-        .integer => unreachable,
-        .rational => unreachable,
-        .real => unreachable,
-        .complex => unreachable,
+        .bool => unreachable,
+        .int => unreachable,
+        .rational => return rational.cosh(x),
+        .float => return float.cosh(x),
+        .dyadic => return dyadic.cosh(x),
+        .complex => return complex.cosh(x),
         .custom => {
             const Impl: type = comptime types.anyHasMethod(
                 &.{ R, X },
                 "zmlCosh",
-                fn (X, anytype) anyerror!numeric.Cosh(X),
-                &.{ X, @TypeOf(ctx) },
+                fn (X) numeric.Cosh(X),
+                &.{X},
             ) orelse
-                @compileError("zml.numeric.cosh: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlCosh(" ++ @typeName(X) ++ ", anytype) !" ++ @typeName(R) ++ "`");
+                @compileError("zml.numeric.cosh: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlCosh(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
 
-            return Impl.zmlCosh(x, ctx);
+            return Impl.zmlCosh(x);
         },
     }
 }

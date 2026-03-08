@@ -1,20 +1,15 @@
 //! Namespace for numeric types and operations.
 
 const int = @import("int.zig");
+const rational = @import("rational.zig");
 const float = @import("float.zig");
 const dyadic = @import("dyadic.zig");
-const cfloat = @import("cfloat.zig");
-const integer = @import("integer.zig");
-const rational = @import("rational.zig");
 const complex = @import("complex.zig");
 
 const numops = @import("numeric/ops.zig");
 
 // Utilities
-pub const init = numops.init;
-pub const deinit = numops.deinit;
 pub const set = numops.set;
-pub const copy = numops.copy;
 
 // Basic operations
 pub const Abs = numops.Abs;
@@ -73,18 +68,12 @@ pub const min_ = numops.min_;
 pub const Exp = numops.Exp;
 pub const exp = numops.exp;
 pub const exp_ = numops.exp_;
-pub const Exp2 = numops.Exp2;
-pub const exp2 = numops.exp2;
-pub const exp2_ = numops.exp2_;
-pub const Log = numops.Log;
-pub const log = numops.log;
-pub const log_ = numops.log_;
-pub const Log10 = numops.Log10;
-pub const log10 = numops.log10;
-pub const log10_ = numops.log10_;
-pub const Log2 = numops.Log2;
-pub const log2 = numops.log2;
-pub const log2_ = numops.log2_;
+pub const Ln = numops.Ln;
+pub const ln = numops.ln;
+pub const ln_ = numops.ln_;
+// pub const Log = numops.Log;
+// pub const log = numops.log;
+// pub const log_ = numops.log_;
 
 // Power functions
 pub const Pow = numops.Pow;
