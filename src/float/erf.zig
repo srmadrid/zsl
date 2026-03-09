@@ -8,17 +8,7 @@ const erf_data = @import("erf_data.zig");
 const dbl64 = @import("dbl64.zig");
 const ldbl128 = @import("ldbl128.zig");
 
-pub fn Erf(comptime X: type) type {
-    comptime if (!types.isNumeric(X) or !types.numericType(X).le(.float))
-        @compileError("zml.float.erf: x must be a bool, an int or a float, got \n\tx: " ++ @typeName(X) ++ "\n");
-
-    return types.EnsureFloat(X);
-}
-
-/// Returns the error function of a float, int or bool operand. The result type
-/// is determined by coercing the operand type to a float, and the operation is
-/// performed by casting the operand to the result type, then computing the
-/// error function at that value.
+/// Returns the error function of a float.
 ///
 /// The error function is defined as:
 /// $$
@@ -27,33 +17,38 @@ pub fn Erf(comptime X: type) type {
 ///
 /// ## Signature
 /// ```zig
-/// float.erf(x: X) float.Erf(X)
+/// float.erf(x: X) X
 /// ```
 ///
 /// ## Arguments
 /// * `x` (`anytype`): The value to get the error function at.
 ///
 /// ## Returns
-/// `float.Erf(@TypeOf(x))`: The error function at `x`.
-pub inline fn erf(x: anytype) float.Erf(@TypeOf(x)) {
-    switch (float.Erf(@TypeOf(x))) {
-        f16 => return types.scast(f16, erf32(types.scast(f32, x))),
+/// `@TypeOf(x)`: The error function at `x`.
+pub inline fn erf(x: anytype) @TypeOf(x) {
+    const X: type = @TypeOf(x);
+
+    comptime if (!types.isNumeric(X) or types.numericType(X) != .float)
+        @compileError("zsl.float.erf: x must be a float, got \n\tx: " ++ @typeName(X) ++ "\n");
+
+    switch (X) {
+        f16 => return types.cast(f16, erf32(types.cast(f32, x))),
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_erff.c
-            return erf32(types.scast(f32, x));
+            return erf32(types.cast(f32, x));
         },
         f64 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_erf.c
-            return erf64(types.scast(f64, x));
+            return erf64(types.cast(f64, x));
         },
         f80 => {
             //
-            // return erf80(types.scast(f80, x));
-            return types.scast(f80, erf128(types.scast(f128, x)));
+            // return erf80(types.cast(f80, x));
+            return types.cast(f80, erf128(types.cast(f128, x)));
         },
         f128 => {
             // https://github.com/JuliaMath/openlibm/blob/master/ld128/s_erfl.c
-            return erf128(types.scast(f128, x));
+            return erf128(types.cast(f128, x));
         },
         else => unreachable,
     }
@@ -79,7 +74,7 @@ fn erf32(x: f32) f32 {
 
     if (ix >= 0x7f800000) { // erf(nan) = nan
         const i: i32 = @bitCast((@as(u32, @bitCast(hx)) >> 31) << 1);
-        return 1 - types.scast(f32, i); // erf(±inf) = ±1
+        return 1 - types.cast(f32, i); // erf(±inf) = ±1
     }
 
     if (ix < 0x3f580000) { // |x| < 0.84375
@@ -179,7 +174,7 @@ fn erf64(x: f64) f64 {
 
     if (ix >= 0x7ff00000) { // erf(nan) = nan
         const i: i32 = @bitCast((@as(u32, @bitCast(hx)) >> 31) << 1);
-        return 1 - types.scast(f64, i); // erf(±inf) = ±1
+        return 1 - types.cast(f64, i); // erf(±inf) = ±1
     }
 
     if (ix < 0x3feb0000) { // |x| < 0.84375
@@ -317,7 +312,7 @@ fn erf128(x: f128) f128 {
 
     if (ix >= 0x7fff0000) { // erf(nan) = nan
         const i: i32 = @bitCast(((@as(u32, @bitCast(sign)) & 0xffff0000) >> 31) << 1);
-        return types.scast(f128, (1 - i)); // erf(±inf) = ±1
+        return types.cast(f128, (1 - i)); // erf(±inf) = ±1
     }
 
     if (ix >= 0x3fff0000) { // |x| >= 1.0

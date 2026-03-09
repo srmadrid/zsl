@@ -8,16 +8,18 @@ const ldbl128 = @import("ldbl128.zig");
 
 pub fn Hypot(comptime X: type, comptime Y: type) type {
     comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
-        !types.numericType(X).le(.float) or !types.numericType(Y).le(.float))
-        @compileError("zml.float.hypot: x and y must be bools, ints or floats, got\n\tx: " ++
+        !types.numericType(X).le(.float) or !types.numericType(Y).le(.float) or
+        (types.numericType(X) != .float and types.numericType(Y) != .float))
+        @compileError("zsl.float.hypot: at least one of x or y must be a float, the other must be a bool, an int, a rational or a float, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    return types.EnsureFloat(types.Coerce(X, Y));
+    return types.Coerce(X, Y);
 }
 
-/// Calculates the hypotenuse $\sqrt{x^2 + y^2}$ of two operands of float, int
-/// or bool types. The result type is determined by coercing the operand types,
-/// and coercing the coerced type to float, and the operation is performed by
+/// Calculates the hypotenuse $\sqrt{x^2 + y^2}$ of two operands of float,
+/// rational, int or bool types, where at least one operand must be of float
+/// type. The result type is determined by coercing the operand types, and
+/// coercing the coerced type to float, and the operation is performed by
 /// casting both operands to the result type, then calculating the hypotenuse.
 ///
 /// ## Signature
@@ -33,23 +35,23 @@ pub fn Hypot(comptime X: type, comptime Y: type) type {
 /// `float.Hypot(@TypeOf(x), @TypeOf(y))`: The hypotenuse of `x` and `y`.
 pub inline fn hypot(x: anytype, y: anytype) float.Hypot(@TypeOf(y), @TypeOf(x)) {
     switch (float.Hypot(@TypeOf(x), @TypeOf(y))) {
-        f16 => return types.scast(f16, hypot32(types.scast(f32, x), types.scast(f32, y))),
+        f16 => return types.cast(f16, hypot32(types.cast(f32, x), types.cast(f32, y))),
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_hypotf.c
-            return hypot32(types.scast(f32, x), types.scast(f32, y));
+            return hypot32(types.cast(f32, x), types.cast(f32, y));
         },
         f64 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_hypot.c
-            return hypot64(types.scast(f64, x), types.scast(f64, y));
+            return hypot64(types.cast(f64, x), types.cast(f64, y));
         },
         f80 => {
             // https://github.com/JuliaMath/openlibm/blob/master/ld80/e_hypotl.c
-            // return hypot80(types.scast(f80, x), types.scast(f80, y));
-            return types.scast(f80, hypot128(types.scast(f128, x), types.scast(f128, y)));
+            // return hypot80(types.cast(f80, x), types.cast(f80, y));
+            return types.cast(f80, hypot128(types.cast(f128, x), types.cast(f128, y)));
         },
         f128 => {
             // https://github.com/JuliaMath/openlibm/blob/master/ld128/e_hypotl.c
-            return hypot128(types.scast(f128, x), types.scast(f128, y));
+            return hypot128(types.cast(f128, x), types.cast(f128, y));
         },
         else => unreachable,
     }

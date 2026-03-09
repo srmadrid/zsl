@@ -6,47 +6,42 @@ const float = @import("../float.zig");
 const dbl64 = @import("dbl64.zig");
 const ldbl128 = @import("ldbl128.zig");
 
-pub fn Cbrt(comptime X: type) type {
-    comptime if (!types.isNumeric(X) or !types.numericType(X).le(.float))
-        @compileError("zml.float.cbrt: x must be a bool, an int or a float, got \n\tx: " ++ @typeName(X) ++ "\n");
-
-    return types.EnsureFloat(X);
-}
-
-/// Returns the cube root `∛x` of a float, int or bool operand. The result type
-/// is determined by coercing the operand type to a float, and the operation is
-/// performed by casting the operand to the result type, then computing its cube
-/// root.
+/// Returns the cube root `∛x` of a float.
 ///
 /// ## Signature
 /// ```zig
-/// float.cbrt(x: X) float.Cbrt(X)
+/// float.cbrt(x: X) X
 /// ```
 ///
 /// ## Arguments
 /// * `x` (`anytype`): The value to get the cube root of.
 ///
 /// ## Returns
-/// `float.Cbrt(@TypeOf(x))`: The cube root of `x`.
-pub inline fn cbrt(x: anytype) float.Cbrt(@TypeOf(x)) {
-    switch (float.Cbrt(@TypeOf(x))) {
-        f16 => return types.scast(f16, cbrt32(types.scast(f32, x))),
+/// `@TypeOf(x)`: The cube root of `x`.
+pub inline fn cbrt(x: anytype) @TypeOf(x) {
+    const X: type = @TypeOf(x);
+
+    comptime if (!types.isNumeric(X) or types.numericType(X) != .float)
+        @compileError("zsl.float.cbrt: x must be a float, got \n\tx: " ++ @typeName(X) ++ "\n");
+
+    switch (@TypeOf(x)) {
+        f16 => return types.cast(f16, cbrt32(types.cast(f32, x))),
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_cbrtf.c
-            return cbrt32(types.scast(f32, x));
+            return cbrt32(types.cast(f32, x));
         },
         f64 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_cbrt.c
-            return cbrt64(types.scast(f64, x));
+            return cbrt64(types.cast(f64, x));
         },
         f80 => {
             //
-            // return cbrt80(types.scast(f80, x));
-            return types.scast(f80, cbrt128(types.scast(f128, x)));
+            // return cbrt80(types.cast(f80, x));
+            return types.cast(f80, cbrt128(types.cast(f128, x)));
         },
         f128 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_cbrtl.c
-            return cbrt128(types.scast(f128, x));
+            return cbrt128(types.cast(f128, x));
         },
         else => unreachable,
     }
@@ -93,17 +88,17 @@ fn cbrt32(x: f32) f32 {
     // First step Newton iteration (solving t * t - x/t == 0) to 16 bits.  In
     // double precision so that its terms can be arranged for efficiency
     // without causing overflow or underflow.
-    var T: f64 = types.scast(f64, t);
+    var T: f64 = types.cast(f64, t);
     var r: f64 = T * T * T;
-    T = T * (2.0 * types.scast(f64, x) + r) / (types.scast(f64, x) + r + r);
+    T = T * (2.0 * types.cast(f64, x) + r) / (types.cast(f64, x) + r + r);
 
     // Second step Newton iteration to 47 bits.  In double precision for
     // efficiency and accuracy.
     r = T * T * T;
-    T = T * (2.0 * types.scast(f64, x) + r) / (types.scast(f64, x) + r + r);
+    T = T * (2.0 * types.cast(f64, x) + r) / (types.cast(f64, x) + r + r);
 
     // Rounding to 24 bits is perfect in round-to-nearest mode
-    return types.scast(f32, T);
+    return types.cast(f32, T);
 }
 
 // Translation of:
@@ -260,13 +255,13 @@ fn cbrt128(x: f128) f128 {
     // but with most of the extra accuracy not discarded.
 
     // Rough cbrt to 5 bits
-    const fx: f32 = types.scast(f32, xx);
+    const fx: f32 = types.cast(f32, xx);
     const hx: u32 = @bitCast(fx);
     const ft: f32 = @bitCast((hx & 0x7fffffff) / 3 +% 709958130);
 
     // 16 bit estimate
-    const dx: f64 = types.scast(f64, xx);
-    var dt: f64 = types.scast(f64, ft);
+    const dx: f64 = types.cast(f64, xx);
+    var dt: f64 = types.cast(f64, ft);
     var dr: f64 = dt * dt * dt;
     dt = dt * (2.0 * dx + dr) / (dx + 2.0 * dr);
 
@@ -276,7 +271,7 @@ fn cbrt128(x: f128) f128 {
 
     // Final step Newton iteration to 64 or 113 bits with
     // error < 0.667 ulps
-    var t: f128 = types.scast(f128, dt);
+    var t: f128 = types.cast(f128, dt);
     const s: f128 = t * t; // t * t is exact
     var r: f128 = xx / s; // error <= 0.5 ulps; |r| < |t|
     const w: f128 = t + t; // t + t is exact

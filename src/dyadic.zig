@@ -5,10 +5,8 @@ const std = @import("std");
 const types = @import("types.zig");
 const Cmp = types.Cmp;
 const int = @import("int.zig");
-const ops = @import("ops.zig");
 
-/// Arbitrary-precision (chosen at compile time)
-/// dyadic type.
+/// Arbitrary-precision dyadic type.
 pub fn Dyadic(mantissa_bits: u16, exponent_bits: u16) type {
     if (mantissa_bits == 0 or exponent_bits == 0 or
         mantissa_bits >= int.maxVal(u16) / 2 or exponent_bits >= int.maxVal(u16) / 2)

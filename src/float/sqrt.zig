@@ -6,47 +6,42 @@ const float = @import("../float.zig");
 const dbl64 = @import("dbl64.zig");
 const ldbl128 = @import("ldbl128.zig");
 
-pub fn Sqrt(comptime X: type) type {
-    comptime if (!types.isNumeric(X) or !types.numericType(X).le(.float))
-        @compileError("zml.float.sqrt: x must be a bool, an int or a float, got \n\tx: " ++ @typeName(X) ++ "\n");
-
-    return types.EnsureFloat(X);
-}
-
-/// Returns the square root `√x` of a float, int or bool operand. The result
-/// type is determined by coercing the operand type to a float, and the
-/// operation is performed by casting the operand to the result type, then
-/// computing its square root.
+/// Returns the square root `√x` of a float.
 ///
 /// ## Signature
 /// ```zig
-/// float.sqrt(x: X) float.Sqrt(X)
+/// float.sqrt(x: X) X
 /// ```
 ///
 /// ## Arguments
 /// * `x` (`anytype`): The value to get the square root of.
 ///
 /// ## Returns
-/// `float.Sqrt(@TypeOf(x))`: The square root of `x`.
-pub inline fn sqrt(x: anytype) float.Sqrt(@TypeOf(x)) {
-    switch (float.Sqrt(@TypeOf(x))) {
-        f16 => return types.scast(f16, sqrt32(types.scast(f32, x))),
+/// `@TypeOf(x)`: The square root of `x`.
+pub inline fn sqrt(x: anytype) @TypeOf(x) {
+    const X: type = @TypeOf(x);
+
+    comptime if (!types.isNumeric(X) or types.numericType(X) != .float)
+        @compileError("zsl.float.sqrt: x must be a float, got \n\tx: " ++ @typeName(X) ++ "\n");
+
+    switch (X) {
+        f16 => return types.cast(f16, sqrt32(types.cast(f32, x))),
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_sqrtf.c
-            return sqrt32(types.scast(f32, x));
+            return sqrt32(types.cast(f32, x));
         },
         f64 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_sqrt.c
-            return sqrt64(types.scast(f64, x));
+            return sqrt64(types.cast(f64, x));
         },
         f80 => {
             //
-            // return sqrt80(types.scast(f80, x));
-            return types.scast(f80, sqrt128(types.scast(f128, x)));
+            // return sqrt80(types.cast(f80, x));
+            return types.cast(f80, sqrt128(types.cast(f128, x)));
         },
         f128 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_sqrtl.c
-            return sqrt128(types.scast(f128, x));
+            return sqrt128(types.cast(f128, x));
         },
         else => unreachable,
     }
@@ -176,27 +171,27 @@ fn sqrt64(x: f64) f64 {
     m -%= 1023; // Unbias exponent
     ix0 = (ix0 & 0x000fffff) | 0x00100000;
     if ((m & 1) != 0) { // Odd m, double x to make it even
-        ix0 +%= ix0 +% types.scast(i32, (ix1 & sign) >> 31);
+        ix0 +%= ix0 +% types.cast(i32, (ix1 & sign) >> 31);
         ix1 +%= ix1;
     }
 
     m >>= 1; // m = [m/2]
 
     // Generate sqrt(x) bit by bit
-    ix0 +%= ix0 +% types.scast(i32, (ix1 & sign) >> 31);
+    ix0 +%= ix0 +% types.cast(i32, (ix1 & sign) >> 31);
     ix1 +%= ix1;
     var q: i32 = 0;
     var s0: i32 = 0;
     var r: u32 = 0x00200000; // r = moving bit from right to left
     while (r != 0) {
-        const t: i32 = s0 +% types.scast(i32, r);
+        const t: i32 = s0 +% types.cast(i32, r);
         if (t <= ix0) {
-            s0 = t +% types.scast(i32, r);
+            s0 = t +% types.cast(i32, r);
             ix0 -%= t;
-            q +%= types.scast(i32, r);
+            q +%= types.cast(i32, r);
         }
 
-        ix0 +%= ix0 +% types.scast(i32, (ix1 & sign) >> 31);
+        ix0 +%= ix0 +% types.cast(i32, (ix1 & sign) >> 31);
         ix1 +%= ix1;
         r >>= 1;
     }
@@ -220,7 +215,7 @@ fn sqrt64(x: f64) f64 {
             q1 +%= r;
         }
 
-        ix0 +%= ix0 +% types.scast(i32, (ix1 & sign) >> 31);
+        ix0 +%= ix0 +% types.cast(i32, (ix1 & sign) >> 31);
         ix1 +%= ix1;
         r >>= 1;
     }
@@ -300,7 +295,7 @@ fn sqrt128(x: f128) f128 {
     }
 
     // Newton's iteration. Split u into a high and low part to achieve additional precision
-    var xn: f128 = types.scast(f128, sqrt64(types.scast(f64, u.toFloat())));
+    var xn: f128 = types.cast(f128, sqrt64(types.cast(f64, u.toFloat())));
     xn = (xn + (u.toFloat() / xn)) * 0.5;
     var lo: f128 = u.toFloat();
     u.mantissa_low = 0; // Zero out lower bits

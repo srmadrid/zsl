@@ -6,47 +6,42 @@ const float = @import("../float.zig");
 const dbl64 = @import("dbl64.zig");
 const ldbl128 = @import("ldbl128.zig");
 
-pub fn Atanh(comptime X: type) type {
-    comptime if (!types.isNumeric(X) or !types.numericType(X).le(.float))
-        @compileError("zml.float.atanh: x must be a bool, an int or a float, got \n\tx: " ++ @typeName(X) ++ "\n");
-
-    return types.EnsureFloat(X);
-}
-
-/// Returns the hyperbolic arctangent $\tanh^{-1}(x)$ of a float, int or bool
-/// operand. The result type is determined by coercing the operand type to a
-/// float, and the operation is performed by casting the operand to the result
-/// type, then computing its hyperbolic arctangent.
+/// Returns the hyperbolic arctangent $\tanh^{-1}(x)$ of a float.
 ///
 /// ## Signature
 /// ```zig
-/// float.atanh(x: X) float.Atanh(X)
+/// float.atanh(x: X) X
 /// ```
 ///
 /// ## Arguments
 /// * `x` (`anytype`): The value to get the hyperbolic arctangent of.
 ///
 /// ## Returns
-/// `float.Atanh(@TypeOf(x))`: The hyperbolic arctangent of `x`.
-pub inline fn atanh(x: anytype) float.Atanh(@TypeOf(x)) {
-    switch (float.Atanh(@TypeOf(x))) {
-        f16 => return types.scast(f16, atanh32(types.scast(f32, x))),
+/// `@TypeOf(x)`: The hyperbolic arctangent of `x`.
+pub inline fn atanh(x: anytype) @TypeOf(x) {
+    const X: type = @TypeOf(x);
+
+    comptime if (!types.isNumeric(X) or types.numericType(X) != .float)
+        @compileError("zsl.float.atanh: x must be a float, got \n\tx: " ++ @typeName(X) ++ "\n");
+
+    switch (X) {
+        f16 => return types.cast(f16, atanh32(types.cast(f32, x))),
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_atanhf.c
-            return atanh32(types.scast(f32, x));
+            return atanh32(types.cast(f32, x));
         },
         f64 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_atanh.c
-            return atanh64(types.scast(f64, x));
+            return atanh64(types.cast(f64, x));
         },
         f80 => {
             //
-            // return atanh80(types.scast(f80, x));
-            return types.scast(f80, atanh128(types.scast(f128, x)));
+            // return atanh80(types.cast(f80, x));
+            return types.cast(f80, atanh128(types.cast(f128, x)));
         },
         f128 => {
             // https://github.com/JuliaMath/openlibm/blob/master/ld128/e_atanhl.c
-            return atanh128(types.scast(f128, x));
+            return atanh128(types.cast(f128, x));
         },
         else => unreachable,
     }

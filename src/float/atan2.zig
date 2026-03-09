@@ -8,18 +8,19 @@ const ldbl128 = @import("ldbl128.zig");
 
 pub fn Atan2(comptime X: type, comptime Y: type) type {
     comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
-        !types.numericType(X).le(.float) or !types.numericType(Y).le(.float))
-        @compileError("zml.float.atan2: x and y must be bools, ints or floats, got\n\tx: " ++
+        !types.numericType(X).le(.float) or !types.numericType(Y).le(.float) or
+        (types.numericType(X) != .float and types.numericType(Y) != .float))
+        @compileError("zsl.float.atan2: at least one of x or y must be a float, the other must be a bool, an int, a rational or a float, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    return types.EnsureFloat(types.Coerce(X, Y));
+    return types.Coerce(X, Y);
 }
 
 /// Calculates the arctangent $\tan^{-1}\left(\frac{y}{x})$ of the coordinates
-/// given by two operands of float, int or bool types. The result type is
-/// determined by coercing the operand types, and coercing the coerced type to
-/// float, and the operation is performed by casting both operands to the result
-/// type, then calculating the arctangent.
+/// given by two operands of float, rational, int or bool types, where at least
+/// one operand must be of float type. The result type is determined by coercing
+/// the operand types, and the operation is performed by casting both operands to
+/// the result type, then calculating the arctangent.
 ///
 /// ## Signature
 /// ```zig
@@ -34,23 +35,23 @@ pub fn Atan2(comptime X: type, comptime Y: type) type {
 /// `float.Atan2(@TypeOf(x), @TypeOf(y))`: The arctangent at `(x, y)`.
 pub inline fn atan2(y: anytype, x: anytype) float.Atan2(@TypeOf(x), @TypeOf(y)) {
     switch (float.Atan2(@TypeOf(x), @TypeOf(y))) {
-        f16 => return types.scast(f16, atan2_32(types.scast(f32, x), types.scast(f32, y))),
+        f16 => return types.cast(f16, atan2_32(types.cast(f32, x), types.cast(f32, y))),
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_atan2f.c
-            return atan2_32(types.scast(f32, x), types.scast(f32, y));
+            return atan2_32(types.cast(f32, x), types.cast(f32, y));
         },
         f64 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_atan2.c
-            return atan2_64(types.scast(f64, x), types.scast(f64, y));
+            return atan2_64(types.cast(f64, x), types.cast(f64, y));
         },
         f80 => {
             //
-            // return atan280(types.scast(f80, x), types.scast(f80, y));
-            return types.scast(f80, atan2_128(types.scast(f128, x), types.scast(f128, y)));
+            // return atan280(types.cast(f80, x), types.cast(f80, y));
+            return types.cast(f80, atan2_128(types.cast(f128, x), types.cast(f128, y)));
         },
         f128 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_atan2l.c
-            return atan2_128(types.scast(f128, x), types.scast(f128, y));
+            return atan2_128(types.cast(f128, x), types.cast(f128, y));
         },
         else => unreachable,
     }

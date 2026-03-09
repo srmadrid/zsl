@@ -6,17 +6,7 @@ const float = @import("../float.zig");
 const dbl64 = @import("dbl64.zig");
 const ldbl128 = @import("ldbl128.zig");
 
-pub fn Log(comptime X: type) type {
-    comptime if (!types.isNumeric(X) or !types.numericType(X).le(.float))
-        @compileError("zml.float.log: x must be a bool, an int or a float, got \n\tx: " ++ @typeName(X) ++ "\n");
-
-    return types.EnsureFloat(X);
-}
-
-/// Returns the natural logarithm `log(x)` of a float, int or bool operand. The
-/// result type is determined by coercing the operand type to a float, and the
-/// operation is performed by casting the operand to the result type, then
-/// computing its logarithm.
+/// Returns the natural logarithm `log(x)` of a float.
 ///
 /// ## Signature
 /// ```zig
@@ -27,25 +17,30 @@ pub fn Log(comptime X: type) type {
 /// * `x` (`anytype`): The value to get the logarithm of.
 ///
 /// ## Returns
-/// `float.Log(@TypeOf(x))`: The natural logarithm of `x`.
-pub inline fn log(x: anytype) float.Log(@TypeOf(x)) {
-    switch (float.Log(@TypeOf(x))) {
-        f16 => return types.scast(f16, log32(types.scast(f32, x))),
+/// `@TypeOf(x)`: The natural logarithm of `x`.
+pub inline fn ln(x: anytype) @TypeOf(x) {
+    const X: type = @TypeOf(x);
+
+    comptime if (!types.isNumeric(X) or types.numericType(X) != .float)
+        @compileError("zsl.float.ln: x must be a float, got \n\tx: " ++ @typeName(X) ++ "\n");
+
+    switch (X) {
+        f16 => return types.cast(f16, ln32(types.cast(f32, x))),
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_logf.c
-            return log32(types.scast(f32, x));
+            return ln32(types.cast(f32, x));
         },
         f64 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_log.c
-            return log64(types.scast(f64, x));
+            return ln64(types.cast(f64, x));
         },
         f80 => {
             // https://github.com/JuliaMath/openlibm/blob/master/ld80/e_logl.c
-            return log80(types.scast(f80, x));
+            return ln80(types.cast(f80, x));
         },
         f128 => {
             // https://github.com/JuliaMath/openlibm/blob/master/ld128/e_logl.c
-            return log128(types.scast(f128, x));
+            return ln128(types.cast(f128, x));
         },
         else => unreachable,
     }
@@ -66,7 +61,7 @@ pub inline fn log(x: anytype) float.Log(@TypeOf(x)) {
 // software is freely granted, provided that this notice
 // is preserved.
 // ====================================================
-fn log32(x: f32) f32 {
+fn ln32(x: f32) f32 {
     var ix: i32 = @bitCast(x);
     var k: i32 = 0;
     var xx: f32 = x;
@@ -97,7 +92,7 @@ fn log32(x: f32) f32 {
             if (k == 0) {
                 return 0.0;
             } else {
-                const dk: f32 = types.scast(f32, k);
+                const dk: f32 = types.cast(f32, k);
                 return dk * 6.9313812256e-01 + dk * 9.0580006145e-06;
             }
         }
@@ -106,13 +101,13 @@ fn log32(x: f32) f32 {
         if (k == 0) {
             return f - R;
         } else {
-            const dk: f32 = types.scast(f32, k);
+            const dk: f32 = types.cast(f32, k);
             return dk * 6.9313812256e-01 - ((R - dk * 9.0580006145e-06) - f);
         }
     }
 
     const s: f32 = f / (2.0 + f);
-    const dk: f32 = types.scast(f32, k);
+    const dk: f32 = types.cast(f32, k);
     const z: f32 = s * s;
     i = ix -% (0x6147a << 3);
     const w: f32 = z * z;
@@ -147,7 +142,7 @@ fn log32(x: f32) f32 {
 // software is freely granted, provided that this notice
 // is preserved.
 // ====================================================
-fn log64(x: f64) f64 {
+fn ln64(x: f64) f64 {
     var hx: i32 = @bitCast(dbl64.getHighPart(x));
     const lx: i32 = @bitCast(dbl64.getLowPart(x));
     var k: i32 = 0;
@@ -179,7 +174,7 @@ fn log64(x: f64) f64 {
             if (k == 0) {
                 return 0.0;
             } else {
-                const dk: f64 = types.scast(f64, k);
+                const dk: f64 = types.cast(f64, k);
                 return dk * 6.93147180369123816490e-1 + dk * 1.90821492927058770002e-10;
             }
         }
@@ -188,13 +183,13 @@ fn log64(x: f64) f64 {
         if (k == 0) {
             return f - R;
         } else {
-            const dk: f64 = types.scast(f64, k);
+            const dk: f64 = types.cast(f64, k);
             return dk * 6.93147180369123816490e-1 - ((R - dk * 1.90821492927058770002e-10) - f);
         }
     }
 
     const s: f64 = f / (2.0 + f);
-    const dk: f64 = types.scast(f64, k);
+    const dk: f64 = types.cast(f64, k);
     const z: f64 = s * s;
     i = hx -% 0x6147a;
     const w: f64 = z * z;
@@ -241,7 +236,7 @@ fn log64(x: f64) f64 {
 // WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
 // ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 // OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-fn log80(x: f80) f80 {
+fn ln80(x: f80) f80 {
     if (std.math.isNan(x))
         return x;
 
@@ -283,9 +278,9 @@ fn log80(x: f80) f80 {
                 (1.9361891836232102174846e2 + z *
                     (-2.6201045551331104417768e1 + z *
                         1.00000000000000000000e0))));
-        z += types.scast(f80, e) * 1.4286068203094172321215e-6;
+        z += types.cast(f80, e) * 1.4286068203094172321215e-6;
         z += xx;
-        z += types.scast(f80, e) * 6.93145751953125e-1;
+        z += types.cast(f80, e) * 6.93145751953125e-1;
         return z;
     }
 
@@ -312,10 +307,10 @@ fn log80(x: f80) f80 {
                         (8.3047565967967209469434e1 + xx *
                             (1.5062909083469192043167e1 + xx *
                                 1.0000000000000000000000e0)))))));
-    y += types.scast(f80, e) * 1.4286068203094172321215e-6;
+    y += types.cast(f80, e) * 1.4286068203094172321215e-6;
     z = y - float.ldexp(z, -1);
     z += xx;
-    z += types.scast(f80, e) * 6.93145751953125e-1;
+    z += types.cast(f80, e) * 6.93145751953125e-1;
     return z;
 }
 
@@ -336,12 +331,12 @@ fn log80(x: f80) f80 {
 // WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
 // ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 // OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-fn log128(x: f128) f128 {
+fn ln128(x: f128) f128 {
     var u: ldbl128.Parts32 = .fromFloat(x);
     var m: u32 = u.mswhi;
 
     // Check for IEEE special cases
-    var k: i32 = types.scast(i32, m & 0x7fffffff);
+    var k: i32 = types.cast(i32, m & 0x7fffffff);
     if ((@as(u32, @bitCast(k)) | u.mswlo | u.lswhi | u.lswlo) == 0)
         return -std.math.inf(f128);
 
@@ -359,8 +354,8 @@ fn log128(x: f128) f128 {
     // Find lookup table index k from high order bits of the significand
     var t: ldbl128.Parts32 = undefined;
     if (m < 0x16800) {
-        k = types.scast(i32, (m -% 0xff00) >> 9);
-        t.mswhi = types.scast(u32, 0x3fff0000 +% (k << 9));
+        k = types.cast(i32, (m -% 0xff00) >> 9);
+        t.mswhi = types.cast(u32, 0x3fff0000 +% (k << 9));
         t.mswlo = 0;
         t.lswhi = 0;
         t.lswlo = 0;
@@ -368,8 +363,8 @@ fn log128(x: f128) f128 {
         e -%= 1;
         k +%= 64;
     } else {
-        k = types.scast(i32, (m -% 0xfe00) >> 10);
-        t.mswhi = types.scast(u32, 0x3ffe0000 +% (k << 10));
+        k = types.cast(i32, (m -% 0xfe00) >> 10);
+        t.mswhi = types.cast(u32, 0x3ffe0000 +% (k << 10));
         t.mswlo = 0;
         t.lswhi = 0;
         t.lswlo = 0;
@@ -402,11 +397,11 @@ fn log128(x: f128) f128 {
         z + 3.333333333333333333333333333333336096926e-1) *
         z * w;
     y -= 0.5 * w;
-    y += types.scast(f128, e) * 1.4286068203094172321214581765680755001344e-6;
+    y += types.cast(f128, e) * 1.4286068203094172321214581765680755001344e-6;
     y += z;
-    y += logtbl_128[types.scast(u32, k - 26)];
+    y += logtbl_128[types.cast(u32, k - 26)];
     y += t.toFloat() - 1.0;
-    y += types.scast(f128, e) * 6.93145751953125e-1;
+    y += types.cast(f128, e) * 6.93145751953125e-1;
     return y;
 }
 

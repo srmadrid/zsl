@@ -5,46 +5,41 @@ const float = @import("../float.zig");
 
 const dbl64 = @import("dbl64.zig");
 
-pub fn Exp(comptime X: type) type {
-    comptime if (!types.isNumeric(X) or !types.numericType(X).le(.float))
-        @compileError("zml.float.exp: x must be a bool, an int or a float, got \n\tx: " ++ @typeName(X) ++ "\n");
-
-    return types.EnsureFloat(X);
-}
-
-/// Returns the exponential `eˣ` of a float, int or bool operand. The result
-/// type is determined by coercing the operand type to a float, and the
-/// operation is performed by casting the operand to the result type, then
-/// computing its exponential.
+/// Returns the exponential `eˣ` of a float.
 ///
 /// ## Signature
 /// ```zig
-/// float.exp(x: X) float.Exp(X)
+/// float.exp(x: X) X
 /// ```
 ///
 /// ## Arguments
 /// * `x` (`anytype`): The value to get the exponential of.
 ///
 /// ## Returns
-/// `float.Exp(@TypeOf(x))`: The exponential of `x`.
-pub inline fn exp(x: anytype) float.Exp(@TypeOf(x)) {
-    switch (float.Exp(@TypeOf(x))) {
-        f16 => return types.scast(f16, exp32(types.scast(f32, x))),
+/// `@TypeOf(x)`: The exponential of `x`.
+pub inline fn exp(x: anytype) @TypeOf(x) {
+    const X: type = @TypeOf(x);
+
+    comptime if (!types.isNumeric(X) or types.numericType(X) != .float)
+        @compileError("zsl.float.exp: x must be a float, got \n\tx: " ++ @typeName(X) ++ "\n");
+
+    switch (X) {
+        f16 => return types.cast(f16, exp32(types.cast(f32, x))),
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_expf.c
-            return exp32(types.scast(f32, x));
+            return exp32(types.cast(f32, x));
         },
         f64 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_exp.c
-            return exp64(types.scast(f64, x));
+            return exp64(types.cast(f64, x));
         },
         f80 => {
             // https://github.com/JuliaMath/openlibm/blob/master/ld80/e_expl.c
-            return exp80(types.scast(f80, x));
+            return exp80(types.cast(f80, x));
         },
         f128 => {
             // https://github.com/JuliaMath/openlibm/blob/master/ld128/e_expl.c
-            return exp128(types.scast(f128, x));
+            return exp128(types.cast(f128, x));
         },
         else => unreachable,
     }
@@ -101,8 +96,8 @@ fn exp32(x: f32) f32 {
                 k = -1;
             }
         } else {
-            k = types.scast(i32, 1.4426950216e+0 * x + @as(f32, if (xsb == 0) 0.5 else -0.5));
-            const t: f32 = types.scast(f32, k);
+            k = types.cast(i32, 1.4426950216e+0 * x + @as(f32, if (xsb == 0) 0.5 else -0.5));
+            const t: f32 = types.cast(f32, k);
             hi = x - t * 6.9314575195e-1;
             lo = t * 1.4286067653e-6;
         }
@@ -195,8 +190,8 @@ fn exp64(x: f64) f64 {
                 k = -1;
             }
         } else {
-            k = types.scast(i32, 1.44269504088896338700e+0 * x + @as(f64, if (xsb == 0) 0.5 else -0.5));
-            const t: f64 = types.scast(f64, k);
+            k = types.cast(i32, 1.44269504088896338700e+0 * x + @as(f64, if (xsb == 0) 0.5 else -0.5));
+            const t: f64 = types.cast(f64, k);
             hi = x - t * 6.93147180369123816490e-1;
             lo = t * 1.90821492927058770002e-10;
         }
@@ -267,7 +262,7 @@ fn exp80(x: f80) f80 {
         return 0.0;
 
     var px: f80 = float.floor(1.4426950408889634073599e0 * x + 0.5);
-    const n: i32 = types.scast(i32, px);
+    const n: i32 = types.cast(i32, px);
     var xx: f80 = x - px * 6.93145751953125e-1;
     xx -= px * 1.4286068203094172321215e-6;
 
@@ -315,7 +310,7 @@ fn exp128(x: f128) f128 {
         return 0.0;
 
     var px: f128 = float.floor(1.442695040888963407359924681001892137426646 * x + 0.5);
-    const n: i32 = types.scast(i32, px);
+    const n: i32 = types.cast(i32, px);
     var xx: f128 = x + px * -6.93145751953125e-1;
     xx += px * -1.428606820309417232121458176568075500134e-6;
 

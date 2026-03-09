@@ -6,47 +6,42 @@ const float = @import("../float.zig");
 const dbl64 = @import("dbl64.zig");
 const ldbl128 = @import("ldbl128.zig");
 
-pub fn Cosh(comptime X: type) type {
-    comptime if (!types.isNumeric(X) or !types.numericType(X).le(.float))
-        @compileError("zml.float.cosh: x must be a bool, an int or a float, got \n\tx: " ++ @typeName(X) ++ "\n");
-
-    return types.EnsureFloat(X);
-}
-
-/// Returns the hyperbolic cosine $\cosh(x)$ of a float, int or bool operand.
-/// The result type is determined by coercing the operand type to a float, and
-/// the operation is performed by casting the operand to the result type, then
-/// computing its hyperbolic cosine.
+/// Returns the hyperbolic cosine $\cosh(x)$ of a float.
 ///
 /// ## Signature
 /// ```zig
-/// float.cosh(x: X) float.Cosh(X)
+/// float.cosh(x: X) X
 /// ```
 ///
 /// ## Arguments
 /// * `x` (`anytype`): The value to get the hyperbolic cosine of.
 ///
 /// ## Returns
-/// `float.Cosh(@TypeOf(x))`: The hyperbolic cosine of `x`.
-pub inline fn cosh(x: anytype) float.Cosh(@TypeOf(x)) {
-    switch (float.Cosh(@TypeOf(x))) {
-        f16 => return types.scast(f16, cosh32(types.scast(f32, x))),
+/// `@TypeOf(x)`: The hyperbolic cosine of `x`.
+pub inline fn cosh(x: anytype) @TypeOf(x) {
+    const X: type = @TypeOf(x);
+
+    comptime if (!types.isNumeric(X) or types.numericType(X) != .float)
+        @compileError("zsl.float.cosh: x must be a float, got \n\tx: " ++ @typeName(X) ++ "\n");
+
+    switch (X) {
+        f16 => return types.cast(f16, cosh32(types.cast(f32, x))),
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_coshf.c
-            return cosh32(types.scast(f32, x));
+            return cosh32(types.cast(f32, x));
         },
         f64 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_cosh.c
-            return cosh64(types.scast(f64, x));
+            return cosh64(types.cast(f64, x));
         },
         f80 => {
             //
-            // return cosh80(types.scast(f80, x));
-            return types.scast(f80, cosh128(types.scast(f128, x)));
+            // return cosh80(types.cast(f80, x));
+            return types.cast(f80, cosh128(types.cast(f128, x)));
         },
         f128 => {
             // https://github.com/JuliaMath/openlibm/blob/master/ld128/e_coshl.c
-            return cosh128(types.scast(f128, x));
+            return cosh128(types.cast(f128, x));
         },
         else => unreachable,
     }

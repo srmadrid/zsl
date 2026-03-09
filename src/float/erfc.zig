@@ -8,17 +8,7 @@ const erf_data = @import("erf_data.zig");
 const dbl64 = @import("dbl64.zig");
 const ldbl128 = @import("ldbl128.zig");
 
-pub fn Erfc(comptime X: type) type {
-    comptime if (!types.isNumeric(X) or !types.numericType(X).le(.float))
-        @compileError("zml.float.erfc: x must be a bool, an int or a float, got \n\tx: " ++ @typeName(X) ++ "\n");
-
-    return types.EnsureFloat(X);
-}
-
-/// Returns the complementary error function of a float, int or bool operand.
-/// The result type is determined by coercing the operand type to a float, and
-/// the operation is performed by casting the operand to the result type, then
-/// computing the complementary error function at that value.
+/// Returns the complementary error function of a float.
 ///
 /// The complementary error function is defined as:
 /// $$
@@ -27,33 +17,38 @@ pub fn Erfc(comptime X: type) type {
 ///
 /// ## Signature
 /// ```zig
-/// float.erfc(x: X) float.Erfc(X)
+/// float.erfc(x: X) X
 /// ```
 ///
 /// ## Arguments
 /// * `x` (`anytype`): The value to get the complementary error function at.
 ///
 /// ## Returns
-/// `float.Erfc(@TypeOf(x))`: The complementary error function at `x`.
-pub inline fn erfc(x: anytype) float.Erfc(@TypeOf(x)) {
-    switch (float.Erfc(@TypeOf(x))) {
-        f16 => return types.scast(f16, erfc32(types.scast(f32, x))),
+/// `@TypeOf(x)`: The complementary error function at `x`.
+pub inline fn erfc(x: anytype) @TypeOf(x) {
+    const X: type = @TypeOf(x);
+
+    comptime if (!types.isNumeric(X) or types.numericType(X) != .float)
+        @compileError("zsl.float.erfc: x must be a float, got \n\tx: " ++ @typeName(X) ++ "\n");
+
+    switch (X) {
+        f16 => return types.cast(f16, erfc32(types.cast(f32, x))),
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_erff.c
-            return erfc32(types.scast(f32, x));
+            return erfc32(types.cast(f32, x));
         },
         f64 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_erf.c
-            return erfc64(types.scast(f64, x));
+            return erfc64(types.cast(f64, x));
         },
         f80 => {
             //
-            // return erfc80(types.scast(f80, x));
-            return types.scast(f80, erfc128(types.scast(f128, x)));
+            // return erfc80(types.cast(f80, x));
+            return types.cast(f80, erfc128(types.cast(f128, x)));
         },
         f128 => {
             // https://github.com/JuliaMath/openlibm/blob/master/ld128/s_erfl.c
-            return erfc128(types.scast(f128, x));
+            return erfc128(types.cast(f128, x));
         },
         else => unreachable,
     }
@@ -79,7 +74,7 @@ fn erfc32(x: f32) f32 {
 
     if (ix >= 0x7f800000) { // erfc(nan) = nan
         // erfc(±inf) = 0,2
-        return types.scast(f32, (@as(u32, @bitCast(hx)) >> 31) << 1);
+        return types.cast(f32, (@as(u32, @bitCast(hx)) >> 31) << 1);
     }
 
     if (ix < 0x3f580000) { // |x| < 0.84375
@@ -187,7 +182,7 @@ fn erfc64(x: f64) f64 {
 
     if (ix >= 0x7ff00000) { // erfc(nan)=nan
         // erfc(±inf) = 0, 2
-        return types.scast(f32, (@as(u32, @bitCast(hx)) >> 31) << 1);
+        return types.cast(f32, (@as(u32, @bitCast(hx)) >> 31) << 1);
     }
 
     if (ix < 0x3feb0000) { // |x| < 0.84375
@@ -334,7 +329,7 @@ fn erfc128(x: f128) f128 {
 
     if (ix >= 0x7fff0000) { // erfc(nan) = nan
         // erfc(±inf) = 0, 2
-        return types.scast(f128, (@as(u32, @intCast(sign)) >> 31) << 1);
+        return types.cast(f128, (@as(u32, @intCast(sign)) >> 31) << 1);
     }
 
     if (ix < 0x3ffd0000) { // |x| < 1/4
@@ -346,7 +341,7 @@ fn erfc128(x: f128) f128 {
 
     if (ix < 0x3fff4000) { // 1.25
         const xx: f128 = u.toFloat();
-        const i: i32 = types.scast(i32, 8.0 * xx);
+        const i: i32 = types.cast(i32, 8.0 * xx);
         var y: f128 = undefined;
         switch (i) {
             2 => {
@@ -405,7 +400,7 @@ fn erfc128(x: f128) f128 {
 
         const xx: f128 = float.abs(x);
         var z: f128 = 1 / (xx * xx);
-        const i: i32 = types.scast(i32, 8.0 / xx);
+        const i: i32 = types.cast(i32, 8.0 / xx);
         var p: f128 = undefined;
         switch (i) {
             1 => {

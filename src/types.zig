@@ -157,11 +157,11 @@ pub const IterationOrder = enum {
 ///   * `isize`, `i8`, `i16`, `i32`, `i64`, `i128`
 ///   * `uX`, `iX` (where X is any bit size)
 ///   * `comptime_int`
-/// * `rational`:Represents rational types (`Rational`).
+/// * `rational`: Represents rational types (`Rational(...)`).
 /// * `float`: Represents floating point types:
 ///   * `f16`, `f32`, `f64`, `f80`, `f128`
 ///   * `comptime_float`
-/// * `dyadic`: Represents dyadic rational types (`Dyadic`).
+/// * `dyadic`: Represents dyadic rational types (`Dyadic(...)`).
 /// * `complex`: Represents complex types:
 ///   * `cf16`, `cf32`, `cf64`, `cf80`, `cf128`
 ///   * `Complex(Dyadic(...))`

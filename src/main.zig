@@ -4,6 +4,15 @@ const ci = @cImport({
     @cInclude("lapacke.h");
 });
 
+pub fn main() !void {
+    // const a: std.mem.Allocator = std.heap.page_allocator;
+    // var gpa: std.heap.DebugAllocator(.{}) = .init;
+    // defer _ = gpa.deinit();
+    // const a = gpa.allocator();
+
+    std.debug.print("Compiles\n", .{});
+}
+
 fn avg(values: []const f64) f64 {
     var sum: f64 = 0;
     for (values) |value| {
@@ -556,59 +565,6 @@ fn print_complex_matrix(desc: []const u8, m: u32, n: u32, a: []zsl.cf64, lda: u3
             std.debug.print("\n", .{});
         }
     }
-}
-
-pub fn main() !void {
-    // const a: std.mem.Allocator = std.heap.page_allocator;
-    // var gpa: std.heap.DebugAllocator(.{}) = .init;
-    // defer _ = gpa.deinit();
-    // const a = gpa.allocator();
-
-    // var zero = try zsl.zero(zsl.autodiff.Dual(zsl.Integer), .{ .allocator = a, .zero = zsl.autodiff.Dual(zsl.Integer)._zeroAllocated });
-    // defer zsl.deinit(&zero, .{ .allocator = a });
-    // std.debug.print("zero: {}\n", .{zero});
-
-    const z: f64 = 1.234567890123456789;
-    const a: zsl.autodiff.Dual(zsl.cf32) = zsl.scast(zsl.autodiff.Dual(zsl.cf32), z);
-    const b: zsl.cf64 = zsl.scast(zsl.cf64, a);
-    std.debug.print("z: {d}\n", .{z});
-    std.debug.print("a: {} + {}ε\n", .{ a.val, a.eps });
-    std.debug.print("b: {}\n", .{b});
-
-    // const a: u64 = 1000;
-    // const b: f64 = 1000;
-    // const c = zsl.add(a, b, .{}) catch unreachable;
-
-    // std.debug.print("{d} + {d} = {d}\n", .{ a, b, c });
-    // std.debug.print("@TypeOf(c) = {s}\n", .{@typeName(@TypeOf(c))});
-
-    // const s = zsl.types.mixStructs(.{ .a = a, .b = b }, .{ .c = c });
-    // std.debug.print("Mixed struct: {}\n", .{s});
-    // std.debug.print("Type of s: {s}\n", .{@typeName(@TypeOf(s))});
-    // std.debug.print("Fields of s: \n", .{});
-    // inline for (@typeInfo(@TypeOf(s)).@"struct".fields) |field| {
-    //     std.debug.print("\t{s}: {s}\n", .{ field.name, @typeName(field.type) });
-    // }
-
-    // const t = zsl.types.stripStruct(s, &.{ "a", "c" });
-    // std.debug.print("Stripped struct: {}\n", .{t});
-    // std.debug.print("Type of t: {s}\n", .{@typeName(@TypeOf(t))});
-    // std.debug.print("Fields of t: \n", .{});
-    // inline for (@typeInfo(@TypeOf(t)).@"struct".fields) |field| {
-    //     std.debug.print("\t{s}: {s}\n", .{ field.name, @typeName(field.type) });
-    // }
-
-    // try symbolicTesting(a);
-
-    // try binopPerfTesting(a);
-
-    // try decompPerfTesting(a);
-
-    //try vectorTesting(a);
-
-    // try matrixTesting(a);
-
-    // try bigintTesting(a);
 }
 
 fn ask_user(default: u32) !u32 {

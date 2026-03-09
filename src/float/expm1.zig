@@ -6,47 +6,42 @@ const float = @import("../float.zig");
 const dbl64 = @import("dbl64.zig");
 const ldbl128 = @import("ldbl128.zig");
 
-pub fn Expm1(comptime X: type) type {
-    comptime if (!types.isNumeric(X) or !types.numericType(X).le(.float))
-        @compileError("zml.float.expm1: x must be a bool, an int or a float, got \n\tx: " ++ @typeName(X) ++ "\n");
-
-    return types.EnsureFloat(X);
-}
-
-/// Returns the exponential minus one $e^x - 1$ of a float, int or bool operand.
-/// The result type is determined by coercing the operand type to a float, and
-/// the operation is performed by casting the operand to the result type, then
-/// computing its exponential minus one.
+/// Returns the exponential minus one $e^x - 1$ of a float.
 ///
 /// ## Signature
 /// ```zig
-/// float.expm1(x: X) float.Expm1(X)
+/// float.expm1(x: X) X
 /// ```
 ///
 /// ## Arguments
 /// * `x` (`anytype`): The value to get the exponential minus one of.
 ///
 /// ## Returns
-/// `float.Expm1(@TypeOf(x))`: The exponential minus one of `x`.
-pub inline fn expm1(x: anytype) float.Expm1(@TypeOf(x)) {
-    switch (float.Expm1(@TypeOf(x))) {
-        f16 => return types.scast(f16, expm1_32(types.scast(f32, x))),
+/// `@TypeOf(x)`: The exponential minus one of `x`.
+pub inline fn expm1(x: anytype) @TypeOf(x) {
+    const X: type = @TypeOf(x);
+
+    comptime if (!types.isNumeric(X) or types.numericType(X) != .float)
+        @compileError("zsl.float.expm1: x must be a float, got \n\tx: " ++ @typeName(X) ++ "\n");
+
+    switch (X) {
+        f16 => return types.cast(f16, expm1_32(types.cast(f32, x))),
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_expm1f.c
-            return expm1_32(types.scast(f32, x));
+            return expm1_32(types.cast(f32, x));
         },
         f64 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_expm1.c
-            return expm1_64(types.scast(f64, x));
+            return expm1_64(types.cast(f64, x));
         },
         f80 => {
             //
-            // return expm1_80(types.scast(f80, x));
-            return types.scast(f80, expm1_128(types.scast(f128, x)));
+            // return expm1_80(types.cast(f80, x));
+            return types.cast(f80, expm1_128(types.cast(f128, x)));
         },
         f128 => {
             // https://github.com/JuliaMath/openlibm/blob/master/ld128/s_expm1l.c
-            return expm1_128(types.scast(f128, x));
+            return expm1_128(types.cast(f128, x));
         },
         else => unreachable,
     }
@@ -107,8 +102,8 @@ fn expm1_32(x: f32) f32 {
                 k = -1;
             }
         } else {
-            k = types.scast(i32, 1.4426950216e+0 * x + @as(f32, if (xsb == 0) 0.5 else -0.5));
-            const t: f32 = types.scast(f32, k);
+            k = types.cast(i32, 1.4426950216e+0 * x + @as(f32, if (xsb == 0) 0.5 else -0.5));
+            const t: f32 = types.cast(f32, k);
             hi = x - t * 6.9313812256e-1; // t * ln2_hi is exact here
             lo = t * 9.0580006145e-6;
         }
@@ -222,8 +217,8 @@ fn expm1_64(x: f64) f64 {
                 k = -1;
             }
         } else {
-            k = types.scast(i32, 1.44269504088896338700e+0 * x + @as(f64, if (xsb == 0) 0.5 else -0.5));
-            const t: f64 = types.scast(f64, k);
+            k = types.cast(i32, 1.44269504088896338700e+0 * x + @as(f64, if (xsb == 0) 0.5 else -0.5));
+            const t: f64 = types.cast(f64, k);
             hi = x - t * 6.93147180369123816490e-1; // t * ln2_hi is exact here
             lo = t * 1.90821492927058770002e-10;
         }
@@ -337,7 +332,7 @@ fn expm1_128(x: f128) f128 {
     // Express x = ln(2) (k + remainder), remainder not exceeding 1/2
     var xx: f128 = 6.93145751953125e-1 + 1.428606820309417232121458176568075500134e-6; // ln(2)
     var px: f128 = float.floor(0.5 + x / xx);
-    const k: i32 = types.scast(i32, px);
+    const k: i32 = types.cast(i32, px);
 
     // Remainder times ln(2)
     var xxx: f128 = x - px * 6.93145751953125e-1;

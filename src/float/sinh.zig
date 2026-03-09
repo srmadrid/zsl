@@ -6,47 +6,42 @@ const float = @import("../float.zig");
 const dbl64 = @import("dbl64.zig");
 const ldbl128 = @import("ldbl128.zig");
 
-pub fn Sinh(comptime X: type) type {
-    comptime if (!types.isNumeric(X) or !types.numericType(X).le(.float))
-        @compileError("zml.float.sinh: x must be a bool, an int or a float, got \n\tx: " ++ @typeName(X) ++ "\n");
-
-    return types.EnsureFloat(X);
-}
-
-/// Returns the hyperbolic sine $\sinh(x)$ of a float, int or bool operand. The
-/// result type is determined by coercing the operand type to a float, and the
-/// operation is performed by casting the operand to the result type, then
-/// computing its hyperbolic sine.
+/// Returns the hyperbolic sine $\sinh(x)$ of a float.
 ///
 /// ## Signature
 /// ```zig
-/// float.sinh(x: X) float.Sinh(X)
+/// float.sinh(x: X) X
 /// ```
 ///
 /// ## Arguments
 /// * `x` (`anytype`): The value to get the hyperbolic sine of.
 ///
 /// ## Returns
-/// `float.Sinh(@TypeOf(x))`: The hyperbolic sine of `x`.
-pub inline fn sinh(x: anytype) float.Sinh(@TypeOf(x)) {
-    switch (float.Sinh(@TypeOf(x))) {
-        f16 => return types.scast(f16, sinh32(types.scast(f32, x))),
+/// `@TypeOf(x)`: The hyperbolic sine of `x`.
+pub inline fn sinh(x: anytype) @TypeOf(x) {
+    const X: type = @TypeOf(x);
+
+    comptime if (!types.isNumeric(X) or types.numericType(X) != .float)
+        @compileError("zsl.float.sinh: x must be a float, got \n\tx: " ++ @typeName(X) ++ "\n");
+
+    switch (X) {
+        f16 => return types.cast(f16, sinh32(types.cast(f32, x))),
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_sinhf.c
-            return sinh32(types.scast(f32, x));
+            return sinh32(types.cast(f32, x));
         },
         f64 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_sinh.c
-            return sinh64(types.scast(f64, x));
+            return sinh64(types.cast(f64, x));
         },
         f80 => {
             //
-            // return sinh80(types.scast(f80, x));
-            return types.scast(f80, sinh128(types.scast(f128, x)));
+            // return sinh80(types.cast(f80, x));
+            return types.cast(f80, sinh128(types.cast(f128, x)));
         },
         f128 => {
             // https://github.com/JuliaMath/openlibm/blob/master/ld128/e_sinhl.c
-            return sinh128(types.scast(f128, x));
+            return sinh128(types.cast(f128, x));
         },
         else => unreachable,
     }

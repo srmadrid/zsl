@@ -24,9 +24,9 @@ pub fn Add(comptime X: type, comptime Y: type) type {
 ///
 /// Depending on the global int operation mode set in `options.int_mode`,
 /// the addition will behave differently in case of over/underflow:
-/// - `.default`: Standard addition, which will panic on over/underflow.
-/// - `.wrap`: Addition with wrapping behavior on over/underflow.
-/// - `.saturate`: Addition with saturation behavior on over/underflow.
+/// * `.default`: Standard addition, which will panic on over/underflow.
+/// * `.wrap`: Addition with wrapping behavior on over/underflow.
+/// * `.saturate`: Addition with saturation behavior on over/underflow.
 ///
 /// ## Signature
 /// ```zig
@@ -66,9 +66,9 @@ pub fn Sub(comptime X: type, comptime Y: type) type {
 ///
 /// Depending on the global int operation mode set in `options.int_mode`,
 /// the subtraction will behave differently in case of over/underflow:
-/// - `.default`: Standard subtraction, which will panic on over/underflow.
-/// - `.wrap`: Subtraction with wrapping behavior on over/underflow.
-/// - `.saturate`: Subtraction with saturation behavior on over/underflow.
+/// * `.default`: Standard subtraction, which will panic on over/underflow.
+/// * `.wrap`: Subtraction with wrapping behavior on over/underflow.
+/// * `.saturate`: Subtraction with saturation behavior on over/underflow.
 ///
 /// ## Signature
 /// ```zig
@@ -108,9 +108,9 @@ pub fn Mul(comptime X: type, comptime Y: type) type {
 ///
 /// Depending on the global int operation mode set in `options.int_mode`,
 /// the multiplication will behave differently in case of over/underflow:
-/// - `.default`: Standard multiplication, which will panic on over/underflow.
-/// - `.wrap`: Multiplication with wrapping behavior on over/underflow.
-/// - `.saturate`: Multiplication with saturation behavior on over/underflow.
+/// * `.default`: Standard multiplication, which will panic on over/underflow.
+/// * `.wrap`: Multiplication with wrapping behavior on over/underflow.
+/// * `.saturate`: Multiplication with saturation behavior on over/underflow.
 ///
 /// ## Signature
 /// ```zig
@@ -478,7 +478,3 @@ pub const abs = @import("int/abs.zig").abs;
 pub const sign = @import("int/sign.zig").sign;
 pub const Pow = @import("int/pow.zig").Pow;
 pub const pow = @import("int/pow.zig").pow;
-
-pub const Error = error{
-    NegativeExponent,
-};

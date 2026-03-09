@@ -8,17 +8,7 @@ const lgamma = @import("lgamma.zig");
 const dbl64 = @import("dbl64.zig");
 const ldbl128 = @import("ldbl128.zig");
 
-pub fn Gamma(comptime X: type) type {
-    comptime if (!types.isNumeric(X) or !types.numericType(X).le(.float))
-        @compileError("zml.float.gamma: x must be a bool, an int or a float, got \n\tx: " ++ @typeName(X) ++ "\n");
-
-    return types.EnsureFloat(X);
-}
-
-/// Returns the gamma function of a float, int or bool  operand. The result type
-/// is determined by coercing the operand type to a  float, and the operation is
-/// performed by casting the operand to the result type, then computing the
-/// gamma function at that value.
+/// Returns the gamma function of a float.
 ///
 /// The gamma function is defined as:
 /// $$
@@ -27,34 +17,39 @@ pub fn Gamma(comptime X: type) type {
 ///
 /// ## Signature
 /// ```zig
-/// float.gamma(x: X) float.Gamma(X)
+/// float.gamma(x: X) X
 /// ```
 ///
 /// ## Arguments
 /// * `x` (`anytype`): The value to get the gamma function at.
 ///
 /// ## Returns
-/// `float.Gamma(@TypeOf(x))`: The gamma function at `x`.
-pub inline fn gamma(x: anytype) float.Gamma(@TypeOf(x)) {
-    switch (float.Gamma(@TypeOf(x))) {
-        f16 => return types.scast(f16, gamma32(types.scast(f32, x))),
+/// `@TypeOf(x)`: The gamma function at `x`.
+pub inline fn gamma(x: anytype) @TypeOf(x) {
+    const X: type = @TypeOf(x);
+
+    comptime if (!types.isNumeric(X) or types.numericType(X) != .float)
+        @compileError("zsl.float.gamma: x must be a float, got \n\tx: " ++ @typeName(X) ++ "\n");
+
+    switch (X) {
+        f16 => return types.cast(f16, gamma32(types.cast(f32, x))),
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_tgammaf.c
-            return gamma32(types.scast(f32, x));
+            return gamma32(types.cast(f32, x));
         },
         f64 => {
             //
-            // return gamma64(types.scast(f64, x));
-            return types.scast(f64, gamma128(types.scast(f128, x)));
+            // return gamma64(types.cast(f64, x));
+            return types.cast(f64, gamma128(types.cast(f128, x)));
         },
         f80 => {
             //
-            // return gamma80(types.scast(f80, x));
-            return types.scast(f80, gamma128(types.scast(f128, x)));
+            // return gamma80(types.cast(f80, x));
+            return types.cast(f80, gamma128(types.cast(f128, x)));
         },
         f128 => {
             // https://github.com/JuliaMath/openlibm/blob/master/ld128/e_tgammal.c
-            return gamma128(types.scast(f128, x));
+            return gamma128(types.cast(f128, x));
         },
         else => unreachable,
     }
@@ -88,11 +83,11 @@ pub inline fn gamma(x: anytype) float.Gamma(@TypeOf(x)) {
 // OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 // SUCH DAMAGE.
 fn gamma32(x: f32) f32 {
-    return types.scast(f32, gamma64(types.scast(f64, x)));
+    return types.cast(f32, gamma64(types.cast(f64, x)));
 }
 
 fn gamma64(x: f64) f64 {
-    return types.scast(f64, gamma128(types.scast(f128, x)));
+    return types.cast(f64, gamma128(types.cast(f128, x)));
 }
 
 // Translation of:
@@ -125,5 +120,5 @@ fn gamma128(x: f128) f128 {
         return x - x;
     var signamp: i32 = undefined;
     const lg: f128 = lgamma.lgamma_r128(x, &signamp);
-    return types.scast(f128, signamp) * float.exp(lg);
+    return types.cast(f128, signamp) * float.exp(lg);
 }

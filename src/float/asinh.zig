@@ -6,47 +6,42 @@ const float = @import("../float.zig");
 const dbl64 = @import("dbl64.zig");
 const ldbl128 = @import("ldbl128.zig");
 
-pub fn Asinh(comptime X: type) type {
-    comptime if (!types.isNumeric(X) or !types.numericType(X).le(.float))
-        @compileError("zml.float.asinh: x must be a bool, an int or a float, got \n\tx: " ++ @typeName(X) ++ "\n");
-
-    return types.EnsureFloat(X);
-}
-
-/// Returns the hyperbolic arcsine $\sinh^{-1}(x)$ of a float, int or bool
-/// operand. The result type is determined by coercing the operand type to a
-/// float, and the operation is performed by casting the operand to the result
-/// type, then computing its hyperbolic arcsine.
+/// Returns the hyperbolic arcsine $\sinh^{-1}(x)$ of a float.
 ///
 /// ## Signature
 /// ```zig
-/// float.asinh(x: X) float.Asinh(X)
+/// float.asinh(x: X) X
 /// ```
 ///
 /// ## Arguments
 /// * `x` (`anytype`): The value to get the hyperbolic arcsine of.
 ///
 /// ## Returns
-/// `float.Asinh(@TypeOf(x))`: The hyperbolic arcsine of `x`.
-pub inline fn asinh(x: anytype) float.Asinh(@TypeOf(x)) {
-    switch (float.Asinh(@TypeOf(x))) {
-        f16 => return types.scast(f16, asinh32(types.scast(f32, x))),
+/// `@TypeOf(x)`: The hyperbolic arcsine of `x`.
+pub inline fn asinh(x: anytype) @TypeOf(x) {
+    const X: type = @TypeOf(x);
+
+    comptime if (!types.isNumeric(X) or types.numericType(X) != .float)
+        @compileError("zsl.float.asinh: x must be a float, got \n\tx: " ++ @typeName(X) ++ "\n");
+
+    switch (X) {
+        f16 => return types.cast(f16, asinh32(types.cast(f32, x))),
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_asinhf.c
-            return asinh32(types.scast(f32, x));
+            return asinh32(types.cast(f32, x));
         },
         f64 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_asinh.c
-            return asinh64(types.scast(f64, x));
+            return asinh64(types.cast(f64, x));
         },
         f80 => {
             //
-            // return asinh80(types.scast(f80, x));
-            return types.scast(f80, asinh128(types.scast(f128, x)));
+            // return asinh80(types.cast(f80, x));
+            return types.cast(f80, asinh128(types.cast(f128, x)));
         },
         f128 => {
             // https://github.com/JuliaMath/openlibm/blob/master/ld128/s_asinhl.c
-            return asinh128(types.scast(f128, x));
+            return asinh128(types.cast(f128, x));
         },
         else => unreachable,
     }

@@ -6,47 +6,42 @@ const float = @import("../float.zig");
 const dbl64 = @import("dbl64.zig");
 const ldbl128 = @import("ldbl128.zig");
 
-pub fn Atan(comptime X: type) type {
-    comptime if (!types.isNumeric(X) or !types.numericType(X).le(.float))
-        @compileError("zml.float.atan: x must be a bool, an int or a float, got \n\tx: " ++ @typeName(X) ++ "\n");
-
-    return types.EnsureFloat(X);
-}
-
-/// Returns the arctangent $\tan^{-1}(x)$ of a float, int or bool operand. The
-/// result type is determined by coercing the operand type to a float, and the
-/// operation is performed by casting the operand to the result type, then
-/// computing its arctangent.
+/// Returns the arctangent $\tan^{-1}(x)$ of a float.
 ///
 /// ## Signature
 /// ```zig
-/// float.atan(x: X) float.Atan(X)
+/// float.atan(x: X) X
 /// ```
 ///
 /// ## Arguments
 /// * `x` (`anytype`): The value to get the arctangent of.
 ///
 /// ## Returns
-/// `float.Atan(@TypeOf(x))`: The arctangent of `x`.
-pub inline fn atan(x: anytype) float.Atan(@TypeOf(x)) {
-    switch (float.Atan(@TypeOf(x))) {
-        f16 => return types.scast(f16, atan32(types.scast(f32, x))),
+/// `@TypeOf(x)`: The arctangent of `x`.
+pub inline fn atan(x: anytype) @TypeOf(x) {
+    const X: type = @TypeOf(x);
+
+    comptime if (!types.isNumeric(X) or types.numericType(X) != .float)
+        @compileError("zsl.float.atan: x must be a float, got \n\tx: " ++ @typeName(X) ++ "\n");
+
+    switch (X) {
+        f16 => return types.cast(f16, atan32(types.cast(f32, x))),
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_atanf.c
-            return atan32(types.scast(f32, x));
+            return atan32(types.cast(f32, x));
         },
         f64 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_atan.c
-            return atan64(types.scast(f64, x));
+            return atan64(types.cast(f64, x));
         },
         f80 => {
             //
-            // return atan80(types.scast(f80, x));
-            return types.scast(f80, atan128(types.scast(f128, x)));
+            // return atan80(types.cast(f80, x));
+            return types.cast(f80, atan128(types.cast(f128, x)));
         },
         f128 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_atanl.c
-            return atan128(types.scast(f128, x));
+            return atan128(types.cast(f128, x));
         },
         else => unreachable,
     }

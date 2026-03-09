@@ -6,47 +6,42 @@ const float = @import("../float.zig");
 const dbl64 = @import("dbl64.zig");
 const ldbl128 = @import("ldbl128.zig");
 
-pub fn Tanh(comptime X: type) type {
-    comptime if (!types.isNumeric(X) or !types.numericType(X).le(.float))
-        @compileError("zml.float.tanh: x must be a bool, an int or a float, got \n\tx: " ++ @typeName(X) ++ "\n");
-
-    return types.EnsureFloat(X);
-}
-
-/// Returns the hyperbolic tangent $\tanh(x)$ of a float, int or bool operand.
-/// The result type is determined by coercing the operand type to a float, and
-/// the operation is performed by casting the operand to the result type, then
-/// computing its hyperbolic tangent.
+/// Returns the hyperbolic tangent $\tanh(x)$ of a float.
 ///
 /// ## Signature
 /// ```zig
-/// float.tanh(x: X) float.Tanh(X)
+/// float.tanh(x: X) X
 /// ```
 ///
 /// ## Arguments
 /// * `x` (`anytype`): The value to get the hyperbolic tangent of.
 ///
 /// ## Returns
-/// `float.Tanh(@TypeOf(x))`: The hyperbolic tangent of `x`.
-pub inline fn tanh(x: anytype) float.Tanh(@TypeOf(x)) {
-    switch (float.Tanh(@TypeOf(x))) {
-        f16 => return types.scast(f16, tanh32(types.scast(f32, x))),
+/// `@TypeOf(x)`: The hyperbolic tangent of `x`.
+pub inline fn tanh(x: anytype) @TypeOf(x) {
+    const X: type = @TypeOf(x);
+
+    comptime if (!types.isNumeric(X) or types.numericType(X) != .float)
+        @compileError("zsl.float.tanh: x must be a float, got \n\tx: " ++ @typeName(X) ++ "\n");
+
+    switch (X) {
+        f16 => return types.cast(f16, tanh32(types.cast(f32, x))),
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_tanhf.c
-            return tanh32(types.scast(f32, x));
+            return tanh32(types.cast(f32, x));
         },
         f64 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_tanh.c
-            return tanh64(types.scast(f64, x));
+            return tanh64(types.cast(f64, x));
         },
         f80 => {
             //
-            // return tanh80(types.scast(f80, x));
-            return types.scast(f80, tanh128(types.scast(f128, x)));
+            // return tanh80(types.cast(f80, x));
+            return types.cast(f80, tanh128(types.cast(f128, x)));
         },
         f128 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_tanhl.c
-            return tanh128(types.scast(f128, x));
+            return tanh128(types.cast(f128, x));
         },
         else => unreachable,
     }

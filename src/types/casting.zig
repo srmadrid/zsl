@@ -82,7 +82,7 @@ pub inline fn cast(comptime N: type, value: anytype) N {
     const V: type = @TypeOf(value);
 
     comptime if (!types.isNumeric(N) or !types.isNumeric(V))
-        @compileError("zml.cast: N must be a numeric type and value must be a numeric, got\n\tN = " ++ @typeName(N) ++ "\n\tvalue: " ++ @typeName(V) ++ "\n");
+        @compileError("zsl.cast: N must be a numeric type and value must be a numeric, got\n\tN = " ++ @typeName(N) ++ "\n\tvalue: " ++ @typeName(V) ++ "\n");
 
     if (comptime N == V)
         return value;
@@ -92,7 +92,7 @@ pub inline fn cast(comptime N: type, value: anytype) N {
             .bool => unreachable,
             .int, .rational, .float, .dyadic, .complex => return if (value) constants.one(N) else constants.zero(N),
             .custom => {
-                comptime if (!types.hasMethod(N, "fromBool", fn (V) N, &.{V}))
+                if (comptime !types.hasMethod(N, "fromBool", fn (V) N, &.{V}))
                     return if (value) constants.one(N) else constants.zero(N);
 
                 return N.fromBool(value);
@@ -107,21 +107,21 @@ pub inline fn cast(comptime N: type, value: anytype) N {
             .complex => return .init(value),
             .custom => {
                 comptime if (!types.hasMethod(N, "fromInt", fn (V) N, &.{V}))
-                    @compileError("zml.cast: " ++ @typeName(N) ++ " must implement `fn fromInt(" ++ @typeName(V) ++ ") " ++ @typeName(N) ++ "`");
+                    @compileError("zsl.cast: " ++ @typeName(N) ++ " must implement `fn fromInt(" ++ @typeName(V) ++ ") " ++ @typeName(N) ++ "`");
 
                 return N.fromInt(value);
             },
         },
         .rational => switch (comptime types.numericType(N)) {
             .bool => return numeric.ne(value, constants.zero(V)),
-            .int => return value.toInt(V),
+            .int => return value.toInt(N),
             .rational => return .init(value),
-            .float => return value.toFloat(V),
+            .float => return value.toFloat(N),
             .dyadic => return .init(value),
             .complex => return .init(value),
             .custom => {
                 comptime if (!types.hasMethod(N, "fromRational", fn (V) N, &.{V}))
-                    @compileError("zml.cast: " ++ @typeName(N) ++ " must implement `fn fromRational(" ++ @typeName(V) ++ ") " ++ @typeName(N) ++ "`");
+                    @compileError("zsl.cast: " ++ @typeName(N) ++ " must implement `fn fromRational(" ++ @typeName(V) ++ ") " ++ @typeName(N) ++ "`");
 
                 return N.fromRational(value);
             },
@@ -135,40 +135,85 @@ pub inline fn cast(comptime N: type, value: anytype) N {
             .complex => return .init(value),
             .custom => {
                 comptime if (!types.hasMethod(N, "fromFloat", fn (V) N, &.{V}))
-                    @compileError("zml.cast: " ++ @typeName(N) ++ " must implement `fn fromFloat(" ++ @typeName(V) ++ ") " ++ @typeName(N) ++ "`");
+                    @compileError("zsl.cast: " ++ @typeName(N) ++ " must implement `fn fromFloat(" ++ @typeName(V) ++ ") " ++ @typeName(N) ++ "`");
 
                 return N.fromFloat(value);
             },
         },
         .dyadic => switch (comptime types.numericType(N)) {
             .bool => return numeric.ne(value, constants.zero(V)),
-            .int => return value.toInt(V),
+            .int => return value.toInt(N),
             .rational => return .init(value),
-            .float => return value.toFloat(V),
+            .float => return value.toFloat(N),
             .dyadic => return .init(value),
             .complex => return .init(value),
             .custom => {
                 comptime if (!types.hasMethod(N, "fromDyadic", fn (V) N, &.{V}))
-                    @compileError("zml.cast: " ++ @typeName(N) ++ " must implement `fn fromDyadic(" ++ @typeName(V) ++ ") " ++ @typeName(N) ++ "`");
+                    @compileError("zsl.cast: " ++ @typeName(N) ++ " must implement `fn fromDyadic(" ++ @typeName(V) ++ ") " ++ @typeName(N) ++ "`");
 
                 return N.fromDyadic(value);
             },
         },
         .complex => switch (comptime types.numericType(N)) {
             .bool => return numeric.ne(value, constants.zero(V)),
-            .int => return .initSet(value, constants.zero),
-            .rational => return .initSet(value),
-            .float => return .initSet(value),
-            .dyadic => return .initSet(value),
-            .complex => return .{
-                .re = cast(types.Scalar(N), value),
-                .im = constants.zero(types.Scalar(N)),
+            .int => return value.toInt(N),
+            .rational => return .init(value),
+            .float => return value.toFloat(N),
+            .dyadic => return .init(value),
+            .complex => return .init(value),
+            .custom => {
+                comptime if (!types.hasMethod(N, "fromComplex", fn (V) N, &.{V}))
+                    @compileError("zsl.cast: " ++ @typeName(N) ++ " must implement `fn fromComplex(" ++ @typeName(V) ++ ") " ++ @typeName(N) ++ "`");
+
+                return N.fromComplex(value);
+            },
+        },
+        .custom => switch (comptime types.numericType(N)) {
+            .bool => {
+                if (comptime !types.hasMethod(V, "toBool", fn (V) N, &.{V}))
+                    return numeric.ne(value, constants.zero(V));
+
+                return V.toBool(value);
+            },
+            .int => {
+                comptime if (!types.hasMethod(V, "toInt", fn (V, type) N, &.{ V, N }))
+                    @compileError("zsl.cast: " ++ @typeName(V) ++ " must implement `fn toInt(" ++ @typeName(V) ++ ", type) " ++ @typeName(N) ++ "`");
+
+                return V.toInt(value, N);
+            },
+            .rational => {
+                comptime if (!types.hasMethod(V, "toRational", fn (V, type) N, &.{ V, N }))
+                    @compileError("zsl.cast: " ++ @typeName(V) ++ " must implement `fn toRational(" ++ @typeName(V) ++ ", type) " ++ @typeName(N) ++ "`");
+
+                return V.toRational(value, N);
+            },
+            .float => {
+                comptime if (!types.hasMethod(V, "toFloat", fn (V, type) N, &.{ V, N }))
+                    @compileError("zsl.cast: " ++ @typeName(V) ++ " must implement `fn toFloat(" ++ @typeName(V) ++ ", type) " ++ @typeName(N) ++ "`");
+
+                return V.toFloat(value, N);
+            },
+            .dyadic => {
+                comptime if (!types.hasMethod(V, "toDyadic", fn (V, type) N, &.{ V, N }))
+                    @compileError("zsl.cast: " ++ @typeName(V) ++ " must implement `fn toDyadic(" ++ @typeName(V) ++ ", type) " ++ @typeName(N) ++ "`");
+
+                return V.toDyadic(value, N);
+            },
+            .complex => {
+                comptime if (!types.hasMethod(V, "toComplex", fn (V, type) N, &.{ V, N }))
+                    @compileError("zsl.cast: " ++ @typeName(V) ++ " must implement `fn toComplex(" ++ @typeName(V) ++ ", type) " ++ @typeName(N) ++ "`");
+
+                return V.toComplex(value, N);
             },
             .custom => {
-                comptime if (!types.hasMethod(N, "zmlFromDyadic", fn (V) N, &.{V}))
-                    @compileError("zml.cast: " ++ @typeName(N) ++ " must implement `fn zmlFromDyadic(" ++ @typeName(V) ++ ") " ++ @typeName(N) ++ "`");
+                if (comptime !types.hasMethod(N, "fromCustom", fn (V) N, &.{V})) {
+                    comptime if (!types.hasMethod(V, "toCustom", fn (V, type) N, &.{ V, N }))
+                        @compileError("zsl.cast: " ++ @typeName(N) ++ " must implement `fn fromCustom(" ++ @typeName(V) ++ ") " ++ @typeName(N) ++ "`, or " ++ @typeName(V) ++ " must implement `fn toCustom(" ++ @typeName(V) ++ ", type) " ++ @typeName(N) ++ "`");
 
-                return N.zmlFromDyadic(value);
+                    return V.toCustom(value, N);
+                }
+
+                return N.fromCustom(value);
             },
         },
     }

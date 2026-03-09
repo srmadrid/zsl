@@ -6,47 +6,42 @@ const float = @import("../float.zig");
 const dbl64 = @import("dbl64.zig");
 const ldbl128 = @import("ldbl128.zig");
 
-pub fn Asin(comptime X: type) type {
-    comptime if (!types.isNumeric(X) or !types.numericType(X).le(.float))
-        @compileError("zml.float.asin: x must be a bool, an int or a float, got \n\tx: " ++ @typeName(X) ++ "\n");
-
-    return types.EnsureFloat(X);
-}
-
-/// Returns the arcsine $\sin^{-1}(x)$ of a float, int or bool operand. The
-/// result type is determined by coercing the operand type to a float, and the
-/// operation is performed by casting the operand to the result type, then
-/// computing its arcsine.
+/// Returns the arcsine $\sin^{-1}(x)$ of a float.
 ///
 /// ## Signature
 /// ```zig
-/// float.asin(x: X) float.Asin(X)
+/// float.asin(x: X) X
 /// ```
 ///
 /// ## Arguments
 /// * `x` (`anytype`): The value to get the arcsine of.
 ///
 /// ## Returns
-/// `float.Asin(@TypeOf(x))`: The arcsine of `x`.
-pub inline fn asin(x: anytype) float.Asin(@TypeOf(x)) {
-    switch (float.Asin(@TypeOf(x))) {
-        f16 => return types.scast(f16, asin32(types.scast(f32, x))),
+/// `@TypeOf(x)`: The arcsine of `x`.
+pub inline fn asin(x: anytype) @TypeOf(x) {
+    const X: type = @TypeOf(x);
+
+    comptime if (!types.isNumeric(X) or types.numericType(X) != .float)
+        @compileError("zsl.float.asin: x must be a float, got \n\tx: " ++ @typeName(X) ++ "\n");
+
+    switch (X) {
+        f16 => return types.cast(f16, asin32(types.cast(f32, x))),
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_asinf.c
-            return asin32(types.scast(f32, x));
+            return asin32(types.cast(f32, x));
         },
         f64 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_asin.c
-            return asin64(types.scast(f64, x));
+            return asin64(types.cast(f64, x));
         },
         f80 => {
             //
-            // return asin80(types.scast(f80, x));
-            return types.scast(f80, asin128(types.scast(f128, x)));
+            // return asin80(types.cast(f80, x));
+            return types.cast(f80, asin128(types.cast(f128, x)));
         },
         f128 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_asinl.c
-            return asin128(types.scast(f128, x));
+            return asin128(types.cast(f128, x));
         },
         else => unreachable,
     }
@@ -94,7 +89,7 @@ fn asin32(x: f32) f32 {
     const q: f32 = 1.0 + t * -7.0662963390e-1;
     const s: f64 = float.sqrt(t);
     w = p / q;
-    t = types.scast(f32, 1.570796326794896558e+0 - 2.0 * (s + s * types.scast(f64, w)));
+    t = types.cast(f32, 1.570796326794896558e+0 - 2.0 * (s + s * types.cast(f64, w)));
     if (hx > 0)
         return t
     else

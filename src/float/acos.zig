@@ -6,47 +6,42 @@ const float = @import("../float.zig");
 const dbl64 = @import("dbl64.zig");
 const ldbl128 = @import("ldbl128.zig");
 
-pub fn Acos(comptime X: type) type {
-    comptime if (!types.isNumeric(X) or !types.numericType(X).le(.float))
-        @compileError("zml.float.acos: x must be a bool, an int or a float, got \n\tx: " ++ @typeName(X) ++ "\n");
-
-    return types.EnsureFloat(X);
-}
-
-/// Returns the arccosine $\cos^{-1}(x)$ of a float, int or bool operand. The
-/// result type is determined by coercing the operand type to a float, and the
-/// operation is performed by casting the operand to the result type, then
-/// computing its arccosine.
+/// Returns the arccosine $\cos^{-1}(x)$ of a float.
 ///
 /// ## Signature
 /// ```zig
-/// float.acos(x: X) float.Acos(X)
+/// float.acos(x: X) X
 /// ```
 ///
 /// ## Arguments
 /// * `x` (`anytype`): The value to get the arccosine of.
 ///
 /// ## Returns
-/// `float.Acos(@TypeOf(x))`: The arccosine of `x`.
-pub inline fn acos(x: anytype) float.Acos(@TypeOf(x)) {
-    switch (float.Acos(@TypeOf(x))) {
-        f16 => return types.scast(f16, acos32(types.scast(f32, x))),
+/// `@TypeOf(x)`: The arccosine of `x`.
+pub inline fn acos(x: anytype) @TypeOf(x) {
+    const X: type = @TypeOf(x);
+
+    comptime if (!types.isNumeric(X) or types.numericType(X) != .float)
+        @compileError("zsl.float.acos: x must be a float, got \n\tx: " ++ @typeName(X) ++ "\n");
+
+    switch (X) {
+        f16 => return types.cast(f16, acos32(types.cast(f32, x))),
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_acosf.c
-            return acos32(types.scast(f32, x));
+            return acos32(types.cast(f32, x));
         },
         f64 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_acos.c
-            return acos64(types.scast(f64, x));
+            return acos64(types.cast(f64, x));
         },
         f80 => {
             //
-            // return acos80(types.scast(f80, x));
-            return types.scast(f80, acos128(types.scast(f128, x)));
+            // return acos80(types.cast(f80, x));
+            return types.cast(f80, acos128(types.cast(f128, x)));
         },
         f128 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_acosl.c
-            return acos128(types.scast(f128, x));
+            return acos128(types.cast(f128, x));
         },
         else => unreachable,
     }

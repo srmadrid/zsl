@@ -6,47 +6,42 @@ const float = @import("../float.zig");
 const dbl64 = @import("dbl64.zig");
 const ldbl128 = @import("ldbl128.zig");
 
-pub fn Acosh(comptime X: type) type {
-    comptime if (!types.isNumeric(X) or !types.numericType(X).le(.float))
-        @compileError("zml.float.acosh: x must be a bool, an int or a float, got \n\tx: " ++ @typeName(X) ++ "\n");
-
-    return types.EnsureFloat(X);
-}
-
-/// Returns the hyperbolic arccosine $\cosh^{-1}(x)$ of a float, int or bool
-/// operand. The result type is determined by coercing the operand type to a
-/// float, and the operation is performed by casting the operand to the result
-/// type, then computing its hyperbolic arccosine.
+/// Returns the hyperbolic arccosine $\cosh^{-1}(x)$ of a float.
 ///
 /// ## Signature
 /// ```zig
-/// float.acosh(x: X) float.Acosh(X)
+/// float.acosh(x: X) X
 /// ```
 ///
 /// ## Arguments
 /// * `x` (`anytype`): The value to get the hyperbolic arccosine of.
 ///
 /// ## Returns
-/// `float.Acosh(@TypeOf(x))`: The hyperbolic arccosine of `x`.
-pub inline fn acosh(x: anytype) float.Acosh(@TypeOf(x)) {
-    switch (float.Acosh(@TypeOf(x))) {
-        f16 => return types.scast(f16, acosh32(types.scast(f32, x))),
+/// `@TypeOf(x)`: The hyperbolic arccosine of `x`.
+pub inline fn acosh(x: anytype) @TypeOf(x) {
+    const X: type = @TypeOf(x);
+
+    comptime if (!types.isNumeric(X) or types.numericType(X) != .float)
+        @compileError("zsl.float.acosh: x must be a float, got \n\tx: " ++ @typeName(X) ++ "\n");
+
+    switch (X) {
+        f16 => return types.cast(f16, acosh32(types.cast(f32, x))),
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_acoshf.c
-            return acosh32(types.scast(f32, x));
+            return acosh32(types.cast(f32, x));
         },
         f64 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_acosh.c
-            return acosh64(types.scast(f64, x));
+            return acosh64(types.cast(f64, x));
         },
         f80 => {
             //
-            // return acosh80(types.scast(f80, x));
-            return types.scast(f80, acosh128(types.scast(f128, x)));
+            // return acosh80(types.cast(f80, x));
+            return types.cast(f80, acosh128(types.cast(f128, x)));
         },
         f128 => {
             // https://github.com/JuliaMath/openlibm/blob/master/ld128/e_acoshl.c
-            return acosh128(types.scast(f128, x));
+            return acosh128(types.cast(f128, x));
         },
         else => unreachable,
     }

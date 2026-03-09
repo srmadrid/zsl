@@ -15,47 +15,42 @@ const rem_pio2_128 = rem_pio2.rem_pio2_128;
 const dbl64 = @import("dbl64.zig");
 const ldbl128 = @import("ldbl128.zig");
 
-pub fn Sin(comptime X: type) type {
-    comptime if (!types.isNumeric(X) or !types.numericType(X).le(.float))
-        @compileError("zml.float.sin: x must be a bool, an int or a float, got \n\tx: " ++ @typeName(X) ++ "\n");
-
-    return types.EnsureFloat(X);
-}
-
-/// Returns the sine $\sin(x)$ of a float, int or bool operand. The result type
-/// is determined by coercing the operand type to a float, and the operation is
-/// performed by casting the operand to the result type, then computing its
-/// sine.
+/// Returns the sine $\sin(x)$ of a float.
 ///
 /// ## Signature
 /// ```zig
-/// float.sin(x: X) float.Sin(X)
+/// float.sin(x: X) X
 /// ```
 ///
 /// ## Arguments
 /// * `x` (`anytype`): The value to get the sine of.
 ///
 /// ## Returns
-/// `float.Sin(@TypeOf(x))`: The sine of `x`.
-pub inline fn sin(x: anytype) float.Sin(@TypeOf(x)) {
-    switch (float.Sin(@TypeOf(x))) {
-        f16 => return types.scast(f16, sin32(types.scast(f32, x))),
+/// `@TypeOf(x)`: The sine of `x`.
+pub inline fn sin(x: anytype) @TypeOf(x) {
+    const X: type = @TypeOf(x);
+
+    comptime if (!types.isNumeric(X) or types.numericType(X) != .float)
+        @compileError("zsl.float.sin: x must be a float, got \n\tx: " ++ @typeName(X) ++ "\n");
+
+    switch (X) {
+        f16 => return types.cast(f16, sin32(types.cast(f32, x))),
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_sinf.c
-            return sin32(types.scast(f32, x));
+            return sin32(types.cast(f32, x));
         },
         f64 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_sin.c
-            return sin64(types.scast(f64, x));
+            return sin64(types.cast(f64, x));
         },
         f80 => {
             //
-            // return sin80(types.scast(f80, x));
-            return types.scast(f80, sin128(types.scast(f128, x)));
+            // return sin80(types.cast(f80, x));
+            return types.cast(f80, sin128(types.cast(f128, x)));
         },
         f128 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_sinl.c
-            return sin128(types.scast(f128, x));
+            return sin128(types.cast(f128, x));
         },
         else => unreachable,
     }
@@ -85,28 +80,28 @@ fn sin32(x: f32) f32 {
         if (ix < 0x39800000) // |x| < 2**-12
             return x;
 
-        return k_sin32(types.scast(f64, x));
+        return k_sin32(types.cast(f64, x));
     }
 
     if (ix <= 0x407b53d1) { // |x| ~<= 5 * pi/4
         if (ix <= 0x4016cbe3) { // |x| ~<= 3 * pi/4
             if (hx > 0)
-                return k_cos32(types.scast(f64, x) - 1.57079632679489661923)
+                return k_cos32(types.cast(f64, x) - 1.57079632679489661923)
             else
-                return -k_cos32(types.scast(f64, x) + 1.57079632679489661923);
+                return -k_cos32(types.cast(f64, x) + 1.57079632679489661923);
         } else {
-            return k_sin32(@as(f64, if (hx > 0) 2.0 else -2.0) * 1.57079632679489661923 - types.scast(f64, x));
+            return k_sin32(@as(f64, if (hx > 0) 2.0 else -2.0) * 1.57079632679489661923 - types.cast(f64, x));
         }
     }
 
     if (ix <= 0x40e231d5) { // |x| ~<= 9 * pi/4
         if (ix <= 0x40afeddf) { // |x| ~<= 7 * pi/4
             if (hx > 0)
-                return -k_cos32(types.scast(f64, x) - 3.0 * 1.57079632679489661923)
+                return -k_cos32(types.cast(f64, x) - 3.0 * 1.57079632679489661923)
             else
-                return k_cos32(types.scast(f64, x) + 3.0 * 1.57079632679489661923);
+                return k_cos32(types.cast(f64, x) + 3.0 * 1.57079632679489661923);
         } else {
-            return k_sin32(types.scast(f64, x) + @as(f64, if (hx > 0) -4.0 else 4.0) * 1.57079632679489661923);
+            return k_sin32(types.cast(f64, x) + @as(f64, if (hx > 0) -4.0 else 4.0) * 1.57079632679489661923);
         }
     } else if (ix >= 0x7f800000) { // sin(Inf or NaN) is NaN
         return x - x;
@@ -226,7 +221,7 @@ pub fn k_sin32(x: f64) f32 {
     const w: f64 = z * z;
     const r: f64 = -0x1a00f9e2cae774.0p-65 + z * 0x16cd878c3b46a7.0p-71;
     const s: f64 = z * x;
-    return types.scast(f32, (x + s * (-0x15555554cbac77.0p-55 + z * 0x111110896efbb2.0p-59)) + s * w * r);
+    return types.cast(f32, (x + s * (-0x15555554cbac77.0p-55 + z * 0x111110896efbb2.0p-59)) + s * w * r);
 }
 
 pub fn k_sin64(x: f64, y: f64, iy: i32) f64 {

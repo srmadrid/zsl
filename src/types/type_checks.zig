@@ -138,7 +138,7 @@ pub fn isNumeric(comptime T: type) bool {
         .bool => return true,
         .int, .comptime_int => return true,
         .float, .comptime_float => return true,
-        .@"struct" => return @hasDecl(T, "zml_is_numeric") and T.zml_is_numeric,
+        .@"struct" => return @hasDecl(T, "is_numeric") and T.is_numeric,
         else => return false,
     }
 }
@@ -163,7 +163,7 @@ pub fn isCustomNumeric(comptime T: type) bool {
 /// `bool`: `true` if the type is a vector, `false` otherwise.
 pub fn isVector(comptime T: type) bool {
     switch (comptime @typeInfo(T)) {
-        .@"struct" => return @hasDecl(T, "zml_is_vector") and T.zml_is_vector,
+        .@"struct" => return @hasDecl(T, "is_vector") and T.is_vector,
         else => return false,
     }
 }
@@ -177,7 +177,7 @@ pub fn isVector(comptime T: type) bool {
 /// `bool`: `true` if the type is a dense vector, `false` otherwise.
 pub fn isDenseVector(comptime T: type) bool {
     switch (comptime @typeInfo(T)) {
-        .@"struct" => return @hasDecl(T, "zml_is_vector") and T.zml_is_vector and @hasDecl(T, "zml_is_dense") and T.zml_is_dense,
+        .@"struct" => return @hasDecl(T, "is_vector") and T.is_vector and @hasDecl(T, "is_dense") and T.is_dense,
         else => return false,
     }
 }
@@ -191,7 +191,7 @@ pub fn isDenseVector(comptime T: type) bool {
 /// `bool`: `true` if the type is a sparse vector, `false` otherwise.
 pub fn isSparseVector(comptime T: type) bool {
     switch (comptime @typeInfo(T)) {
-        .@"struct" => return @hasDecl(T, "zml_is_vector") and T.zml_is_vector and @hasDecl(T, "zml_is_sparse") and T.zml_is_sparse,
+        .@"struct" => return @hasDecl(T, "is_vector") and T.is_vector and @hasDecl(T, "is_sparse") and T.is_sparse,
         else => return false,
     }
 }
@@ -205,7 +205,7 @@ pub fn isSparseVector(comptime T: type) bool {
 /// `bool`: `true` if the type is a custom vector, `false` otherwise.
 pub fn isCustomVector(comptime T: type) bool {
     switch (comptime @typeInfo(T)) {
-        .@"struct" => return @hasDecl(T, "zml_is_vector") and T.zml_is_vector and @hasDecl(T, "zml_is_custom") and T.zml_is_custom,
+        .@"struct" => return @hasDecl(T, "is_vector") and T.is_vector and @hasDecl(T, "is_custom") and T.is_custom,
         else => return false,
     }
 }
@@ -219,7 +219,7 @@ pub fn isCustomVector(comptime T: type) bool {
 /// `bool`: `true` if the type is a matrix, `false` otherwise.
 pub fn isMatrix(comptime T: type) bool {
     switch (comptime @typeInfo(T)) {
-        .@"struct" => return @hasDecl(T, "zml_is_matrix") and T.zml_is_matrix,
+        .@"struct" => return @hasDecl(T, "is_matrix") and T.is_matrix,
         else => return false,
     }
 }
@@ -234,7 +234,7 @@ pub fn isMatrix(comptime T: type) bool {
 /// `bool`: `true` if the type is a square matrix, `false` otherwise.
 pub fn isSquareMatrix(comptime T: type) bool {
     switch (comptime @typeInfo(T)) {
-        .@"struct" => return (@hasDecl(T, "zml_is_symmetric") and T.zml_is_symmetric) or (@hasDecl(T, "zml_is_hermitian") and T.zml_is_hermitian),
+        .@"struct" => return (@hasDecl(T, "is_symmetric") and T.is_symmetric) or (@hasDecl(T, "is_hermitian") and T.is_hermitian),
         else => return false,
     }
 }
@@ -248,7 +248,7 @@ pub fn isSquareMatrix(comptime T: type) bool {
 /// `bool`: `true` if the type is a general matrix, `false` otherwise.
 pub fn isGeneralMatrix(comptime T: type) bool {
     switch (comptime @typeInfo(T)) {
-        .@"struct" => return @hasDecl(T, "zml_is_matrix") and T.zml_is_matrix and @hasDecl(T, "zml_is_general") and T.zml_is_general,
+        .@"struct" => return @hasDecl(T, "is_matrix") and T.is_matrix and @hasDecl(T, "is_general") and T.is_general,
         else => return false,
     }
 }
@@ -262,7 +262,7 @@ pub fn isGeneralMatrix(comptime T: type) bool {
 /// `bool`: `true` if the type is a general dense matrix, `false` otherwise.
 pub fn isGeneralDenseMatrix(comptime T: type) bool {
     switch (comptime @typeInfo(T)) {
-        .@"struct" => @hasDecl(T, "zml_is_matrix") and T.zml_is_matrix and @hasDecl(T, "zml_is_general") and T.zml_is_general and @hasDecl(T, "zml_is_dense") and T.zml_is_dense,
+        .@"struct" => @hasDecl(T, "is_matrix") and T.is_matrix and @hasDecl(T, "is_general") and T.is_general and @hasDecl(T, "is_dense") and T.is_dense,
         else => return false,
     }
 }
@@ -276,7 +276,7 @@ pub fn isGeneralDenseMatrix(comptime T: type) bool {
 /// `bool`: `true` if the type is a general sparse matrix, `false` otherwise.
 pub fn isGeneralSparseMatrix(comptime T: type) bool {
     switch (comptime @typeInfo(T)) {
-        .@"struct" => @hasDecl(T, "zml_is_matrix") and T.zml_is_matrix and @hasDecl(T, "zml_is_general") and T.zml_is_general and @hasDecl(T, "zml_is_sparse") and T.zml_is_sparse,
+        .@"struct" => @hasDecl(T, "is_matrix") and T.is_matrix and @hasDecl(T, "is_general") and T.is_general and @hasDecl(T, "is_sparse") and T.is_sparse,
         else => return false,
     }
 }
@@ -290,7 +290,7 @@ pub fn isGeneralSparseMatrix(comptime T: type) bool {
 /// `bool`: `true` if the type is a symmetric matrix, `false` otherwise.
 pub fn isSymmetricMatrix(comptime T: type) bool {
     switch (comptime @typeInfo(T)) {
-        .@"struct" => return @hasDecl(T, "zml_is_matrix") and T.zml_is_matrix and @hasDecl(T, "zml_is_symmetric") and T.zml_is_symmetric,
+        .@"struct" => return @hasDecl(T, "is_matrix") and T.is_matrix and @hasDecl(T, "is_symmetric") and T.is_symmetric,
         else => return false,
     }
 }
@@ -304,7 +304,7 @@ pub fn isSymmetricMatrix(comptime T: type) bool {
 /// `bool`: `true` if the type is a symmetric dense matrix, `false` otherwise.
 pub fn isSymmetricDenseMatrix(comptime T: type) bool {
     switch (comptime @typeInfo(T)) {
-        .@"struct" => @hasDecl(T, "zml_is_matrix") and T.zml_is_matrix and @hasDecl(T, "zml_is_symmetric") and T.zml_is_symmetric and @hasDecl(T, "zml_is_dense") and T.zml_is_dense,
+        .@"struct" => @hasDecl(T, "is_matrix") and T.is_matrix and @hasDecl(T, "is_symmetric") and T.is_symmetric and @hasDecl(T, "is_dense") and T.is_dense,
         else => return false,
     }
 }
@@ -318,7 +318,7 @@ pub fn isSymmetricDenseMatrix(comptime T: type) bool {
 /// `bool`: `true` if the type is a symmetric sparse matrix, `false` otherwise.
 pub fn isSymmetricSparseMatrix(comptime T: type) bool {
     switch (comptime @typeInfo(T)) {
-        .@"struct" => @hasDecl(T, "zml_is_matrix") and T.zml_is_matrix and @hasDecl(T, "zml_is_symmetric") and T.zml_is_symmetric and @hasDecl(T, "zml_is_sparse") and T.zml_is_sparse,
+        .@"struct" => @hasDecl(T, "is_matrix") and T.is_matrix and @hasDecl(T, "is_symmetric") and T.is_symmetric and @hasDecl(T, "is_sparse") and T.is_sparse,
         else => return false,
     }
 }
@@ -332,7 +332,7 @@ pub fn isSymmetricSparseMatrix(comptime T: type) bool {
 /// `bool`: `true` if the type is a hermitian matrix, `false` otherwise.
 pub fn isHermitianMatrix(comptime T: type) bool {
     switch (comptime @typeInfo(T)) {
-        .@"struct" => return @hasDecl(T, "zml_is_matrix") and T.zml_is_matrix and @hasDecl(T, "zml_is_hermitian") and T.zml_is_hermitian,
+        .@"struct" => return @hasDecl(T, "is_matrix") and T.is_matrix and @hasDecl(T, "is_hermitian") and T.is_hermitian,
         else => return false,
     }
 }
@@ -346,7 +346,7 @@ pub fn isHermitianMatrix(comptime T: type) bool {
 /// `bool`: `true` if the type is a hermitian dense matrix, `false` otherwise.
 pub fn isHermitianDenseMatrix(comptime T: type) bool {
     switch (comptime @typeInfo(T)) {
-        .@"struct" => @hasDecl(T, "zml_is_matrix") and T.zml_is_matrix and @hasDecl(T, "zml_is_hermitian") and T.zml_is_hermitian and @hasDecl(T, "zml_is_dense") and T.zml_is_dense,
+        .@"struct" => @hasDecl(T, "is_matrix") and T.is_matrix and @hasDecl(T, "is_hermitian") and T.is_hermitian and @hasDecl(T, "is_dense") and T.is_dense,
         else => return false,
     }
 }
@@ -360,7 +360,7 @@ pub fn isHermitianDenseMatrix(comptime T: type) bool {
 /// `bool`: `true` if the type is a hermitian sparse matrix, `false` otherwise.
 pub fn isHermitianSparseMatrix(comptime T: type) bool {
     switch (comptime @typeInfo(T)) {
-        .@"struct" => @hasDecl(T, "zml_is_matrix") and T.zml_is_matrix and @hasDecl(T, "zml_is_hermitian") and T.zml_is_hermitian and @hasDecl(T, "zml_is_sparse") and T.zml_is_sparse,
+        .@"struct" => @hasDecl(T, "is_matrix") and T.is_matrix and @hasDecl(T, "is_hermitian") and T.is_hermitian and @hasDecl(T, "is_sparse") and T.is_sparse,
         else => return false,
     }
 }
@@ -374,7 +374,7 @@ pub fn isHermitianSparseMatrix(comptime T: type) bool {
 /// `bool`: `true` if the type is a triangular matrix, `false` otherwise.
 pub fn isTriangularMatrix(comptime T: type) bool {
     switch (comptime @typeInfo(T)) {
-        .@"struct" => return @hasDecl(T, "zml_is_matrix") and T.zml_is_matrix and @hasDecl(T, "zml_is_triangular") and T.zml_is_triangular,
+        .@"struct" => return @hasDecl(T, "is_matrix") and T.is_matrix and @hasDecl(T, "is_triangular") and T.is_triangular,
         else => return false,
     }
 }
@@ -388,7 +388,7 @@ pub fn isTriangularMatrix(comptime T: type) bool {
 /// `bool`: `true` if the type is a triangular dense matrix, `false` otherwise.
 pub fn isTriangularDenseMatrix(comptime T: type) bool {
     switch (comptime @typeInfo(T)) {
-        .@"struct" => @hasDecl(T, "zml_is_matrix") and T.zml_is_matrix and @hasDecl(T, "zml_is_triangular") and T.zml_is_triangular and @hasDecl(T, "zml_is_dense") and T.zml_is_dense,
+        .@"struct" => @hasDecl(T, "is_matrix") and T.is_matrix and @hasDecl(T, "is_triangular") and T.is_triangular and @hasDecl(T, "is_dense") and T.is_dense,
         else => return false,
     }
 }
@@ -402,7 +402,7 @@ pub fn isTriangularDenseMatrix(comptime T: type) bool {
 /// `bool`: `true` if the type is a triangular sparse matrix, `false` otherwise.
 pub fn isTriangularSparseMatrix(comptime T: type) bool {
     switch (comptime @typeInfo(T)) {
-        .@"struct" => @hasDecl(T, "zml_is_matrix") and T.zml_is_matrix and @hasDecl(T, "zml_is_triangular") and T.zml_is_triangular and @hasDecl(T, "zml_is_sparse") and T.zml_is_sparse,
+        .@"struct" => @hasDecl(T, "is_matrix") and T.is_matrix and @hasDecl(T, "is_triangular") and T.is_triangular and @hasDecl(T, "is_sparse") and T.is_sparse,
         else => return false,
     }
 }
@@ -416,7 +416,7 @@ pub fn isTriangularSparseMatrix(comptime T: type) bool {
 /// `bool`: `true` if the type is a diagonal matrix, `false` otherwise.
 pub fn isDiagonalMatrix(comptime T: type) bool {
     switch (comptime @typeInfo(T)) {
-        .@"struct" => @hasDecl(T, "zml_is_matrix") and T.zml_is_matrix and @hasDecl(T, "zml_is_diagonal") and T.zml_is_diagonal,
+        .@"struct" => @hasDecl(T, "is_matrix") and T.is_matrix and @hasDecl(T, "is_diagonal") and T.is_diagonal,
         else => return false,
     }
 }
@@ -430,7 +430,7 @@ pub fn isDiagonalMatrix(comptime T: type) bool {
 /// `bool`: `true` if the type is a permutation matrix, `false` otherwise.
 pub fn isPermutationMatrix(comptime T: type) bool {
     switch (comptime @typeInfo(T)) {
-        .@"struct" => @hasDecl(T, "zml_is_matrix") and T.zml_is_matrix and @hasDecl(T, "zml_is_permutation") and T.zml_is_permutation,
+        .@"struct" => @hasDecl(T, "is_matrix") and T.is_matrix and @hasDecl(T, "is_permutation") and T.is_permutation,
         else => return false,
     }
 }
@@ -444,7 +444,7 @@ pub fn isPermutationMatrix(comptime T: type) bool {
 /// `bool`: `true` if the type is a dense matrix, `false` otherwise.
 pub fn isDenseMatrix(comptime T: type) bool {
     switch (comptime @typeInfo(T)) {
-        .@"struct" => return @hasDecl(T, "zml_is_matrix") and T.zml_is_matrix and @hasDecl(T, "zml_is_dense") and T.zml_is_dense,
+        .@"struct" => return @hasDecl(T, "is_matrix") and T.is_matrix and @hasDecl(T, "is_dense") and T.is_dense,
         else => return false,
     }
 }
@@ -458,7 +458,7 @@ pub fn isDenseMatrix(comptime T: type) bool {
 /// `bool`: `true` if the type is a sparse matrix, `false` otherwise.
 pub fn isSparseMatrix(comptime T: type) bool {
     switch (comptime @typeInfo(T)) {
-        .@"struct" => return @hasDecl(T, "zml_is_matrix") and T.zml_is_matrix and @hasDecl(T, "zml_is_sparse") and T.zml_is_sparse,
+        .@"struct" => return @hasDecl(T, "is_matrix") and T.is_matrix and @hasDecl(T, "is_sparse") and T.is_sparse,
         else => return false,
     }
 }
@@ -472,7 +472,7 @@ pub fn isSparseMatrix(comptime T: type) bool {
 /// `bool`: `true` if the type is a custom matrix, `false` otherwise.
 pub fn isCustomMatrix(comptime T: type) bool {
     switch (comptime @typeInfo(T)) {
-        .@"struct" => return @hasDecl(T, "zml_is_matrix") and T.zml_is_matrix and @hasDecl(T, "zml_is_custom") and T.zml_is_custom,
+        .@"struct" => return @hasDecl(T, "is_matrix") and T.is_matrix and @hasDecl(T, "is_custom") and T.is_custom,
         else => return false,
     }
 }
@@ -486,7 +486,7 @@ pub fn isCustomMatrix(comptime T: type) bool {
 /// `bool`: `true` if the type is an array, `false` otherwise.
 pub fn isArray(comptime T: type) bool {
     switch (comptime @typeInfo(T)) {
-        .@"struct" => return @hasDecl(T, "zml_is_array") and T.zml_is_array,
+        .@"struct" => return @hasDecl(T, "is_array") and T.is_array,
         else => return false,
     }
 }
@@ -500,7 +500,7 @@ pub fn isArray(comptime T: type) bool {
 /// `bool`: `true` if the type is a dense array, `false` otherwise.
 pub fn isDenseArray(comptime T: type) bool {
     switch (comptime @typeInfo(T)) {
-        .@"struct" => return @hasDecl(T, "zml_is_array") and T.zml_is_array and @hasDecl(T, "zml_is_dense") and T.zml_is_dense,
+        .@"struct" => return @hasDecl(T, "is_array") and T.is_array and @hasDecl(T, "is_dense") and T.is_dense,
         else => return false,
     }
 }
@@ -514,7 +514,7 @@ pub fn isDenseArray(comptime T: type) bool {
 /// `bool`: `true` if the type is a strided array, `false` otherwise.
 pub fn isStridedArray(comptime T: type) bool {
     switch (comptime @typeInfo(T)) {
-        .@"struct" => return @hasDecl(T, "zml_is_array") and T.zml_is_array and @hasDecl(T, "zml_is_strided") and T.zml_is_strided,
+        .@"struct" => return @hasDecl(T, "is_array") and T.is_array and @hasDecl(T, "is_strided") and T.is_strided,
         else => return false,
     }
 }
@@ -528,7 +528,7 @@ pub fn isStridedArray(comptime T: type) bool {
 /// `bool`: `true` if the type is a sparse array, `false` otherwise.
 pub fn isSparseArray(comptime T: type) bool {
     switch (comptime @typeInfo(T)) {
-        .@"struct" => return @hasDecl(T, "zml_is_array") and T.zml_is_array and @hasDecl(T, "zml_is_sparse") and T.zml_is_sparse,
+        .@"struct" => return @hasDecl(T, "is_array") and T.is_array and @hasDecl(T, "is_sparse") and T.is_sparse,
         else => return false,
     }
 }
@@ -542,7 +542,7 @@ pub fn isSparseArray(comptime T: type) bool {
 /// `bool`: `true` if the type is a custom array, `false` otherwise.
 pub fn isCustomArray(comptime T: type) bool {
     switch (comptime @typeInfo(T)) {
-        .@"struct" => return @hasDecl(T, "zml_is_array") and T.zml_is_array and @hasDecl(T, "zml_is_custom") and T.zml_is_custom,
+        .@"struct" => return @hasDecl(T, "is_array") and T.is_array and @hasDecl(T, "is_custom") and T.is_custom,
         else => return false,
     }
 }
@@ -563,13 +563,13 @@ pub fn isExpression(comptime T: type) bool {
 /// `bool`: `true` if the type is integral, `false` otherwise.
 pub fn isIntegral(comptime N: type) bool {
     if (comptime !types.isNumeric(N))
-        @compileError("zml.types.isIntegral: " ++ @typeName(N) ++ " is not a supported numeric type");
+        @compileError("zsl.types.isIntegral: " ++ @typeName(N) ++ " is not a supported numeric type");
 
     switch (comptime types.numericType(N)) {
         .bool => return true,
         .int => return true,
         .float => return false,
-        else => return @hasDecl(N, "zml_is_integral") and N.zml_is_integral,
+        else => return @hasDecl(N, "is_integral") and N.is_integral,
     }
 }
 
@@ -583,7 +583,7 @@ pub fn isIntegral(comptime N: type) bool {
 /// `bool`: `true` if the type is non-integral, `false` otherwise.
 pub fn isNonIntegral(comptime N: type) bool {
     if (comptime !types.isNumeric(N))
-        @compileError("zml.types.isNonIntegral: " ++ @typeName(N) ++ " is not a supported numeric type");
+        @compileError("zsl.types.isNonIntegral: " ++ @typeName(N) ++ " is not a supported numeric type");
 
     return !isIntegral(N);
 }
@@ -598,13 +598,13 @@ pub fn isNonIntegral(comptime N: type) bool {
 /// `bool`: `true` if the type is real, `false` otherwise.
 pub fn isReal(comptime N: type) bool {
     if (comptime !types.isNumeric(N))
-        @compileError("zml.types.isReal: " ++ @typeName(N) ++ " is not a supported numeric type");
+        @compileError("zsl.types.isReal: " ++ @typeName(N) ++ " is not a supported numeric type");
 
     switch (comptime types.numericType(N)) {
         .bool => return true,
         .int => return true,
         .float => return true,
-        else => return @hasDecl(N, "zml_is_real") and N.zml_is_real,
+        else => return @hasDecl(N, "is_real") and N.is_real,
     }
 }
 
@@ -618,13 +618,13 @@ pub fn isReal(comptime N: type) bool {
 /// `bool`: `true` if the type is complex, `false` otherwise.
 pub fn isComplex(comptime N: type) bool {
     if (comptime !types.isNumeric(N))
-        @compileError("zml.types.isComplex: " ++ @typeName(N) ++ " is not a supported numeric type");
+        @compileError("zsl.types.isComplex: " ++ @typeName(N) ++ " is not a supported numeric type");
 
     switch (comptime types.numericType(N)) {
         .bool => return false,
         .int => return false,
         .float => return false,
-        else => return @hasDecl(N, "zml_is_complex") and N.zml_is_complex,
+        else => return @hasDecl(N, "is_complex") and N.is_complex,
     }
 }
 
@@ -638,7 +638,7 @@ pub fn isComplex(comptime N: type) bool {
 /// `bool`: `true` if the type is signed, `false` otherwise.
 pub fn isSigned(comptime N: type) bool {
     if (comptime !types.isNumeric(N))
-        @compileError("zml.types.isSigned: " ++ @typeName(N) ++ " is not a supported numeric type");
+        @compileError("zsl.types.isSigned: " ++ @typeName(N) ++ " is not a supported numeric type");
 
     switch (comptime types.numericType(N)) {
         .int => {
@@ -649,7 +649,7 @@ pub fn isSigned(comptime N: type) bool {
             }
         },
         .float => return true,
-        else => return @hasDecl(N, "zml_is_signed") and N.zml_is_signed,
+        else => return @hasDecl(N, "is_signed") and N.is_signed,
     }
 }
 
@@ -663,7 +663,7 @@ pub fn isSigned(comptime N: type) bool {
 /// `bool`: `true` if the type is unsigned, `false` otherwise.
 pub fn isUnsigned(comptime N: type) bool {
     if (comptime !types.isNumeric(N))
-        @compileError("zml.types.isUnsigned: " ++ @typeName(N) ++ " is not a supported numeric type");
+        @compileError("zsl.types.isUnsigned: " ++ @typeName(N) ++ " is not a supported numeric type");
 
     switch (comptime types.numericType(N)) {
         .bool => return true,
@@ -675,6 +675,6 @@ pub fn isUnsigned(comptime N: type) bool {
             }
         },
         .float => return false,
-        else => return @hasDecl(N, "zml_is_unsigned") and N.zml_is_unsigned,
+        else => return @hasDecl(N, "is_unsigned") and N.is_unsigned,
     }
 }

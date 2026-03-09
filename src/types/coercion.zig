@@ -3,16 +3,10 @@ const std = @import("std");
 const types = @import("../types.zig");
 
 const int = @import("../int.zig");
-const dyadic = @import("../dyadic.zig");
-const Dyadic = dyadic.Dyadic;
-const cfloat = @import("../cfloat.zig");
-const Cfloat = cfloat.Cfloat;
-const integer = @import("../integer.zig");
-const Integer = integer.Integer;
 const rational = @import("../rational.zig");
 const Rational = rational.Rational;
-const real = @import("../real.zig");
-const Real = real.Real;
+const dyadic = @import("../dyadic.zig");
+const Dyadic = dyadic.Dyadic;
 const complex = @import("../complex.zig");
 const Complex = complex.Complex;
 
@@ -501,17 +495,14 @@ pub fn Coerce(comptime X: type, comptime Y: type) type {
     }
 
     // Else two numeric types
-    const xnumeric = types.numericType(X);
-    const ynumeric = types.numericType(Y);
-
-    switch (xnumeric) { // Manage comptime ints and floats everywhere we don't do yet
-        .bool => switch (ynumeric) {
+    switch (comptime types.numericType(X)) {
+        .bool => switch (comptime types.numericType(Y)) {
             .bool => return bool,
-            .custom => unreachable,
             else => return Y,
+            .custom => unreachable,
         },
-        .int => switch (ynumeric) {
-            .bool => return Coerce(Y, X),
+        .int => switch (comptime types.numericType(Y)) {
+            .bool => return X,
             .int => {
                 if (X == comptime_int)
                     return Y;
@@ -523,16 +514,14 @@ pub fn Coerce(comptime X: type, comptime Y: type) type {
                 comptime var yinfo = @typeInfo(Y);
 
                 if (xinfo.int.signedness == .unsigned) {
-                    if (yinfo.int.signedness == .unsigned) {
-                        // Both unsigned
+                    if (yinfo.int.signedness == .unsigned) { // both unsigned
                         if (xinfo.int.bits > yinfo.int.bits)
                             return X
                         else
                             return Y;
-                    } else {
-                        // X unsigned, Y signed
-                        if (xinfo.int.bits > yinfo.int.bits) {
-                            // Unsigned is larger than signed
+                    } else { // X unsigned, Y signed
+                        if (xinfo.int.bits >= yinfo.int.bits) {
+                            // Unsigned is larger or equal to signed
                             if (std.mem.indexOfScalar(type, &types.standard_integer_types, X) != null and
                                 std.mem.indexOfScalar(type, &types.standard_integer_types, Y) != null)
                             {
@@ -551,19 +540,14 @@ pub fn Coerce(comptime X: type, comptime Y: type) type {
                                 yinfo.int.bits = xinfo.int.bits + 1;
                                 return @Type(yinfo);
                             }
-                        } else if (xinfo.int.bits == yinfo.int.bits) {
-                            // Equal size, need to add 1 bit to signed
-                            yinfo.int.bits += 1;
-                            return @Type(yinfo);
                         } else {
                             // Signed is larger than unsigned
                             return Y;
                         }
                     }
                 } else {
-                    if (yinfo.int.signedness == .unsigned) {
-                        // X signed, Y unsigned
-                        if (yinfo.int.bits > xinfo.int.bits) {
+                    if (yinfo.int.signedness == .unsigned) { // X signed, Y unsigned
+                        if (yinfo.int.bits >= xinfo.int.bits) {
                             // Unsigned is larger than signed
                             if (std.mem.indexOfScalar(type, &types.standard_integer_types, X) != null and
                                 std.mem.indexOfScalar(type, &types.standard_integer_types, Y) != null)
@@ -583,16 +567,11 @@ pub fn Coerce(comptime X: type, comptime Y: type) type {
                                 xinfo.int.bits = yinfo.int.bits + 1;
                                 return @Type(xinfo);
                             }
-                        } else if (xinfo.int.bits == yinfo.int.bits) {
-                            // Equal size, need to add 1 bit to signed
-                            xinfo.int.bits += 1;
-                            return @Type(xinfo);
                         } else {
                             // Signed is larger than unsigned
                             return X;
                         }
-                    } else {
-                        // Both signed
+                    } else { // both signed
                         if (xinfo.int.bits > yinfo.int.bits)
                             return X
                         else
@@ -600,6 +579,7 @@ pub fn Coerce(comptime X: type, comptime Y: type) type {
                     }
                 }
             },
+            .rational => return Rational(@typeInfo(Coerce(X, Y.Numerator)).int.bits),
             .float => {
                 if (Y == comptime_float)
                     return EnsureFloat(X);
@@ -607,6 +587,9 @@ pub fn Coerce(comptime X: type, comptime Y: type) type {
                 return Coerce(EnsureFloat(X), Y);
             },
             .dyadic => {
+                if (X == comptime_int)
+                    return Y;
+
                 const xinfo = @typeInfo(X);
 
                 return Dyadic(
@@ -614,119 +597,112 @@ pub fn Coerce(comptime X: type, comptime Y: type) type {
                     @typeInfo(Y.Exponent).int.bits,
                 );
             },
-            .cfloat => {
-                return Cfloat(Coerce(X, types.Scalar(Y)));
-            },
+            .complex => return Complex(Coerce(X, types.Scalar(Y))),
             .custom => unreachable,
-            else => return Y,
         },
-        .float => {
-            switch (ynumeric) {
-                .bool => return Coerce(Y, X),
-                .int => return Coerce(Y, X),
-                .float => {
-                    if (X == comptime_float)
-                        return Y;
+        .rational => switch (comptime types.numericType(Y)) {
+            .bool => return X,
+            .int => return Rational(@typeInfo(Coerce(X.Numerator, Y)).int.bits),
+            .rational => return Rational(int.max(@typeInfo(X.Numerator).int.bits, @typeInfo(Y.Numerator).int.bits)),
+            .float => return Coerce(EnsureFloat(X.Numerator), Y),
+            .dyadic => {
+                const xbits = @typeInfo(X.Numerator).int.bits;
 
-                    if (Y == comptime_float)
-                        return X;
-
-                    const xinfo = @typeInfo(X);
-                    const yinfo = @typeInfo(Y);
-
-                    if (xinfo.float.bits > yinfo.float.bits)
-                        return X
-                    else
-                        return Y;
-                },
-                .dyadic => {
-                    const x_mantissa_bits = std.math.floatMantissaBits(X) + 1;
-                    const x_exponent_bits = std.math.floatExponentBits(X);
-
-                    return Dyadic(
-                        int.max(x_mantissa_bits, @typeInfo(Y.Mantissa).int.bits),
-                        int.max(x_exponent_bits, @typeInfo(Y.Exponent).int.bits),
-                    );
-                },
-                .cfloat => {
-                    return Cfloat(Coerce(X, types.Scalar(Y)));
-                },
-                .integer => return Rational,
-                .custom => unreachable,
-                else => return Y,
-            }
+                return Dyadic(
+                    int.max(xbits, @typeInfo(Y.Mantissa).int.bits),
+                    int.max(std.math.log2_int_ceil(u16, xbits) + 2, @typeInfo(Y.Exponent).int.bits),
+                );
+            },
+            .complex => return Complex(Coerce(X, types.Scalar(Y))),
+            .custom => unreachable,
         },
-        .dyadic => switch (ynumeric) {
-            .bool => return Coerce(Y, X),
-            .int => return Coerce(Y, X),
-            .float => return Coerce(Y, X),
+        .float => switch (comptime types.numericType(Y)) {
+            .bool => return X,
+            .int => {
+                if (X == comptime_float)
+                    return EnsureFloat(X);
+
+                return Coerce(X, EnsureFloat(Y));
+            },
+            .rational => return Coerce(X, EnsureFloat(Y.Numerator)),
+            .float => {
+                if (X == comptime_float)
+                    return Y;
+
+                if (Y == comptime_float)
+                    return X;
+
+                const xinfo = @typeInfo(X);
+                const yinfo = @typeInfo(Y);
+
+                if (xinfo.float.bits > yinfo.float.bits)
+                    return X
+                else
+                    return Y;
+            },
+            .dyadic => {
+                if (X == comptime_float)
+                    return Y;
+
+                const x_mantissa_bits = std.math.floatMantissaBits(X) + 1;
+                const x_exponent_bits = std.math.floatExponentBits(X);
+
+                return Dyadic(
+                    int.max(x_mantissa_bits, @typeInfo(Y.Mantissa).int.bits),
+                    int.max(x_exponent_bits, @typeInfo(Y.Exponent).int.bits),
+                );
+            },
+            .complex => return Complex(Coerce(X, types.Scalar(Y))),
+            .custom => unreachable,
+        },
+        .dyadic => switch (comptime types.numericType(Y)) {
+            .bool => return X,
+            .int => {
+                if (Y == comptime_int)
+                    return X;
+
+                const yinfo = @typeInfo(Y);
+
+                return Dyadic(
+                    int.max(@typeInfo(X.Mantissa).int.bits, yinfo.int.bits),
+                    @typeInfo(X.Exponent).int.bits,
+                );
+            },
+            .rational => {
+                const ybits = @typeInfo(Y.Numerator).int.bits;
+
+                return Dyadic(
+                    int.max(@typeInfo(X.Mantissa).int.bits, ybits),
+                    int.max(@typeInfo(X.Exponent).int.bits, std.math.log2_int_ceil(u16, ybits) + 2),
+                );
+            },
+            .float => {
+                if (Y == comptime_float)
+                    return X;
+
+                const y_mantissa_bits = std.math.floatMantissaBits(Y) + 1;
+                const y_exponent_bits = std.math.floatExponentBits(Y);
+
+                return Dyadic(
+                    int.max(@typeInfo(X.Mantissa).int.bits, y_mantissa_bits),
+                    int.max(@typeInfo(X.Exponent).int.bits, y_exponent_bits),
+                );
+            },
             .dyadic => {
                 return Dyadic(
                     int.max(@typeInfo(X.Mantissa).int.bits, @typeInfo(Y.Mantissa).int.bits),
                     int.max(@typeInfo(X.Exponent).int.bits, @typeInfo(Y.Exponent).int.bits),
                 );
             },
-            .cfloat => {
-                return Cfloat(Coerce(X, types.Scalar(Y)));
-            },
-            .integer => return Rational,
-            .custom => unreachable,
-            else => return Y,
-        },
-        .cfloat => {
-            switch (ynumeric) {
-                .bool => return Coerce(Y, X),
-                .int => return Coerce(Y, X),
-                .float => return Coerce(Y, X),
-                .dyadic => return Coerce(Y, X),
-                .cfloat => {
-                    return cfloat.Cfloat(Coerce(types.Scalar(X), types.Scalar(Y)));
-                },
-                .integer => return Complex(Rational),
-                .rational => return Complex(Rational),
-                .real => return Complex(Real),
-                .complex => return Y,
-                .custom => unreachable,
-            }
-        },
-        .integer => switch (ynumeric) {
-            .bool => return Coerce(Y, X),
-            .int => return Coerce(Y, X),
-            .float => return Coerce(Y, X),
-            .cfloat => return Coerce(Y, X),
-            .integer => return Integer,
-            .custom => unreachable,
-            else => return Y,
-        },
-        .rational => switch (ynumeric) {
-            .bool => return Coerce(Y, X),
-            .int => return Coerce(Y, X),
-            .float => return Coerce(Y, X),
-            .cfloat => return Coerce(Y, X),
-            .integer => return Coerce(Y, X),
-            .rational => return X,
-            .custom => unreachable,
-            else => return Y,
-        },
-        .real => switch (ynumeric) {
-            .bool => return Coerce(Y, X),
-            .int => return Coerce(Y, X),
-            .float => return Coerce(Y, X),
-            .cfloat => return Coerce(Y, X),
-            .integer => return Coerce(Y, X),
-            .rational => return Coerce(Y, X),
-            .real => return Real,
-            .complex => return Complex(Real),
+            .complex => return Complex(Coerce(X, types.Scalar(Y))),
             .custom => unreachable,
         },
-        .complex => switch (ynumeric) {
-            .bool => return Coerce(Y, X),
-            .int => return Coerce(Y, X),
-            .float => return Coerce(Y, X),
-            .cfloat => return Coerce(Y, X),
-            .integer => return Coerce(Y, X),
-            .rational => return Coerce(Y, X),
-            .real => return Coerce(Y, X),
+        .complex => switch (comptime types.numericType(Y)) {
+            .bool => X,
+            .int => return Complex(Coerce(types.Scalar(X), Y)),
+            .rational => return Complex(Coerce(types.Scalar(X), Y)),
+            .float => return Complex(Coerce(types.Scalar(X), Y)),
+            .dyadic => return Complex(Coerce(types.Scalar(X), Y)),
             .complex => return Complex(Coerce(types.Scalar(X), types.Scalar(Y))),
             .custom => unreachable,
         },

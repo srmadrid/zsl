@@ -6,47 +6,42 @@ const float = @import("../float.zig");
 const dbl64 = @import("dbl64.zig");
 const ldbl128 = @import("ldbl128.zig");
 
-pub fn Log2(comptime X: type) type {
-    comptime if (!types.isNumeric(X) or !types.numericType(X).le(.float))
-        @compileError("zml.float.log2: x must be a bool, an int or a float, got \n\tx: " ++ @typeName(X) ++ "\n");
-
-    return types.EnsureFloat(X);
-}
-
-/// Returns the base-2 logarithm $\log_2(x)$ of a float, int or bool operand.
-/// The result type is determined by coercing the operand type to a float, and
-/// the operation is performed by casting the operand to the result type, then
-/// computing its base-2 logarithm.
+/// Returns the base-2 logarithm $\log_2(x)$ of a float.
 ///
 /// ## Signature
 /// ```zig
-/// float.log2(x: X) float.Log2(X)
+/// float.log2(x: X) X
 /// ```
 ///
 /// ## Arguments
 /// * `x` (`anytype`): The value to get the base-2 logarithm of.
 ///
 /// ## Returns
-/// `float.Log2(@TypeOf(x))`: The base-2 logarithm of `x`.
-pub inline fn log2(x: anytype) float.Log2(@TypeOf(x)) {
-    switch (float.Log2(@TypeOf(x))) {
-        f16 => return types.scast(f16, log2_32(types.scast(f32, x))),
+/// `@TypeOf(x)`: The base-2 logarithm of `x`.
+pub inline fn log2(x: anytype) @TypeOf(x) {
+    const X: type = @TypeOf(x);
+
+    comptime if (!types.isNumeric(X) or types.numericType(X) != .float)
+        @compileError("zsl.float.log2: x must be a float, got \n\tx: " ++ @typeName(X) ++ "\n");
+
+    switch (X) {
+        f16 => return types.cast(f16, log2_32(types.cast(f32, x))),
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_log2f.c
-            return log2_32(types.scast(f32, x));
+            return log2_32(types.cast(f32, x));
         },
         f64 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_log2.c
-            return log2_64(types.scast(f64, x));
+            return log2_64(types.cast(f64, x));
         },
         f80 => {
             //
-            // return log2_80(types.scast(f80, x));
-            return types.scast(f80, log2_128(types.scast(f128, x)));
+            // return log2_80(types.cast(f80, x));
+            return types.cast(f80, log2_128(types.cast(f128, x)));
         },
         f128 => {
             // https://github.com/JuliaMath/openlibm/blob/master/ld128/e_log2l.c
-            return log2_128(types.scast(f128, x));
+            return log2_128(types.cast(f128, x));
         },
         else => unreachable,
     }
@@ -92,7 +87,7 @@ fn log2_32(x: f32) f32 {
     const i: i32 = (hx + (0x4afb0d)) & 0x800000;
     xx = @bitCast(hx | (i ^ 0x3f800000)); // Normalize x or x/2
     k +%= (i >> 23);
-    const y: f32 = types.scast(f32, k);
+    const y: f32 = types.cast(f32, k);
     const f: f32 = xx - 1.0;
     const hfsq: f32 = 0.5 * f * f;
     const s: f32 = f / (2.0 + f);
@@ -153,7 +148,7 @@ fn log2_64(x: f64) f64 {
     const i: i32 = (hx +% 0x95f64) & 0x100000;
     dbl64.setHighPart(&xx, @bitCast(hx | (i ^ 0x3ff00000))); // normalize x or x/2
     k +%= (i >> 20);
-    const y: f64 = types.scast(f64, k);
+    const y: f64 = types.cast(f64, k);
     const f: f64 = xx - 1.0;
     const hfsq: f64 = 0.5 * f * f;
     const s: f64 = f / (2.0 + f);
@@ -296,6 +291,6 @@ fn log2_128(x: f128) f128 {
     z += xx * 4.4269504088896340735992468100189213742664595e-1;
     z += y;
     z += xx;
-    z += types.scast(f128, e);
+    z += types.cast(f128, e);
     return z;
 }

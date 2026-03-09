@@ -9,17 +9,7 @@ const erf_data = @import("erf_data.zig");
 const dbl64 = @import("dbl64.zig");
 const ldbl128 = @import("ldbl128.zig");
 
-pub fn Lgamma(comptime X: type) type {
-    comptime if (!types.isNumeric(X) or !types.numericType(X).le(.float))
-        @compileError("zml.float.lgamma: x must be a bool, an int or a float, got \n\tx: " ++ @typeName(X) ++ "\n");
-
-    return types.EnsureFloat(X);
-}
-
-/// Returns the log-gamma function of a float, int or bool  operand. The result
-/// type is determined by coercing the operand type to a  float, and the
-/// operation is performed by casting the operand to the result type, then
-/// computing the log-gamma function at that value.
+/// Returns the log-gamma function of a float.
 ///
 /// The log-gamma function is defined as:
 /// $$
@@ -28,32 +18,37 @@ pub fn Lgamma(comptime X: type) type {
 ///
 /// ## Signature
 /// ```zig
-/// float.lgamma(x: X) float.Lgamma(X)
+/// float.lgamma(x: X) X
 /// ```
 ///
 /// ## Arguments
 /// * `x` (`anytype`): The value to get the log-gamma function at.
 ///
 /// ## Returns
-/// `float.Lgamma(@TypeOf(x))`: The log-gamma function at `x`.
-pub fn lgamma(x: anytype) float.Lgamma(@TypeOf(x)) {
+/// `@TypeOf(x)`: The log-gamma function at `x`.
+pub fn lgamma(x: anytype) @TypeOf(x) {
+    const X: type = @TypeOf(x);
+
+    comptime if (!types.isNumeric(X) or !types.numericType(X) != .float)
+        @compileError("zsl.float.lgamma: x must be a float, got \n\tx: " ++ @typeName(X) ++ "\n");
+
     var local_signgam: i32 = undefined;
-    switch (float.Lgamma(@TypeOf(x))) {
-        f16 => return types.scast(f16, lgamma_r32(types.scast(f32, x), &local_signgam)),
+    switch (X) {
+        f16 => return types.cast(f16, lgamma_r32(types.cast(f32, x), &local_signgam)),
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_lgammaf_r.c
-            // return lgamma_r32(types.scast(f32, x), &local_signgam);
-            return types.scast(f32, lgamma_r128(types.scast(f128, x), &local_signgam));
+            // return lgamma_r32(types.cast(f32, x), &local_signgam);
+            return types.cast(f32, lgamma_r128(types.cast(f128, x), &local_signgam));
         },
         f64 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_lgamma_r.c
-            // return lgamma_r64(types.scast(f64, x), &local_signgam);
-            return types.scast(f64, lgamma_r128(types.scast(f128, x), &local_signgam));
+            // return lgamma_r64(types.cast(f64, x), &local_signgam);
+            return types.cast(f64, lgamma_r128(types.cast(f128, x), &local_signgam));
         },
-        f80 => return types.scast(f80, lgamma_r128(types.scast(f128, x), &local_signgam)),
+        f80 => return types.cast(f80, lgamma_r128(types.cast(f128, x), &local_signgam)),
         f128 => {
             // https://github.com/JuliaMath/openlibm/blob/master/ld128/e_lgammal_r.c
-            return lgamma_r128(types.scast(f128, x), &local_signgam);
+            return lgamma_r128(types.cast(f128, x), &local_signgam);
         },
         else => unreachable,
     }
@@ -105,7 +100,7 @@ pub fn lgamma_r128(x: f128, signgamp: *i32) f128 {
         if (p == q)
             return (1 / (p - p));
 
-        const i: i128 = types.scast(i128, p);
+        const i: i128 = types.cast(i128, p);
         if ((i & 1) == 0)
             signgamp.* = -1
         else
@@ -130,7 +125,7 @@ pub fn lgamma_r128(x: f128, signgamp: *i32) f128 {
     if (x < 13.5) {
         var p: f128 = 0;
         const nx: f128 = float.floor(x + 0.5);
-        const nn: i32 = types.scast(i32, nx);
+        const nn: i32 = types.cast(i32, nx);
         switch (nn) {
             0 => {
                 // log gamma (x + 1) = log(x) + log gamma(x)
@@ -305,7 +300,7 @@ pub fn lgamma_r128(x: f128, signgamp: *i32) f128 {
     }
 
     if (x > 1.0485738685148938358098967157129705071571e4928)
-        return types.scast(f128, signgamp.*) * std.math.inf(f128);
+        return types.cast(f128, signgamp.*) * std.math.inf(f128);
 
     if (x > 0x1p112)
         return x * (float.log(x) - 1);

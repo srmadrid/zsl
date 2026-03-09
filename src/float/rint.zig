@@ -11,7 +11,7 @@ pub inline fn rint(x: anytype) @TypeOf(x) {
     const X: type = @TypeOf(x);
 
     comptime if (!types.isNumeric(X) or types.numericType(X) != .float)
-        @compileError("zml.float.rint: x must be a float, got \n\tx: " ++ @typeName(@TypeOf(x)) ++ "\n");
+        @compileError("zsl.float.rint: x must be a float, got \n\tx: " ++ @typeName(@TypeOf(x)) ++ "\n");
 
     switch (@TypeOf(x)) {
         f16 => return types.cast(f16, rint32(types.cast(f32, x))),
@@ -58,15 +58,15 @@ fn rint32(x: f32) f32 {
             if ((I0 & 0x7fffffff) == 0)
                 return x;
 
-            const w: f32 = TWO23[types.scast(u32, sx)] + x;
-            var t = w - TWO23[types.scast(u32, sx)];
+            const w: f32 = TWO23[types.cast(u32, sx)] + x;
+            var t = w - TWO23[types.cast(u32, sx)];
             I0 = @bitCast(t);
             t = @bitCast((I0 & 0x7fffffff) | (sx << 31));
             return t;
         }
 
-        const w: f32 = TWO23[types.scast(u32, sx)] + x;
-        return w - TWO23[types.scast(u32, sx)];
+        const w: f32 = TWO23[types.cast(u32, sx)] + x;
+        return w - TWO23[types.cast(u32, sx)];
     }
 
     if (j0 == 0x80)
@@ -107,8 +107,8 @@ fn rint64(x: f64) f64 {
             I0 |= ((I1 | -I1) >> 12) & 0x80000;
             var xx: f64 = x;
             dbl64.setHighPart(&xx, I0);
-            const w: f64 = TWO52[types.scast(u32, sx)] + xx;
-            var t: f64 = w - TWO52[types.scast(u32, sx)];
+            const w: f64 = TWO52[types.cast(u32, sx)] + xx;
+            var t: f64 = w - TWO52[types.cast(u32, sx)];
             I0 = @bitCast(dbl64.getHighPart(t));
             dbl64.setHighPart(&t, (I0 & 0x7fffffff) | (sx << 31));
             return t;
@@ -142,8 +142,8 @@ fn rint64(x: f64) f64 {
 
     var xx: f64 = x;
     dbl64.setFromParts(&xx, @bitCast(I0), @bitCast(I1));
-    const w: f64 = TWO52[types.scast(u32, sx)] + xx;
-    return w - TWO52[types.scast(u32, sx)];
+    const w: f64 = TWO52[types.cast(u32, sx)] + xx;
+    return w - TWO52[types.cast(u32, sx)];
 }
 
 // Translation of:

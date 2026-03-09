@@ -6,47 +6,42 @@ const float = @import("../float.zig");
 const dbl64 = @import("dbl64.zig");
 const ldbl128 = @import("ldbl128.zig");
 
-pub fn Exp2(comptime X: type) type {
-    comptime if (!types.isNumeric(X) or !types.numericType(X).le(.float))
-        @compileError("zml.float.exp2: x must be a bool, an int or a float, got \n\tx: " ++ @typeName(X) ++ "\n");
-
-    return types.EnsureFloat(X);
-}
-
-/// Returns the base-2 exponential `2ˣ` of a float, int or bool operand. The
-/// result type is determined by coercing the operand type to a float, and the
-/// operation is performed by casting the operand to the result type, then
-/// computing its base-2 exponential.
+/// Returns the base-2 exponential `2ˣ` of a float.
 ///
 /// ## Signature
 /// ```zig
-/// float.exp2(x: X) float.Exp2(X)
+/// float.exp2(x: X) X
 /// ```
 ///
 /// ## Arguments
 /// * `x` (`anytype`): The value to get the base-2 exponential of.
 ///
 /// ## Returns
-/// `float.Exp2(@TypeOf(x))`: The base-2 exponential of `x`.
-pub inline fn exp2(x: anytype) float.Exp2(@TypeOf(x)) {
-    switch (float.Exp2(@TypeOf(x))) {
-        f16 => return types.scast(f16, exp2_32(types.scast(f32, x))),
+/// `@TypeOf(x)`: The base-2 exponential of `x`.
+pub inline fn exp2(x: anytype) @TypeOf(x) {
+    const X: type = @TypeOf(x);
+
+    comptime if (!types.isNumeric(X) or types.numericType(X) != .float)
+        @compileError("zsl.float.exp2: x must be a float, got \n\tx: " ++ @typeName(X) ++ "\n");
+
+    switch (X) {
+        f16 => return types.cast(f16, exp2_32(types.cast(f32, x))),
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_exp2f.c
-            return exp2_32(types.scast(f32, x));
+            return exp2_32(types.cast(f32, x));
         },
         f64 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_exp2.c
-            return exp2_64(types.scast(f64, x));
+            return exp2_64(types.cast(f64, x));
         },
         f80 => {
             //
-            // return exp2_80(types.scast(f80, x));
-            return types.scast(f80, exp2_128(types.scast(f128, x)));
+            // return exp2_80(types.cast(f80, x));
+            return types.cast(f80, exp2_128(types.cast(f128, x)));
         },
         f128 => {
             // https://github.com/JuliaMath/openlibm/blob/master/ld128/s_exp2l.c
-            return exp2_128(types.scast(f128, x));
+            return exp2_128(types.cast(f128, x));
         },
         else => unreachable,
     }
@@ -108,7 +103,7 @@ fn exp2_32(x: f32) f32 {
     const k: i32 = @bitCast((I0 >> 4) << 20);
     I0 &= 16 - 1;
     t -= 0x1.8p23 / 16.0;
-    const z: f64 = types.scast(f64, x - t);
+    const z: f64 = types.cast(f64, x - t);
     const twopk: f64 = dbl64.Parts.toFloat(.{ .msw = @bitCast(0x3ff00000 +% k), .lsw = 0 });
 
     // Compute r = exp2(y) = exp2ft[I0] * p(z)
@@ -121,7 +116,7 @@ fn exp2_32(x: f32) f32 {
             0x1.3b2c9cp-7);
 
     // Scale by 2**(k >> 20)
-    return types.scast(f32, tv * twopk);
+    return types.cast(f32, tv * twopk);
 }
 
 // Translation of:
@@ -284,7 +279,7 @@ fn exp2_128(x: f128) f128 {
 
     // Compute r = exp2(y) = exp2t[I0] * p(z - eps[i])
     const t: f128 = tbl_128[I0]; // exp2t[I0]
-    z -= types.scast(f128, eps_128[I0]); // eps[I0]
+    z -= types.cast(f128, eps_128[I0]); // eps[I0]
     const r: f128 = t + t * z *
         (0x1.62e42fefa39ef35793c7673007e6p-1 + z *
             (0x1.ebfbdff82c58ea86f16b06ec9736p-3 + z *
