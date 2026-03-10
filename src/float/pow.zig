@@ -16,7 +16,7 @@ pub fn Pow(comptime X: type, comptime Y: type) type {
     return types.EnsureFloat(types.Coerce(X, Y));
 }
 
-/// Performs exponentiation $x^y$ between two operands of float, rational, int or
+/// Performs exponentiation `xʸ` between two operands of float, rational, int or
 /// bool types, where at least one operand must be of float type. The result type
 /// is determined by coercing the operand types, and the operation is performed
 /// by casting both operands to the result type, then performing the

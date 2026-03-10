@@ -1,13 +1,27 @@
 const types = @import("../types.zig");
-const ops = @import("../ops.zig");
+const numeric = @import("../numeric.zig");
+
+const complex = @import("../complex.zig");
 
 pub fn Abs(comptime Z: type) type {
-    comptime if (!types.isNumeric(Z) or types.numericType(Z) != .cfloat)
-        @compileError("zml.cfloat.abs: z must be a cfloat, got \n\tz: " ++ @typeName(Z) ++ "\n");
+    comptime if (!types.isNumeric(Z) or types.numericType(Z) != .complex)
+        @compileError("zsl.complex.abs: z must be a complex, got \n\tz: " ++ @typeName(Z) ++ "\n");
 
     return types.Scalar(Z);
 }
 
-pub fn abs(z: anytype) Abs(@TypeOf(z)) {
-    return ops.hypot(z.re, z.im, .{}) catch unreachable;
+/// Returns the absolute value of a complex `z`.
+///
+/// ## Signature
+/// ```zig
+/// complex.abs(z: Z) complex.Abs(Z)
+/// ```
+///
+/// ## Arguments
+/// * `z` (`anytype`): The complex value to get the absolute value of.
+///
+/// ## Returns
+/// `complex.Abs(@TypeOf(z))`: The absolute value of `z`.
+pub fn abs(z: anytype) complex.Abs(@TypeOf(z)) {
+    return numeric.hypot(z.re, z.im);
 }

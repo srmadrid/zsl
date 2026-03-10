@@ -6,11 +6,11 @@ const float = @import("../float.zig");
 const dbl64 = @import("dbl64.zig");
 const ldbl128 = @import("ldbl128.zig");
 
-/// Returns the natural logarithm `log(x)` of a float.
+/// Returns the natural logarithm `logₑ(x)` of a float.
 ///
 /// ## Signature
 /// ```zig
-/// float.log(x: X) float.Log(X)
+/// float.ln(x: X) X
 /// ```
 ///
 /// ## Arguments

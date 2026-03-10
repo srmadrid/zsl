@@ -1,12 +1,33 @@
 const types = @import("../types.zig");
-const cfloat = @import("../cfloat.zig");
-const constants = @import("../constants.zig");
+const numeric = @import("../numeric.zig");
 
+const complex = @import("../complex.zig");
+
+/// Returns the hyperbolic arccosine `cosh⁻¹(z)` of a complex.
+///
+/// ## Signature
+/// ```zig
+/// complex.acosh(z: Z) Z
+/// ```
+///
+/// ## Arguments
+/// * `z` (`anytype`): The value to get the hyperbolic arccosine of.
+///
+/// ## Returns
+/// `@TypeOf(z)`: The hyperbolic arccosine of `z`.
 pub fn acosh(z: anytype) @TypeOf(z) {
     const Z = @TypeOf(z);
 
-    comptime if (!types.isNumeric(Z) or types.numericType(Z) != .cfloat)
-        @compileError("zml.cfloat.acosh: z must be a cfloat, got \n\tz: " ++ @typeName(Z) ++ "\n");
+    comptime if (!types.isNumeric(Z) or types.numericType(Z) != .complex)
+        @compileError("zsl.complex.acosh: z must be a complex, got \n\tz: " ++ @typeName(Z) ++ "\n");
 
-    return cfloat.acos(z).mulImag(constants.one(types.Scalar(Z), .{}) catch unreachable);
+    return numeric.mul(
+        numeric.ln(
+            numeric.add(
+                numeric.sqrt(numeric.div(numeric.add(z, numeric.one(Z)), numeric.two(Z))),
+                numeric.sqrt(numeric.div(numeric.sub(z, numeric.one(Z)), numeric.two(Z))),
+            ),
+        ),
+        numeric.two(Z),
+    );
 }

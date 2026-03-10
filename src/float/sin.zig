@@ -15,7 +15,7 @@ const rem_pio2_128 = rem_pio2.rem_pio2_128;
 const dbl64 = @import("dbl64.zig");
 const ldbl128 = @import("ldbl128.zig");
 
-/// Returns the sine $\sin(x)$ of a float.
+/// Returns the sine `sin(x)` of a float.
 ///
 /// ## Signature
 /// ```zig

@@ -21,11 +21,6 @@ pub const cf80 = complex.cf80;
 pub const cf128 = complex.cf128;
 pub const comptime_ccomplex = complex.comptime_complex;
 
-const constants = @import("constants.zig");
-pub const zero = constants.zero;
-pub const one = constants.one;
-pub const two = constants.two;
-
 // Domain namespaces
 pub const numeric = @import("numeric.zig");
 pub const vector = @import("vector.zig");

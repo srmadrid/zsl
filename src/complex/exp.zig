@@ -1,23 +1,29 @@
 const types = @import("../types.zig");
-const ops = @import("../ops.zig");
+const numeric = @import("../numeric.zig");
 
+const complex = @import("../complex.zig");
+
+/// Returns the exponential `eᶻ` of a complex.
+///
+/// ## Signature
+/// ```zig
+/// complex.exp(z: Z) Z
+/// ```
+///
+/// ## Arguments
+/// * `z` (`anytype`): The value to get the exponential of.
+///
+/// ## Returns
+/// `@TypeOf(z)`: The exponential of `z`.
 pub fn exp(z: anytype) @TypeOf(z) {
     const Z = @TypeOf(z);
 
-    comptime if (!types.isNumeric(Z) or types.numericType(Z) != .cfloat)
-        @compileError("zml.cfloat.exp: z must be a cfloat, got \n\tz: " ++ @typeName(Z) ++ "\n");
+    comptime if (!types.isNumeric(Z) or types.numericType(Z) != .complex)
+        @compileError("zsl.complex.exp: z must be a complex, got \n\tz: " ++ @typeName(Z) ++ "\n");
 
-    const r: @TypeOf(z.re) = ops.exp(z.re, .{}) catch unreachable;
+    const r = numeric.exp(z.re);
     return .{
-        .re = ops.mul(
-            r,
-            ops.cos(z.im, .{}) catch unreachable,
-            .{},
-        ) catch unreachable,
-        .im = ops.mul(
-            r,
-            ops.sin(z.im, .{}) catch unreachable,
-            .{},
-        ) catch unreachable,
+        .re = numeric.mul(r, numeric.cos(z.im)),
+        .im = numeric.mul(r, numeric.sin(z.im)),
     };
 }

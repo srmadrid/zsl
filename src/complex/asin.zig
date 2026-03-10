@@ -1,66 +1,40 @@
-const std = @import("std");
-
 const types = @import("../types.zig");
-const float = @import("../float.zig");
-const cfloat = @import("../cfloat.zig");
+const numeric = @import("../numeric.zig");
 
+const complex = @import("../complex.zig");
+
+/// Returns the arcsine `sin⁻¹(z)` of a complex.
+///
+/// ## Signature
+/// ```zig
+/// complex.asin(z: Z) Z
+/// ```
+///
+/// ## Arguments
+/// * `z` (`anytype`): The value to get the arcsine of.
+///
+/// ## Returns
+/// `@TypeOf(z)`: The arcsine of `z`.
 pub fn asin(z: anytype) @TypeOf(z) {
     const Z = @TypeOf(z);
 
-    comptime if (!types.isNumeric(Z) or types.numericType(Z) != .cfloat)
-        @compileError("zml.cfloat.asin: z must be a cfloat, got \n\tz: " ++ @typeName(Z) ++ "\n");
+    comptime if (!types.isNumeric(Z) or types.numericType(Z) != .complex)
+        @compileError("zsl.complex.asin: z must be a complex, got \n\tz: " ++ @typeName(Z) ++ "\n");
 
-    if (z.im == 0.0) {
-        return if (float.abs(z.re) > 1.0)
-            .{
-                .re = 1.570796326794896619231321691639751442098585,
-                .im = 0.0,
-            }
-        else
-            .{
-                .re = float.asin(z.re),
-                .im = 0.0,
-            };
-    }
+    const r1 = numeric.abs(numeric.add(z, numeric.one(Z)));
+    const r2 = numeric.abs(numeric.sub(z, numeric.one(Z)));
 
-    var b: @TypeOf(z.re) = cfloat.abs(z);
-    if (float.abs(b) < 0.125) {
-        const z2: @TypeOf(z) = .{
-            .re = (z.re - z.im) * (z.re + z.im),
-            .im = (2.0 * z.re * z.im),
-        };
-        var cn: @TypeOf(z.re) = 1.0;
-        var n: @TypeOf(z.re) = 1.0;
-        var ca: @TypeOf(z) = z;
-        var sum: @TypeOf(z) = z;
-        while (true) {
-            var ct: @TypeOf(z) = z2.mul(ca);
-            ca = ct;
+    const sum = numeric.add(r1, r2);
+    const diff = numeric.sub(r1, r2);
 
-            cn *= n;
-            n += 1.0;
-            cn /= n;
-            n += 1.0;
-            b = cn / n;
+    const u = numeric.div(diff, numeric.two(@TypeOf(diff)));
+    const v = numeric.div(sum, numeric.two(@TypeOf(sum)));
 
-            ct = ct.mulReal(b);
-            sum = sum.add(ct);
-            b = cfloat.abs(ct);
+    const re = numeric.asin(u);
+    const im = numeric.acosh(v);
 
-            if (b <= std.math.floatEps(@TypeOf(z.re)))
-                break;
-        }
-
-        return sum;
-    }
-
-    const ct: @TypeOf(z) = z.mulImag(1.0);
-    var zz: @TypeOf(z) = .{
-        .re = 1.0 - (z.re - z.im) * (z.re + z.im),
-        .im = -(2.0 * z.re * z.im),
+    return .{
+        .re = re,
+        .im = if (numeric.lt(z.im, numeric.one(@TypeOf(z.im)))) numeric.neg(im) else im,
     };
-    const z2: @TypeOf(z) = cfloat.sqrt(zz);
-    zz = ct.add(z2);
-    zz = cfloat.log(zz);
-    return zz.mulImag(-1.0);
 }
