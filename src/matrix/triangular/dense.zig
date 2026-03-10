@@ -5,8 +5,7 @@ const Layout = types.Layout;
 const Uplo = types.Uplo;
 const Diag = types.Diag;
 const IterationOrder = types.IterationOrder;
-const ops = @import("../../ops.zig");
-const constants = @import("../../constants.zig");
+const numeric = @import("../../numeric.zig");
 const int = @import("../../int.zig");
 
 const matrix = @import("../../matrix.zig");
@@ -182,12 +181,12 @@ pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
                         while (j < cols) : (j += 1) {
                             i = 0;
                             while (i < int.min(j, rows)) : (i += 1) {
-                                mat.data[mat._index(i, j)] = try ops.init(
+                                mat.data[mat._index(i, j)] = try numeric.init(
                                     T,
                                     types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                                 );
 
-                                try ops.set(
+                                try numeric.set(
                                     &mat.data[mat._index(i, j)],
                                     value,
                                     types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
@@ -198,12 +197,12 @@ pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
                         while (j < cols) : (j += 1) {
                             i = 0;
                             while (i < int.min(j + 1, rows)) : (i += 1) {
-                                mat.data[mat._index(i, j)] = try ops.init(
+                                mat.data[mat._index(i, j)] = try numeric.init(
                                     T,
                                     types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                                 );
 
-                                try ops.set(
+                                try numeric.set(
                                     &mat.data[mat._index(i, j)],
                                     value,
                                     types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
@@ -216,12 +215,12 @@ pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
                         while (j < int.min(rows, cols)) : (j += 1) {
                             i = j + 1;
                             while (i < rows) : (i += 1) {
-                                mat.data[mat._index(i, j)] = try ops.init(
+                                mat.data[mat._index(i, j)] = try numeric.init(
                                     T,
                                     types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                                 );
 
-                                try ops.set(
+                                try numeric.set(
                                     &mat.data[mat._index(i, j)],
                                     value,
                                     types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
@@ -232,12 +231,12 @@ pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
                         while (j < int.min(rows, cols)) : (j += 1) {
                             i = j;
                             while (i < rows) : (i += 1) {
-                                mat.data[mat._index(i, j)] = try ops.init(
+                                mat.data[mat._index(i, j)] = try numeric.init(
                                     T,
                                     types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                                 );
 
-                                try ops.set(
+                                try numeric.set(
                                     &mat.data[mat._index(i, j)],
                                     value,
                                     types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
@@ -252,12 +251,12 @@ pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
                         while (i < int.min(rows, cols)) : (i += 1) {
                             j = i + 1;
                             while (j < cols) : (j += 1) {
-                                mat.data[mat._index(i, j)] = try ops.init(
+                                mat.data[mat._index(i, j)] = try numeric.init(
                                     T,
                                     types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                                 );
 
-                                try ops.set(
+                                try numeric.set(
                                     &mat.data[mat._index(i, j)],
                                     value,
                                     types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
@@ -268,12 +267,12 @@ pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
                         while (i < int.min(rows, cols)) : (i += 1) {
                             j = i;
                             while (j < cols) : (j += 1) {
-                                mat.data[mat._index(i, j)] = try ops.init(
+                                mat.data[mat._index(i, j)] = try numeric.init(
                                     T,
                                     types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                                 );
 
-                                try ops.set(
+                                try numeric.set(
                                     &mat.data[mat._index(i, j)],
                                     value,
                                     types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
@@ -286,12 +285,12 @@ pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
                         while (i < rows) : (i += 1) {
                             j = 0;
                             while (j < int.min(i, cols)) : (j += 1) {
-                                mat.data[mat._index(i, j)] = try ops.init(
+                                mat.data[mat._index(i, j)] = try numeric.init(
                                     T,
                                     types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                                 );
 
-                                try ops.set(
+                                try numeric.set(
                                     &mat.data[mat._index(i, j)],
                                     value,
                                     types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
@@ -302,12 +301,12 @@ pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
                         while (i < rows) : (i += 1) {
                             j = 0;
                             while (j < int.min(i + 1, cols)) : (j += 1) {
-                                mat.data[mat._index(i, j)] = try ops.init(
+                                mat.data[mat._index(i, j)] = try numeric.init(
                                     T,
                                     types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                                 );
 
-                                try ops.set(
+                                try numeric.set(
                                     &mat.data[mat._index(i, j)],
                                     value,
                                     types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
@@ -385,14 +384,14 @@ pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
                     while (j < size) : (j += 1) {
                         i = 0;
                         while (i < j) : (i += 1) {
-                            mat.data[mat._index(i, j)] = try constants.zero(
+                            mat.data[mat._index(i, j)] = try numeric.zero(
                                 T,
                                 types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                             );
                         }
 
                         if (comptime diag == .non_unit) {
-                            mat.data[mat._index(j, j)] = try constants.one(
+                            mat.data[mat._index(j, j)] = try numeric.one(
                                 T,
                                 types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                             );
@@ -401,7 +400,7 @@ pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
                 } else { // cl
                     while (j < size) : (j += 1) {
                         if (comptime diag == .non_unit) {
-                            mat.data[mat._index(j, j)] = try constants.one(
+                            mat.data[mat._index(j, j)] = try numeric.one(
                                 T,
                                 types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                             );
@@ -410,7 +409,7 @@ pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
                         i = j + 1;
 
                         while (i < size) : (i += 1) {
-                            mat.data[mat._index(i, j)] = try constants.zero(
+                            mat.data[mat._index(i, j)] = try numeric.zero(
                                 T,
                                 types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                             );
@@ -421,7 +420,7 @@ pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
                 if (comptime uplo == .upper) { // ru
                     while (i < size) : (i += 1) {
                         if (comptime diag == .non_unit) {
-                            mat.data[mat._index(i, i)] = try constants.one(
+                            mat.data[mat._index(i, i)] = try numeric.one(
                                 T,
                                 types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                             );
@@ -430,7 +429,7 @@ pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
                         j = i + 1;
 
                         while (j < size) : (j += 1) {
-                            mat.data[mat._index(i, j)] = try constants.zero(
+                            mat.data[mat._index(i, j)] = try numeric.zero(
                                 T,
                                 types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                             );
@@ -440,14 +439,14 @@ pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
                     while (i < size) : (i += 1) {
                         j = 0;
                         while (j < i) : (j += 1) {
-                            mat.data[mat._index(i, j)] = try constants.zero(
+                            mat.data[mat._index(i, j)] = try numeric.zero(
                                 T,
                                 types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                             );
                         }
 
                         if (comptime diag == .non_unit) {
-                            mat.data[mat._index(i, i)] = try constants.one(
+                            mat.data[mat._index(i, i)] = try numeric.one(
                                 T,
                                 types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                             );
@@ -518,15 +517,15 @@ pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
 
             if (comptime uplo == .upper) {
                 if (r > c)
-                    return constants.zero(T, .{}) catch unreachable;
+                    return numeric.zero(T, .{}) catch unreachable;
             } else {
                 if (r < c)
-                    return constants.zero(T, .{}) catch unreachable;
+                    return numeric.zero(T, .{}) catch unreachable;
             }
 
             if (comptime diag == .unit) {
                 if (r == c)
-                    return constants.one(T, .{}) catch unreachable;
+                    return numeric.one(T, .{}) catch unreachable;
             }
 
             return self.data[self._index(r, c)];
@@ -780,19 +779,19 @@ pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
                     while (j < mat.cols) : (j += 1) {
                         i = 0;
                         while (i < j) : (i += 1) {
-                            mat.data[mat._index(i, j)] = try ops.copy(
+                            mat.data[mat._index(i, j)] = try numeric.copy(
                                 self.data[self._index(i, j)],
                                 types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                             );
                         }
 
                         if (comptime diag == .unit) {
-                            mat.data[mat._index(j, j)] = try constants.one(
+                            mat.data[mat._index(j, j)] = try numeric.one(
                                 T,
                                 types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                             );
                         } else {
-                            mat.data[mat._index(j, j)] = try ops.copy(
+                            mat.data[mat._index(j, j)] = try numeric.copy(
                                 self.data[self._index(j, j)],
                                 types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                             );
@@ -800,7 +799,7 @@ pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
 
                         i = j + 1;
                         while (i < mat.rows) : (i += 1) {
-                            mat.data[mat._index(i, j)] = try constants.zero(
+                            mat.data[mat._index(i, j)] = try numeric.zero(
                                 T,
                                 types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                             );
@@ -810,19 +809,19 @@ pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
                     while (j < mat.cols) : (j += 1) {
                         i = 0;
                         while (i < j) : (i += 1) {
-                            mat.data[mat._index(i, j)] = try constants.zero(
+                            mat.data[mat._index(i, j)] = try numeric.zero(
                                 T,
                                 types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                             );
                         }
 
                         if (comptime diag == .unit) {
-                            mat.data[mat._index(j, j)] = try constants.one(
+                            mat.data[mat._index(j, j)] = try numeric.one(
                                 T,
                                 types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                             );
                         } else {
-                            mat.data[mat._index(j, j)] = try ops.copy(
+                            mat.data[mat._index(j, j)] = try numeric.copy(
                                 self.data[self._index(j, j)],
                                 types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                             );
@@ -830,7 +829,7 @@ pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
 
                         i = j + 1;
                         while (i < mat.rows) : (i += 1) {
-                            mat.data[mat._index(i, j)] = try ops.copy(
+                            mat.data[mat._index(i, j)] = try numeric.copy(
                                 self.data[self._index(i, j)],
                                 types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                             );
@@ -842,19 +841,19 @@ pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
                     while (i < mat.rows) : (i += 1) {
                         j = 0;
                         while (j < i) : (j += 1) {
-                            mat.data[mat._index(i, j)] = try constants.zero(
+                            mat.data[mat._index(i, j)] = try numeric.zero(
                                 T,
                                 types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                             );
                         }
 
                         if (comptime diag == .unit) {
-                            mat.data[mat._index(i, i)] = try constants.one(
+                            mat.data[mat._index(i, i)] = try numeric.one(
                                 T,
                                 types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                             );
                         } else {
-                            mat.data[mat._index(i, i)] = try ops.copy(
+                            mat.data[mat._index(i, i)] = try numeric.copy(
                                 self.data[self._index(i, i)],
                                 types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                             );
@@ -862,7 +861,7 @@ pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
 
                         j = i + 1;
                         while (j < mat.cols) : (j += 1) {
-                            mat.data[mat._index(i, j)] = try ops.copy(
+                            mat.data[mat._index(i, j)] = try numeric.copy(
                                 self.data[self._index(i, j)],
                                 types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                             );
@@ -872,19 +871,19 @@ pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
                     while (i < mat.rows) : (i += 1) {
                         j = 0;
                         while (j < i) : (j += 1) {
-                            mat.data[mat._index(i, j)] = try ops.copy(
+                            mat.data[mat._index(i, j)] = try numeric.copy(
                                 self.data[self._index(i, j)],
                                 types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                             );
                         }
 
                         if (comptime diag == .unit) {
-                            mat.data[mat._index(i, i)] = try constants.one(
+                            mat.data[mat._index(i, i)] = try numeric.one(
                                 T,
                                 types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                             );
                         } else {
-                            mat.data[mat._index(i, i)] = try ops.copy(
+                            mat.data[mat._index(i, i)] = try numeric.copy(
                                 self.data[self._index(i, i)],
                                 types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                             );
@@ -892,7 +891,7 @@ pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
 
                         j = i + 1;
                         while (j < mat.cols) : (j += 1) {
-                            mat.data[mat._index(i, j)] = try constants.zero(
+                            mat.data[mat._index(i, j)] = try numeric.zero(
                                 T,
                                 types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                             );
@@ -926,7 +925,7 @@ pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
 
                             if (j < int.min(self.rows, self.cols)) {
                                 if (comptime diag == .unit) {
-                                    result.data[j + j * result.strides[1]] = constants.one(T, ctx) catch unreachable;
+                                    result.data[j + j * result.strides[1]] = numeric.one(T, ctx) catch unreachable;
                                 } else {
                                     result.data[j + j * result.strides[1]] = self.data[j + j * self.ld];
                                 }
@@ -934,7 +933,7 @@ pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
 
                             i = j + 1;
                             while (i < self.rows) : (i += 1) {
-                                result.data[i + j * result.strides[1]] = constants.zero(T, ctx) catch unreachable;
+                                result.data[i + j * result.strides[1]] = numeric.zero(T, ctx) catch unreachable;
                             }
                         }
                     } else { // cl
@@ -942,12 +941,12 @@ pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
                         while (j < self.cols) : (j += 1) {
                             var i: u32 = 0;
                             while (i < int.min(j, self.rows)) : (i += 1) {
-                                result.data[i + j * result.strides[1]] = constants.zero(T, ctx) catch unreachable;
+                                result.data[i + j * result.strides[1]] = numeric.zero(T, ctx) catch unreachable;
                             }
 
                             if (j < int.min(self.rows, self.cols)) {
                                 if (comptime diag == .unit) {
-                                    result.data[j + j * result.strides[1]] = constants.one(T, ctx) catch unreachable;
+                                    result.data[j + j * result.strides[1]] = numeric.one(T, ctx) catch unreachable;
                                 } else {
                                     result.data[j + j * result.strides[1]] = self.data[j + j * self.ld];
                                 }
@@ -965,12 +964,12 @@ pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
                         while (i < self.rows) : (i += 1) {
                             var j: u32 = 0;
                             while (j < int.min(i, self.cols)) : (j += 1) {
-                                result.data[i * result.strides[0] + j] = constants.zero(T, ctx) catch unreachable;
+                                result.data[i * result.strides[0] + j] = numeric.zero(T, ctx) catch unreachable;
                             }
 
                             if (i < int.min(self.rows, self.cols)) {
                                 if (comptime diag == .unit) {
-                                    result.data[i * result.strides[0] + i] = constants.one(T, ctx) catch unreachable;
+                                    result.data[i * result.strides[0] + i] = numeric.one(T, ctx) catch unreachable;
                                 } else {
                                     result.data[i * result.strides[0] + i] = self.data[i * self.ld + i];
                                 }
@@ -991,7 +990,7 @@ pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
 
                             if (i < int.min(self.rows, self.cols)) {
                                 if (comptime diag == .unit) {
-                                    result.data[i * result.strides[0] + i] = constants.one(T, ctx) catch unreachable;
+                                    result.data[i * result.strides[0] + i] = numeric.one(T, ctx) catch unreachable;
                                 } else {
                                     result.data[i * result.strides[0] + i] = self.data[i * self.ld + i];
                                 }
@@ -999,7 +998,7 @@ pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
 
                             j = i + 1;
                             while (j < self.cols) : (j += 1) {
-                                result.data[i * result.strides[0] + j] = constants.zero(T, ctx) catch unreachable;
+                                result.data[i * result.strides[0] + j] = numeric.zero(T, ctx) catch unreachable;
                             }
                         }
                     }
@@ -1073,7 +1072,7 @@ pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
                                 if (_j == j) {
                                     const l: u32 = if (comptime diag == .unit) _j else _j + 1;
                                     while (_i < int.min(i, l)) : (_i += 1) {
-                                        ops.deinit(
+                                        numeric.deinit(
                                             &self.data[self._index(_i, _j)],
                                             types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                                         );
@@ -1081,7 +1080,7 @@ pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
                                 } else {
                                     const l: u32 = if (comptime diag == .unit) _j else _j + 1;
                                     while (_i < l) : (_i += 1) {
-                                        ops.deinit(
+                                        numeric.deinit(
                                             &self.data[self._index(_i, _j)],
                                             types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                                         );
@@ -1094,14 +1093,14 @@ pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
                                 var _i: u32 = if (comptime diag == .unit) _j + 1 else _j;
                                 if (_j == j) {
                                     while (_i < int.min(i, self.rows)) : (_i += 1) {
-                                        ops.deinit(
+                                        numeric.deinit(
                                             &self.data[self._index(_i, _j)],
                                             types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                                         );
                                     }
                                 } else {
                                     while (_i < self.rows) : (_i += 1) {
-                                        ops.deinit(
+                                        numeric.deinit(
                                             &self.data[self._index(_i, _j)],
                                             types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                                         );
@@ -1116,14 +1115,14 @@ pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
                                 var _j: u32 = if (comptime diag == .unit) _i + 1 else _i;
                                 if (_i == i) {
                                     while (_j < int.min(j, self.cols)) : (_j += 1) {
-                                        ops.deinit(
+                                        numeric.deinit(
                                             &self.data[self._index(_i, _j)],
                                             types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                                         );
                                     }
                                 } else {
                                     while (_j < self.cols) : (_j += 1) {
-                                        ops.deinit(
+                                        numeric.deinit(
                                             &self.data[self._index(_i, _j)],
                                             types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                                         );
@@ -1137,7 +1136,7 @@ pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
                                 if (_i == i) {
                                     const l: u32 = if (comptime diag == .unit) _i else _i + 1;
                                     while (_j < int.min(j, l)) : (_j += 1) {
-                                        ops.deinit(
+                                        numeric.deinit(
                                             &self.data[self._index(_i, _j)],
                                             types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                                         );
@@ -1145,7 +1144,7 @@ pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
                                 } else {
                                     const l: u32 = if (comptime diag == .unit) _i else _i + 1;
                                     while (_j < l) : (_j += 1) {
-                                        ops.deinit(
+                                        numeric.deinit(
                                             &self.data[self._index(_i, _j)],
                                             types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                                         );

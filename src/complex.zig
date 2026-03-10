@@ -35,6 +35,11 @@ pub fn Complex(comptime N: type) type {
         /// Scalar type
         pub const Scalar = N;
 
+        /// Constants
+        pub const zero: Complex(N) = .{ .re = numeric.zero(N), .im = numeric.zero(N) };
+        pub const one: Complex(N) = .{ .re = numeric.one(N), .im = numeric.zero(N) };
+        pub const two: Complex(N) = .{ .re = numeric.two(N), .im = numeric.zero(N) };
+
         /// Initializes a complex from any numeric value.
         ///
         /// ## Arguments

@@ -5,8 +5,7 @@ const Layout = types.Layout;
 const Uplo = types.Uplo;
 const Diag = types.Diag;
 const IterationOrder = types.IterationOrder;
-const ops = @import("../../ops.zig");
-const constants = @import("../../constants.zig");
+const numeric = @import("../../numeric.zig");
 const int = @import("../../int.zig");
 
 const vector = @import("../../vector.zig");
@@ -169,12 +168,12 @@ pub fn Dense(T: type, layout: Layout) type {
                 while (j < cols) : (j += 1) {
                     i = 0;
                     while (i < rows) : (i += 1) {
-                        mat.data[mat._index(i, j)] = try ops.init(
+                        mat.data[mat._index(i, j)] = try numeric.init(
                             T,
                             types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                         );
 
-                        try ops.set(
+                        try numeric.set(
                             &mat.data[mat._index(i, j)],
                             value,
                             types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
@@ -185,12 +184,12 @@ pub fn Dense(T: type, layout: Layout) type {
                 while (i < rows) : (i += 1) {
                     j = 0;
                     while (j < cols) : (j += 1) {
-                        mat.data[mat._index(i, j)] = try ops.init(
+                        mat.data[mat._index(i, j)] = try numeric.init(
                             T,
                             types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                         );
 
-                        try ops.set(
+                        try numeric.set(
                             &mat.data[mat._index(i, j)],
                             value,
                             types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
@@ -265,13 +264,13 @@ pub fn Dense(T: type, layout: Layout) type {
                 while (j < size) : (j += 1) {
                     i = 0;
                     while (i < j) : (i += 1) {
-                        mat.data[mat._index(i, j)] = try constants.zero(
+                        mat.data[mat._index(i, j)] = try numeric.zero(
                             T,
                             types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                         );
                     }
 
-                    mat.data[mat._index(j, j)] = try constants.one(
+                    mat.data[mat._index(j, j)] = try numeric.one(
                         T,
                         types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                     );
@@ -279,7 +278,7 @@ pub fn Dense(T: type, layout: Layout) type {
                     i += 1;
 
                     while (i < size) : (i += 1) {
-                        mat.data[mat._index(i, j)] = try constants.zero(
+                        mat.data[mat._index(i, j)] = try numeric.zero(
                             T,
                             types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                         );
@@ -289,13 +288,13 @@ pub fn Dense(T: type, layout: Layout) type {
                 while (i < size) : (i += 1) {
                     j = 0;
                     while (j < i) : (j += 1) {
-                        mat.data[mat._index(i, j)] = try constants.zero(
+                        mat.data[mat._index(i, j)] = try numeric.zero(
                             T,
                             types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                         );
                     }
 
-                    mat.data[mat._index(i, i)] = try constants.one(
+                    mat.data[mat._index(i, i)] = try numeric.one(
                         T,
                         types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                     );
@@ -303,7 +302,7 @@ pub fn Dense(T: type, layout: Layout) type {
                     j += 1;
 
                     while (j < size) : (j += 1) {
-                        mat.data[mat._index(i, j)] = try constants.zero(
+                        mat.data[mat._index(i, j)] = try numeric.zero(
                             T,
                             types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                         );
@@ -518,7 +517,7 @@ pub fn Dense(T: type, layout: Layout) type {
                 while (j < mat.cols) : (j += 1) {
                     i = 0;
                     while (i < mat.rows) : (i += 1) {
-                        mat.data[mat._index(i, j)] = try ops.copy(
+                        mat.data[mat._index(i, j)] = try numeric.copy(
                             self.data[self._index(i, j)],
                             types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                         );
@@ -528,7 +527,7 @@ pub fn Dense(T: type, layout: Layout) type {
                 while (i < mat.rows) : (i += 1) {
                     j = 0;
                     while (j < mat.cols) : (j += 1) {
-                        mat.data[mat._index(i, j)] = try ops.copy(
+                        mat.data[mat._index(i, j)] = try numeric.copy(
                             self.data[self._index(i, j)],
                             types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                         );
@@ -889,14 +888,14 @@ pub fn Dense(T: type, layout: Layout) type {
                             var _i: u32 = 0;
                             if (_j == j) {
                                 while (_i < int.min(i, self.rows)) : (_i += 1) {
-                                    ops.deinit(
+                                    numeric.deinit(
                                         &self.data[self._index(_i, _j)],
                                         types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                                     );
                                 }
                             } else {
                                 while (_i < self.rows) : (_i += 1) {
-                                    ops.deinit(
+                                    numeric.deinit(
                                         &self.data[self._index(_i, _j)],
                                         types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                                     );
@@ -909,14 +908,14 @@ pub fn Dense(T: type, layout: Layout) type {
                             var _j: u32 = 0;
                             if (_i == i) {
                                 while (_j < int.min(j, self.cols)) : (_j += 1) {
-                                    ops.deinit(
+                                    numeric.deinit(
                                         &self.data[self._index(_i, _j)],
                                         types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                                     );
                                 }
                             } else {
                                 while (_j < self.cols) : (_j += 1) {
-                                    ops.deinit(
+                                    numeric.deinit(
                                         &self.data[self._index(_i, _j)],
                                         types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                                     );

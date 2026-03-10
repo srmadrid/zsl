@@ -5,8 +5,6 @@ const opts = @import("options");
 const types = @import("types.zig");
 const Order = types.Layout;
 
-const ops = @import("ops.zig");
-
 const int = @import("int.zig");
 const float = @import("float.zig");
 
@@ -30,114 +28,114 @@ pub const Iterator = @import("array/iterators.zig").Iterator;
 
 pub const max_dimensions = opts.max_dimensions;
 
-const arrops = @import("array/ops.zig");
-pub const apply1 = arrops.apply1;
-pub const apply1_ = arrops.apply1_;
-pub const apply2 = arrops.apply2;
-pub const apply2_ = arrops.apply2_;
+// const arrops = @import("array/ops.zig");
+// pub const apply1 = arrops.apply1;
+// pub const apply1_ = arrops.apply1_;
+// pub const apply2 = arrops.apply2;
+// pub const apply2_ = arrops.apply2_;
 
-pub const add = arrops.add;
-pub const add_ = arrops.add_;
-pub const sub = arrops.sub;
-pub const sub_ = arrops.sub_;
-pub const mul = arrops.mul;
-pub const mul_ = arrops.mul_;
-pub const div = arrops.div;
-pub const div_ = arrops.div_;
+// pub const add = arrops.add;
+// pub const add_ = arrops.add_;
+// pub const sub = arrops.sub;
+// pub const sub_ = arrops.sub_;
+// pub const mul = arrops.mul;
+// pub const mul_ = arrops.mul_;
+// pub const div = arrops.div;
+// pub const div_ = arrops.div_;
 
-pub const eq = arrops.eq;
-pub const eq_ = arrops.eq_;
-pub const ne = arrops.ne;
-pub const ne_ = arrops.ne_;
-pub const lt = arrops.lt;
-pub const lt_ = arrops.lt_;
-pub const le = arrops.le;
-pub const le_ = arrops.le_;
-pub const gt = arrops.gt;
-pub const gt_ = arrops.gt_;
-pub const ge = arrops.ge;
-pub const ge_ = arrops.ge_;
+// pub const eq = arrops.eq;
+// pub const eq_ = arrops.eq_;
+// pub const ne = arrops.ne;
+// pub const ne_ = arrops.ne_;
+// pub const lt = arrops.lt;
+// pub const lt_ = arrops.lt_;
+// pub const le = arrops.le;
+// pub const le_ = arrops.le_;
+// pub const gt = arrops.gt;
+// pub const gt_ = arrops.gt_;
+// pub const ge = arrops.ge;
+// pub const ge_ = arrops.ge_;
 
-pub const max = arrops.max;
-pub const max_ = arrops.max_;
-pub const min = arrops.min;
-pub const min_ = arrops.min_;
+// pub const max = arrops.max;
+// pub const max_ = arrops.max_;
+// pub const min = arrops.min;
+// pub const min_ = arrops.min_;
 
-// Basic operations
-pub const abs = arrops.abs;
-pub const abs_ = arrops.abs_;
-pub const abs1 = arrops.abs1;
-pub const abs1_ = arrops.abs1_;
-pub const abs2 = arrops.abs2;
-pub const abs2_ = arrops.abs2_;
+// // Basic operations
+// pub const abs = arrops.abs;
+// pub const abs_ = arrops.abs_;
+// pub const abs1 = arrops.abs1;
+// pub const abs1_ = arrops.abs1_;
+// pub const abs2 = arrops.abs2;
+// pub const abs2_ = arrops.abs2_;
 
-// Exponential functions
-pub const exp = arrops.exp;
-pub const exp_ = arrops.exp_;
-pub const exp10 = arrops.exp10;
-pub const exp10_ = arrops.exp10_;
-pub const exp2 = arrops.exp2;
-pub const exp2_ = arrops.exp2_;
-pub const log = arrops.log;
-pub const log_ = arrops.log_;
-pub const log10 = arrops.log10;
-pub const log10_ = arrops.log10_;
-pub const log2 = arrops.log2;
-pub const log2_ = arrops.log2_;
+// // Exponential functions
+// pub const exp = arrops.exp;
+// pub const exp_ = arrops.exp_;
+// pub const exp10 = arrops.exp10;
+// pub const exp10_ = arrops.exp10_;
+// pub const exp2 = arrops.exp2;
+// pub const exp2_ = arrops.exp2_;
+// pub const log = arrops.log;
+// pub const log_ = arrops.log_;
+// pub const log10 = arrops.log10;
+// pub const log10_ = arrops.log10_;
+// pub const log2 = arrops.log2;
+// pub const log2_ = arrops.log2_;
 
-// Power functions
-pub const pow = arrops.pow;
-pub const pow_ = arrops.pow_;
-pub const sqrt = arrops.sqrt;
-pub const sqrt_ = arrops.sqrt_;
-pub const cbrt = arrops.cbrt;
-pub const cbrt_ = arrops.cbrt_;
-pub const hypot = arrops.hypot;
-pub const hypot_ = arrops.hypot_;
+// // Power functions
+// pub const pow = arrops.pow;
+// pub const pow_ = arrops.pow_;
+// pub const sqrt = arrops.sqrt;
+// pub const sqrt_ = arrops.sqrt_;
+// pub const cbrt = arrops.cbrt;
+// pub const cbrt_ = arrops.cbrt_;
+// pub const hypot = arrops.hypot;
+// pub const hypot_ = arrops.hypot_;
 
-// Trigonometric functions
-pub const sin = arrops.sin;
-pub const sin_ = arrops.sin_;
-pub const cos = arrops.cos;
-pub const cos_ = arrops.cos_;
-pub const tan = arrops.tan;
-pub const tan_ = arrops.tan_;
-pub const asin = arrops.asin;
-pub const asin_ = arrops.asin_;
-pub const acos = arrops.acos;
-pub const acos_ = arrops.acos_;
-pub const atan = arrops.atan;
-pub const atan_ = arrops.atan_;
-pub const atan2 = arrops.atan2;
-pub const atan2_ = arrops.atan2_;
+// // Trigonometric functions
+// pub const sin = arrops.sin;
+// pub const sin_ = arrops.sin_;
+// pub const cos = arrops.cos;
+// pub const cos_ = arrops.cos_;
+// pub const tan = arrops.tan;
+// pub const tan_ = arrops.tan_;
+// pub const asin = arrops.asin;
+// pub const asin_ = arrops.asin_;
+// pub const acos = arrops.acos;
+// pub const acos_ = arrops.acos_;
+// pub const atan = arrops.atan;
+// pub const atan_ = arrops.atan_;
+// pub const atan2 = arrops.atan2;
+// pub const atan2_ = arrops.atan2_;
 
-// Hyperbolic functions
-pub const sinh = arrops.sinh;
-pub const sinh_ = arrops.sinh_;
-pub const cosh = arrops.cosh;
-pub const cosh_ = arrops.cosh_;
-pub const tanh = arrops.tanh;
-pub const tanh_ = arrops.tanh_;
-pub const asinh = arrops.asinh;
-pub const asinh_ = arrops.asinh_;
-pub const acosh = arrops.acosh;
-pub const acosh_ = arrops.acosh_;
-pub const atanh = arrops.atanh;
-pub const atanh_ = arrops.atanh_;
+// // Hyperbolic functions
+// pub const sinh = arrops.sinh;
+// pub const sinh_ = arrops.sinh_;
+// pub const cosh = arrops.cosh;
+// pub const cosh_ = arrops.cosh_;
+// pub const tanh = arrops.tanh;
+// pub const tanh_ = arrops.tanh_;
+// pub const asinh = arrops.asinh;
+// pub const asinh_ = arrops.asinh_;
+// pub const acosh = arrops.acosh;
+// pub const acosh_ = arrops.acosh_;
+// pub const atanh = arrops.atanh;
+// pub const atanh_ = arrops.atanh_;
 
-// Error and gamma functions
-pub const erf = arrops.erf;
-pub const erf_ = arrops.erf_;
-pub const erfc = arrops.erfc;
-pub const erfc_ = arrops.erfc_;
-pub const gamma = arrops.gamma;
-pub const gamma_ = arrops.gamma_;
-pub const lgamma = arrops.lgamma;
-pub const lgamma_ = arrops.lgamma_;
+// // Error and gamma functions
+// pub const erf = arrops.erf;
+// pub const erf_ = arrops.erf_;
+// pub const erfc = arrops.erfc;
+// pub const erfc_ = arrops.erfc_;
+// pub const gamma = arrops.gamma;
+// pub const gamma_ = arrops.gamma_;
+// pub const lgamma = arrops.lgamma;
+// pub const lgamma_ = arrops.lgamma_;
 
-// Nearest integer operations
-pub const ceil = arrops.ceil;
-pub const ceil_ = arrops.ceil_;
+// // Nearest integer operations
+// pub const ceil = arrops.ceil;
+// pub const ceil_ = arrops.ceil_;
 
 pub const Broadcast = struct {
     ndim: u32,

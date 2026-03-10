@@ -10,20 +10,20 @@ const numeric = @import("../../numeric.zig");
 
 pub fn Lgamma(X: type) type {
     comptime if (!types.isNumeric(X))
-        @compileError("zml.numeric.lgamma: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.numeric.lgamma: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
 
     switch (comptime types.numericType(X)) {
-        .bool => @compileError("zml.numeric.lgamma: not defined for " ++ @typeName(X) ++ "."),
-        .int => @compileError("zml.numeric.lgamma: not defined for " ++ @typeName(X) ++ "."),
+        .bool => @compileError("zsl.numeric.lgamma: not defined for " ++ @typeName(X) ++ "."),
+        .int => @compileError("zsl.numeric.lgamma: not defined for " ++ @typeName(X) ++ "."),
         .rational => return X,
         .float => return X,
         .dyadic => return X,
         .complex => return X,
         .custom => {
-            if (comptime !types.hasMethod(X, "ZmlLgamma", fn (type) type, &.{X}))
-                @compileError("zml.numeric.lgamma: " ++ @typeName(X) ++ " must implement `fn ZmlLgamma(type) type`");
+            if (comptime !types.hasMethod(X, "Lgamma", fn (type) type, &.{X}))
+                @compileError("zsl.numeric.lgamma: " ++ @typeName(X) ++ " must implement `fn Lgamma(type) type`");
 
-            return X.ZmlLgamma(X);
+            return X.Lgamma(X);
         },
     }
 }
@@ -50,14 +50,14 @@ pub fn Lgamma(X: type) type {
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` must implement the required `ZmlLgamma` method. The expected signature
-/// and behavior of `ZmlLgamma` are as follows:
-/// * `fn ZmlLgamma(type) type`: Returns the type of the log-gamma function of
+/// `X` must implement the required `Lgamma` method. The expected signature
+/// and behavior of `Lgamma` are as follows:
+/// * `fn Lgamma(type) type`: Returns the type of the log-gamma function of
 ///   `x`.
 ///
-/// `numeric.Lgamma(X)` or `X` must implement the required `zmlLgamma` method.
-/// The expected signature and behavior of `zmlLgamma` are as follows:
-/// * `fn zmlLgamma(X) numeric.Lgamma(X)`: Returns the log-gamma function of `x`.
+/// `numeric.Lgamma(X)` or `X` must implement the required `lgamma` method.
+/// The expected signature and behavior of `lgamma` are as follows:
+/// * `fn lgamma(X) numeric.Lgamma(X)`: Returns the log-gamma function of `x`.
 pub inline fn lgamma(x: anytype) numeric.Lgamma(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Lgamma(X);
@@ -72,13 +72,13 @@ pub inline fn lgamma(x: anytype) numeric.Lgamma(@TypeOf(x)) {
         .custom => {
             const Impl: type = comptime types.anyHasMethod(
                 &.{ R, X },
-                "zmlLgamma",
+                "lgamma",
                 fn (X) numeric.Lgamma(X),
                 &.{X},
             ) orelse
-                @compileError("zml.numeric.lgamma: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlLgamma(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
+                @compileError("zsl.numeric.lgamma: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn lgamma(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
 
-            return Impl.zmlLgamma(x);
+            return Impl.lgamma(x);
         },
     }
 }

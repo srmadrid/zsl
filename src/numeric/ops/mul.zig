@@ -10,35 +10,35 @@ const numeric = @import("../../numeric.zig");
 
 pub fn Mul(X: type, Y: type) type {
     comptime if (!types.isNumeric(X) or !types.isNumeric(Y))
-        @compileError("zml.numeric.mul: x and y must be numerics, got \n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
+        @compileError("zsl.numeric.mul: x and y must be numerics, got \n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
     if (comptime types.isCustomType(X)) {
         if (comptime types.isCustomType(Y)) { // X and Y both custom
             const Impl: type = comptime types.anyHasMethod(
                 &.{ X, Y },
-                "ZmlMul",
+                "Mul",
                 fn (type, type) type,
                 &.{ X, Y },
             ) orelse
-                @compileError("zml.numeric.mul: " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn ZmlMul(type, type) type`");
+                @compileError("zsl.numeric.mul: " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn Mul(type, type) type`");
 
-            return Impl.ZmlMul(X, Y);
+            return Impl.Mul(X, Y);
         } else { // only X custom
-            comptime if (!types.hasMethod(X, "ZmlMul", fn (type, type) type, &.{ X, Y }))
-                @compileError("zml.numeric.mul: " ++ @typeName(X) ++ " must implement `fn ZmlMul(type, type) type`");
+            comptime if (!types.hasMethod(X, "Mul", fn (type, type) type, &.{ X, Y }))
+                @compileError("zsl.numeric.mul: " ++ @typeName(X) ++ " must implement `fn Mul(type, type) type`");
 
-            return X.ZmlMul(X, Y);
+            return X.Mul(X, Y);
         }
     } else if (comptime types.isCustomType(Y)) { // only Y custom
-        comptime if (!types.hasMethod(Y, "ZmlMul", fn (type, type) type, &.{ X, Y }))
-            @compileError("zml.numeric.mul: " ++ @typeName(Y) ++ " must implement `fn ZmlMul(type, type) type`");
+        comptime if (!types.hasMethod(Y, "Mul", fn (type, type) type, &.{ X, Y }))
+            @compileError("zsl.numeric.mul: " ++ @typeName(Y) ++ " must implement `fn Mul(type, type) type`");
 
-        return Y.ZmlMul(X, Y);
+        return Y.Mul(X, Y);
     }
 
     switch (comptime types.numericType(X)) {
         .bool => switch (comptime types.numericType(Y)) {
-            .bool => @compileError("zml.numeric.mul: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+            .bool => @compileError("zsl.numeric.mul: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .int => return int.Mul(X, Y),
             .rational => return rational.Mul(X, Y),
             .float => return float.Mul(X, Y),
@@ -98,13 +98,13 @@ pub fn Mul(X: type, Y: type) type {
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` or `Y` must implement the required `ZmlMul` method. The expected
-/// signature and behavior of `ZmlMul` are as follows:
-/// * `fn ZmlMul(type, type) type`: Returns the type of `x * y`.
+/// `X` or `Y` must implement the required `Mul` method. The expected
+/// signature and behavior of `Mul` are as follows:
+/// * `fn Mul(type, type) type`: Returns the type of `x * y`.
 ///
-/// `numeric.Mul(X, Y)`, `X` or `Y` must implement the required `zmlMul` method.
-/// The expected signatures and behavior of `zmlMul` are as follows:
-/// * `fn zmlMul(X, Y) numeric.Mul(X, Y)`: Returns the multiplication of `x` and
+/// `numeric.Mul(X, Y)`, `X` or `Y` must implement the required `mul` method.
+/// The expected signatures and behavior of `mul` are as follows:
+/// * `fn mul(X, Y) numeric.Mul(X, Y)`: Returns the multiplication of `x` and
 ///   `y`.
 pub inline fn mul(x: anytype, y: anytype) numeric.Mul(@TypeOf(x), @TypeOf(y)) {
     const X: type = @TypeOf(x);
@@ -115,34 +115,34 @@ pub inline fn mul(x: anytype, y: anytype) numeric.Mul(@TypeOf(x), @TypeOf(y)) {
         if (comptime types.isCustomType(Y)) { // X and Y both custom
             const Impl: type = comptime types.anyHasMethod(
                 &.{ R, X, Y },
-                "zmlMul",
+                "mul",
                 fn (X, Y) R,
                 &.{ X, Y },
             ) orelse
-                @compileError("zml.numeric.mul: " ++ @typeName(R) ++ ", " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn zmlMul(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
+                @compileError("zsl.numeric.mul: " ++ @typeName(R) ++ ", " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn mul(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
 
-            return Impl.zmlMul(x, y);
+            return Impl.mul(x, y);
         } else { // only X custom
             const Impl: type = comptime types.anyHasMethod(
                 &.{ R, X },
-                "zmlMul",
+                "mul",
                 fn (X, Y) R,
                 &.{ X, Y },
             ) orelse
-                @compileError("zml.numeric.mul: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlMul(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
+                @compileError("zsl.numeric.mul: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn mul(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
 
-            return Impl.zmlMul(x, y);
+            return Impl.mul(x, y);
         }
     } else if (comptime types.isCustomType(Y)) { // only Y custom
         const Impl: type = comptime types.anyHasMethod(
             &.{ R, Y },
-            "zmlMul",
+            "mul",
             fn (X, Y) R,
             &.{ X, Y },
         ) orelse
-            @compileError("zml.numeric.mul: " ++ @typeName(R) ++ " or " ++ @typeName(Y) ++ " must implement `fn zmlMul(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
+            @compileError("zsl.numeric.mul: " ++ @typeName(R) ++ " or " ++ @typeName(Y) ++ " must implement `fn mul(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
 
-        return Impl.zmlMul(x, y);
+        return Impl.mul(x, y);
     }
 
     switch (comptime types.numericType(X)) {

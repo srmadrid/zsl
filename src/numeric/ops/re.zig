@@ -10,7 +10,7 @@ const numeric = @import("../../numeric.zig");
 
 pub fn Re(X: type) type {
     comptime if (!types.isNumeric(X))
-        @compileError("zml.numeric.re: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.numeric.re: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
 
     switch (comptime types.numericType(X)) {
         .bool => return X,
@@ -20,10 +20,10 @@ pub fn Re(X: type) type {
         .dyadic => return X,
         .complex => return types.Scalar(X),
         .custom => {
-            if (comptime !types.hasMethod(X, "ZmlRe", fn (type) type, &.{X}))
-                @compileError("zml.numeric.re: " ++ @typeName(X) ++ " must implement `fn ZmlRe(type) type`");
+            if (comptime !types.hasMethod(X, "Re", fn (type) type, &.{X}))
+                @compileError("zsl.numeric.re: " ++ @typeName(X) ++ " must implement `fn Re(type) type`");
 
-            return X.ZmlRe(X);
+            return X.Re(X);
         },
     }
 }
@@ -45,13 +45,13 @@ pub fn Re(X: type) type {
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` must implement the required `ZmlRe` method. The expected signature and
-/// behavior of `ZmlRe` are as follows:
-/// * `fn ZmlRe(type) type`: Returns the type of the real part of `x`.
+/// `X` must implement the required `Re` method. The expected signature and
+/// behavior of `Re` are as follows:
+/// * `fn Re(type) type`: Returns the type of the real part of `x`.
 ///
-/// `numeric.Re(X)` or `X` must implement the required `zmlRe` method. The
-/// expected signature and behavior of `zmlRe` are as follows:
-/// * `fn zmlRe(X) numeric.Re(X)`: Returns the real part of `x`.
+/// `numeric.Re(X)` or `X` must implement the required `re` method. The
+/// expected signature and behavior of `re` are as follows:
+/// * `fn re(X) numeric.Re(X)`: Returns the real part of `x`.
 pub inline fn re(x: anytype) numeric.Re(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Re(X);
@@ -66,13 +66,13 @@ pub inline fn re(x: anytype) numeric.Re(@TypeOf(x)) {
         .custom => {
             const Impl: type = comptime types.anyHasMethod(
                 &.{ R, X },
-                "zmlRe",
+                "re",
                 fn (X) numeric.Re(X),
                 &.{X},
             ) orelse
-                @compileError("zml.numeric.re: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlRe(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
+                @compileError("zsl.numeric.re: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn re(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
 
-            return Impl.zmlRe(x);
+            return Impl.re(x);
         },
     }
 }

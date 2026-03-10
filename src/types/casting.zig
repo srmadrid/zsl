@@ -1,5 +1,4 @@
 const types = @import("../types.zig");
-const constants = @import("../constants.zig");
 const numeric = @import("../numeric.zig");
 
 const rational = @import("../rational.zig");
@@ -90,16 +89,16 @@ pub inline fn cast(comptime N: type, value: anytype) N {
     switch (comptime types.numericType(V)) {
         .bool => switch (comptime types.numericType(N)) {
             .bool => unreachable,
-            .int, .rational, .float, .dyadic, .complex => return if (value) constants.one(N) else constants.zero(N),
+            .int, .rational, .float, .dyadic, .complex => return if (value) numeric.one(N) else numeric.zero(N),
             .custom => {
                 if (comptime !types.hasMethod(N, "fromBool", fn (V) N, &.{V}))
-                    return if (value) constants.one(N) else constants.zero(N);
+                    return if (value) numeric.one(N) else numeric.zero(N);
 
                 return N.fromBool(value);
             },
         },
         .int => switch (comptime types.numericType(N)) {
-            .bool => return numeric.ne(value, constants.zero(V)),
+            .bool => return numeric.ne(value, numeric.zero(V)),
             .int => return @intCast(value),
             .rational => return .init(value),
             .float => return @floatFromInt(value),
@@ -113,7 +112,7 @@ pub inline fn cast(comptime N: type, value: anytype) N {
             },
         },
         .rational => switch (comptime types.numericType(N)) {
-            .bool => return numeric.ne(value, constants.zero(V)),
+            .bool => return numeric.ne(value, numeric.zero(V)),
             .int => return value.toInt(N),
             .rational => return .init(value),
             .float => return value.toFloat(N),
@@ -127,7 +126,7 @@ pub inline fn cast(comptime N: type, value: anytype) N {
             },
         },
         .float => switch (comptime types.numericType(N)) {
-            .bool => return numeric.ne(value, constants.zero(V)),
+            .bool => return numeric.ne(value, numeric.zero(V)),
             .int => return @intFromFloat(value),
             .rational => return .init(value),
             .float => return @floatCast(value),
@@ -141,7 +140,7 @@ pub inline fn cast(comptime N: type, value: anytype) N {
             },
         },
         .dyadic => switch (comptime types.numericType(N)) {
-            .bool => return numeric.ne(value, constants.zero(V)),
+            .bool => return numeric.ne(value, numeric.zero(V)),
             .int => return value.toInt(N),
             .rational => return .init(value),
             .float => return value.toFloat(N),
@@ -155,7 +154,7 @@ pub inline fn cast(comptime N: type, value: anytype) N {
             },
         },
         .complex => switch (comptime types.numericType(N)) {
-            .bool => return numeric.ne(value, constants.zero(V)),
+            .bool => return numeric.ne(value, numeric.zero(V)),
             .int => return value.toInt(N),
             .rational => return .init(value),
             .float => return value.toFloat(N),
@@ -171,7 +170,7 @@ pub inline fn cast(comptime N: type, value: anytype) N {
         .custom => switch (comptime types.numericType(N)) {
             .bool => {
                 if (comptime !types.hasMethod(V, "toBool", fn (V) N, &.{V}))
-                    return numeric.ne(value, constants.zero(V));
+                    return numeric.ne(value, numeric.zero(V));
 
                 return V.toBool(value);
             },

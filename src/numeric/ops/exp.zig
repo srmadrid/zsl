@@ -10,20 +10,20 @@ const numeric = @import("../../numeric.zig");
 
 pub fn Exp(X: type) type {
     comptime if (!types.isNumeric(X))
-        @compileError("zml.numeric.exp: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.numeric.exp: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
 
     switch (comptime types.numericType(X)) {
-        .bool => @compileError("zml.numeric.exp: not defined for " ++ @typeName(X) ++ "."),
-        .int => @compileError("zml.numeric.exp: not defined for " ++ @typeName(X) ++ "."),
+        .bool => @compileError("zsl.numeric.exp: not defined for " ++ @typeName(X) ++ "."),
+        .int => @compileError("zsl.numeric.exp: not defined for " ++ @typeName(X) ++ "."),
         .rational => return X,
         .float => return X,
         .dyadic => return X,
         .complex => return X,
         .custom => {
-            if (comptime !types.hasMethod(X, "ZmlExp", fn (type) type, &.{X}))
-                @compileError("zml.numeric.exp: " ++ @typeName(X) ++ " must implement `fn ZmlExp(type) type`");
+            if (comptime !types.hasMethod(X, "Exp", fn (type) type, &.{X}))
+                @compileError("zsl.numeric.exp: " ++ @typeName(X) ++ " must implement `fn Exp(type) type`");
 
-            return X.ZmlExp(X);
+            return X.Exp(X);
         },
     }
 }
@@ -45,13 +45,13 @@ pub fn Exp(X: type) type {
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` must implement the required `ZmlExp` method. The expected signature and
-/// behavior of `ZmlExp` are as follows:
-/// * `fn ZmlExp(type) type`: Returns the type of the exponential of `x`.
+/// `X` must implement the required `Exp` method. The expected signature and
+/// behavior of `Exp` are as follows:
+/// * `fn Exp(type) type`: Returns the type of the exponential of `x`.
 ///
-/// `numeric.Exp(X)` or `X` must implement the required `zmlExp` method. The
-/// expected signature and behavior of `zmlExp` are as follows:
-/// * `fn zmlExp(X) numeric.Exp(X)`: Returns the exponential of `x`.
+/// `numeric.Exp(X)` or `X` must implement the required `exp` method. The
+/// expected signature and behavior of `exp` are as follows:
+/// * `fn exp(X) numeric.Exp(X)`: Returns the exponential of `x`.
 pub inline fn exp(x: anytype) numeric.Exp(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Exp(X);
@@ -66,13 +66,13 @@ pub inline fn exp(x: anytype) numeric.Exp(@TypeOf(x)) {
         .custom => {
             const Impl: type = comptime types.anyHasMethod(
                 &.{ R, X },
-                "zmlExp",
+                "exp",
                 fn (X) numeric.Exp(X),
                 &.{X},
             ) orelse
-                @compileError("zml.numeric.exp: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlExp(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
+                @compileError("zsl.numeric.exp: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn exp(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
 
-            return Impl.zmlExp(x);
+            return Impl.exp(x);
         },
     }
 }

@@ -10,7 +10,7 @@ const numeric = @import("../../numeric.zig");
 
 pub fn Im(X: type) type {
     comptime if (!types.isNumeric(X))
-        @compileError("zml.numeric.im: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.numeric.im: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
 
     switch (comptime types.numericType(X)) {
         .bool => return X,
@@ -20,10 +20,10 @@ pub fn Im(X: type) type {
         .dyadic => return X,
         .complex => return types.Scalar(X),
         .custom => {
-            if (comptime !types.hasMethod(X, "ZmlIm", fn (type) type, &.{X}))
-                @compileError("zml.numeric.im: " ++ @typeName(X) ++ " must implement `fn ZmlIm(type) type`");
+            if (comptime !types.hasMethod(X, "Im", fn (type) type, &.{X}))
+                @compileError("zsl.numeric.im: " ++ @typeName(X) ++ " must implement `fn Im(type) type`");
 
-            return X.ZmlIm(X);
+            return X.Im(X);
         },
     }
 }
@@ -45,13 +45,13 @@ pub fn Im(X: type) type {
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` must implement the required `ZmlIm` method. The expected signature and
-/// behavior of `ZmlIm` are as follows:
-/// * `fn ZmlIm(type) type`: Returns the type of the imaginary part of `x`.
+/// `X` must implement the required `Im` method. The expected signature and
+/// behavior of `Im` are as follows:
+/// * `fn Im(type) type`: Returns the type of the imaginary part of `x`.
 ///
-/// `numeric.Im(X)` or `X` must implement the required `zmlIm` method. The
-/// expected signature and behavior of `zmlIm` are as follows:
-/// * `fn zmlIm(X) numeric.Im(X)`: Returns the imaginary part of `x`.
+/// `numeric.Im(X)` or `X` must implement the required `im` method. The
+/// expected signature and behavior of `im` are as follows:
+/// * `fn im(X) numeric.Im(X)`: Returns the imaginary part of `x`.
 pub inline fn im(x: anytype) numeric.Im(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Im(X);
@@ -66,13 +66,13 @@ pub inline fn im(x: anytype) numeric.Im(@TypeOf(x)) {
         .custom => {
             const Impl: type = comptime types.anyHasMethod(
                 &.{ R, X },
-                "zmlIm",
+                "im",
                 fn (X) numeric.Im(X),
                 &.{X},
             ) orelse
-                @compileError("zml.numeric.im: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlIm(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
+                @compileError("zsl.numeric.im: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn im(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
 
-            return Impl.zmlIm(x);
+            return Impl.im(x);
         },
     }
 }

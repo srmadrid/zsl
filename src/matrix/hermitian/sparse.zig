@@ -3,8 +3,7 @@ const std = @import("std");
 const types = @import("../../types.zig");
 const Layout = types.Layout;
 const Uplo = types.Uplo;
-const ops = @import("../../ops.zig");
-const constants = @import("../../constants.zig");
+const numeric = @import("../../numeric.zig");
 
 const matrix = @import("../../matrix.zig");
 const Flags = matrix.Flags;
@@ -129,7 +128,7 @@ pub fn Sparse(T: type, uplo: Uplo, layout: Layout) type {
                         return if (noconj)
                             self.data[i]
                         else
-                            ops.conj(self.data[i], .{}) catch unreachable
+                            numeric.conj(self.data[i], .{}) catch unreachable
                     else if (self.idx[i] > rr)
                         break;
                 }
@@ -143,13 +142,13 @@ pub fn Sparse(T: type, uplo: Uplo, layout: Layout) type {
                         return if (noconj)
                             self.data[j]
                         else
-                            ops.conj(self.data[j], .{}) catch unreachable
+                            numeric.conj(self.data[j], .{}) catch unreachable
                     else if (self.idx[j] > cc)
                         break;
                 }
             }
 
-            return constants.zero(T, .{}) catch unreachable;
+            return numeric.zero(T, .{}) catch unreachable;
         }
 
         /// Gets the element at the specified position without bounds checking.
@@ -196,7 +195,7 @@ pub fn Sparse(T: type, uplo: Uplo, layout: Layout) type {
                 }
             }
 
-            return constants.zero(T, .{}) catch unreachable;
+            return numeric.zero(T, .{}) catch unreachable;
         }
 
         /// Sets the element at the specified position.
@@ -267,7 +266,7 @@ pub fn Sparse(T: type, uplo: Uplo, layout: Layout) type {
                     if (self.idx[i] == rr) {
                         self.data[i] = value;
                         if (conj) {
-                            ops.conj_(
+                            numeric.conj_(
                                 &self.data[i],
                                 self.data[i],
                                 .{},
@@ -287,7 +286,7 @@ pub fn Sparse(T: type, uplo: Uplo, layout: Layout) type {
                     if (self.idx[j] == cc) {
                         self.data[j] = value;
                         if (conj) {
-                            ops.conj_(
+                            numeric.conj_(
                                 &self.data[j],
                                 self.data[j],
                                 .{},
@@ -405,7 +404,7 @@ pub fn Sparse(T: type, uplo: Uplo, layout: Layout) type {
 
                     var i: u32 = 0;
                     while (i < self.nnz) : (i += 1) {
-                        ops.deinit(
+                        numeric.deinit(
                             &self.data[i],
                             types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                         );

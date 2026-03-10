@@ -10,7 +10,7 @@ const numeric = @import("../../numeric.zig");
 
 pub fn Sign(X: type) type {
     comptime if (!types.isNumeric(X))
-        @compileError("zml.numeric.sign: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.numeric.sign: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
 
     switch (comptime types.numericType(X)) {
         .bool => return X,
@@ -20,10 +20,10 @@ pub fn Sign(X: type) type {
         .dyadic => return X,
         .complex => return X,
         .custom => {
-            if (comptime !types.hasMethod(X, "ZmlSign", fn (type) type, &.{X}))
-                @compileError("zml.numeric.sign: " ++ @typeName(X) ++ " must implement `fn ZmlSign(type) type`");
+            if (comptime !types.hasMethod(X, "Sign", fn (type) type, &.{X}))
+                @compileError("zsl.numeric.sign: " ++ @typeName(X) ++ " must implement `fn Sign(type) type`");
 
-            return X.ZmlSign(X);
+            return X.Sign(X);
         },
     }
 }
@@ -45,13 +45,13 @@ pub fn Sign(X: type) type {
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` must implement the required `ZmlSign` method. The expected signature and
-/// behavior of `ZmlSign` are as follows:
-/// * `fn ZmlSign(type) type`: Returns the type of the sign of `x`.
+/// `X` must implement the required `Sign` method. The expected signature and
+/// behavior of `Sign` are as follows:
+/// * `fn Sign(type) type`: Returns the type of the sign of `x`.
 ///
-/// `numeric.Sign(X)` or `X` must implement the required `zmlSign` method. The
-/// expected signature and behavior of `zmlSign` are as follows:
-/// * `fn zmlSign(X) numeric.Sign(X)`: Returns the sign of `x`.
+/// `numeric.Sign(X)` or `X` must implement the required `sign` method. The
+/// expected signature and behavior of `sign` are as follows:
+/// * `fn sign(X) numeric.Sign(X)`: Returns the sign of `x`.
 pub inline fn sign(x: anytype) numeric.Sign(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Sign(X);
@@ -66,13 +66,13 @@ pub inline fn sign(x: anytype) numeric.Sign(@TypeOf(x)) {
         .custom => {
             const Impl: type = comptime types.anyHasMethod(
                 &.{ R, X },
-                "zmlSign",
+                "sign",
                 fn (X) numeric.Sign(X),
                 &.{X},
             ) orelse
-                @compileError("zml.numeric.sign: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlSign(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
+                @compileError("zsl.numeric.sign: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn sign(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
 
-            return Impl.zmlSign(x);
+            return Impl.sign(x);
         },
     }
 }

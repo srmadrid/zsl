@@ -14,7 +14,7 @@ const Numeric = types.Numeric;
 const orderOf = types.layoutOf;
 const Coerce = types.Coerce;
 
-const ops = @import("../ops.zig");
+const numeric = @import("../numeric.zig");
 const int = @import("../int.zig");
 
 const array = @import("../array.zig");
@@ -134,7 +134,7 @@ pub fn Dense(T: type, order: Order) type {
                 errdefer _cleanup(T, arr.data[0..i], ctx);
 
                 while (i < arr.size) : (i += 1) {
-                    arr.data[i] = ops.copy(arr.data[0], ctx);
+                    arr.data[i] = numeric.copy(arr.data[0], ctx);
                 }
             }
 
@@ -180,39 +180,39 @@ pub fn Dense(T: type, order: Order) type {
 
             var arr: Dense(T, order) = undefined;
             if (comptime !types.isArbitraryPrecision(T)) {
-                const positive_step: bool = try ops.gt(step, 0, .{});
-                if (ops.eq(step, 0, .{}) catch unreachable or
-                    (ops.lt(stop, start, .{}) catch unreachable and positive_step) or
-                    (ops.gt(stop, start, .{}) catch unreachable and !positive_step))
+                const positive_step: bool = try numeric.gt(step, 0, .{});
+                if (numeric.eq(step, 0, .{}) catch unreachable or
+                    (numeric.lt(stop, start, .{}) catch unreachable and positive_step) or
+                    (numeric.gt(stop, start, .{}) catch unreachable and !positive_step))
                     return array.Error.InvalidRange;
 
                 const start_casted: T = types.scast(T, start);
                 const stop_casted: T = types.scast(T, ctx);
                 const step_casted: T = types.scast(T, ctx);
                 const diff: T = if (positive_step)
-                    ops.sub( // diff = stop_casted - start_casted
+                    numeric.sub( // diff = stop_casted - start_casted
                         stop_casted,
                         start_casted,
                         ctx,
                     ) catch unreachable
                 else
-                    ops.sub( // diff = start_casted - stop_casted
+                    numeric.sub( // diff = start_casted - stop_casted
                         start_casted,
                         stop_casted,
                         ctx,
                     ) catch unreachable;
 
-                var len_T: T = ops.div( // len_T = diff / step_casted
+                var len_T: T = numeric.div( // len_T = diff / step_casted
                     diff,
                     step_casted,
                     ctx,
                 ) catch unreachable;
-                ops.abs_( // len_T = abs(len_T)
+                numeric.abs_( // len_T = abs(len_T)
                     &len_T,
                     len_T,
                     ctx,
                 ) catch unreachable;
-                ops.ceil_( // len_T = ceil(len_T)
+                numeric.ceil_( // len_T = ceil(len_T)
                     &len_T,
                     len_T,
                     ctx,
@@ -228,7 +228,7 @@ pub fn Dense(T: type, order: Order) type {
                 arr.data[0] = start_casted;
                 var i: u32 = 0;
                 while (i < len - 1) : (i += 1) {
-                    ops.add_( // arr.data[i] = arr.data[i - 1] + step_casted
+                    numeric.add_( // arr.data[i] = arr.data[i - 1] + step_casted
                         &arr.data[i],
                         arr.data[i - 1],
                         step_casted,
@@ -238,36 +238,36 @@ pub fn Dense(T: type, order: Order) type {
                 arr.data[len - 1] = stop_casted;
             } else {
                 // Orientative for arbitrary precision types.
-                const positive_step: bool = try ops.gt(step, 0, .{});
-                if (try ops.eq(step, 0, .{}) or
-                    (try ops.lt(stop, start, .{}) and positive_step) or
-                    (try ops.gt(stop, start, .{}) and !positive_step))
+                const positive_step: bool = try numeric.gt(step, 0, .{});
+                if (try numeric.eq(step, 0, .{}) or
+                    (try numeric.lt(stop, start, .{}) and positive_step) or
+                    (try numeric.gt(stop, start, .{}) and !positive_step))
                 {
                     return array.Error.InvalidRange;
                 }
 
-                var start_casted: T = try ops.init(T, ctx);
-                errdefer ops.deinit(&start_casted, ctx);
-                try ops.set(&start_casted, start, ctx);
+                var start_casted: T = try numeric.init(T, ctx);
+                errdefer numeric.deinit(&start_casted, ctx);
+                try numeric.set(&start_casted, start, ctx);
 
-                var stop_casted: T = try ops.init(T, ctx);
-                errdefer ops.deinit(&stop_casted, ctx);
-                try ops.set(&stop_casted, stop, ctx);
+                var stop_casted: T = try numeric.init(T, ctx);
+                errdefer numeric.deinit(&stop_casted, ctx);
+                try numeric.set(&stop_casted, stop, ctx);
 
-                var step_casted: T = try ops.init(T, ctx);
-                errdefer ops.deinit(&step_casted, ctx);
-                try ops.set(&step_casted, step, ctx);
+                var step_casted: T = try numeric.init(T, ctx);
+                errdefer numeric.deinit(&step_casted, ctx);
+                try numeric.set(&step_casted, step, ctx);
 
                 var diff: T = if (positive_step)
-                    try ops.sub(stop_casted, start_casted, ctx)
+                    try numeric.sub(stop_casted, start_casted, ctx)
                 else
-                    try ops.sub(start_casted, stop_casted, ctx);
-                errdefer ops.deinit(&diff, ctx);
+                    try numeric.sub(start_casted, stop_casted, ctx);
+                errdefer numeric.deinit(&diff, ctx);
 
-                var len_T: T = try ops.div(diff, step_casted, ctx);
-                errdefer ops.deinit(&len_T, ctx);
-                try ops.abs_(&len_T, len_T, ctx);
-                try ops.ceil_(&len_T, len_T, ctx);
+                var len_T: T = try numeric.div(diff, step_casted, ctx);
+                errdefer numeric.deinit(&len_T, ctx);
+                try numeric.abs_(&len_T, len_T, ctx);
+                try numeric.ceil_(&len_T, len_T, ctx);
                 const len: u32 = types.scast(u32, len_T);
 
                 if (len == 0) {
@@ -280,56 +280,56 @@ pub fn Dense(T: type, order: Order) type {
                     1 => {
                         arr.data[0] = start_casted;
 
-                        ops.deinit(&stop_casted, ctx);
-                        ops.deinit(&step_casted, ctx);
-                        ops.deinit(&diff, ctx);
-                        ops.deinit(&len_T, ctx);
+                        numeric.deinit(&stop_casted, ctx);
+                        numeric.deinit(&step_casted, ctx);
+                        numeric.deinit(&diff, ctx);
+                        numeric.deinit(&len_T, ctx);
 
                         return arr;
                     },
                     2 => {
                         arr.data[0] = start_casted;
-                        try ops.add_(&step_casted, step_casted, arr.data[0], ctx);
+                        try numeric.add_(&step_casted, step_casted, arr.data[0], ctx);
                         arr.data[1] = step_casted;
 
-                        ops.deinit(&stop_casted, ctx);
-                        ops.deinit(&diff, ctx);
-                        ops.deinit(&len_T, ctx);
+                        numeric.deinit(&stop_casted, ctx);
+                        numeric.deinit(&diff, ctx);
+                        numeric.deinit(&len_T, ctx);
 
                         return arr;
                     },
                     3 => {
                         arr.data[0] = start_casted;
-                        try ops.add_(&stop_casted, arr.data[0], step_casted, ctx);
+                        try numeric.add_(&stop_casted, arr.data[0], step_casted, ctx);
                         arr.data[1] = stop_casted;
-                        try ops.add_(&step_casted, arr.data[1], step_casted, ctx);
+                        try numeric.add_(&step_casted, arr.data[1], step_casted, ctx);
                         arr.data[2] = step_casted;
 
-                        ops.deinit(&diff, ctx);
-                        ops.deinit(&len_T, ctx);
+                        numeric.deinit(&diff, ctx);
+                        numeric.deinit(&len_T, ctx);
 
                         return arr;
                     },
                     4 => {
                         arr.data[0] = start_casted;
-                        try ops.add_(&diff, arr.data[0], step_casted, ctx);
+                        try numeric.add_(&diff, arr.data[0], step_casted, ctx);
                         arr.data[1] = diff;
-                        try ops.add_(&stop_casted, arr.data[1], step_casted, ctx);
+                        try numeric.add_(&stop_casted, arr.data[1], step_casted, ctx);
                         arr.data[2] = stop_casted;
-                        try ops.add_(&step_casted, arr.data[2], step_casted, ctx);
+                        try numeric.add_(&step_casted, arr.data[2], step_casted, ctx);
                         arr.data[3] = step_casted;
 
-                        ops.deinit(&len_T, ctx);
+                        numeric.deinit(&len_T, ctx);
 
                         return arr;
                     },
                     else => {
                         arr.data[0] = start_casted;
-                        try ops.add_(&len_T, arr.data[0], step_casted, ctx);
+                        try numeric.add_(&len_T, arr.data[0], step_casted, ctx);
                         arr.data[1] = len_T;
-                        try ops.add_(&diff, arr.data[1], step_casted, ctx);
+                        try numeric.add_(&diff, arr.data[1], step_casted, ctx);
                         arr.data[2] = diff;
-                        try ops.add_(&stop_casted, arr.data[2], step_casted, ctx);
+                        try numeric.add_(&stop_casted, arr.data[2], step_casted, ctx);
                         arr.data[3] = stop_casted;
                     },
                 }
@@ -338,10 +338,10 @@ pub fn Dense(T: type, order: Order) type {
                 errdefer cleanup(T, arr.data[4..i], ctx);
 
                 while (i < len - 1) : (i += 1) {
-                    arr.data[i] = try ops.add(arr.data[i - 1], step_casted, ctx);
+                    arr.data[i] = try numeric.add(arr.data[i - 1], step_casted, ctx);
                 }
 
-                try ops.add_(&step_casted, step_casted, arr.data[len - 2], ctx);
+                try numeric.add_(&step_casted, step_casted, arr.data[len - 2], ctx);
                 arr.data[len - 1] = step_casted;
             }
 
@@ -391,14 +391,14 @@ pub fn Dense(T: type, order: Order) type {
 
             if (comptime !types.isArbitraryPrecision(T)) {
                 if (opts.num == 1) {
-                    ops.set( // arr.data[0] = start
+                    numeric.set( // arr.data[0] = start
                         &arr.data[0],
                         start,
                         ctx,
                     ) catch unreachable;
 
                     if (opts.retstep) |*r| {
-                        ops.set(
+                        numeric.set(
                             r,
                             0,
                             ctx,
@@ -408,27 +408,27 @@ pub fn Dense(T: type, order: Order) type {
                     return arr;
                 } else if (opts.num == 2) {
                     if (opts.endpoint) {
-                        ops.set( // arr.data[0] = start
+                        numeric.set( // arr.data[0] = start
                             &arr.data[0],
                             start,
                             ctx,
                         ) catch unreachable;
 
-                        ops.set( // arr.data[1] = stop
+                        numeric.set( // arr.data[1] = stop
                             &arr.data[1],
                             stop,
                             ctx,
                         ) catch unreachable;
                     } else {
-                        ops.set( // arr.data[0] = start
+                        numeric.set( // arr.data[0] = start
                             &arr.data[0],
                             start,
                             ctx,
                         ) catch unreachable;
 
-                        ops.div_( // arr.data[1] += (start + stop) / 2
+                        numeric.div_( // arr.data[1] += (start + stop) / 2
                             &arr.data[1],
-                            ops.add(
+                            numeric.add(
                                 arr.data[0],
                                 stop,
                                 ctx,
@@ -439,10 +439,10 @@ pub fn Dense(T: type, order: Order) type {
                     }
 
                     if (opts.retstep) |*r| {
-                        ops.set( // r = (arr.data[1] - arr.data[0]) / 2
+                        numeric.set( // r = (arr.data[1] - arr.data[0]) / 2
                             r,
-                            ops.div(
-                                ops.sub(
+                            numeric.div(
+                                numeric.sub(
                                     arr.data[1],
                                     arr.data[0],
                                     ctx,
@@ -459,21 +459,21 @@ pub fn Dense(T: type, order: Order) type {
 
                 const start_casted: T = types.scast(T, ctx);
                 const stop_casted: T = types.scast(T, ctx);
-                var step: T = ops.sub( // step = stop_casted - start_casted
+                var step: T = numeric.sub( // step = stop_casted - start_casted
                     stop_casted,
                     start_casted,
                     ctx,
                 ) catch unreachable;
 
                 if (opts.endpoint) {
-                    ops.div_(
+                    numeric.div_(
                         &step,
                         step,
                         opts.num - 1,
                         ctx,
                     ) catch unreachable;
                 } else {
-                    ops.div_(
+                    numeric.div_(
                         &step,
                         step,
                         opts.num,
@@ -482,7 +482,7 @@ pub fn Dense(T: type, order: Order) type {
                 }
 
                 if (opts.retstep) |*r| {
-                    ops.set(
+                    numeric.set(
                         r,
                         step,
                         ctx,
@@ -491,7 +491,7 @@ pub fn Dense(T: type, order: Order) type {
 
                 if (opts.num == 3 and opts.endpoint) {
                     arr.data[0] = start_casted;
-                    ops.add_( // arr.data[1] = start_casted + step
+                    numeric.add_( // arr.data[1] = start_casted + step
                         &arr.data[1],
                         start_casted,
                         step,
@@ -502,13 +502,13 @@ pub fn Dense(T: type, order: Order) type {
                     return arr;
                 } else if (opts.num == 3 and !opts.endpoint) {
                     arr.data[0] = start_casted;
-                    ops.add_( // arr.data[1] = start_casted + step
+                    numeric.add_( // arr.data[1] = start_casted + step
                         &arr.data[1],
                         start_casted,
                         step,
                         ctx,
                     ) catch unreachable;
-                    ops.sub_( // arr.data[2] = stop_casted - step
+                    numeric.sub_( // arr.data[2] = stop_casted - step
                         &arr.data[2],
                         stop_casted,
                         step,
@@ -521,7 +521,7 @@ pub fn Dense(T: type, order: Order) type {
                 arr.data[0] = start_casted;
                 var i: u32 = 1;
                 while (i < opts.num - 2) : (i += 1) {
-                    ops.add_( // arr.data[i] = arr.data[i - 1] + step
+                    numeric.add_( // arr.data[i] = arr.data[i - 1] + step
                         &arr.data[i],
                         arr.data[i - 1],
                         step,
@@ -530,7 +530,7 @@ pub fn Dense(T: type, order: Order) type {
                 }
 
                 if (opts.endpoint) {
-                    ops.add_( // arr.data[num - 2] = arr.data[num - 3] + step
+                    numeric.add_( // arr.data[num - 2] = arr.data[num - 3] + step
                         &arr.data[opts.num - 2],
                         arr.data[opts.num - 3],
                         step,
@@ -538,13 +538,13 @@ pub fn Dense(T: type, order: Order) type {
                     );
                     arr.data[opts.num - 1] = stop_casted;
                 } else {
-                    ops.add_( // arr.data[num - 2] = arr.data[num - 3] + step
+                    numeric.add_( // arr.data[num - 2] = arr.data[num - 3] + step
                         &arr.data[opts.num - 2],
                         arr.data[opts.num - 3],
                         step,
                         ctx,
                     ) catch unreachable;
-                    ops.sub_( // arr.data[num - 1] = stop_casted - step
+                    numeric.sub_( // arr.data[num - 1] = stop_casted - step
                         &arr.data[opts.num - 1],
                         stop_casted,
                         step,
@@ -553,65 +553,65 @@ pub fn Dense(T: type, order: Order) type {
                 }
             } else {
                 if (opts.num == 1) {
-                    arr.data[0] = try ops.init(T, ctx);
-                    errdefer ops.deinit(&arr.data[0], ctx);
-                    try ops.set(&arr.data[0], start, ctx);
+                    arr.data[0] = try numeric.init(T, ctx);
+                    errdefer numeric.deinit(&arr.data[0], ctx);
+                    try numeric.set(&arr.data[0], start, ctx);
 
                     return arr;
                 } else if (opts.num == 2 and opts.endpoint) {
-                    arr.data[0] = try ops.init(T, ctx);
-                    errdefer ops.deinit(&arr.data[0], ctx);
-                    try ops.set(&arr.data[0], start, ctx);
-                    arr.data[1] = try ops.init(T, ctx);
-                    errdefer ops.deinit(&arr.data[1], ctx);
-                    try ops.set(&arr.data[1], stop, ctx);
+                    arr.data[0] = try numeric.init(T, ctx);
+                    errdefer numeric.deinit(&arr.data[0], ctx);
+                    try numeric.set(&arr.data[0], start, ctx);
+                    arr.data[1] = try numeric.init(T, ctx);
+                    errdefer numeric.deinit(&arr.data[1], ctx);
+                    try numeric.set(&arr.data[1], stop, ctx);
 
                     return arr;
                 } else if (opts.num == 2 and !opts.endpoint) {
-                    arr.data[0] = try ops.init(T, ctx);
-                    errdefer ops.deinit(&arr.data[0], ctx);
-                    try ops.set(&arr.data[0], start, ctx);
-                    arr.data[1] = try ops.init(T, ctx);
-                    errdefer ops.deinit(&arr.data[1], ctx);
-                    try ops.set(&arr.data[1], stop, ctx);
-                    try ops.add_(&arr.data[1], arr.data[1], arr.data[0], ctx);
-                    try ops.div_(&arr.data[1], arr.data[1], 2, ctx);
+                    arr.data[0] = try numeric.init(T, ctx);
+                    errdefer numeric.deinit(&arr.data[0], ctx);
+                    try numeric.set(&arr.data[0], start, ctx);
+                    arr.data[1] = try numeric.init(T, ctx);
+                    errdefer numeric.deinit(&arr.data[1], ctx);
+                    try numeric.set(&arr.data[1], stop, ctx);
+                    try numeric.add_(&arr.data[1], arr.data[1], arr.data[0], ctx);
+                    try numeric.div_(&arr.data[1], arr.data[1], 2, ctx);
 
                     return arr;
                 }
 
-                var start_casted: T = try ops.init(T, ctx);
-                errdefer ops.deinit(&start_casted, ctx);
-                try ops.set(&start_casted, start, ctx);
+                var start_casted: T = try numeric.init(T, ctx);
+                errdefer numeric.deinit(&start_casted, ctx);
+                try numeric.set(&start_casted, start, ctx);
 
-                var stop_casted: T = try ops.init(T, ctx);
-                errdefer ops.deinit(&stop_casted, ctx);
-                try ops.set(&stop_casted, stop, ctx);
+                var stop_casted: T = try numeric.init(T, ctx);
+                errdefer numeric.deinit(&stop_casted, ctx);
+                try numeric.set(&stop_casted, stop, ctx);
 
-                var step: T = try ops.sub(stop_casted, start_casted, ctx);
-                errdefer ops.deinit(&step, ctx);
+                var step: T = try numeric.sub(stop_casted, start_casted, ctx);
+                errdefer numeric.deinit(&step, ctx);
                 if (opts.endpoint) {
-                    try ops.div_(&step, step, opts.num - 1, ctx);
+                    try numeric.div_(&step, step, opts.num - 1, ctx);
                 } else {
-                    try ops.div_(&step, step, opts.num, ctx);
+                    try numeric.div_(&step, step, opts.num, ctx);
                 }
 
                 if (opts.retstep) |*r| {
-                    try ops.set(r, step, ctx);
+                    try numeric.set(r, step, ctx);
                 }
 
                 if (opts.num == 3 and opts.endpoint) {
                     arr.data[0] = start_casted;
-                    try ops.add_(&step, step, arr.data[0], ctx);
+                    try numeric.add_(&step, step, arr.data[0], ctx);
                     arr.data[1] = step;
                     arr.data[2] = stop_casted;
 
                     return arr;
                 } else if (opts.num == 3 and !opts.endpoint) {
                     arr.data[0] = start_casted;
-                    try ops.sub_(&stop_casted, stop_casted, step, ctx);
+                    try numeric.sub_(&stop_casted, stop_casted, step, ctx);
                     arr.data[2] = stop_casted;
-                    try ops.add_(&step, step, arr.data[0], ctx);
+                    try numeric.add_(&step, step, arr.data[0], ctx);
                     arr.data[1] = step;
 
                     return arr;
@@ -622,16 +622,16 @@ pub fn Dense(T: type, order: Order) type {
                 var i: u32 = 1;
                 errdefer cleanup(T, allocator, arr.data[1..i]);
                 while (i < opts.num - 2) : (i += 1) {
-                    arr.data[i] = try ops.add(arr.data[i - 1], step, ctx);
+                    arr.data[i] = try numeric.add(arr.data[i - 1], step, ctx);
                 }
 
                 if (opts.endpoint) {
-                    try ops.add_(&step, step, arr.data[opts.num - 3], ctx);
+                    try numeric.add_(&step, step, arr.data[opts.num - 3], ctx);
                     arr.data[opts.num - 2] = step;
                     arr.data[opts.num - 1] = stop_casted;
                 } else {
-                    try ops.sub_(&stop_casted, stop_casted, step, ctx);
-                    try ops.add_(&step, step, arr.data[opts.num - 3], ctx);
+                    try numeric.sub_(&stop_casted, stop_casted, step, ctx);
+                    try numeric.add_(&step, step, arr.data[opts.num - 3], ctx);
                     arr.data[opts.num - 2] = step;
                     arr.data[opts.num - 1] = stop_casted;
                 }
@@ -692,7 +692,7 @@ pub fn Dense(T: type, order: Order) type {
             );
             errdefer arr.deinit(allocator);
 
-            try ops.pow_(&arr, base, arr, ctx);
+            try numeric.pow_(&arr, base, arr, ctx);
 
             return arr;
         }
@@ -1044,7 +1044,7 @@ pub fn Dense(T: type, order: Order) type {
                 return;
 
             for (data) |*value| {
-                ops.deinit(value, ctx);
+                numeric.deinit(value, ctx);
             }
         }
 

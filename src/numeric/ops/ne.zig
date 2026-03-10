@@ -26,40 +26,43 @@ const numeric = @import("../../numeric.zig");
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` or `Y` must implement the required `zmlNe` method. The expected
-/// signature and behavior of `zmlNe` are as follows:
-/// * `fn zmlNe(X, Y) bool`: Compares `x` and `y` for inequality.
+/// `X` or `Y` must implement the required `ne` method. The expected
+/// signature and behavior of `ne` are as follows:
+/// * `fn ne(X, Y) bool`: Compares `x` and `y` for inequality.
 pub inline fn ne(x: anytype, y: anytype) bool {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
+
+    comptime if (!types.isNumeric(X) or !types.isNumeric(Y))
+        @compileError("zsl.numeric.ne: x and y must be numerics, got \n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
     if (comptime types.isCustomType(X)) {
         if (comptime types.isCustomType(Y)) { // X and Y both custom
             const Impl: type = comptime types.anyHasMethod(
                 &.{ X, Y },
-                "zmlNe",
+                "ne",
                 fn (X, Y) bool,
                 &.{ X, Y },
             ) orelse
-                @compileError("zml.numeric.ne: " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn zmlNe(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
+                @compileError("zsl.numeric.ne: " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn ne(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
 
-            return Impl.zmlNe(x, y);
+            return Impl.ne(x, y);
         } else { // only X custom
-            comptime if (!types.hasMethod(X, "zmlNe", fn (X, Y) bool, &.{ X, Y }))
-                @compileError("zml.numeric.ne: " ++ @typeName(X) ++ " must implement `fn zmlNe(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
+            comptime if (!types.hasMethod(X, "ne", fn (X, Y) bool, &.{ X, Y }))
+                @compileError("zsl.numeric.ne: " ++ @typeName(X) ++ " must implement `fn ne(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
 
-            return X.zmlNe(x, y);
+            return X.ne(x, y);
         }
     } else if (comptime types.isCustomType(Y)) { // only Y custom
-        comptime if (!types.hasMethod(Y, "zmlNe", fn (X, Y) bool, &.{ X, Y }))
-            @compileError("zml.numeric.ne: " ++ @typeName(Y) ++ " must implement `fn zmlNe(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
+        comptime if (!types.hasMethod(Y, "ne", fn (X, Y) bool, &.{ X, Y }))
+            @compileError("zsl.numeric.ne: " ++ @typeName(Y) ++ " must implement `fn ne(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
 
-        return Y.zmlNe(x, y);
+        return Y.ne(x, y);
     }
 
     switch (comptime types.numericType(X)) {
         .bool => switch (comptime types.numericType(Y)) {
-            .bool => return x == y,
+            .bool => return x != y,
             .int => return int.ne(x, y),
             .rational => return rational.ne(x, y),
             .float => return float.ne(x, y),

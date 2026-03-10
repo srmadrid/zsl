@@ -27,12 +27,12 @@ const numeric = @import("../../numeric.zig");
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `O` or `X` should implement the required `zmlCbrt_` method. The expected
-/// signature and behavior of `zmlCbrt_` are as follows:
-/// * `fn zmlCbrt_(*O, X) void`: Computes the cube root of `x` and stores it in
+/// `O` or `X` should implement the required `cbrt_` method. The expected
+/// signature and behavior of `cbrt_` are as follows:
+/// * `fn cbrt_(*O, X) void`: Computes the cube root of `x` and stores it in
 ///   `o`.
 ///
-/// If neither `O` nor `X` implement the required `zmlCbrt_` method, the function
+/// If neither `O` nor `X` implement the required `cbrt_` method, the function
 /// will fall back to using `numeric.set` with the result of `numeric.cbrt`,
 /// potentially resulting in a less efficient implementation. In this case, `O`
 /// and `X` must adhere to the requirements of these functions.
@@ -43,21 +43,21 @@ pub inline fn cbrt_(o: anytype, x: anytype) void {
     comptime if (!types.isPointer(O) or types.isConstPointer(O) or
         !types.isNumeric(types.Child(O)) or
         !types.isNumeric(X))
-        @compileError("zml.numeric.cbrt_: o must be a mutable one-item pointer to a numeric, and x must be a numeric, got \n\to: " ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.numeric.cbrt_: o must be a mutable one-item pointer to a numeric, and x must be a numeric, got \n\to: " ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n");
 
     O = types.Child(O);
 
     if (comptime types.isCustomType(O)) {
         if (comptime types.isCustomType(X)) { // O and X both custom
-            if (comptime types.anyHasMethod(&.{ O, X }, "zmlCbrt_", fn (*O, X) void, &.{ *O, X })) |Impl|
-                return Impl.zmlCbrt_(o, x);
+            if (comptime types.anyHasMethod(&.{ O, X }, "cbrt_", fn (*O, X) void, &.{ *O, X })) |Impl|
+                return Impl.cbrt_(o, x);
         } else { // only O custom
-            if (comptime types.hasMethod(O, "zmlCbrt_", fn (*O, X) void, &.{ *O, X }))
-                return O.zmlCbrt_(o, x);
+            if (comptime types.hasMethod(O, "cbrt_", fn (*O, X) void, &.{ *O, X }))
+                return O.cbrt_(o, x);
         }
     } else if (comptime types.isCustomType(X)) { // only X custom
-        if (comptime types.hasMethod(X, "zmlCbrt_", fn (*O, X) void, &.{ *O, X }))
-            return X.zmlCbrt_(o, x);
+        if (comptime types.hasMethod(X, "cbrt_", fn (*O, X) void, &.{ *O, X }))
+            return X.cbrt_(o, x);
     }
 
     return numeric.set(o, numeric.cbrt(x));

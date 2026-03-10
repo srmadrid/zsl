@@ -10,20 +10,20 @@ const numeric = @import("../../numeric.zig");
 
 pub fn Atan(X: type) type {
     comptime if (!types.isNumeric(X))
-        @compileError("zml.numeric.atan: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.numeric.atan: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
 
     switch (comptime types.numericType(X)) {
-        .bool => @compileError("zml.numeric.atan: not defined for " ++ @typeName(X) ++ "."),
-        .int => @compileError("zml.numeric.atan: not defined for " ++ @typeName(X) ++ "."),
+        .bool => @compileError("zsl.numeric.atan: not defined for " ++ @typeName(X) ++ "."),
+        .int => @compileError("zsl.numeric.atan: not defined for " ++ @typeName(X) ++ "."),
         .rational => return X,
         .float => return X,
         .dyadic => return X,
         .complex => return X,
         .custom => {
-            if (comptime !types.hasMethod(X, "ZmlAtan", fn (type) type, &.{X}))
-                @compileError("zml.numeric.atan: " ++ @typeName(X) ++ " must implement `fn ZmlAtan(type) type`");
+            if (comptime !types.hasMethod(X, "Atan", fn (type) type, &.{X}))
+                @compileError("zsl.numeric.atan: " ++ @typeName(X) ++ " must implement `fn Atan(type) type`");
 
-            return X.ZmlAtan(X);
+            return X.Atan(X);
         },
     }
 }
@@ -45,13 +45,13 @@ pub fn Atan(X: type) type {
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` must implement the required `ZmlAtan` method. The expected signature and
-/// behavior of `ZmlAtan` are as follows:
-/// * `fn ZmlAtan(type) type`: Returns the type of the arctangent of `x`.
+/// `X` must implement the required `Atan` method. The expected signature and
+/// behavior of `Atan` are as follows:
+/// * `fn Atan(type) type`: Returns the type of the arctangent of `x`.
 ///
-/// `numeric.Atan(X)` or `X` must implement the required `zmlAtan` method. The
-/// expected signature and behavior of `zmlAtan` are as follows:
-/// * `fn zmlAtan(X) numeric.Atan(X)`: Returns the arctangent of `x`.
+/// `numeric.Atan(X)` or `X` must implement the required `atan` method. The
+/// expected signature and behavior of `atan` are as follows:
+/// * `fn atan(X) numeric.Atan(X)`: Returns the arctangent of `x`.
 pub inline fn atan(x: anytype) numeric.Atan(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Atan(X);
@@ -66,13 +66,13 @@ pub inline fn atan(x: anytype) numeric.Atan(@TypeOf(x)) {
         .custom => {
             const Impl: type = comptime types.anyHasMethod(
                 &.{ R, X },
-                "zmlAtan",
+                "atan",
                 fn (X) numeric.Atan(X),
                 &.{X},
             ) orelse
-                @compileError("zml.numeric.atan: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlAtan(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
+                @compileError("zsl.numeric.atan: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn atan(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
 
-            return Impl.zmlAtan(x);
+            return Impl.atan(x);
         },
     }
 }

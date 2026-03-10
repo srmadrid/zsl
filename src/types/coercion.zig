@@ -1207,12 +1207,9 @@ pub fn EnsureFloat(comptime T: type) type {
 
             return f128;
         },
+        .rational => @compileError("zsl.types.EnsureFloat: not implemented yet for " ++ @typeName(T) ++ "."),
         .float => return T,
         .dyadic => return T,
-        .cfloat => return T,
-        .integer => return Rational,
-        .rational => return T,
-        .real => return T,
         .complex => return T,
         .custom => unreachable,
     }

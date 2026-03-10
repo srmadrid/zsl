@@ -27,12 +27,12 @@ const numeric = @import("../../numeric.zig");
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `O` or `X` should implement the required `zmlLn_` method. The expected
-/// signature and behavior of `zmlLn_` are as follows:
-/// * `fn zmlLn_(*O, X) void`: Computes the natural logarithm of `x` and stores
+/// `O` or `X` should implement the required `ln_` method. The expected
+/// signature and behavior of `ln_` are as follows:
+/// * `fn ln_(*O, X) void`: Computes the natural logarithm of `x` and stores
 ///   it in `o`.
 ///
-/// If neither `O` nor `X` implement the required `zmlLn_` method, the function
+/// If neither `O` nor `X` implement the required `ln_` method, the function
 /// will fall back to using `numeric.set` with the result of `numeric.ln`,
 /// potentially resulting in a less efficient implementation. In this case, `O`
 /// and `X` must adhere to the requirements of these functions.
@@ -43,21 +43,21 @@ pub inline fn ln_(o: anytype, x: anytype) void {
     comptime if (!types.isPointer(O) or types.isConstPointer(O) or
         !types.isNumeric(types.Child(O)) or
         !types.isNumeric(X))
-        @compileError("zml.numeric.ln_: o must be a mutable one-item pointer to a numeric, and x must be a numeric, got \n\to: " ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.numeric.ln_: o must be a mutable one-item pointer to a numeric, and x must be a numeric, got \n\to: " ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n");
 
     O = types.Child(O);
 
     if (comptime types.isCustomType(O)) {
         if (comptime types.isCustomType(X)) { // O and X both custom
-            if (comptime types.anyHasMethod(&.{ O, X }, "zmlLn_", fn (*O, X) void, &.{ *O, X })) |Impl|
-                return Impl.zmlLn_(o, x);
+            if (comptime types.anyHasMethod(&.{ O, X }, "ln_", fn (*O, X) void, &.{ *O, X })) |Impl|
+                return Impl.ln_(o, x);
         } else { // only O custom
-            if (comptime types.hasMethod(O, "zmlLn_", fn (*O, X) void, &.{ *O, X }))
-                return O.zmlLn_(o, x);
+            if (comptime types.hasMethod(O, "ln_", fn (*O, X) void, &.{ *O, X }))
+                return O.ln_(o, x);
         }
     } else if (comptime types.isCustomType(X)) { // only X custom
-        if (comptime types.hasMethod(X, "zmlLn_", fn (*O, X) void, &.{ *O, X }))
-            return X.zmlLn_(o, x);
+        if (comptime types.hasMethod(X, "ln_", fn (*O, X) void, &.{ *O, X }))
+            return X.ln_(o, x);
     }
 
     return numeric.set(o, numeric.ln(x));

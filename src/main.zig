@@ -10,7 +10,17 @@ pub fn main() !void {
     // defer _ = gpa.deinit();
     // const a = gpa.allocator();
 
-    std.debug.print("Compiles\n", .{});
+    var prng = std.Random.DefaultPrng.init(@bitCast(std.time.timestamp()));
+    const rand = prng.random();
+
+    const a: zsl.cf64 = .{ .re = rand.float(f64), .im = rand.float(f64) };
+    const b: zsl.cf64 = .{ .re = rand.float(f64), .im = rand.float(f64) };
+    const c: zsl.cf64 = .{ .re = rand.float(f64), .im = rand.float(f64) };
+
+    std.debug.print("a: {s} = {}, b: {s} = {}, c: {s} = {}\n", .{ @typeName(@TypeOf(a)), a, @typeName(@TypeOf(b)), b, @typeName(@TypeOf(c)), c });
+
+    const d = zsl.numeric.fma(a, b, c);
+    std.debug.print("d: {s} = {}\n", .{ @typeName(@TypeOf(d)), d });
 }
 
 fn avg(values: []const f64) f64 {

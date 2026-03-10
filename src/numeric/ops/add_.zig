@@ -28,12 +28,12 @@ const numeric = @import("../../numeric.zig");
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `O`, `X` or `Y` should implement the required `zmlAdd_` method. The expected
-/// signature and behavior of `zmlAdd_` are as follows:
-/// * `fn zmlAdd_(*O, X, Y) void`: Computes the addition of `x` and `y` and
+/// `O`, `X` or `Y` should implement the required `add_` method. The expected
+/// signature and behavior of `add_` are as follows:
+/// * `fn add_(*O, X, Y) void`: Computes the addition of `x` and `y` and
 ///   stores it in `o`.
 ///
-/// If none of `O`, `X` and `Y` implement the required `zmlAdd_` method, the
+/// If none of `O`, `X` and `Y` implement the required `add_` method, the
 /// function will fall back to using `numeric.set` with the result of
 /// `numeric.add`, potentially resulting in a less efficient implementation. In
 /// this case, `O`, `X` and `Y` must adhere to the requirements of these
@@ -47,40 +47,40 @@ pub inline fn add_(o: anytype, x: anytype, y: anytype) void {
         !types.isNumeric(types.Child(O)) or
         !types.isNumeric(X) or
         !types.isNumeric(Y))
-        @compileError("zml.numeric.add_: o must be a mutable one-item pointer to a numeric, and x and y must be numerics, got \n\to: " ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
+        @compileError("zsl.numeric.add_: o must be a mutable one-item pointer to a numeric, and x and y must be numerics, got \n\to: " ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
     O = types.Child(O);
 
     if (comptime types.isCustomType(O)) {
         if (comptime types.isCustomType(X)) {
             if (comptime types.isCustomType(Y)) { // O, X and Y all custom
-                if (comptime types.anyHasMethod(&.{ O, X, Y }, "zmlAdd_", fn (*O, X, Y) void, &.{ *O, X, Y })) |Impl|
-                    return Impl.zmlAdd_(o, x, y);
+                if (comptime types.anyHasMethod(&.{ O, X, Y }, "add_", fn (*O, X, Y) void, &.{ *O, X, Y })) |Impl|
+                    return Impl.add_(o, x, y);
             } else { // only O and X custom
-                if (comptime types.anyHasMethod(&.{ O, X }, "zmlAdd_", fn (*O, X, Y) void, &.{ *O, X, Y })) |Impl|
-                    return Impl.zmlAdd_(o, x, y);
+                if (comptime types.anyHasMethod(&.{ O, X }, "add_", fn (*O, X, Y) void, &.{ *O, X, Y })) |Impl|
+                    return Impl.add_(o, x, y);
             }
         } else {
             if (comptime types.isCustomType(Y)) { // only O and Y custom
-                if (comptime types.anyHasMethod(&.{ O, Y }, "zmlAdd_", fn (*O, X, Y) void, &.{ *O, X, Y })) |Impl|
-                    return Impl.zmlAdd_(o, x, y);
+                if (comptime types.anyHasMethod(&.{ O, Y }, "add_", fn (*O, X, Y) void, &.{ *O, X, Y })) |Impl|
+                    return Impl.add_(o, x, y);
             } else { // only O custom
-                if (comptime types.hasMethod(O, "zmlAdd_", fn (*O, X, Y) void, &.{ *O, X, Y }))
-                    return O.zmlAdd_(o, x, y);
+                if (comptime types.hasMethod(O, "add_", fn (*O, X, Y) void, &.{ *O, X, Y }))
+                    return O.add_(o, x, y);
             }
         }
     } else {
         if (comptime types.isCustomType(X)) {
             if (comptime types.isCustomType(Y)) { // only X and Y custom
-                if (comptime types.anyHasMethod(&.{ X, Y }, "zmlAdd_", fn (*O, X, Y) void, &.{ *O, X, Y })) |Impl|
-                    return Impl.zmlAdd_(o, x, y);
+                if (comptime types.anyHasMethod(&.{ X, Y }, "add_", fn (*O, X, Y) void, &.{ *O, X, Y })) |Impl|
+                    return Impl.add_(o, x, y);
             } else { // only X custom
-                if (comptime types.hasMethod(X, "zmlAdd_", fn (*O, X, Y) void, &.{ *O, X, Y }))
-                    return X.zmlAdd_(o, x, y);
+                if (comptime types.hasMethod(X, "add_", fn (*O, X, Y) void, &.{ *O, X, Y }))
+                    return X.add_(o, x, y);
             }
         } else if (comptime types.isCustomType(Y)) { // only Y custom
-            if (comptime types.hasMethod(Y, "zmlAdd_", fn (*O, X, Y) void, &.{ *O, X, Y }))
-                return Y.zmlAdd_(o, x, y);
+            if (comptime types.hasMethod(Y, "add_", fn (*O, X, Y) void, &.{ *O, X, Y }))
+                return Y.add_(o, x, y);
         }
     }
 

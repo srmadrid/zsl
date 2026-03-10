@@ -2,8 +2,7 @@ const std = @import("std");
 
 const types = @import("../../types.zig");
 const Layout = types.Layout;
-const ops = @import("../../ops.zig");
-const constants = @import("../../constants.zig");
+const numeric = @import("../../numeric.zig");
 
 const matrix = @import("../../matrix.zig");
 const Flags = matrix.Flags;
@@ -124,7 +123,7 @@ pub fn Sparse(T: type, layout: Layout) type {
                 }
             }
 
-            return constants.zero(T, .{}) catch unreachable;
+            return numeric.zero(T, .{}) catch unreachable;
         }
 
         /// Gets the element at the specified position without bounds checking.
@@ -169,7 +168,7 @@ pub fn Sparse(T: type, layout: Layout) type {
                 }
             }
 
-            return constants.zero(T, .{}) catch unreachable;
+            return numeric.zero(T, .{}) catch unreachable;
         }
 
         /// Sets the element at the specified position.
@@ -341,7 +340,7 @@ pub fn Sparse(T: type, layout: Layout) type {
 
                     var i: u32 = 0;
                     while (i < self.nnz) : (i += 1) {
-                        ops.deinit(
+                        numeric.deinit(
                             &self.data[i],
                             types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                         );

@@ -10,30 +10,30 @@ const numeric = @import("../../numeric.zig");
 
 pub fn Max(X: type, Y: type) type {
     comptime if (!types.isNumeric(X) or !types.isNumeric(Y))
-        @compileError("zml.numeric.max: x and y must be numerics, got \n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
+        @compileError("zsl.numeric.max: x and y must be numerics, got \n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
     if (comptime types.isCustomType(X)) {
         if (comptime types.isCustomType(Y)) { // X and Y both custom
             const Impl: type = comptime types.anyHasMethod(
                 &.{ X, Y },
-                "ZmlMax",
+                "Max",
                 fn (type, type) type,
                 &.{ X, Y },
             ) orelse
-                @compileError("zml.numeric.max: " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn ZmlMax(type, type) type`");
+                @compileError("zsl.numeric.max: " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn Max(type, type) type`");
 
-            return Impl.ZmlMax(X, Y);
+            return Impl.Max(X, Y);
         } else { // only X custom
-            comptime if (!types.hasMethod(X, "ZmlMax", fn (type, type) type, &.{ X, Y }))
-                @compileError("zml.numeric.max: " ++ @typeName(X) ++ " must implement `fn ZmlMax(type, type) type`");
+            comptime if (!types.hasMethod(X, "Max", fn (type, type) type, &.{ X, Y }))
+                @compileError("zsl.numeric.max: " ++ @typeName(X) ++ " must implement `fn Max(type, type) type`");
 
-            return X.ZmlMax(X, Y);
+            return X.Max(X, Y);
         }
     } else if (comptime types.isCustomType(Y)) { // only Y custom
-        comptime if (!types.hasMethod(Y, "ZmlMax", fn (type, type) type, &.{ X, Y }))
-            @compileError("zml.numeric.max: " ++ @typeName(Y) ++ " must implement `fn ZmlMax(type, type) type`");
+        comptime if (!types.hasMethod(Y, "Max", fn (type, type) type, &.{ X, Y }))
+            @compileError("zsl.numeric.max: " ++ @typeName(Y) ++ " must implement `fn Max(type, type) type`");
 
-        return Y.ZmlMax(X, Y);
+        return Y.Max(X, Y);
     }
 
     switch (comptime types.numericType(X)) {
@@ -43,7 +43,7 @@ pub fn Max(X: type, Y: type) type {
             .rational => return rational.Max(X, Y),
             .float => return float.Max(X, Y),
             .dyadic => return dyadic.Max(X, Y),
-            .complex => @compileError("zml.numeric.max: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+            .complex => @compileError("zsl.numeric.max: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
         .int => switch (comptime types.numericType(Y)) {
@@ -51,28 +51,28 @@ pub fn Max(X: type, Y: type) type {
             .rational => return rational.Max(X, Y),
             .float => return float.Max(X, Y),
             .dyadic => return dyadic.Max(X, Y),
-            .complex => @compileError("zml.numeric.max: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+            .complex => @compileError("zsl.numeric.max: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
         .rational => switch (comptime types.numericType(Y)) {
             .bool, .int, .rational => return rational.Max(X, Y),
             .float => return float.Max(X, Y),
             .dyadic => return dyadic.Max(X, Y),
-            .complex => @compileError("zml.numeric.max: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+            .complex => @compileError("zsl.numeric.max: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
         .float => switch (comptime types.numericType(Y)) {
             .bool, .int, .rational, .float => return float.Max(X, Y),
             .dyadic => return dyadic.Max(X, Y),
-            .complex => @compileError("zml.numeric.max: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+            .complex => @compileError("zsl.numeric.max: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
         .dyadic => switch (comptime types.numericType(Y)) {
             .bool, .int, .rational, .float, .dyadic => return dyadic.Max(X, Y),
-            .complex => @compileError("zml.numeric.max: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+            .complex => @compileError("zsl.numeric.max: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
-        .complex => @compileError("zml.numeric.max: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+        .complex => @compileError("zsl.numeric.max: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
         .custom => unreachable,
     }
 }
@@ -95,13 +95,13 @@ pub fn Max(X: type, Y: type) type {
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` or `Y` must implement the required `ZmlMax` method. The expected
-/// signature and behavior of `ZmlMax` are as follows:
-/// * `fn ZmlMax(type, type) type`: Returns the type of `x + y`.
+/// `X` or `Y` must implement the required `Max` method. The expected
+/// signature and behavior of `Max` are as follows:
+/// * `fn Max(type, type) type`: Returns the type of `x + y`.
 ///
-/// `numeric.Max(X, Y)`, `X` or `Y` must implement the required `zmlMax` method.
-/// The expected signatures and behavior of `zmlMax` are as follows:
-/// * `fn zmlMax(X, Y) numeric.Max(X, Y)`: Returns the maximum between `x` and
+/// `numeric.Max(X, Y)`, `X` or `Y` must implement the required `max` method.
+/// The expected signatures and behavior of `max` are as follows:
+/// * `fn max(X, Y) numeric.Max(X, Y)`: Returns the maximum between `x` and
 ///   `y`.
 pub inline fn max(x: anytype, y: anytype) numeric.Max(@TypeOf(x), @TypeOf(y)) {
     const X: type = @TypeOf(x);
@@ -112,34 +112,34 @@ pub inline fn max(x: anytype, y: anytype) numeric.Max(@TypeOf(x), @TypeOf(y)) {
         if (comptime types.isCustomType(Y)) { // X and Y both custom
             const Impl: type = comptime types.anyHasMethod(
                 &.{ R, X, Y },
-                "zmlMax",
+                "max",
                 fn (X, Y) R,
                 &.{ X, Y },
             ) orelse
-                @compileError("zml.numeric.max: " ++ @typeName(R) ++ ", " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn zmlMax(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
+                @compileError("zsl.numeric.max: " ++ @typeName(R) ++ ", " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn max(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
 
-            return Impl.zmlMax(x, y);
+            return Impl.max(x, y);
         } else { // only X custom
             const Impl: type = comptime types.anyHasMethod(
                 &.{ R, X },
-                "zmlMax",
+                "max",
                 fn (X, Y) R,
                 &.{ X, Y },
             ) orelse
-                @compileError("zml.numeric.max: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlMax(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
+                @compileError("zsl.numeric.max: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn max(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
 
-            return Impl.zmlMax(x, y);
+            return Impl.max(x, y);
         }
     } else if (comptime types.isCustomType(Y)) { // only Y custom
         const Impl: type = comptime types.anyHasMethod(
             &.{ R, Y },
-            "zmlMax",
+            "max",
             fn (X, Y) R,
             &.{ X, Y },
         ) orelse
-            @compileError("zml.numeric.max: " ++ @typeName(R) ++ " or " ++ @typeName(Y) ++ " must implement `fn zmlMax(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
+            @compileError("zsl.numeric.max: " ++ @typeName(R) ++ " or " ++ @typeName(Y) ++ " must implement `fn max(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
 
-        return Impl.zmlMax(x, y);
+        return Impl.max(x, y);
     }
 
     switch (comptime types.numericType(X)) {

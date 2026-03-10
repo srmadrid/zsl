@@ -8,7 +8,7 @@ const Coerce = types.Coerce;
 const Numeric = types.Numeric;
 const orderOf = types.layoutOf;
 
-const ops = @import("../ops.zig");
+const numeric = @import("../numeric.zig");
 const int = @import("../int.zig");
 
 const array = @import("../array.zig");

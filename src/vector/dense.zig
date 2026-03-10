@@ -3,7 +3,7 @@ const std = @import("std");
 const types = @import("../types.zig");
 const ReturnType2 = types.ReturnType2;
 const Numeric = types.Numeric;
-const ops = @import("../ops.zig");
+const numeric = @import("../numeric.zig");
 const int = @import("../int.zig");
 
 const vector = @import("../vector.zig");
@@ -136,12 +136,12 @@ pub fn Dense(T: type) type {
             errdefer vec._cleanup(i, ctx);
 
             while (i < len) : (i += 1) {
-                vec.data[i] = try ops.init(
+                vec.data[i] = try numeric.init(
                     T,
                     types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                 );
 
-                try ops.set(
+                try numeric.set(
                     &vec.data[i],
                     value,
                     types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
@@ -390,7 +390,7 @@ pub fn Dense(T: type) type {
                     if (self.inc == 1) {
                         var i: u32 = 0;
                         while (i < num_elems) : (i += 1) {
-                            ops.deinit(
+                            numeric.deinit(
                                 &self.data[i],
                                 types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                             );
@@ -399,7 +399,7 @@ pub fn Dense(T: type) type {
                         var is: i32 = if (self.inc < 0) (-types.scast(i32, self.len) + 1) * self.inc else 0;
                         var i: u32 = 0;
                         while (i < num_elems) : (i += 1) {
-                            ops.deinit(
+                            numeric.deinit(
                                 &self.data[types.scast(u32, is)],
                                 types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                             );

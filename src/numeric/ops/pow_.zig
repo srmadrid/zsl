@@ -28,12 +28,12 @@ const numeric = @import("../../numeric.zig");
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `O`, `X` or `Y` should implement the required `zmlPow_` method. The expected
-/// signature and behavior of `zmlPow_` are as follows:
-/// * `fn zmlPow_(*O, X, Y) void`: Computes the exponentiation of `x` to the power
+/// `O`, `X` or `Y` should implement the required `pow_` method. The expected
+/// signature and behavior of `pow_` are as follows:
+/// * `fn pow_(*O, X, Y) void`: Computes the exponentiation of `x` to the power
 ///   `y` and stores it in `o`.
 ///
-/// If none of `O`, `X` and `Y` implement the required `zmlPow_` method, the
+/// If none of `O`, `X` and `Y` implement the required `pow_` method, the
 /// function will fall back to using `numeric.set` with the result of
 /// `numeric.pow`, potentially resulting in a less efficient implementation. In
 /// this case, `O`, `X` and `Y` must adhere to the requirements of these
@@ -47,40 +47,40 @@ pub inline fn pow_(o: anytype, x: anytype, y: anytype) void {
         !types.isNumeric(types.Child(O)) or
         !types.isNumeric(X) or
         !types.isNumeric(Y))
-        @compileError("zml.numeric.pow_: o must be a mutable one-item pointer to a numeric, and x and y must be numerics, got \n\to: " ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
+        @compileError("zsl.numeric.pow_: o must be a mutable one-item pointer to a numeric, and x and y must be numerics, got \n\to: " ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
     O = types.Child(O);
 
     if (comptime types.isCustomType(O)) {
         if (comptime types.isCustomType(X)) {
             if (comptime types.isCustomType(Y)) { // O, X and Y all custom
-                if (comptime types.anyHasMethod(&.{ O, X, Y }, "zmlPow_", fn (*O, X, Y) void, &.{ *O, X, Y })) |Impl|
-                    return Impl.zmlPow_(o, x, y);
+                if (comptime types.anyHasMethod(&.{ O, X, Y }, "pow_", fn (*O, X, Y) void, &.{ *O, X, Y })) |Impl|
+                    return Impl.pow_(o, x, y);
             } else { // only O and X custom
-                if (comptime types.anyHasMethod(&.{ O, X }, "zmlPow_", fn (*O, X, Y) void, &.{ *O, X, Y })) |Impl|
-                    return Impl.zmlPow_(o, x, y);
+                if (comptime types.anyHasMethod(&.{ O, X }, "pow_", fn (*O, X, Y) void, &.{ *O, X, Y })) |Impl|
+                    return Impl.pow_(o, x, y);
             }
         } else {
             if (comptime types.isCustomType(Y)) { // only O and Y custom
-                if (comptime types.anyHasMethod(&.{ O, Y }, "zmlPow_", fn (*O, X, Y) void, &.{ *O, X, Y })) |Impl|
-                    return Impl.zmlPow_(o, x, y);
+                if (comptime types.anyHasMethod(&.{ O, Y }, "pow_", fn (*O, X, Y) void, &.{ *O, X, Y })) |Impl|
+                    return Impl.pow_(o, x, y);
             } else { // only O custom
-                if (comptime types.hasMethod(O, "zmlPow_", fn (*O, X, Y) void, &.{ *O, X, Y }))
-                    return O.zmlPow_(o, x, y);
+                if (comptime types.hasMethod(O, "pow_", fn (*O, X, Y) void, &.{ *O, X, Y }))
+                    return O.pow_(o, x, y);
             }
         }
     } else {
         if (comptime types.isCustomType(X)) {
             if (comptime types.isCustomType(Y)) { // only X and Y custom
-                if (comptime types.anyHasMethod(&.{ X, Y }, "zmlPow_", fn (*O, X, Y) void, &.{ *O, X, Y })) |Impl|
-                    return Impl.zmlPow_(o, x, y);
+                if (comptime types.anyHasMethod(&.{ X, Y }, "pow_", fn (*O, X, Y) void, &.{ *O, X, Y })) |Impl|
+                    return Impl.pow_(o, x, y);
             } else { // only X custom
-                if (comptime types.hasMethod(X, "zmlPow_", fn (*O, X, Y) void, &.{ *O, X, Y }))
-                    return X.zmlPow_(o, x, y);
+                if (comptime types.hasMethod(X, "pow_", fn (*O, X, Y) void, &.{ *O, X, Y }))
+                    return X.pow_(o, x, y);
             }
         } else if (comptime types.isCustomType(Y)) { // only Y custom
-            if (comptime types.hasMethod(Y, "zmlPow_", fn (*O, X, Y) void, &.{ *O, X, Y }))
-                return Y.zmlPow_(o, x, y);
+            if (comptime types.hasMethod(Y, "pow_", fn (*O, X, Y) void, &.{ *O, X, Y }))
+                return Y.pow_(o, x, y);
         }
     }
 

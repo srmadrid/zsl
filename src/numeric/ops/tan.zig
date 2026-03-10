@@ -10,20 +10,20 @@ const numeric = @import("../../numeric.zig");
 
 pub fn Tan(X: type) type {
     comptime if (!types.isNumeric(X))
-        @compileError("zml.numeric.tan: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.numeric.tan: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
 
     switch (comptime types.numericType(X)) {
-        .bool => @compileError("zml.numeric.tan: not defined for " ++ @typeName(X) ++ "."),
-        .int => @compileError("zml.numeric.tan: not defined for " ++ @typeName(X) ++ "."),
+        .bool => @compileError("zsl.numeric.tan: not defined for " ++ @typeName(X) ++ "."),
+        .int => @compileError("zsl.numeric.tan: not defined for " ++ @typeName(X) ++ "."),
         .rational => return X,
         .float => return X,
         .dyadic => return X,
         .complex => return X,
         .custom => {
-            if (comptime !types.hasMethod(X, "ZmlTan", fn (type) type, &.{X}))
-                @compileError("zml.numeric.tan: " ++ @typeName(X) ++ " must implement `fn ZmlTan(type) type`");
+            if (comptime !types.hasMethod(X, "Tan", fn (type) type, &.{X}))
+                @compileError("zsl.numeric.tan: " ++ @typeName(X) ++ " must implement `fn Tan(type) type`");
 
-            return X.ZmlTan(X);
+            return X.Tan(X);
         },
     }
 }
@@ -45,13 +45,13 @@ pub fn Tan(X: type) type {
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` must implement the required `ZmlTan` method. The expected signature and
-/// behavior of `ZmlTan` are as follows:
-/// * `fn ZmlTan(type) type`: Returns the type of the tangent of `x`.
+/// `X` must implement the required `Tan` method. The expected signature and
+/// behavior of `Tan` are as follows:
+/// * `fn Tan(type) type`: Returns the type of the tangent of `x`.
 ///
-/// `numeric.Tan(X)` or `X` must implement the required `zmlTan` method. The
-/// expected signature and behavior of `zmlTan` are as follows:
-/// * `fn zmlTan(X) numeric.Tan(X)`: Returns the tangent of `x`.
+/// `numeric.Tan(X)` or `X` must implement the required `tan` method. The
+/// expected signature and behavior of `tan` are as follows:
+/// * `fn tan(X) numeric.Tan(X)`: Returns the tangent of `x`.
 pub inline fn tan(x: anytype) numeric.Tan(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Tan(X);
@@ -66,13 +66,13 @@ pub inline fn tan(x: anytype) numeric.Tan(@TypeOf(x)) {
         .custom => {
             const Impl: type = comptime types.anyHasMethod(
                 &.{ R, X },
-                "zmlTan",
+                "tan",
                 fn (X) numeric.Tan(X),
                 &.{X},
             ) orelse
-                @compileError("zml.numeric.tan: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlTan(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
+                @compileError("zsl.numeric.tan: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn tan(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
 
-            return Impl.zmlTan(x);
+            return Impl.tan(x);
         },
     }
 }

@@ -26,35 +26,38 @@ const numeric = @import("../../numeric.zig");
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` or `Y` must implement the required `zmlGt` method. The expected
-/// signature and behavior of `zmlGt` are as follows:
-/// * `fn zmlGt(X, Y) bool`: Compares `x` and `y` for greater-than ordering.
+/// `X` or `Y` must implement the required `gt` method. The expected
+/// signature and behavior of `gt` are as follows:
+/// * `fn gt(X, Y) bool`: Compares `x` and `y` for greater-than ordering.
 pub inline fn gt(x: anytype, y: anytype) bool {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
+
+    comptime if (!types.isNumeric(X) or !types.isNumeric(Y))
+        @compileError("zsl.numeric.gt: x and y must be numerics, got \n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
     if (comptime types.isCustomType(X)) {
         if (comptime types.isCustomType(Y)) { // X and Y both custom
             const Impl: type = comptime types.anyHasMethod(
                 &.{ X, Y },
-                "zmlGt",
+                "gt",
                 fn (X, Y) bool,
                 &.{ X, Y },
             ) orelse
-                @compileError("zml.numeric.gt: " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn zmlGt(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
+                @compileError("zsl.numeric.gt: " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn gt(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
 
-            return Impl.zmlGt(x, y);
+            return Impl.gt(x, y);
         } else { // only X custom
-            comptime if (!types.hasMethod(X, "zmlGt", fn (X, Y) bool, &.{ X, Y }))
-                @compileError("zml.numeric.gt: " ++ @typeName(X) ++ " must implement `fn zmlGt(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
+            comptime if (!types.hasMethod(X, "gt", fn (X, Y) bool, &.{ X, Y }))
+                @compileError("zsl.numeric.gt: " ++ @typeName(X) ++ " must implement `fn gt(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
 
-            return X.zmlGt(x, y);
+            return X.gt(x, y);
         }
     } else if (comptime types.isCustomType(Y)) { // only Y custom
-        comptime if (!types.hasMethod(Y, "zmlGt", fn (X, Y) bool, &.{ X, Y }))
-            @compileError("zml.numeric.gt: " ++ @typeName(Y) ++ " must implement `fn zmlGt(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
+        comptime if (!types.hasMethod(Y, "gt", fn (X, Y) bool, &.{ X, Y }))
+            @compileError("zsl.numeric.gt: " ++ @typeName(Y) ++ " must implement `fn gt(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
 
-        return Y.zmlGt(x, y);
+        return Y.gt(x, y);
     }
 
     switch (comptime types.numericType(X)) {
@@ -64,7 +67,7 @@ pub inline fn gt(x: anytype, y: anytype) bool {
             .rational => return rational.gt(x, y),
             .float => return float.gt(x, y),
             .dyadic => return dyadic.gt(x, y),
-            .complex => @compileError("zml.numeric.gt: not defigtd for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+            .complex => @compileError("zsl.numeric.gt: not defigtd for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
         .int => switch (comptime types.numericType(Y)) {
@@ -72,28 +75,28 @@ pub inline fn gt(x: anytype, y: anytype) bool {
             .rational => return rational.gt(x, y),
             .float => return float.gt(x, y),
             .dyadic => return dyadic.gt(x, y),
-            .complex => @compileError("zml.numeric.gt: not defigtd for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+            .complex => @compileError("zsl.numeric.gt: not defigtd for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
         .rational => switch (comptime types.numericType(Y)) {
             .bool, .int, .rational => return rational.gt(x, y),
             .float => return float.gt(x, y),
             .dyadic => return dyadic.gt(x, y),
-            .complex => @compileError("zml.numeric.gt: not defigtd for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+            .complex => @compileError("zsl.numeric.gt: not defigtd for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
         .float => switch (comptime types.numericType(Y)) {
             .bool, .int, .rational, .float => return float.gt(x, y),
             .dyadic => return dyadic.gt(x, y),
-            .complex => @compileError("zml.numeric.gt: not defigtd for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+            .complex => @compileError("zsl.numeric.gt: not defigtd for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
         .dyadic => switch (comptime types.numericType(Y)) {
             .bool, .int, .rational, .float, .dyadic => return dyadic.gt(x, y),
-            .complex => @compileError("zml.numeric.gt: not defigtd for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+            .complex => @compileError("zsl.numeric.gt: not defigtd for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
-        .complex => @compileError("zml.numeric.gt: not defigtd for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+        .complex => @compileError("zsl.numeric.gt: not defigtd for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
         .custom => unreachable,
     }
 }

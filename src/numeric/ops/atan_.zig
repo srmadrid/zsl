@@ -27,12 +27,12 @@ const numeric = @import("../../numeric.zig");
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `O` or `X` should implement the required `zmlAtan_` method. The expected
-/// signature and behavior of `zmlAtan_` are as follows:
-/// * `fn zmlAtan_(*O, X) void`: Computes the arctangent of `x` and stores it
+/// `O` or `X` should implement the required `atan_` method. The expected
+/// signature and behavior of `atan_` are as follows:
+/// * `fn atan_(*O, X) void`: Computes the arctangent of `x` and stores it
 ///   in `o`.
 ///
-/// If neither `O` nor `X` implement the required `zmlAtan_` method, the function
+/// If neither `O` nor `X` implement the required `atan_` method, the function
 /// will fall back to using `numeric.set` with the result of `numeric.atan`,
 /// potentially resulting in a less efficient implementation. In this case, `O`
 /// and `X` must adhere to the requirements of these functions.
@@ -43,21 +43,21 @@ pub inline fn atan_(o: anytype, x: anytype) void {
     comptime if (!types.isPointer(O) or types.isConstPointer(O) or
         !types.isNumeric(types.Child(O)) or
         !types.isNumeric(X))
-        @compileError("zml.numeric.atan_: o must be a mutable one-item pointer to a numeric, and x must be a numeric, got \n\to: " ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.numeric.atan_: o must be a mutable one-item pointer to a numeric, and x must be a numeric, got \n\to: " ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n");
 
     O = types.Child(O);
 
     if (comptime types.isCustomType(O)) {
         if (comptime types.isCustomType(X)) { // O and X both custom
-            if (comptime types.anyHasMethod(&.{ O, X }, "zmlAtan_", fn (*O, X) void, &.{ *O, X })) |Impl|
-                return Impl.zmlAtan_(o, x);
+            if (comptime types.anyHasMethod(&.{ O, X }, "atan_", fn (*O, X) void, &.{ *O, X })) |Impl|
+                return Impl.atan_(o, x);
         } else { // only O custom
-            if (comptime types.hasMethod(O, "zmlAtan_", fn (*O, X) void, &.{ *O, X }))
-                return O.zmlAtan_(o, x);
+            if (comptime types.hasMethod(O, "atan_", fn (*O, X) void, &.{ *O, X }))
+                return O.atan_(o, x);
         }
     } else if (comptime types.isCustomType(X)) { // only X custom
-        if (comptime types.hasMethod(X, "zmlAtan_", fn (*O, X) void, &.{ *O, X }))
-            return X.zmlAtan_(o, x);
+        if (comptime types.hasMethod(X, "atan_", fn (*O, X) void, &.{ *O, X }))
+            return X.atan_(o, x);
     }
 
     return numeric.set(o, numeric.atan(x));

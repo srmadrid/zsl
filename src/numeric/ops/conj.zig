@@ -10,7 +10,7 @@ const numeric = @import("../../numeric.zig");
 
 pub fn Conj(X: type) type {
     comptime if (!types.isNumeric(X))
-        @compileError("zml.numeric.conj: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.numeric.conj: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
 
     switch (comptime types.numericType(X)) {
         .bool => return X,
@@ -20,10 +20,10 @@ pub fn Conj(X: type) type {
         .dyadic => return X,
         .complex => return X,
         .custom => {
-            if (comptime !types.hasMethod(X, "ZmlConj", fn (type) type, &.{X}))
-                @compileError("zml.numeric.conj: " ++ @typeName(X) ++ " must implement `fn ZmlConj(type) type`");
+            if (comptime !types.hasMethod(X, "Conj", fn (type) type, &.{X}))
+                @compileError("zsl.numeric.conj: " ++ @typeName(X) ++ " must implement `fn Conj(type) type`");
 
-            return X.ZmlConj(X);
+            return X.Conj(X);
         },
     }
 }
@@ -45,13 +45,13 @@ pub fn Conj(X: type) type {
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` must implement the required `ZmlConj` method. The expected signature and
-/// behavior of `ZmlConj` are as follows:
-/// * `fn ZmlConj(type) type`: Returns the type of the complex conjugate of `x`.
+/// `X` must implement the required `Conj` method. The expected signature and
+/// behavior of `Conj` are as follows:
+/// * `fn Conj(type) type`: Returns the type of the complex conjugate of `x`.
 ///
-/// `numeric.Conj(X)` or `X` must implement the required `zmlConj` method. The
-/// expected signature and behavior of `zmlConj` are as follows:
-/// * `fn zmlConj(X) numeric.Conj(X)`: Returns the complex conjugate of `x`.
+/// `numeric.Conj(X)` or `X` must implement the required `conj` method. The
+/// expected signature and behavior of `conj` are as follows:
+/// * `fn conj(X) numeric.Conj(X)`: Returns the complex conjugate of `x`.
 pub inline fn conj(x: anytype) numeric.Conj(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Conj(X);
@@ -62,17 +62,17 @@ pub inline fn conj(x: anytype) numeric.Conj(@TypeOf(x)) {
         .rational => return x,
         .float => return x,
         .dyadic => return x,
-        .complex => return x.conj(),
+        .complex => return complex.conj(x),
         .custom => {
             const Impl: type = comptime types.anyHasMethod(
                 &.{ R, X },
-                "zmlConj",
+                "conj",
                 fn (X) numeric.Conj(X),
                 &.{X},
             ) orelse
-                @compileError("zml.numeric.conj: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlConj(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
+                @compileError("zsl.numeric.conj: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn conj(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
 
-            return Impl.zmlConj(x);
+            return Impl.conj(x);
         },
     }
 }

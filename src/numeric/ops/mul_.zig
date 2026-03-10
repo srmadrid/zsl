@@ -28,12 +28,12 @@ const numeric = @import("../../numeric.zig");
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `O`, `X` or `Y` should implement the required `zmlMul_` method. The expected
-/// signature and behavior of `zmlMul_` are as follows:
-/// * `fn zmlMul_(*O, X, Y) void`: Computes the multiplication of `x` and `y` and
+/// `O`, `X` or `Y` should implement the required `mul_` method. The expected
+/// signature and behavior of `mul_` are as follows:
+/// * `fn mul_(*O, X, Y) void`: Computes the multiplication of `x` and `y` and
 ///   stores it in `o`.
 ///
-/// If none of `O`, `X` and `Y` implement the required `zmlMul_` method, the
+/// If none of `O`, `X` and `Y` implement the required `mul_` method, the
 /// function will fall back to using `numeric.set` with the result of
 /// `numeric.mul`, potentially resulting in a less efficient implementation. In
 /// this case, `O`, `X` and `Y` must adhere to the requirements of these
@@ -47,40 +47,40 @@ pub inline fn mul_(o: anytype, x: anytype, y: anytype) void {
         !types.isNumeric(types.Child(O)) or
         !types.isNumeric(X) or
         !types.isNumeric(Y))
-        @compileError("zml.numeric.mul_: o must be a mutable one-item pointer to a numeric, and x and y must be numerics, got \n\to: " ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
+        @compileError("zsl.numeric.mul_: o must be a mutable one-item pointer to a numeric, and x and y must be numerics, got \n\to: " ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
     O = types.Child(O);
 
     if (comptime types.isCustomType(O)) {
         if (comptime types.isCustomType(X)) {
             if (comptime types.isCustomType(Y)) { // O, X and Y all custom
-                if (comptime types.anyHasMethod(&.{ O, X, Y }, "zmlMul_", fn (*O, X, Y) void, &.{ *O, X, Y })) |Impl|
-                    return Impl.zmlMul_(o, x, y);
+                if (comptime types.anyHasMethod(&.{ O, X, Y }, "mul_", fn (*O, X, Y) void, &.{ *O, X, Y })) |Impl|
+                    return Impl.mul_(o, x, y);
             } else { // only O and X custom
-                if (comptime types.anyHasMethod(&.{ O, X }, "zmlMul_", fn (*O, X, Y) void, &.{ *O, X, Y })) |Impl|
-                    return Impl.zmlMul_(o, x, y);
+                if (comptime types.anyHasMethod(&.{ O, X }, "mul_", fn (*O, X, Y) void, &.{ *O, X, Y })) |Impl|
+                    return Impl.mul_(o, x, y);
             }
         } else {
             if (comptime types.isCustomType(Y)) { // only O and Y custom
-                if (comptime types.anyHasMethod(&.{ O, Y }, "zmlMul_", fn (*O, X, Y) void, &.{ *O, X, Y })) |Impl|
-                    return Impl.zmlMul_(o, x, y);
+                if (comptime types.anyHasMethod(&.{ O, Y }, "mul_", fn (*O, X, Y) void, &.{ *O, X, Y })) |Impl|
+                    return Impl.mul_(o, x, y);
             } else { // only O custom
-                if (comptime types.hasMethod(O, "zmlMul_", fn (*O, X, Y) void, &.{ *O, X, Y }))
-                    return O.zmlMul_(o, x, y);
+                if (comptime types.hasMethod(O, "mul_", fn (*O, X, Y) void, &.{ *O, X, Y }))
+                    return O.mul_(o, x, y);
             }
         }
     } else {
         if (comptime types.isCustomType(X)) {
             if (comptime types.isCustomType(Y)) { // only X and Y custom
-                if (comptime types.anyHasMethod(&.{ X, Y }, "zmlMul_", fn (*O, X, Y) void, &.{ *O, X, Y })) |Impl|
-                    return Impl.zmlMul_(o, x, y);
+                if (comptime types.anyHasMethod(&.{ X, Y }, "mul_", fn (*O, X, Y) void, &.{ *O, X, Y })) |Impl|
+                    return Impl.mul_(o, x, y);
             } else { // only X custom
-                if (comptime types.hasMethod(X, "zmlMul_", fn (*O, X, Y) void, &.{ *O, X, Y }))
-                    return X.zmlMul_(o, x, y);
+                if (comptime types.hasMethod(X, "mul_", fn (*O, X, Y) void, &.{ *O, X, Y }))
+                    return X.mul_(o, x, y);
             }
         } else if (comptime types.isCustomType(Y)) { // only Y custom
-            if (comptime types.hasMethod(Y, "zmlMul_", fn (*O, X, Y) void, &.{ *O, X, Y }))
-                return Y.zmlMul_(o, x, y);
+            if (comptime types.hasMethod(Y, "mul_", fn (*O, X, Y) void, &.{ *O, X, Y }))
+                return Y.mul_(o, x, y);
         }
     }
 

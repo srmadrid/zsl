@@ -27,12 +27,12 @@ const numeric = @import("../../numeric.zig");
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `O` or `X` should implement the required `zmlExp_` method. The expected
-/// signature and behavior of `zmlExp_` are as follows:
-/// * `fn zmlExp_(*O, X) void`: Computes the exponential of `x` and stores it in
+/// `O` or `X` should implement the required `exp_` method. The expected
+/// signature and behavior of `exp_` are as follows:
+/// * `fn exp_(*O, X) void`: Computes the exponential of `x` and stores it in
 ///   `o`.
 ///
-/// If neither `O` nor `X` implement the required `zmlExp_` method, the function
+/// If neither `O` nor `X` implement the required `exp_` method, the function
 /// will fall back to using `numeric.set` with the result of `numeric.exp`,
 /// potentially resulting in a less efficient implementation. In this case, `O`
 /// and `X` must adhere to the requirements of these functions.
@@ -43,21 +43,21 @@ pub inline fn exp_(o: anytype, x: anytype) void {
     comptime if (!types.isPointer(O) or types.isConstPointer(O) or
         !types.isNumeric(types.Child(O)) or
         !types.isNumeric(X))
-        @compileError("zml.numeric.exp_: o must be a mutable one-item pointer to a numeric, and x must be a numeric, got \n\to: " ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.numeric.exp_: o must be a mutable one-item pointer to a numeric, and x must be a numeric, got \n\to: " ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n");
 
     O = types.Child(O);
 
     if (comptime types.isCustomType(O)) {
         if (comptime types.isCustomType(X)) { // O and X both custom
-            if (comptime types.anyHasMethod(&.{ O, X }, "zmlExp_", fn (*O, X) void, &.{ *O, X })) |Impl|
-                return Impl.zmlExp_(o, x);
+            if (comptime types.anyHasMethod(&.{ O, X }, "exp_", fn (*O, X) void, &.{ *O, X })) |Impl|
+                return Impl.exp_(o, x);
         } else { // only O custom
-            if (comptime types.hasMethod(O, "zmlExp_", fn (*O, X) void, &.{ *O, X }))
-                return O.zmlExp_(o, x);
+            if (comptime types.hasMethod(O, "exp_", fn (*O, X) void, &.{ *O, X }))
+                return O.exp_(o, x);
         }
     } else if (comptime types.isCustomType(X)) { // only X custom
-        if (comptime types.hasMethod(X, "zmlExp_", fn (*O, X) void, &.{ *O, X }))
-            return X.zmlExp_(o, x);
+        if (comptime types.hasMethod(X, "exp_", fn (*O, X) void, &.{ *O, X }))
+            return X.exp_(o, x);
     }
 
     return numeric.set(o, numeric.exp(x));

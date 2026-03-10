@@ -10,20 +10,20 @@ const numeric = @import("../../numeric.zig");
 
 pub fn Acos(X: type) type {
     comptime if (!types.isNumeric(X))
-        @compileError("zml.numeric.acos: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.numeric.acos: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
 
     switch (comptime types.numericType(X)) {
-        .bool => @compileError("zml.numeric.acos: not defined for " ++ @typeName(X) ++ "."),
-        .int => @compileError("zml.numeric.acos: not defined for " ++ @typeName(X) ++ "."),
+        .bool => @compileError("zsl.numeric.acos: not defined for " ++ @typeName(X) ++ "."),
+        .int => @compileError("zsl.numeric.acos: not defined for " ++ @typeName(X) ++ "."),
         .rational => return X,
         .float => return X,
         .dyadic => return X,
         .complex => return X,
         .custom => {
-            if (comptime !types.hasMethod(X, "ZmlAcos", fn (type) type, &.{X}))
-                @compileError("zml.numeric.acos: " ++ @typeName(X) ++ " must implement `fn ZmlAcos(type) type`");
+            if (comptime !types.hasMethod(X, "Acos", fn (type) type, &.{X}))
+                @compileError("zsl.numeric.acos: " ++ @typeName(X) ++ " must implement `fn Acos(type) type`");
 
-            return X.ZmlAcos(X);
+            return X.Acos(X);
         },
     }
 }
@@ -45,13 +45,13 @@ pub fn Acos(X: type) type {
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` must implement the required `ZmlAcos` method. The expected signature and
-/// behavior of `ZmlAcos` are as follows:
-/// * `fn ZmlAcos(type) type`: Returns the type of the arccosine of `x`.
+/// `X` must implement the required `Acos` method. The expected signature and
+/// behavior of `Acos` are as follows:
+/// * `fn Acos(type) type`: Returns the type of the arccosine of `x`.
 ///
-/// `numeric.Acos(X)` or `X` must implement the required `zmlAcos` method. The
-/// expected signature and behavior of `zmlAcos` are as follows:
-/// * `fn zmlAcos(X) numeric.Acos(X)`: Returns the arccosine of `x`.
+/// `numeric.Acos(X)` or `X` must implement the required `acos` method. The
+/// expected signature and behavior of `acos` are as follows:
+/// * `fn acos(X) numeric.Acos(X)`: Returns the arccosine of `x`.
 pub inline fn acos(x: anytype) numeric.Acos(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Acos(X);
@@ -66,13 +66,13 @@ pub inline fn acos(x: anytype) numeric.Acos(@TypeOf(x)) {
         .custom => {
             const Impl: type = comptime types.anyHasMethod(
                 &.{ R, X },
-                "zmlAcos",
+                "acos",
                 fn (X) numeric.Acos(X),
                 &.{X},
             ) orelse
-                @compileError("zml.numeric.acos: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlAcos(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
+                @compileError("zsl.numeric.acos: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn acos(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
 
-            return Impl.zmlAcos(x);
+            return Impl.acos(x);
         },
     }
 }

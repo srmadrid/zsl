@@ -10,35 +10,35 @@ const numeric = @import("../../numeric.zig");
 
 pub fn Pow(X: type, Y: type) type {
     comptime if (!types.isNumeric(X) or !types.isNumeric(Y))
-        @compileError("zml.numeric.pow: x and y must be numerics, got \n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
+        @compileError("zsl.numeric.pow: x and y must be numerics, got \n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
     if (comptime types.isCustomType(X)) {
         if (comptime types.isCustomType(Y)) { // X and Y both custom
             const Impl: type = comptime types.anyHasMethod(
                 &.{ X, Y },
-                "ZmlPow",
+                "Pow",
                 fn (type, type) type,
                 &.{ X, Y },
             ) orelse
-                @compileError("zml.numeric.pow: " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn ZmlPow(type, type) type`");
+                @compileError("zsl.numeric.pow: " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn Pow(type, type) type`");
 
-            return Impl.ZmlPow(X, Y);
+            return Impl.Pow(X, Y);
         } else { // only X custom
-            comptime if (!types.hasMethod(X, "ZmlPow", fn (type, type) type, &.{ X, Y }))
-                @compileError("zml.numeric.pow: " ++ @typeName(X) ++ " must implement `fn ZmlPow(type, type) type`");
+            comptime if (!types.hasMethod(X, "Pow", fn (type, type) type, &.{ X, Y }))
+                @compileError("zsl.numeric.pow: " ++ @typeName(X) ++ " must implement `fn Pow(type, type) type`");
 
-            return X.ZmlPow(X, Y);
+            return X.Pow(X, Y);
         }
     } else if (comptime types.isCustomType(Y)) { // only Y custom
-        comptime if (!types.hasMethod(Y, "ZmlPow", fn (type, type) type, &.{ X, Y }))
-            @compileError("zml.numeric.pow: " ++ @typeName(Y) ++ " must implement `fn ZmlPow(type, type) type`");
+        comptime if (!types.hasMethod(Y, "Pow", fn (type, type) type, &.{ X, Y }))
+            @compileError("zsl.numeric.pow: " ++ @typeName(Y) ++ " must implement `fn Pow(type, type) type`");
 
-        return Y.ZmlPow(X, Y);
+        return Y.Pow(X, Y);
     }
 
     switch (comptime types.numericType(X)) {
         .bool => switch (comptime types.numericType(Y)) {
-            .bool => @compileError("zml.numeric.pow: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+            .bool => @compileError("zsl.numeric.pow: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .int => return int.Pow(X, Y),
             .rational => return rational.Pow(X, Y),
             .float => return float.Pow(X, Y),
@@ -98,13 +98,13 @@ pub fn Pow(X: type, Y: type) type {
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` or `Y` must implement the required `ZmlPow` method. The expected
-/// signature and behavior of `ZmlPow` are as follows:
-/// * `fn ZmlPow(type, type) type`: Returns the type of `x + y`.
+/// `X` or `Y` must implement the required `Pow` method. The expected
+/// signature and behavior of `Pow` are as follows:
+/// * `fn Pow(type, type) type`: Returns the type of `x + y`.
 ///
-/// `numeric.Pow(X, Y)`, `X` or `Y` must implement the required `zmlPow` method.
-/// The expected signatures and behavior of `zmlPow` are as follows:
-/// * `fn zmlPow(X, Y) numeric.Pow(X, Y)`: Returns the exponentiation of `x` to
+/// `numeric.Pow(X, Y)`, `X` or `Y` must implement the required `pow` method.
+/// The expected signatures and behavior of `pow` are as follows:
+/// * `fn pow(X, Y) numeric.Pow(X, Y)`: Returns the exponentiation of `x` to
 ///   the power `y`.
 pub inline fn pow(x: anytype, y: anytype) numeric.Pow(@TypeOf(x), @TypeOf(y)) {
     const X: type = @TypeOf(x);
@@ -115,34 +115,34 @@ pub inline fn pow(x: anytype, y: anytype) numeric.Pow(@TypeOf(x), @TypeOf(y)) {
         if (comptime types.isCustomType(Y)) { // X and Y both custom
             const Impl: type = comptime types.anyHasMethod(
                 &.{ R, X, Y },
-                "zmlPow",
+                "pow",
                 fn (X, Y) R,
                 &.{ X, Y },
             ) orelse
-                @compileError("zml.numeric.pow: " ++ @typeName(R) ++ ", " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn zmlPow(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
+                @compileError("zsl.numeric.pow: " ++ @typeName(R) ++ ", " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn pow(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
 
-            return Impl.zmlPow(x, y);
+            return Impl.pow(x, y);
         } else { // only X custom
             const Impl: type = comptime types.anyHasMethod(
                 &.{ R, X },
-                "zmlPow",
+                "pow",
                 fn (X, Y) R,
                 &.{ X, Y },
             ) orelse
-                @compileError("zml.numeric.pow: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlPow(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
+                @compileError("zsl.numeric.pow: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn pow(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
 
-            return Impl.zmlPow(x, y);
+            return Impl.pow(x, y);
         }
     } else if (comptime types.isCustomType(Y)) { // only Y custom
         const Impl: type = comptime types.anyHasMethod(
             &.{ R, Y },
-            "zmlPow",
+            "pow",
             fn (X, Y) R,
             &.{ X, Y },
         ) orelse
-            @compileError("zml.numeric.pow: " ++ @typeName(R) ++ " or " ++ @typeName(Y) ++ " must implement `fn zmlPow(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
+            @compileError("zsl.numeric.pow: " ++ @typeName(R) ++ " or " ++ @typeName(Y) ++ " must implement `fn pow(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
 
-        return Impl.zmlPow(x, y);
+        return Impl.pow(x, y);
     }
 
     switch (comptime types.numericType(X)) {

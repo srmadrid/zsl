@@ -10,7 +10,7 @@ const numeric = @import("../../numeric.zig");
 
 pub fn Neg(X: type) type {
     comptime if (!types.isNumeric(X))
-        @compileError("zml.numeric.neg: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.numeric.neg: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
 
     switch (comptime types.numericType(X)) {
         .bool => return X,
@@ -20,10 +20,10 @@ pub fn Neg(X: type) type {
         .dyadic => return X,
         .complex => return X,
         .custom => {
-            if (comptime !types.hasMethod(X, "ZmlNeg", fn (type) type, &.{X}))
-                @compileError("zml.numeric.neg: " ++ @typeName(X) ++ " must implement `fn ZmlNeg(type) type`");
+            if (comptime !types.hasMethod(X, "Neg", fn (type) type, &.{X}))
+                @compileError("zsl.numeric.neg: " ++ @typeName(X) ++ " must implement `fn Neg(type) type`");
 
-            return X.ZmlNeg(X);
+            return X.Neg(X);
         },
     }
 }
@@ -45,19 +45,19 @@ pub fn Neg(X: type) type {
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` must implement the required `ZmlNeg` method. The expected signature and
-/// behavior of `ZmlNeg` are as follows:
-/// * `fn ZmlNeg(type) type`: Returns the type of the negation of `x`.
+/// `X` must implement the required `Neg` method. The expected signature and
+/// behavior of `Neg` are as follows:
+/// * `fn Neg(type) type`: Returns the type of the negation of `x`.
 ///
-/// `numeric.Neg(X)` or `X` must implement the required `zmlNeg` method. The
-/// expected signature and behavior of `zmlNeg` are as follows:
-/// * `fn zmlNeg(X) numeric.Neg(X)`: Returns the negation of `x`.
+/// `numeric.Neg(X)` or `X` must implement the required `neg` method. The
+/// expected signature and behavior of `neg` are as follows:
+/// * `fn neg(X) numeric.Neg(X)`: Returns the negation of `x`.
 pub inline fn neg(x: anytype) numeric.Abs(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Neg(X);
 
     switch (comptime types.numericType(X)) {
-        .bool => return x,
+        .bool => return !x,
         .int => return -x,
         .rational => return rational.neg(x),
         .float => return -x,
@@ -66,13 +66,13 @@ pub inline fn neg(x: anytype) numeric.Abs(@TypeOf(x)) {
         .custom => {
             const Impl: type = comptime types.anyHasMethod(
                 &.{ R, X },
-                "zmlNeg",
+                "neg",
                 fn (X) numeric.Neg(X),
                 &.{X},
             ) orelse
-                @compileError("zml.numeric.neg: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlNeg(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
+                @compileError("zsl.numeric.neg: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn neg(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
 
-            return Impl.zmlNeg(x);
+            return Impl.neg(x);
         },
     }
 }

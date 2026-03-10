@@ -4,8 +4,7 @@ const types = @import("../types.zig");
 const Order = types.Order;
 const Uplo = types.Uplo;
 const Diag = types.Diag;
-const ops = @import("../ops.zig");
-const constants = @import("../constants.zig");
+const numeric = @import("../numeric.zig");
 const int = @import("../int.zig");
 
 const matrix = @import("../matrix.zig");
@@ -182,15 +181,15 @@ pub fn Permutation(T: type) type {
 
             if (self.direction == .forward) {
                 if (self.data[r] == c) {
-                    return constants.one(T, .{}) catch unreachable;
+                    return numeric.one(T, .{}) catch unreachable;
                 } else {
-                    return constants.zero(T, .{}) catch unreachable;
+                    return numeric.zero(T, .{}) catch unreachable;
                 }
             } else {
                 if (self.data[c] == r) {
-                    return constants.one(T, .{}) catch unreachable;
+                    return numeric.one(T, .{}) catch unreachable;
                 } else {
-                    return constants.zero(T, .{}) catch unreachable;
+                    return numeric.zero(T, .{}) catch unreachable;
                 }
             }
         }
@@ -215,15 +214,15 @@ pub fn Permutation(T: type) type {
         pub inline fn at(self: *const Permutation(T), row: u32, col: u32) T {
             if (self.direction == .forward) {
                 if (self.data[row] == col) {
-                    return constants.one(T, .{}) catch unreachable;
+                    return numeric.one(T, .{}) catch unreachable;
                 } else {
-                    return constants.zero(T, .{}) catch unreachable;
+                    return numeric.zero(T, .{}) catch unreachable;
                 }
             } else {
                 if (self.data[col] == row) {
-                    return constants.one(T, .{}) catch unreachable;
+                    return numeric.one(T, .{}) catch unreachable;
                 } else {
-                    return constants.zero(T, .{}) catch unreachable;
+                    return numeric.zero(T, .{}) catch unreachable;
                 }
             }
         }
@@ -332,12 +331,12 @@ pub fn Permutation(T: type) type {
                         i = 0;
                         while (i < self.size) : (i += 1) {
                             mat.data[mat._index(i, j)] = if (self.data[i] == j)
-                                try constants.one(
+                                try numeric.one(
                                     T,
                                     types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                                 )
                             else
-                                try constants.zero(
+                                try numeric.zero(
                                     T,
                                     types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                                 );
@@ -348,12 +347,12 @@ pub fn Permutation(T: type) type {
                         j = 0;
                         while (j < self.size) : (j += 1) {
                             mat.data[mat._index(i, j)] = if (self.data[j] == i)
-                                try constants.one(
+                                try numeric.one(
                                     T,
                                     types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                                 )
                             else
-                                try constants.zero(
+                                try numeric.zero(
                                     T,
                                     types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                                 );
@@ -366,12 +365,12 @@ pub fn Permutation(T: type) type {
                         j = 0;
                         while (j < self.size) : (j += 1) {
                             mat.data[mat._index(i, j)] = if (self.data[i] == j)
-                                try constants.one(
+                                try numeric.one(
                                     T,
                                     types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                                 )
                             else
-                                try constants.zero(
+                                try numeric.zero(
                                     T,
                                     types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                                 );
@@ -382,12 +381,12 @@ pub fn Permutation(T: type) type {
                         i = 0;
                         while (i < self.size) : (i += 1) {
                             mat.data[mat._index(i, j)] = if (self.data[j] == i)
-                                try constants.one(
+                                try numeric.one(
                                     T,
                                     types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                                 )
                             else
-                                try constants.zero(
+                                try numeric.zero(
                                     T,
                                     types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                                 );
@@ -415,9 +414,9 @@ pub fn Permutation(T: type) type {
                         var i: u32 = 0;
                         while (i < self.size) : (i += 1) {
                             result.data[i + j * result.strides[0]] = if (self.data[i] == j)
-                                constants.one(T, ctx) catch unreachable
+                                numeric.one(T, ctx) catch unreachable
                             else
-                                constants.zero(T, ctx) catch unreachable;
+                                numeric.zero(T, ctx) catch unreachable;
                         }
                     }
                 } else {
@@ -426,9 +425,9 @@ pub fn Permutation(T: type) type {
                         var j: u32 = 0;
                         while (j < self.size) : (j += 1) {
                             result.data[i + j * result.strides[0]] = if (self.data[j] == i)
-                                constants.one(T, ctx) catch unreachable
+                                numeric.one(T, ctx) catch unreachable
                             else
-                                constants.zero(T, ctx) catch unreachable;
+                                numeric.zero(T, ctx) catch unreachable;
                         }
                     }
                 }
@@ -439,9 +438,9 @@ pub fn Permutation(T: type) type {
                         var j: u32 = 0;
                         while (j < self.size) : (j += 1) {
                             result.data[i * result.strides[0] + j] = if (self.data[i] == j)
-                                constants.one(T, ctx) catch unreachable
+                                numeric.one(T, ctx) catch unreachable
                             else
-                                constants.zero(T, ctx) catch unreachable;
+                                numeric.zero(T, ctx) catch unreachable;
                         }
                     }
                 } else {
@@ -450,9 +449,9 @@ pub fn Permutation(T: type) type {
                         var i: u32 = 0;
                         while (i < self.size) : (i += 1) {
                             result.data[i * result.strides[0] + j] = if (self.data[j] == i)
-                                constants.one(T, ctx) catch unreachable
+                                numeric.one(T, ctx) catch unreachable
                             else
-                                constants.zero(T, ctx) catch unreachable;
+                                numeric.zero(T, ctx) catch unreachable;
                         }
                     }
                 }

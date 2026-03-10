@@ -10,20 +10,20 @@ const numeric = @import("../../numeric.zig");
 
 pub fn Asin(X: type) type {
     comptime if (!types.isNumeric(X))
-        @compileError("zml.numeric.asin: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.numeric.asin: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
 
     switch (comptime types.numericType(X)) {
-        .bool => @compileError("zml.numeric.asin: not defined for " ++ @typeName(X) ++ "."),
-        .int => @compileError("zml.numeric.asin: not defined for " ++ @typeName(X) ++ "."),
+        .bool => @compileError("zsl.numeric.asin: not defined for " ++ @typeName(X) ++ "."),
+        .int => @compileError("zsl.numeric.asin: not defined for " ++ @typeName(X) ++ "."),
         .rational => return X,
         .float => return X,
         .dyadic => return X,
         .complex => return X,
         .custom => {
-            if (comptime !types.hasMethod(X, "ZmlAsin", fn (type) type, &.{X}))
-                @compileError("zml.numeric.asin: " ++ @typeName(X) ++ " must implement `fn ZmlAsin(type) type`");
+            if (comptime !types.hasMethod(X, "Asin", fn (type) type, &.{X}))
+                @compileError("zsl.numeric.asin: " ++ @typeName(X) ++ " must implement `fn Asin(type) type`");
 
-            return X.ZmlAsin(X);
+            return X.Asin(X);
         },
     }
 }
@@ -45,13 +45,13 @@ pub fn Asin(X: type) type {
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` must implement the required `ZmlAsin` method. The expected signature and
-/// behavior of `ZmlAsin` are as follows:
-/// * `fn ZmlAsin(type) type`: Returns the type of the arcsine of `x`.
+/// `X` must implement the required `Asin` method. The expected signature and
+/// behavior of `Asin` are as follows:
+/// * `fn Asin(type) type`: Returns the type of the arcsine of `x`.
 ///
-/// `numeric.Asin(X)` or `X` must implement the required `zmlAsin` method. The
-/// expected signature and behavior of `zmlAsin` are as follows:
-/// * `fn zmlAsin(X) numeric.Asin(X)`: Returns the arcsine of `x`.
+/// `numeric.Asin(X)` or `X` must implement the required `asin` method. The
+/// expected signature and behavior of `asin` are as follows:
+/// * `fn asin(X) numeric.Asin(X)`: Returns the arcsine of `x`.
 pub inline fn asin(x: anytype) numeric.Asin(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Asin(X);
@@ -66,13 +66,13 @@ pub inline fn asin(x: anytype) numeric.Asin(@TypeOf(x)) {
         .custom => {
             const Impl: type = comptime types.anyHasMethod(
                 &.{ R, X },
-                "zmlAsin",
+                "asin",
                 fn (X) numeric.Asin(X),
                 &.{X},
             ) orelse
-                @compileError("zml.numeric.asin: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlAsin(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
+                @compileError("zsl.numeric.asin: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn asin(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
 
-            return Impl.zmlAsin(x);
+            return Impl.asin(x);
         },
     }
 }

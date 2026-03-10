@@ -26,36 +26,39 @@ const numeric = @import("../../numeric.zig");
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` or `Y` must implement the required `zmlLe` method. The expected
-/// signature and behavior of `zmlLe` are as follows:
-/// * `fn zmlLe(X, Y) bool`: Compares `x` and `y` for less-than or equal
+/// `X` or `Y` must implement the required `le` method. The expected
+/// signature and behavior of `le` are as follows:
+/// * `fn le(X, Y) bool`: Compares `x` and `y` for less-than or equal
 ///   ordering.
 pub inline fn le(x: anytype, y: anytype) bool {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 
+    comptime if (!types.isNumeric(X) or !types.isNumeric(Y))
+        @compileError("zsl.numeric.le: x and y must be numerics, got \n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
+
     if (comptime types.isCustomType(X)) {
         if (comptime types.isCustomType(Y)) { // X and Y both custom
             const Impl: type = comptime types.anyHasMethod(
                 &.{ X, Y },
-                "zmlLe",
+                "le",
                 fn (X, Y) bool,
                 &.{ X, Y },
             ) orelse
-                @compileError("zml.numeric.le: " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn zmlLe(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
+                @compileError("zsl.numeric.le: " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn le(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
 
-            return Impl.zmlLe(x, y);
+            return Impl.le(x, y);
         } else { // only X custom
-            comptime if (!types.hasMethod(X, "zmlLe", fn (X, Y) bool, &.{ X, Y }))
-                @compileError("zml.numeric.le: " ++ @typeName(X) ++ " must implement `fn zmlLe(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
+            comptime if (!types.hasMethod(X, "le", fn (X, Y) bool, &.{ X, Y }))
+                @compileError("zsl.numeric.le: " ++ @typeName(X) ++ " must implement `fn le(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
 
-            return X.zmlLe(x, y);
+            return X.le(x, y);
         }
     } else if (comptime types.isCustomType(Y)) { // only Y custom
-        comptime if (!types.hasMethod(Y, "zmlLe", fn (X, Y) bool, &.{ X, Y }))
-            @compileError("zml.numeric.le: " ++ @typeName(Y) ++ " must implement `fn zmlLe(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
+        comptime if (!types.hasMethod(Y, "le", fn (X, Y) bool, &.{ X, Y }))
+            @compileError("zsl.numeric.le: " ++ @typeName(Y) ++ " must implement `fn le(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
 
-        return Y.zmlLe(x, y);
+        return Y.le(x, y);
     }
 
     switch (comptime types.numericType(X)) {
@@ -65,7 +68,7 @@ pub inline fn le(x: anytype, y: anytype) bool {
             .rational => return rational.le(x, y),
             .float => return float.le(x, y),
             .dyadic => return dyadic.le(x, y),
-            .complex => @compileError("zml.numeric.le: not defiled for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+            .complex => @compileError("zsl.numeric.le: not defiled for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
         .int => switch (comptime types.numericType(Y)) {
@@ -73,28 +76,28 @@ pub inline fn le(x: anytype, y: anytype) bool {
             .rational => return rational.le(x, y),
             .float => return float.le(x, y),
             .dyadic => return dyadic.le(x, y),
-            .complex => @compileError("zml.numeric.le: not defiled for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+            .complex => @compileError("zsl.numeric.le: not defiled for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
         .rational => switch (comptime types.numericType(Y)) {
             .bool, .int, .rational => return rational.le(x, y),
             .float => return float.le(x, y),
             .dyadic => return dyadic.le(x, y),
-            .complex => @compileError("zml.numeric.le: not defiled for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+            .complex => @compileError("zsl.numeric.le: not defiled for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
         .float => switch (comptime types.numericType(Y)) {
             .bool, .int, .rational, .float => return float.le(x, y),
             .dyadic => return dyadic.le(x, y),
-            .complex => @compileError("zml.numeric.le: not defiled for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+            .complex => @compileError("zsl.numeric.le: not defiled for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
         .dyadic => switch (comptime types.numericType(Y)) {
             .bool, .int, .rational, .float, .dyadic => return dyadic.le(x, y),
-            .complex => @compileError("zml.numeric.le: not defiled for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+            .complex => @compileError("zsl.numeric.le: not defiled for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
-        .complex => @compileError("zml.numeric.le: not defiled for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+        .complex => @compileError("zsl.numeric.le: not defiled for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
         .custom => unreachable,
     }
 }

@@ -27,12 +27,12 @@ const numeric = @import("../../numeric.zig");
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `O` or `X` should implement the required `zmlAbs2_` method. The expected
-/// signature and behavior of `zmlAbs2_` are as follows:
-/// * `fn zmlAbs2_(*O, X) void`: Computes the squared absolute value of `x` and
+/// `O` or `X` should implement the required `abs2_` method. The expected
+/// signature and behavior of `abs2_` are as follows:
+/// * `fn abs2_(*O, X) void`: Computes the squared absolute value of `x` and
 ///   stores it in `o`.
 ///
-/// If neither `O` nor `X` implement the required `zmlAbs2_` method, the function
+/// If neither `O` nor `X` implement the required `abs2_` method, the function
 /// will fall back to using `numeric.set` with the result of `numeric.abs2`,
 /// potentially resulting in a less efficient implementation. In this case, `O`
 /// and `X` must adhere to the requirements of these functions.
@@ -43,21 +43,21 @@ pub inline fn abs2_(o: anytype, x: anytype) void {
     comptime if (!types.isPointer(O) or types.isConstPointer(O) or
         !types.isNumeric(types.Child(O)) or
         !types.isNumeric(X))
-        @compileError("zml.numeric.abs2_: o must be a mutable one-item pointer to a numeric, and x must be a numeric, got \n\to: " ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.numeric.abs2_: o must be a mutable one-item pointer to a numeric, and x must be a numeric, got \n\to: " ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n");
 
     O = types.Child(O);
 
     if (comptime types.isCustomType(O)) {
         if (comptime types.isCustomType(X)) { // O and X both custom
-            if (comptime types.anyHasMethod(&.{ O, X }, "zmlAbs2_", fn (*O, X) void, &.{ *O, X })) |Impl|
-                return Impl.zmlAbs2_(o, x);
+            if (comptime types.anyHasMethod(&.{ O, X }, "abs2_", fn (*O, X) void, &.{ *O, X })) |Impl|
+                return Impl.abs2_(o, x);
         } else { // only O custom
-            if (comptime types.hasMethod(O, "zmlAbs2_", fn (*O, X) void, &.{ *O, X }))
-                return O.zmlAbs2_(o, x);
+            if (comptime types.hasMethod(O, "abs2_", fn (*O, X) void, &.{ *O, X }))
+                return O.abs2_(o, x);
         }
     } else if (comptime types.isCustomType(X)) { // only X custom
-        if (comptime types.hasMethod(X, "zmlAbs2_", fn (*O, X) void, &.{ *O, X }))
-            return X.zmlAbs2_(o, x);
+        if (comptime types.hasMethod(X, "abs2_", fn (*O, X) void, &.{ *O, X }))
+            return X.abs2_(o, x);
     }
 
     return numeric.set(o, numeric.abs2(x));

@@ -2,8 +2,7 @@ const std = @import("std");
 
 const types = @import("../types.zig");
 const Layout = types.Layout;
-const ops = @import("../ops.zig");
-const constants = @import("../constants.zig");
+const numeric = @import("../numeric.zig");
 const int = @import("../int.zig");
 
 const matrix = @import("../matrix.zig");
@@ -155,12 +154,12 @@ pub fn Diagonal(T: type) type {
             errdefer mat._cleanup(i, ctx);
 
             while (i < int.min(rows, cols)) : (i += 1) {
-                mat.data[i] = try ops.init(
+                mat.data[i] = try numeric.init(
                     T,
                     types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                 );
 
-                try ops.set(
+                try numeric.set(
                     &mat.data[i],
                     value,
                     types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
@@ -226,7 +225,7 @@ pub fn Diagonal(T: type) type {
             errdefer mat._cleanup(i, ctx);
 
             while (i < size) : (i += 1) {
-                mat.data[i] = try constants.one(
+                mat.data[i] = try numeric.one(
                     T,
                     types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                 );
@@ -290,7 +289,7 @@ pub fn Diagonal(T: type) type {
                 return matrix.Error.PositionOutOfBounds;
 
             if (r != c)
-                return constants.zero(T, .{}) catch unreachable;
+                return numeric.zero(T, .{}) catch unreachable;
 
             return self.data[r];
         }
@@ -531,20 +530,20 @@ pub fn Diagonal(T: type) type {
                 while (j < mat.cols) : (j += 1) {
                     i = 0;
                     while (i < int.min(j, mat.rows)) : (i += 1) {
-                        mat.data[mat._index(i, j)] = try constants.zero(
+                        mat.data[mat._index(i, j)] = try numeric.zero(
                             T,
                             types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                         );
                     }
 
-                    mat.data[mat._index(j, j)] = try ops.copy(
+                    mat.data[mat._index(j, j)] = try numeric.copy(
                         self.data[j],
                         types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                     );
 
                     i = j + 1;
                     while (i < mat.rows) : (i += 1) {
-                        mat.data[mat._index(i, j)] = try constants.zero(
+                        mat.data[mat._index(i, j)] = try numeric.zero(
                             T,
                             types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                         );
@@ -554,20 +553,20 @@ pub fn Diagonal(T: type) type {
                 while (i < mat.rows) : (i += 1) {
                     j = 0;
                     while (j < int.min(i, mat.cols)) : (j += 1) {
-                        mat.data[mat._index(i, j)] = try constants.zero(
+                        mat.data[mat._index(i, j)] = try numeric.zero(
                             T,
                             types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                         );
                     }
 
-                    mat.data[mat._index(i, i)] = try ops.copy(
+                    mat.data[mat._index(i, i)] = try numeric.copy(
                         self.data[i],
                         types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                     );
 
                     j = i + 1;
                     while (j < mat.cols) : (j += 1) {
-                        mat.data[mat._index(i, j)] = try constants.zero(
+                        mat.data[mat._index(i, j)] = try numeric.zero(
                             T,
                             types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                         );
@@ -595,7 +594,7 @@ pub fn Diagonal(T: type) type {
                     while (j < self.cols) : (j += 1) {
                         var i: u32 = 0;
                         while (i < int.min(j, self.rows)) : (i += 1) {
-                            result.data[i + j * result.ld] = constants.zero(T, ctx) catch unreachable;
+                            result.data[i + j * result.ld] = numeric.zero(T, ctx) catch unreachable;
                         }
 
                         if (j < int.min(self.rows, self.cols)) {
@@ -604,7 +603,7 @@ pub fn Diagonal(T: type) type {
 
                         i = j + 1;
                         while (i < self.rows) : (i += 1) {
-                            result.data[i + j * result.ld] = constants.zero(T, ctx) catch unreachable;
+                            result.data[i + j * result.ld] = numeric.zero(T, ctx) catch unreachable;
                         }
                     }
                 } else {
@@ -612,7 +611,7 @@ pub fn Diagonal(T: type) type {
                     while (i < self.rows) : (i += 1) {
                         var j: u32 = 0;
                         while (j < int.min(i, self.cols)) : (j += 1) {
-                            result.data[i * result.ld + j] = constants.zero(T, ctx) catch unreachable;
+                            result.data[i * result.ld + j] = numeric.zero(T, ctx) catch unreachable;
                         }
 
                         if (i < int.min(self.rows, self.cols)) {
@@ -621,7 +620,7 @@ pub fn Diagonal(T: type) type {
 
                         j = i + 1;
                         while (j < self.cols) : (j += 1) {
-                            result.data[i * result.ld + j] = constants.zero(T, ctx) catch unreachable;
+                            result.data[i * result.ld + j] = numeric.zero(T, ctx) catch unreachable;
                         }
                     }
                 }
@@ -678,7 +677,7 @@ pub fn Diagonal(T: type) type {
 
                     var _i: u32 = 0;
                     while (_i < int.min(i, int.min(self.rows, self.cols))) : (_i += 1) {
-                        ops.deinit(
+                        numeric.deinit(
                             &self.data[_i],
                             types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                         );

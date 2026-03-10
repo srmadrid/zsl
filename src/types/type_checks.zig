@@ -262,7 +262,7 @@ pub fn isGeneralMatrix(comptime T: type) bool {
 /// `bool`: `true` if the type is a general dense matrix, `false` otherwise.
 pub fn isGeneralDenseMatrix(comptime T: type) bool {
     switch (comptime @typeInfo(T)) {
-        .@"struct" => @hasDecl(T, "is_matrix") and T.is_matrix and @hasDecl(T, "is_general") and T.is_general and @hasDecl(T, "is_dense") and T.is_dense,
+        .@"struct" => return @hasDecl(T, "is_matrix") and T.is_matrix and @hasDecl(T, "is_general") and T.is_general and @hasDecl(T, "is_dense") and T.is_dense,
         else => return false,
     }
 }
@@ -276,7 +276,7 @@ pub fn isGeneralDenseMatrix(comptime T: type) bool {
 /// `bool`: `true` if the type is a general sparse matrix, `false` otherwise.
 pub fn isGeneralSparseMatrix(comptime T: type) bool {
     switch (comptime @typeInfo(T)) {
-        .@"struct" => @hasDecl(T, "is_matrix") and T.is_matrix and @hasDecl(T, "is_general") and T.is_general and @hasDecl(T, "is_sparse") and T.is_sparse,
+        .@"struct" => return @hasDecl(T, "is_matrix") and T.is_matrix and @hasDecl(T, "is_general") and T.is_general and @hasDecl(T, "is_sparse") and T.is_sparse,
         else => return false,
     }
 }
@@ -304,7 +304,7 @@ pub fn isSymmetricMatrix(comptime T: type) bool {
 /// `bool`: `true` if the type is a symmetric dense matrix, `false` otherwise.
 pub fn isSymmetricDenseMatrix(comptime T: type) bool {
     switch (comptime @typeInfo(T)) {
-        .@"struct" => @hasDecl(T, "is_matrix") and T.is_matrix and @hasDecl(T, "is_symmetric") and T.is_symmetric and @hasDecl(T, "is_dense") and T.is_dense,
+        .@"struct" => return @hasDecl(T, "is_matrix") and T.is_matrix and @hasDecl(T, "is_symmetric") and T.is_symmetric and @hasDecl(T, "is_dense") and T.is_dense,
         else => return false,
     }
 }
@@ -318,7 +318,7 @@ pub fn isSymmetricDenseMatrix(comptime T: type) bool {
 /// `bool`: `true` if the type is a symmetric sparse matrix, `false` otherwise.
 pub fn isSymmetricSparseMatrix(comptime T: type) bool {
     switch (comptime @typeInfo(T)) {
-        .@"struct" => @hasDecl(T, "is_matrix") and T.is_matrix and @hasDecl(T, "is_symmetric") and T.is_symmetric and @hasDecl(T, "is_sparse") and T.is_sparse,
+        .@"struct" => return @hasDecl(T, "is_matrix") and T.is_matrix and @hasDecl(T, "is_symmetric") and T.is_symmetric and @hasDecl(T, "is_sparse") and T.is_sparse,
         else => return false,
     }
 }
@@ -346,7 +346,7 @@ pub fn isHermitianMatrix(comptime T: type) bool {
 /// `bool`: `true` if the type is a hermitian dense matrix, `false` otherwise.
 pub fn isHermitianDenseMatrix(comptime T: type) bool {
     switch (comptime @typeInfo(T)) {
-        .@"struct" => @hasDecl(T, "is_matrix") and T.is_matrix and @hasDecl(T, "is_hermitian") and T.is_hermitian and @hasDecl(T, "is_dense") and T.is_dense,
+        .@"struct" => return @hasDecl(T, "is_matrix") and T.is_matrix and @hasDecl(T, "is_hermitian") and T.is_hermitian and @hasDecl(T, "is_dense") and T.is_dense,
         else => return false,
     }
 }
@@ -360,7 +360,7 @@ pub fn isHermitianDenseMatrix(comptime T: type) bool {
 /// `bool`: `true` if the type is a hermitian sparse matrix, `false` otherwise.
 pub fn isHermitianSparseMatrix(comptime T: type) bool {
     switch (comptime @typeInfo(T)) {
-        .@"struct" => @hasDecl(T, "is_matrix") and T.is_matrix and @hasDecl(T, "is_hermitian") and T.is_hermitian and @hasDecl(T, "is_sparse") and T.is_sparse,
+        .@"struct" => return @hasDecl(T, "is_matrix") and T.is_matrix and @hasDecl(T, "is_hermitian") and T.is_hermitian and @hasDecl(T, "is_sparse") and T.is_sparse,
         else => return false,
     }
 }
@@ -388,7 +388,7 @@ pub fn isTriangularMatrix(comptime T: type) bool {
 /// `bool`: `true` if the type is a triangular dense matrix, `false` otherwise.
 pub fn isTriangularDenseMatrix(comptime T: type) bool {
     switch (comptime @typeInfo(T)) {
-        .@"struct" => @hasDecl(T, "is_matrix") and T.is_matrix and @hasDecl(T, "is_triangular") and T.is_triangular and @hasDecl(T, "is_dense") and T.is_dense,
+        .@"struct" => return @hasDecl(T, "is_matrix") and T.is_matrix and @hasDecl(T, "is_triangular") and T.is_triangular and @hasDecl(T, "is_dense") and T.is_dense,
         else => return false,
     }
 }
@@ -402,7 +402,7 @@ pub fn isTriangularDenseMatrix(comptime T: type) bool {
 /// `bool`: `true` if the type is a triangular sparse matrix, `false` otherwise.
 pub fn isTriangularSparseMatrix(comptime T: type) bool {
     switch (comptime @typeInfo(T)) {
-        .@"struct" => @hasDecl(T, "is_matrix") and T.is_matrix and @hasDecl(T, "is_triangular") and T.is_triangular and @hasDecl(T, "is_sparse") and T.is_sparse,
+        .@"struct" => return @hasDecl(T, "is_matrix") and T.is_matrix and @hasDecl(T, "is_triangular") and T.is_triangular and @hasDecl(T, "is_sparse") and T.is_sparse,
         else => return false,
     }
 }
@@ -416,7 +416,7 @@ pub fn isTriangularSparseMatrix(comptime T: type) bool {
 /// `bool`: `true` if the type is a diagonal matrix, `false` otherwise.
 pub fn isDiagonalMatrix(comptime T: type) bool {
     switch (comptime @typeInfo(T)) {
-        .@"struct" => @hasDecl(T, "is_matrix") and T.is_matrix and @hasDecl(T, "is_diagonal") and T.is_diagonal,
+        .@"struct" => return @hasDecl(T, "is_matrix") and T.is_matrix and @hasDecl(T, "is_diagonal") and T.is_diagonal,
         else => return false,
     }
 }
@@ -430,7 +430,7 @@ pub fn isDiagonalMatrix(comptime T: type) bool {
 /// `bool`: `true` if the type is a permutation matrix, `false` otherwise.
 pub fn isPermutationMatrix(comptime T: type) bool {
     switch (comptime @typeInfo(T)) {
-        .@"struct" => @hasDecl(T, "is_matrix") and T.is_matrix and @hasDecl(T, "is_permutation") and T.is_permutation,
+        .@"struct" => return @hasDecl(T, "is_matrix") and T.is_matrix and @hasDecl(T, "is_permutation") and T.is_permutation,
         else => return false,
     }
 }

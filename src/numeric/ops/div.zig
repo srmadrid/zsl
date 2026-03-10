@@ -10,35 +10,35 @@ const numeric = @import("../../numeric.zig");
 
 pub fn Div(X: type, Y: type) type {
     comptime if (!types.isNumeric(X) or !types.isNumeric(Y))
-        @compileError("zml.numeric.div: x and y must be numerics, got \n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
+        @compileError("zsl.numeric.div: x and y must be numerics, got \n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
     if (comptime types.isCustomType(X)) {
         if (comptime types.isCustomType(Y)) { // X and Y both custom
             const Impl: type = comptime types.anyHasMethod(
                 &.{ X, Y },
-                "ZmlDiv",
+                "Div",
                 fn (type, type) type,
                 &.{ X, Y },
             ) orelse
-                @compileError("zml.numeric.div: " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn ZmlDiv(type, type) type`");
+                @compileError("zsl.numeric.div: " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn Div(type, type) type`");
 
-            return Impl.ZmlDiv(X, Y);
+            return Impl.Div(X, Y);
         } else { // only X custom
-            comptime if (!types.hasMethod(X, "ZmlDiv", fn (type, type) type, &.{ X, Y }))
-                @compileError("zml.numeric.div: " ++ @typeName(X) ++ " must implement `fn ZmlDiv(type, type) type`");
+            comptime if (!types.hasMethod(X, "Div", fn (type, type) type, &.{ X, Y }))
+                @compileError("zsl.numeric.div: " ++ @typeName(X) ++ " must implement `fn Div(type, type) type`");
 
-            return X.ZmlDiv(X, Y);
+            return X.Div(X, Y);
         }
     } else if (comptime types.isCustomType(Y)) { // only Y custom
-        comptime if (!types.hasMethod(Y, "ZmlDiv", fn (type, type) type, &.{ X, Y }))
-            @compileError("zml.numeric.div: " ++ @typeName(Y) ++ " must implement `fn ZmlDiv(type, type) type`");
+        comptime if (!types.hasMethod(Y, "Div", fn (type, type) type, &.{ X, Y }))
+            @compileError("zsl.numeric.div: " ++ @typeName(Y) ++ " must implement `fn Div(type, type) type`");
 
-        return Y.ZmlDiv(X, Y);
+        return Y.Div(X, Y);
     }
 
     switch (comptime types.numericType(X)) {
         .bool => switch (comptime types.numericType(Y)) {
-            .bool => @compileError("zml.numeric.div: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+            .bool => @compileError("zsl.numeric.div: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .int => return int.Div(X, Y),
             .rational => return rational.Div(X, Y),
             .float => return float.Div(X, Y),
@@ -98,13 +98,13 @@ pub fn Div(X: type, Y: type) type {
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` or `Y` must implement the required `ZmlDiv` method. The expected
-/// signature and behavior of `ZmlDiv` are as follows:
-/// * `fn ZmlDiv(type, type) type`: Returns the type of `x/y`.
+/// `X` or `Y` must implement the required `Div` method. The expected
+/// signature and behavior of `Div` are as follows:
+/// * `fn Div(type, type) type`: Returns the type of `x/y`.
 ///
-/// `numeric.Div(X, Y)`, `X` or `Y` must implement the required `zmlDiv` method.
-/// The expected signatures and behavior of `zmlDiv` are as follows:
-/// * `fn zmlDiv(X, Y) numeric.Div(X, Y)`: Returns the division of `x` and `y`.
+/// `numeric.Div(X, Y)`, `X` or `Y` must implement the required `div` method.
+/// The expected signatures and behavior of `div` are as follows:
+/// * `fn div(X, Y) numeric.Div(X, Y)`: Returns the division of `x` and `y`.
 pub inline fn div(x: anytype, y: anytype) numeric.Div(@TypeOf(x), @TypeOf(y)) {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
@@ -114,34 +114,34 @@ pub inline fn div(x: anytype, y: anytype) numeric.Div(@TypeOf(x), @TypeOf(y)) {
         if (comptime types.isCustomType(Y)) { // X and Y both custom
             const Impl: type = comptime types.anyHasMethod(
                 &.{ R, X, Y },
-                "zmlDiv",
+                "div",
                 fn (X, Y) R,
                 &.{ X, Y },
             ) orelse
-                @compileError("zml.numeric.div: " ++ @typeName(R) ++ ", " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn zmlDiv(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
+                @compileError("zsl.numeric.div: " ++ @typeName(R) ++ ", " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn div(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
 
-            return Impl.zmlDiv(x, y);
+            return Impl.div(x, y);
         } else { // only X custom
             const Impl: type = comptime types.anyHasMethod(
                 &.{ R, X },
-                "zmlDiv",
+                "div",
                 fn (X, Y) R,
                 &.{ X, Y },
             ) orelse
-                @compileError("zml.numeric.div: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlDiv(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
+                @compileError("zsl.numeric.div: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn div(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
 
-            return Impl.zmlDiv(x, y);
+            return Impl.div(x, y);
         }
     } else if (comptime types.isCustomType(Y)) { // only Y custom
         const Impl: type = comptime types.anyHasMethod(
             &.{ R, Y },
-            "zmlDiv",
+            "div",
             fn (X, Y) R,
             &.{ X, Y },
         ) orelse
-            @compileError("zml.numeric.div: " ++ @typeName(R) ++ " or " ++ @typeName(Y) ++ " must implement `fn zmlDiv(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
+            @compileError("zsl.numeric.div: " ++ @typeName(R) ++ " or " ++ @typeName(Y) ++ " must implement `fn div(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
 
-        return Impl.zmlDiv(x, y);
+        return Impl.div(x, y);
     }
 
     switch (comptime types.numericType(X)) {

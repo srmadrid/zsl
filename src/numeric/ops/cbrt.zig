@@ -10,20 +10,20 @@ const numeric = @import("../../numeric.zig");
 
 pub fn Cbrt(X: type) type {
     comptime if (!types.isNumeric(X))
-        @compileError("zml.numeric.cbrt: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.numeric.cbrt: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
 
     switch (comptime types.numericType(X)) {
-        .bool => @compileError("zml.numeric.cbrt: not defined for " ++ @typeName(X) ++ "."),
-        .int => @compileError("zml.numeric.cbrt: not defined for " ++ @typeName(X) ++ "."),
+        .bool => @compileError("zsl.numeric.cbrt: not defined for " ++ @typeName(X) ++ "."),
+        .int => @compileError("zsl.numeric.cbrt: not defined for " ++ @typeName(X) ++ "."),
         .rational => return X,
         .float => return X,
         .dyadic => return X,
         .complex => return X,
         .custom => {
-            if (comptime !types.hasMethod(X, "ZmlCbrt", fn (type) type, &.{X}))
-                @compileError("zml.numeric.cbrt: " ++ @typeName(X) ++ " must implement `fn ZmlCbrt(type) type`");
+            if (comptime !types.hasMethod(X, "Cbrt", fn (type) type, &.{X}))
+                @compileError("zsl.numeric.cbrt: " ++ @typeName(X) ++ " must implement `fn Cbrt(type) type`");
 
-            return X.ZmlCbrt(X);
+            return X.Cbrt(X);
         },
     }
 }
@@ -45,13 +45,13 @@ pub fn Cbrt(X: type) type {
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` must implement the required `ZmlCbrt` method. The expected signature and
-/// behavior of `ZmlCbrt` are as follows:
-/// * `fn ZmlCbrt(type) type`: Returns the type of the cube root of `x`.
+/// `X` must implement the required `Cbrt` method. The expected signature and
+/// behavior of `Cbrt` are as follows:
+/// * `fn Cbrt(type) type`: Returns the type of the cube root of `x`.
 ///
-/// `numeric.Cbrt(X)` or `X` must implement the required `zmlCbrt` method. The
-/// expected signature and behavior of `zmlCbrt` are as follows:
-/// * `fn zmlCbrt(X) numeric.Cbrt(X)`: Returns the cube root of `x`.
+/// `numeric.Cbrt(X)` or `X` must implement the required `cbrt` method. The
+/// expected signature and behavior of `cbrt` are as follows:
+/// * `fn cbrt(X) numeric.Cbrt(X)`: Returns the cube root of `x`.
 pub inline fn cbrt(x: anytype) numeric.Cbrt(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Cbrt(X);
@@ -66,13 +66,13 @@ pub inline fn cbrt(x: anytype) numeric.Cbrt(@TypeOf(x)) {
         .custom => {
             const Impl: type = comptime types.anyHasMethod(
                 &.{ R, X },
-                "zmlCbrt",
+                "cbrt",
                 fn (X) numeric.Cbrt(X),
                 &.{X},
             ) orelse
-                @compileError("zml.numeric.cbrt: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlCbrt(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
+                @compileError("zsl.numeric.cbrt: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn cbrt(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
 
-            return Impl.zmlCbrt(x);
+            return Impl.cbrt(x);
         },
     }
 }

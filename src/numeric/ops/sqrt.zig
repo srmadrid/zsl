@@ -10,20 +10,20 @@ const numeric = @import("../../numeric.zig");
 
 pub fn Sqrt(X: type) type {
     comptime if (!types.isNumeric(X))
-        @compileError("zml.numeric.sqrt: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.numeric.sqrt: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
 
     switch (comptime types.numericType(X)) {
-        .bool => @compileError("zml.numeric.sqrt: not defined for " ++ @typeName(X) ++ "."),
-        .int => @compileError("zml.numeric.sqrt: not defined for " ++ @typeName(X) ++ "."),
+        .bool => @compileError("zsl.numeric.sqrt: not defined for " ++ @typeName(X) ++ "."),
+        .int => @compileError("zsl.numeric.sqrt: not defined for " ++ @typeName(X) ++ "."),
         .rational => return X,
         .float => return X,
         .dyadic => return X,
         .cfloat => return X,
         .custom => {
-            if (comptime !types.hasMethod(X, "ZmlSqrt", fn (type) type, &.{X}))
-                @compileError("zml.numeric.sqrt: " ++ @typeName(X) ++ " must implement `fn ZmlSqrt(type) type`");
+            if (comptime !types.hasMethod(X, "Sqrt", fn (type) type, &.{X}))
+                @compileError("zsl.numeric.sqrt: " ++ @typeName(X) ++ " must implement `fn Sqrt(type) type`");
 
-            return X.ZmlSqrt(X);
+            return X.Sqrt(X);
         },
     }
 }
@@ -45,13 +45,13 @@ pub fn Sqrt(X: type) type {
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` must implement the required `ZmlSqrt` method. The expected signature and
-/// behavior of `ZmlSqrt` are as follows:
-/// * `fn ZmlSqrt(type) type`: Returns the type of the square root of `x`.
+/// `X` must implement the required `Sqrt` method. The expected signature and
+/// behavior of `Sqrt` are as follows:
+/// * `fn Sqrt(type) type`: Returns the type of the square root of `x`.
 ///
-/// `numeric.Sqrt(X)` or `X` must implement the required `zmlSqrt` method. The
-/// expected signature and behavior of `zmlSqrt` are as follows:
-/// * `fn zmlSqrt(X) numeric.Sqrt(X)`: Returns the square root of `x`.
+/// `numeric.Sqrt(X)` or `X` must implement the required `sqrt` method. The
+/// expected signature and behavior of `sqrt` are as follows:
+/// * `fn sqrt(X) numeric.Sqrt(X)`: Returns the square root of `x`.
 pub inline fn sqrt(x: anytype) numeric.Sqrt(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Sqrt(X);
@@ -66,13 +66,13 @@ pub inline fn sqrt(x: anytype) numeric.Sqrt(@TypeOf(x)) {
         .custom => {
             const Impl: type = comptime types.anyHasMethod(
                 &.{ R, X },
-                "zmlSqrt",
+                "sqrt",
                 fn (X) numeric.Sqrt(X),
                 &.{X},
             ) orelse
-                @compileError("zml.numeric.sqrt: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlSqrt(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
+                @compileError("zsl.numeric.sqrt: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn sqrt(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
 
-            return Impl.zmlSqrt(x);
+            return Impl.sqrt(x);
         },
     }
 }

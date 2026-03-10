@@ -4,8 +4,7 @@ const types = @import("../../types.zig");
 const Order = types.Order;
 const Uplo = types.Uplo;
 const Diag = types.Diag;
-const ops = @import("../../ops.zig");
-const constants = @import("../../constants.zig");
+const numeric = @import("../../numeric.zig");
 const int = @import("../../int.zig");
 
 const matrix = @import("../../matrix.zig");
@@ -232,7 +231,7 @@ pub fn Sparse(T: type, order: Order) type {
                 }
             }
 
-            return constants.zero(T, .{}) catch unreachable;
+            return numeric.zero(T, .{}) catch unreachable;
         }
 
         /// Gets the element at the specified position without bounds checking.
@@ -267,7 +266,7 @@ pub fn Sparse(T: type, order: Order) type {
                 }
             }
 
-            return constants.zero(T, .{}) catch unreachable;
+            return numeric.zero(T, .{}) catch unreachable;
         }
 
         /// Sets the element at the specified location, inserting it if it does
@@ -503,7 +502,7 @@ pub fn Sparse(T: type, order: Order) type {
             var i: u32 = 0;
             while (i < self.nnz) : (i += 1) {
                 if (self.row[i] == r and self.col[i] == c) {
-                    try ops.add_(
+                    try numeric.add_(
                         &self.data[i],
                         self.data[i],
                         value,
@@ -606,7 +605,7 @@ pub fn Sparse(T: type, order: Order) type {
             errdefer _cleanup(data.ptr, i, ctx);
 
             while (i < self.nnz) : (i += 1) {
-                data[i] = try ops.copy(
+                data[i] = try numeric.copy(
                     self.data[i],
                     types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                 );
@@ -768,7 +767,7 @@ pub fn Sparse(T: type, order: Order) type {
             errdefer _cleanup(data.ptr, i, ctx);
 
             while (i < self.nnz) : (i += 1) {
-                data[i] = try ops.copy(
+                data[i] = try numeric.copy(
                     self.data[i],
                     types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                 );
@@ -819,7 +818,7 @@ pub fn Sparse(T: type, order: Order) type {
                 if (comptime types.isArbitraryPrecision(T)) {
                     if (!keep) {
                         // Deinitialize element
-                        ops.deinit(
+                        numeric.deinit(
                             &self.data[i],
                             types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                         );
@@ -1519,7 +1518,7 @@ pub fn Sparse(T: type, order: Order) type {
 
                     var _i: u32 = 0;
                     while (_i < i) : (_i += 1) {
-                        ops.deinit(
+                        numeric.deinit(
                             &data[_i],
                             types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                         );

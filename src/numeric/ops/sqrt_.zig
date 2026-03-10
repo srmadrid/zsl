@@ -27,12 +27,12 @@ const numeric = @import("../../numeric.zig");
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `O` or `X` should implement the required `zmlSqrt_` method. The expected
-/// signature and behavior of `zmlSqrt_` are as follows:
-/// * `fn zmlSqrt_(*O, X) void`: Computes the square root of `x` and stores it
+/// `O` or `X` should implement the required `sqrt_` method. The expected
+/// signature and behavior of `sqrt_` are as follows:
+/// * `fn sqrt_(*O, X) void`: Computes the square root of `x` and stores it
 ///   in `o`.
 ///
-/// If neither `O` nor `X` implement the required `zmlSqrt_` method, the function
+/// If neither `O` nor `X` implement the required `sqrt_` method, the function
 /// will fall back to using `numeric.set` with the result of `numeric.sqrt`,
 /// potentially resulting in a less efficient implementation. In this case, `O`
 /// and `X` must adhere to the requirements of these functions.
@@ -43,21 +43,21 @@ pub inline fn sqrt_(o: anytype, x: anytype) void {
     comptime if (!types.isPointer(O) or types.isConstPointer(O) or
         !types.isNumeric(types.Child(O)) or
         !types.isNumeric(X))
-        @compileError("zml.numeric.sqrt_: o must be a mutable one-item pointer to a numeric, and x must be a numeric, got \n\to: " ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.numeric.sqrt_: o must be a mutable one-item pointer to a numeric, and x must be a numeric, got \n\to: " ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n");
 
     O = types.Child(O);
 
     if (comptime types.isCustomType(O)) {
         if (comptime types.isCustomType(X)) { // O and X both custom
-            if (comptime types.anyHasMethod(&.{ O, X }, "zmlSqrt_", fn (*O, X) void, &.{ *O, X })) |Impl|
-                return Impl.zmlSqrt_(o, x);
+            if (comptime types.anyHasMethod(&.{ O, X }, "sqrt_", fn (*O, X) void, &.{ *O, X })) |Impl|
+                return Impl.sqrt_(o, x);
         } else { // only O custom
-            if (comptime types.hasMethod(O, "zmlSqrt_", fn (*O, X) void, &.{ *O, X }))
-                return O.zmlSqrt_(o, x);
+            if (comptime types.hasMethod(O, "sqrt_", fn (*O, X) void, &.{ *O, X }))
+                return O.sqrt_(o, x);
         }
     } else if (comptime types.isCustomType(X)) { // only X custom
-        if (comptime types.hasMethod(X, "zmlSqrt_", fn (*O, X) void, &.{ *O, X }))
-            return X.zmlSqrt_(o, x);
+        if (comptime types.hasMethod(X, "sqrt_", fn (*O, X) void, &.{ *O, X }))
+            return X.sqrt_(o, x);
     }
 
     return numeric.set(o, numeric.sqrt(x));

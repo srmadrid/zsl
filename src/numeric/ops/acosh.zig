@@ -10,20 +10,20 @@ const numeric = @import("../../numeric.zig");
 
 pub fn Acosh(X: type) type {
     comptime if (!types.isNumeric(X))
-        @compileError("zml.numeric.acosh: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.numeric.acosh: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
 
     switch (comptime types.numericType(X)) {
-        .bool => @compileError("zml.numeric.acosh: not defined for " ++ @typeName(X) ++ "."),
-        .int => @compileError("zml.numeric.acosh: not defined for " ++ @typeName(X) ++ "."),
+        .bool => @compileError("zsl.numeric.acosh: not defined for " ++ @typeName(X) ++ "."),
+        .int => @compileError("zsl.numeric.acosh: not defined for " ++ @typeName(X) ++ "."),
         .rational => return X,
         .float => return X,
         .dyadic => return X,
         .complex => return X,
         .custom => {
-            if (comptime !types.hasMethod(X, "ZmlAcosh", fn (type) type, &.{X}))
-                @compileError("zml.numeric.acosh: " ++ @typeName(X) ++ " must implement `fn ZmlAcosh(type) type`");
+            if (comptime !types.hasMethod(X, "Acosh", fn (type) type, &.{X}))
+                @compileError("zsl.numeric.acosh: " ++ @typeName(X) ++ " must implement `fn Acosh(type) type`");
 
-            return X.ZmlAcosh(X);
+            return X.Acosh(X);
         },
     }
 }
@@ -45,14 +45,14 @@ pub fn Acosh(X: type) type {
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` must implement the required `ZmlAcosh` method. The expected signature and
-/// behavior of `ZmlAcosh` are as follows:
-/// * `fn ZmlAcosh(type) type`: Returns the type of the hyperbolic arccosine of
+/// `X` must implement the required `Acosh` method. The expected signature and
+/// behavior of `Acosh` are as follows:
+/// * `fn Acosh(type) type`: Returns the type of the hyperbolic arccosine of
 ///   `x`.
 ///
-/// `numeric.Acosh(X)` or `X` must implement the required `zmlAcosh` method. The
-/// expected signature and behavior of `zmlAcosh` are as follows:
-/// * `fn zmlAcosh(X) numeric.Acosh(X)`: Returns the hyperbolic arccosine of `x`.
+/// `numeric.Acosh(X)` or `X` must implement the required `acosh` method. The
+/// expected signature and behavior of `acosh` are as follows:
+/// * `fn acosh(X) numeric.Acosh(X)`: Returns the hyperbolic arccosine of `x`.
 pub inline fn acosh(x: anytype) numeric.Acosh(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Acosh(X);
@@ -67,13 +67,13 @@ pub inline fn acosh(x: anytype) numeric.Acosh(@TypeOf(x)) {
         .custom => {
             const Impl: type = comptime types.anyHasMethod(
                 &.{ R, X },
-                "zmlAcosh",
+                "acosh",
                 fn (X) numeric.Acosh(X),
                 &.{X},
             ) orelse
-                @compileError("zml.numeric.acosh: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlAcosh(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
+                @compileError("zsl.numeric.acosh: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn acosh(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
 
-            return Impl.zmlAcosh(x);
+            return Impl.acosh(x);
         },
     }
 }

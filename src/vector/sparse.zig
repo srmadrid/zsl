@@ -3,8 +3,7 @@ const std = @import("std");
 const types = @import("../types.zig");
 const ReturnType2 = types.ReturnType2;
 const Numeric = types.Numeric;
-const ops = @import("../ops.zig");
-const constants = @import("../constants.zig");
+const numeric = @import("../numeric.zig");
 const int = @import("../int.zig");
 
 const vector = @import("../vector.zig");
@@ -203,7 +202,7 @@ pub fn Sparse(T: type) type {
                     break;
             }
 
-            return constants.zero(T, .{}) catch unreachable;
+            return numeric.zero(T, .{}) catch unreachable;
         }
 
         /// Gets the element at the specified index without bounds checking.
@@ -229,7 +228,7 @@ pub fn Sparse(T: type) type {
                     break;
             }
 
-            return constants.zero(T, .{}) catch unreachable;
+            return numeric.zero(T, .{}) catch unreachable;
         }
 
         /// Sets the element at the specified index, inserting it if it does not
@@ -441,7 +440,7 @@ pub fn Sparse(T: type) type {
             var i: u32 = 0;
             while (i < self.nnz) : (i += 1) {
                 if (self.idx[i] == index) {
-                    try ops.add_(
+                    try numeric.add_(
                         &self.data[i],
                         self.data[i],
                         value,
@@ -522,7 +521,7 @@ pub fn Sparse(T: type) type {
 
                     var i: u32 = 0;
                     while (i < num_elems) : (i += 1) {
-                        ops.deinit(
+                        numeric.deinit(
                             &self.data[i],
                             types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                         );
@@ -638,9 +637,9 @@ pub fn apply2(
             j += 1;
         } else if (x.idx[i] < y.idx[j]) {
             if (comptime opinfo.@"fn".params.len == 2) {
-                result.data[result.nnz] = op(x.data[i], constants.zero(Numeric(Y), .{}) catch unreachable);
+                result.data[result.nnz] = op(x.data[i], numeric.zero(Numeric(Y), .{}) catch unreachable);
             } else if (comptime opinfo.@"fn".params.len == 3) {
-                result.data[result.nnz] = try op(x.data[i], constants.zero(Numeric(Y), .{}) catch unreachable, ctx);
+                result.data[result.nnz] = try op(x.data[i], numeric.zero(Numeric(Y), .{}) catch unreachable, ctx);
             }
 
             result.idx[result.nnz] = x.idx[i];
@@ -648,9 +647,9 @@ pub fn apply2(
             i += 1;
         } else {
             if (comptime opinfo.@"fn".params.len == 2) {
-                result.data[result.nnz] = op(constants.zero(Numeric(X), .{}) catch unreachable, y.data[j]);
+                result.data[result.nnz] = op(numeric.zero(Numeric(X), .{}) catch unreachable, y.data[j]);
             } else if (comptime opinfo.@"fn".params.len == 3) {
-                result.data[result.nnz] = try op(constants.zero(Numeric(X), .{}) catch unreachable, y.data[j], ctx);
+                result.data[result.nnz] = try op(numeric.zero(Numeric(X), .{}) catch unreachable, y.data[j], ctx);
             }
 
             result.idx[result.nnz] = y.idx[j];
@@ -661,9 +660,9 @@ pub fn apply2(
 
     while (i < x.nnz) : (i += 1) {
         if (comptime opinfo.@"fn".params.len == 2) {
-            result.data[result.nnz] = op(x.data[i], constants.zero(Numeric(Y), .{}) catch unreachable);
+            result.data[result.nnz] = op(x.data[i], numeric.zero(Numeric(Y), .{}) catch unreachable);
         } else if (comptime opinfo.@"fn".params.len == 3) {
-            result.data[result.nnz] = try op(x.data[i], constants.zero(Numeric(Y), .{}) catch unreachable, ctx);
+            result.data[result.nnz] = try op(x.data[i], numeric.zero(Numeric(Y), .{}) catch unreachable, ctx);
         }
 
         result.idx[result.nnz] = x.idx[i];
@@ -672,9 +671,9 @@ pub fn apply2(
 
     while (j < y.nnz) : (j += 1) {
         if (comptime opinfo.@"fn".params.len == 2) {
-            result.data[result.nnz] = op(constants.zero(Numeric(X), .{}) catch unreachable, y.data[j]);
+            result.data[result.nnz] = op(numeric.zero(Numeric(X), .{}) catch unreachable, y.data[j]);
         } else if (comptime opinfo.@"fn".params.len == 3) {
-            result.data[result.nnz] = try op(constants.zero(Numeric(X), .{}) catch unreachable, y.data[j], ctx);
+            result.data[result.nnz] = try op(numeric.zero(Numeric(X), .{}) catch unreachable, y.data[j], ctx);
         }
 
         result.idx[result.nnz] = y.idx[j];

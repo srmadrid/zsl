@@ -10,7 +10,7 @@ const numeric = @import("../../numeric.zig");
 
 pub fn Abs1(X: type) type {
     comptime if (!types.isNumeric(X))
-        @compileError("zml.numeric.abs1: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.numeric.abs1: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
 
     switch (comptime types.numericType(X)) {
         .bool => return X,
@@ -20,10 +20,10 @@ pub fn Abs1(X: type) type {
         .dyadic => return X,
         .complex => return complex.Abs1(X),
         .custom => {
-            if (comptime !types.hasMethod(X, "ZmlAbs1", fn (type) type, &.{X}))
-                @compileError("zml.numeric.abs1: " ++ @typeName(X) ++ " must implement `fn ZmlAbs1(type) type`");
+            if (comptime !types.hasMethod(X, "Abs1", fn (type) type, &.{X}))
+                @compileError("zsl.numeric.abs1: " ++ @typeName(X) ++ " must implement `fn Abs1(type) type`");
 
-            return X.ZmlAbs1(X);
+            return X.Abs1(X);
         },
     }
 }
@@ -45,13 +45,13 @@ pub fn Abs1(X: type) type {
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` must implement the required `ZmlAbs1` method. The expected signature and
-/// behavior of `ZmlAbs1` are as follows:
-/// * `fn ZmlAbs1(type) type`: Returns the type of the 1-norm of `x`.
+/// `X` must implement the required `Abs1` method. The expected signature and
+/// behavior of `Abs1` are as follows:
+/// * `fn Abs1(type) type`: Returns the type of the 1-norm of `x`.
 ///
-/// `numeric.Abs1(X)` or `X` must implement the required `zmlAbs1` method. The
-/// expected signature and behavior of `zmlAbs1` are as follows:
-/// * `fn zmlAbs1(X) numeric.Abs1(X)`: Returns the 1-norm of `x`.
+/// `numeric.Abs1(X)` or `X` must implement the required `abs1` method. The
+/// expected signature and behavior of `abs1` are as follows:
+/// * `fn abs1(X) numeric.Abs1(X)`: Returns the 1-norm of `x`.
 pub inline fn abs1(x: anytype) numeric.Abs1(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Abs1(X);
@@ -66,13 +66,13 @@ pub inline fn abs1(x: anytype) numeric.Abs1(@TypeOf(x)) {
         .custom => {
             const Impl: type = comptime types.anyHasMethod(
                 &.{ R, X },
-                "zmlAbs1",
+                "abs1",
                 fn (X) numeric.Abs1(X),
                 &.{X},
             ) orelse
-                @compileError("zml.numeric.abs1: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlAbs1(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
+                @compileError("zsl.numeric.abs1: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn abs1(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
 
-            return Impl.zmlAbs1(x);
+            return Impl.abs1(x);
         },
     }
 }

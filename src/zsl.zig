@@ -23,12 +23,12 @@ pub const comptime_ccomplex = complex.comptime_complex;
 
 // Domain namespaces
 pub const numeric = @import("numeric.zig");
-pub const vector = @import("vector.zig");
-pub const matrix = @import("matrix.zig");
-pub const array = @import("array.zig");
+// pub const vector = @import("vector.zig");
+// pub const matrix = @import("matrix.zig");
+// pub const array = @import("array.zig");
 
-pub const linalg = @import("linalg.zig");
-pub const autodiff = @import("autodiff.zig");
+// pub const linalg = @import("linalg.zig");
+// pub const autodiff = @import("autodiff.zig");
 
 // Symbolic system.
 //pub const Expression = @import("expression/expression.zig").Expression;

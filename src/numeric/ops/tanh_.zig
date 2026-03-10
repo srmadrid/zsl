@@ -27,12 +27,12 @@ const numeric = @import("../../numeric.zig");
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `O` or `X` should implement the required `zmlTanh_` method. The expected
-/// signature and behavior of `zmlTanh_` are as follows:
-/// * `fn zmlTanh_(*O, X) void`: Computes the hyperbolic tangent of `x` and
+/// `O` or `X` should implement the required `tanh_` method. The expected
+/// signature and behavior of `tanh_` are as follows:
+/// * `fn tanh_(*O, X) void`: Computes the hyperbolic tangent of `x` and
 ///   stores it in `o`.
 ///
-/// If neither `O` nor `X` implement the required `zmlTanh_` method, the function
+/// If neither `O` nor `X` implement the required `tanh_` method, the function
 /// will fall back to using `numeric.set` with the result of `numeric.tanh`,
 /// potentially resulting in a less efficient implementation. In this case, `O`
 /// and `X` must adhere to the requirements of these functions.
@@ -43,21 +43,21 @@ pub inline fn tanh_(o: anytype, x: anytype) void {
     comptime if (!types.isPointer(O) or types.isConstPointer(O) or
         !types.isNumeric(types.Child(O)) or
         !types.isNumeric(X))
-        @compileError("zml.numeric.tanh_: o must be a mutable one-item pointer to a numeric, and x must be a numeric, got \n\to: " ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.numeric.tanh_: o must be a mutable one-item pointer to a numeric, and x must be a numeric, got \n\to: " ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n");
 
     O = types.Child(O);
 
     if (comptime types.isCustomType(O)) {
         if (comptime types.isCustomType(X)) { // O and X both custom
-            if (comptime types.anyHasMethod(&.{ O, X }, "zmlTanh_", fn (*O, X) void, &.{ *O, X })) |Impl|
-                return Impl.zmlTanh_(o, x);
+            if (comptime types.anyHasMethod(&.{ O, X }, "tanh_", fn (*O, X) void, &.{ *O, X })) |Impl|
+                return Impl.tanh_(o, x);
         } else { // only O custom
-            if (comptime types.hasMethod(O, "zmlTanh_", fn (*O, X) void, &.{ *O, X }))
-                return O.zmlTanh_(o, x);
+            if (comptime types.hasMethod(O, "tanh_", fn (*O, X) void, &.{ *O, X }))
+                return O.tanh_(o, x);
         }
     } else if (comptime types.isCustomType(X)) { // only X custom
-        if (comptime types.hasMethod(X, "zmlTanh_", fn (*O, X) void, &.{ *O, X }))
-            return X.zmlTanh_(o, x);
+        if (comptime types.hasMethod(X, "tanh_", fn (*O, X) void, &.{ *O, X }))
+            return X.tanh_(o, x);
     }
 
     return numeric.set(o, numeric.tanh(x));

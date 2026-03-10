@@ -10,20 +10,20 @@ const numeric = @import("../../numeric.zig");
 
 pub fn Tanh(X: type) type {
     comptime if (!types.isNumeric(X))
-        @compileError("zml.numeric.tanh: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.numeric.tanh: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
 
     switch (comptime types.numericType(X)) {
-        .bool => @compileError("zml.numeric.tanh: not defined for " ++ @typeName(X) ++ "."),
-        .int => @compileError("zml.numeric.tanh: not defined for " ++ @typeName(X) ++ "."),
+        .bool => @compileError("zsl.numeric.tanh: not defined for " ++ @typeName(X) ++ "."),
+        .int => @compileError("zsl.numeric.tanh: not defined for " ++ @typeName(X) ++ "."),
         .rational => return X,
         .float => return X,
         .dyadic => return X,
         .complex => return X,
         .custom => {
-            if (comptime !types.hasMethod(X, "ZmlTanh", fn (type) type, &.{X}))
-                @compileError("zml.numeric.tanh: " ++ @typeName(X) ++ " must implement `fn ZmlTanh(type) type`");
+            if (comptime !types.hasMethod(X, "Tanh", fn (type) type, &.{X}))
+                @compileError("zsl.numeric.tanh: " ++ @typeName(X) ++ " must implement `fn Tanh(type) type`");
 
-            return X.ZmlTanh(X);
+            return X.Tanh(X);
         },
     }
 }
@@ -45,13 +45,13 @@ pub fn Tanh(X: type) type {
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` must implement the required `ZmlTanh` method. The expected signature and
-/// behavior of `ZmlTanh` are as follows:
-/// * `fn ZmlTanh(type) type`: Returns the type of the hyperbolic tangent of `x`.
+/// `X` must implement the required `Tanh` method. The expected signature and
+/// behavior of `Tanh` are as follows:
+/// * `fn Tanh(type) type`: Returns the type of the hyperbolic tangent of `x`.
 ///
-/// `numeric.Tanh(X)` or `X` must implement the required `zmlTanh` method. The
-/// expected signature and behavior of `zmlTanh` are as follows:
-/// * `fn zmlTanh(X) numeric.Tanh(X)`: Returns the hyperbolic tangent of `x`.
+/// `numeric.Tanh(X)` or `X` must implement the required `tanh` method. The
+/// expected signature and behavior of `tanh` are as follows:
+/// * `fn tanh(X) numeric.Tanh(X)`: Returns the hyperbolic tangent of `x`.
 pub inline fn tanh(x: anytype) numeric.Tanh(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Tanh(X);
@@ -66,13 +66,13 @@ pub inline fn tanh(x: anytype) numeric.Tanh(@TypeOf(x)) {
         .custom => {
             const Impl: type = comptime types.anyHasMethod(
                 &.{ R, X },
-                "zmlTanh",
+                "tanh",
                 fn (X) numeric.Tanh(X),
                 &.{X},
             ) orelse
-                @compileError("zml.numeric.tanh: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlTanh(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
+                @compileError("zsl.numeric.tanh: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn tanh(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
 
-            return Impl.zmlTanh(x);
+            return Impl.tanh(x);
         },
     }
 }

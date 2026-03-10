@@ -10,20 +10,20 @@ const numeric = @import("../../numeric.zig");
 
 pub fn Asinh(X: type) type {
     comptime if (!types.isNumeric(X))
-        @compileError("zml.numeric.asinh: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.numeric.asinh: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
 
     switch (comptime types.numericType(X)) {
-        .bool => @compileError("zml.numeric.asinh: not defined for " ++ @typeName(X) ++ "."),
-        .int => @compileError("zml.numeric.asinh: not defined for " ++ @typeName(X) ++ "."),
+        .bool => @compileError("zsl.numeric.asinh: not defined for " ++ @typeName(X) ++ "."),
+        .int => @compileError("zsl.numeric.asinh: not defined for " ++ @typeName(X) ++ "."),
         .rational => return X,
         .float => return X,
         .dyadic => return X,
         .complex => return X,
         .custom => {
-            if (comptime !types.hasMethod(X, "ZmlAsinh", fn (type) type, &.{X}))
-                @compileError("zml.numeric.asinh: " ++ @typeName(X) ++ " must implement `fn ZmlAsinh(type) type`");
+            if (comptime !types.hasMethod(X, "Asinh", fn (type) type, &.{X}))
+                @compileError("zsl.numeric.asinh: " ++ @typeName(X) ++ " must implement `fn Asinh(type) type`");
 
-            return X.ZmlAsinh(X);
+            return X.Asinh(X);
         },
     }
 }
@@ -45,14 +45,14 @@ pub fn Asinh(X: type) type {
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` must implement the required `ZmlAsinh` method. The expected signature and
-/// behavior of `ZmlAsinh` are as follows:
-/// * `fn ZmlAsinh(type) type`: Returns the type of the hyperbolic arcsine of
+/// `X` must implement the required `Asinh` method. The expected signature and
+/// behavior of `Asinh` are as follows:
+/// * `fn Asinh(type) type`: Returns the type of the hyperbolic arcsine of
 ///   `x`.
 ///
-/// `numeric.Asinh(X)` or `X` must implement the required `zmlAsinh` method. The
-/// expected signature and behavior of `zmlAsinh` are as follows:
-/// * `fn zmlAsinh(X) numeric.Asinh(X)`: Returns the hyperbolic arcsine of `x`.
+/// `numeric.Asinh(X)` or `X` must implement the required `asinh` method. The
+/// expected signature and behavior of `asinh` are as follows:
+/// * `fn asinh(X) numeric.Asinh(X)`: Returns the hyperbolic arcsine of `x`.
 pub inline fn asinh(x: anytype) numeric.Asinh(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Asinh(X);
@@ -67,13 +67,13 @@ pub inline fn asinh(x: anytype) numeric.Asinh(@TypeOf(x)) {
         .custom => {
             const Impl: type = comptime types.anyHasMethod(
                 &.{ R, X },
-                "zmlAsinh",
+                "asinh",
                 fn (X) numeric.Asinh(X),
                 &.{X},
             ) orelse
-                @compileError("zml.numeric.asinh: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlAsinh(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
+                @compileError("zsl.numeric.asinh: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn asinh(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
 
-            return Impl.zmlAsinh(x);
+            return Impl.asinh(x);
         },
     }
 }

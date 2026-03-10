@@ -27,12 +27,12 @@ const numeric = @import("../../numeric.zig");
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `O` or `X` should implement the required `zmlSinh_` method. The expected
-/// signature and behavior of `zmlSinh_` are as follows:
-/// * `fn zmlSinh_(*O, X) void`: Computes the hyperbolic sine of `x` and stores
+/// `O` or `X` should implement the required `sinh_` method. The expected
+/// signature and behavior of `sinh_` are as follows:
+/// * `fn sinh_(*O, X) void`: Computes the hyperbolic sine of `x` and stores
 ///   it in `o`.
 ///
-/// If neither `O` nor `X` implement the required `zmlSinh_` method, the function
+/// If neither `O` nor `X` implement the required `sinh_` method, the function
 /// will fall back to using `numeric.set` with the result of `numeric.sinh`,
 /// potentially resulting in a less efficient implementation. In this case, `O`
 /// and `X` must adhere to the requirements of these functions.
@@ -43,21 +43,21 @@ pub inline fn sinh_(o: anytype, x: anytype) void {
     comptime if (!types.isPointer(O) or types.isConstPointer(O) or
         !types.isNumeric(types.Child(O)) or
         !types.isNumeric(X))
-        @compileError("zml.numeric.sinh_: o must be a mutable one-item pointer to a numeric, and x must be a numeric, got \n\to: " ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.numeric.sinh_: o must be a mutable one-item pointer to a numeric, and x must be a numeric, got \n\to: " ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n");
 
     O = types.Child(O);
 
     if (comptime types.isCustomType(O)) {
         if (comptime types.isCustomType(X)) { // O and X both custom
-            if (comptime types.anyHasMethod(&.{ O, X }, "zmlSinh_", fn (*O, X) void, &.{ *O, X })) |Impl|
-                return Impl.zmlSinh_(o, x);
+            if (comptime types.anyHasMethod(&.{ O, X }, "sinh_", fn (*O, X) void, &.{ *O, X })) |Impl|
+                return Impl.sinh_(o, x);
         } else { // only O custom
-            if (comptime types.hasMethod(O, "zmlSinh_", fn (*O, X) void, &.{ *O, X }))
-                return O.zmlSinh_(o, x);
+            if (comptime types.hasMethod(O, "sinh_", fn (*O, X) void, &.{ *O, X }))
+                return O.sinh_(o, x);
         }
     } else if (comptime types.isCustomType(X)) { // only X custom
-        if (comptime types.hasMethod(X, "zmlSinh_", fn (*O, X) void, &.{ *O, X }))
-            return X.zmlSinh_(o, x);
+        if (comptime types.hasMethod(X, "sinh_", fn (*O, X) void, &.{ *O, X }))
+            return X.sinh_(o, x);
     }
 
     return numeric.set(o, numeric.sinh(x));

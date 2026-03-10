@@ -27,12 +27,12 @@ const numeric = @import("../../numeric.zig");
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `O` or `X` should implement the required `zmlConj_` method. The expected
-/// signature and behavior of `zmlConj_` are as follows:
-/// * `fn zmlConj_(*O, X) void`: Computes the complex conjugate of `x` and stores
+/// `O` or `X` should implement the required `conj_` method. The expected
+/// signature and behavior of `conj_` are as follows:
+/// * `fn conj_(*O, X) void`: Computes the complex conjugate of `x` and stores
 ///   it in `o`.
 ///
-/// If neither `O` nor `X` implement the required `zmlConj_` method, the function
+/// If neither `O` nor `X` implement the required `conj_` method, the function
 /// will fall back to using `numeric.set` with the result of `numeric.conj`,
 /// potentially resulting in a less efficient implementation. In this case, `O`
 /// and `X` must adhere to the requirements of these functions.
@@ -43,21 +43,21 @@ pub inline fn conj_(o: anytype, x: anytype) void {
     comptime if (!types.isPointer(O) or types.isConstPointer(O) or
         !types.isNumeric(types.Child(O)) or
         !types.isNumeric(X))
-        @compileError("zml.numeric.conj_: o must be a mutable one-item pointer to a numeric, and x must be a numeric, got \n\to: " ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.numeric.conj_: o must be a mutable one-item pointer to a numeric, and x must be a numeric, got \n\to: " ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n");
 
     O = types.Child(O);
 
     if (comptime types.isCustomType(O)) {
         if (comptime types.isCustomType(X)) { // O and X both custom
-            if (comptime types.anyHasMethod(&.{ O, X }, "zmlConj_", fn (*O, X) void, &.{ *O, X })) |Impl|
-                return Impl.zmlConj_(o, x);
+            if (comptime types.anyHasMethod(&.{ O, X }, "conj_", fn (*O, X) void, &.{ *O, X })) |Impl|
+                return Impl.conj_(o, x);
         } else { // only O custom
-            if (comptime types.hasMethod(O, "zmlConj_", fn (*O, X) void, &.{ *O, X }))
-                return O.zmlConj_(o, x);
+            if (comptime types.hasMethod(O, "conj_", fn (*O, X) void, &.{ *O, X }))
+                return O.conj_(o, x);
         }
     } else if (comptime types.isCustomType(X)) { // only X custom
-        if (comptime types.hasMethod(X, "zmlConj_", fn (*O, X) void, &.{ *O, X }))
-            return X.zmlConj_(o, x);
+        if (comptime types.hasMethod(X, "conj_", fn (*O, X) void, &.{ *O, X }))
+            return X.conj_(o, x);
     }
 
     return numeric.set(o, numeric.conj(x));

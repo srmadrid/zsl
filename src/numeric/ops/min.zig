@@ -10,30 +10,30 @@ const numeric = @import("../../numeric.zig");
 
 pub fn Min(X: type, Y: type) type {
     comptime if (!types.isNumeric(X) or !types.isNumeric(Y))
-        @compileError("zml.numeric.min: x and y must be numerics, got \n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
+        @compileError("zsl.numeric.min: x and y must be numerics, got \n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
     if (comptime types.isCustomType(X)) {
         if (comptime types.isCustomType(Y)) { // X and Y both custom
             const Impl: type = comptime types.anyHasMethod(
                 &.{ X, Y },
-                "ZmlMin",
+                "Min",
                 fn (type, type) type,
                 &.{ X, Y },
             ) orelse
-                @compileError("zml.numeric.min: " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn ZmlMin(type, type) type`");
+                @compileError("zsl.numeric.min: " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn Min(type, type) type`");
 
-            return Impl.ZmlMin(X, Y);
+            return Impl.Min(X, Y);
         } else { // only X custom
-            comptime if (!types.hasMethod(X, "ZmlMin", fn (type, type) type, &.{ X, Y }))
-                @compileError("zml.numeric.min: " ++ @typeName(X) ++ " must implement `fn ZmlMin(type, type) type`");
+            comptime if (!types.hasMethod(X, "Min", fn (type, type) type, &.{ X, Y }))
+                @compileError("zsl.numeric.min: " ++ @typeName(X) ++ " must implement `fn Min(type, type) type`");
 
-            return X.ZmlMin(X, Y);
+            return X.Min(X, Y);
         }
     } else if (comptime types.isCustomType(Y)) { // only Y custom
-        comptime if (!types.hasMethod(Y, "ZmlMin", fn (type, type) type, &.{ X, Y }))
-            @compileError("zml.numeric.min: " ++ @typeName(Y) ++ " must implement `fn ZmlMin(type, type) type`");
+        comptime if (!types.hasMethod(Y, "Min", fn (type, type) type, &.{ X, Y }))
+            @compileError("zsl.numeric.min: " ++ @typeName(Y) ++ " must implement `fn Min(type, type) type`");
 
-        return Y.ZmlMin(X, Y);
+        return Y.Min(X, Y);
     }
 
     switch (comptime types.numericType(X)) {
@@ -43,7 +43,7 @@ pub fn Min(X: type, Y: type) type {
             .rational => return rational.Min(X, Y),
             .float => return float.Min(X, Y),
             .dyadic => return dyadic.Min(X, Y),
-            .complex => @compileError("zml.numeric.min: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+            .complex => @compileError("zsl.numeric.min: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
         .int => switch (comptime types.numericType(Y)) {
@@ -51,28 +51,28 @@ pub fn Min(X: type, Y: type) type {
             .rational => return rational.Min(X, Y),
             .float => return float.Min(X, Y),
             .dyadic => return dyadic.Min(X, Y),
-            .complex => @compileError("zml.numeric.min: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+            .complex => @compileError("zsl.numeric.min: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
         .rational => switch (comptime types.numericType(Y)) {
             .bool, .int, .rational => return rational.Min(X, Y),
             .float => return float.Min(X, Y),
             .dyadic => return dyadic.Min(X, Y),
-            .complex => @compileError("zml.numeric.min: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+            .complex => @compileError("zsl.numeric.min: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
         .float => switch (comptime types.numericType(Y)) {
             .bool, .int, .rational, .float => return float.Min(X, Y),
             .dyadic => return dyadic.Min(X, Y),
-            .complex => @compileError("zml.numeric.min: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+            .complex => @compileError("zsl.numeric.min: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
         .dyadic => switch (comptime types.numericType(Y)) {
             .bool, .int, .rational, .float, .dyadic => return dyadic.Min(X, Y),
-            .complex => @compileError("zml.numeric.min: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+            .complex => @compileError("zsl.numeric.min: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
-        .complex => @compileError("zml.numeric.min: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+        .complex => @compileError("zsl.numeric.min: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
         .custom => unreachable,
     }
 }
@@ -95,13 +95,13 @@ pub fn Min(X: type, Y: type) type {
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` or `Y` must implement the required `ZmlMin` method. The expected
-/// signature and behavior of `ZmlMin` are as follows:
-/// * `fn ZmlMin(type, type) type`: Returns the type of `x + y`.
+/// `X` or `Y` must implement the required `Min` method. The expected
+/// signature and behavior of `Min` are as follows:
+/// * `fn Min(type, type) type`: Returns the type of `x + y`.
 ///
-/// `numeric.Min(X, Y)`, `X` or `Y` must implement the required `zmlMin` method.
-/// The expected signatures and behavior of `zmlMin` are as follows:
-/// * `fn zmlMin(X, Y) numeric.Min(X, Y)`: Returns the minimum between `x` and
+/// `numeric.Min(X, Y)`, `X` or `Y` must implement the required `min` method.
+/// The expected signatures and behavior of `min` are as follows:
+/// * `fn min(X, Y) numeric.Min(X, Y)`: Returns the minimum between `x` and
 ///   `y`.
 pub inline fn min(x: anytype, y: anytype) numeric.Min(@TypeOf(x), @TypeOf(y)) {
     const X: type = @TypeOf(x);
@@ -112,34 +112,34 @@ pub inline fn min(x: anytype, y: anytype) numeric.Min(@TypeOf(x), @TypeOf(y)) {
         if (comptime types.isCustomType(Y)) { // X and Y both custom
             const Impl: type = comptime types.anyHasMethod(
                 &.{ R, X, Y },
-                "zmlMin",
+                "min",
                 fn (X, Y) R,
                 &.{ X, Y },
             ) orelse
-                @compileError("zml.numeric.min: " ++ @typeName(R) ++ ", " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn zmlMin(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
+                @compileError("zsl.numeric.min: " ++ @typeName(R) ++ ", " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn min(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
 
-            return Impl.zmlMin(x, y);
+            return Impl.min(x, y);
         } else { // only X custom
             const Impl: type = comptime types.anyHasMethod(
                 &.{ R, X },
-                "zmlMin",
+                "min",
                 fn (X, Y) R,
                 &.{ X, Y },
             ) orelse
-                @compileError("zml.numeric.min: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlMin(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
+                @compileError("zsl.numeric.min: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn min(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
 
-            return Impl.zmlMin(x, y);
+            return Impl.min(x, y);
         }
     } else if (comptime types.isCustomType(Y)) { // only Y custom
         const Impl: type = comptime types.anyHasMethod(
             &.{ R, Y },
-            "zmlMin",
+            "min",
             fn (X, Y) R,
             &.{ X, Y },
         ) orelse
-            @compileError("zml.numeric.min: " ++ @typeName(R) ++ " or " ++ @typeName(Y) ++ " must implement `fn zmlMin(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
+            @compileError("zsl.numeric.min: " ++ @typeName(R) ++ " or " ++ @typeName(Y) ++ " must implement `fn min(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
 
-        return Impl.zmlMin(x, y);
+        return Impl.min(x, y);
     }
 
     switch (comptime types.numericType(X)) {

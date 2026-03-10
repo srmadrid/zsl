@@ -27,12 +27,12 @@ const numeric = @import("../../numeric.zig");
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `O` or `X` should implement the required `zmlCosh_` method. The expected
-/// signature and behavior of `zmlCosh_` are as follows:
-/// * `fn zmlCosh_(*O, X) void`: Computes the hyperbolic cosine of `x` and stores
+/// `O` or `X` should implement the required `cosh_` method. The expected
+/// signature and behavior of `cosh_` are as follows:
+/// * `fn cosh_(*O, X) void`: Computes the hyperbolic cosine of `x` and stores
 ///   it in `o`.
 ///
-/// If neither `O` nor `X` implement the required `zmlCosh_` method, the function
+/// If neither `O` nor `X` implement the required `cosh_` method, the function
 /// will fall back to using `numeric.set` with the result of `numeric.cosh`,
 /// potentially resulting in a less efficient implementation. In this case, `O`
 /// and `X` must adhere to the requirements of these functions.
@@ -43,21 +43,21 @@ pub inline fn cosh_(o: anytype, x: anytype) void {
     comptime if (!types.isPointer(O) or types.isConstPointer(O) or
         !types.isNumeric(types.Child(O)) or
         !types.isNumeric(X))
-        @compileError("zml.numeric.cosh_: o must be a mutable one-item pointer to a numeric, and x must be a numeric, got \n\to: " ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.numeric.cosh_: o must be a mutable one-item pointer to a numeric, and x must be a numeric, got \n\to: " ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n");
 
     O = types.Child(O);
 
     if (comptime types.isCustomType(O)) {
         if (comptime types.isCustomType(X)) { // O and X both custom
-            if (comptime types.anyHasMethod(&.{ O, X }, "zmlCosh_", fn (*O, X) void, &.{ *O, X })) |Impl|
-                return Impl.zmlCosh_(o, x);
+            if (comptime types.anyHasMethod(&.{ O, X }, "cosh_", fn (*O, X) void, &.{ *O, X })) |Impl|
+                return Impl.cosh_(o, x);
         } else { // only O custom
-            if (comptime types.hasMethod(O, "zmlCosh_", fn (*O, X) void, &.{ *O, X }))
-                return O.zmlCosh_(o, x);
+            if (comptime types.hasMethod(O, "cosh_", fn (*O, X) void, &.{ *O, X }))
+                return O.cosh_(o, x);
         }
     } else if (comptime types.isCustomType(X)) { // only X custom
-        if (comptime types.hasMethod(X, "zmlCosh_", fn (*O, X) void, &.{ *O, X }))
-            return X.zmlCosh_(o, x);
+        if (comptime types.hasMethod(X, "cosh_", fn (*O, X) void, &.{ *O, X }))
+            return X.cosh_(o, x);
     }
 
     return numeric.set(o, numeric.cosh(x));

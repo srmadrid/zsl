@@ -10,20 +10,20 @@ const numeric = @import("../../numeric.zig");
 
 pub fn Erfc(X: type) type {
     comptime if (!types.isNumeric(X))
-        @compileError("zml.numeric.erfc: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.numeric.erfc: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
 
     switch (comptime types.numericType(X)) {
-        .bool => @compileError("zml.numeric.erfc: not defined for " ++ @typeName(X) ++ "."),
-        .int => @compileError("zml.numeric.erfc: not defined for " ++ @typeName(X) ++ "."),
+        .bool => @compileError("zsl.numeric.erfc: not defined for " ++ @typeName(X) ++ "."),
+        .int => @compileError("zsl.numeric.erfc: not defined for " ++ @typeName(X) ++ "."),
         .rational => return X,
         .float => return X,
         .dyadic => return X,
         .complex => return X,
         .custom => {
-            if (comptime !types.hasMethod(X, "ZmlErfc", fn (type) type, &.{X}))
-                @compileError("zml.numeric.erfc: " ++ @typeName(X) ++ " must implement `fn ZmlErfc(type) type`");
+            if (comptime !types.hasMethod(X, "Erfc", fn (type) type, &.{X}))
+                @compileError("zsl.numeric.erfc: " ++ @typeName(X) ++ " must implement `fn Erfc(type) type`");
 
-            return X.ZmlErfc(X);
+            return X.Erfc(X);
         },
     }
 }
@@ -51,13 +51,13 @@ pub fn Erfc(X: type) type {
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` must implement the required `ZmlErfc` method. The expected signature and
-/// behavior of `ZmlErfc` are as follows:
-/// * `fn ZmlErfc(type) type`: Returns the type of the error function of `x`.
+/// `X` must implement the required `Erfc` method. The expected signature and
+/// behavior of `Erfc` are as follows:
+/// * `fn Erfc(type) type`: Returns the type of the error function of `x`.
 ///
-/// `numeric.Erfc(X)` or `X` must implement the required `zmlErfc` method. The
-/// expected signature and behavior of `zmlErfc` are as follows:
-/// * `fn zmlErfc(X) numeric.Erfc(X)`: Returns the error function of `x`.
+/// `numeric.Erfc(X)` or `X` must implement the required `erfc` method. The
+/// expected signature and behavior of `erfc` are as follows:
+/// * `fn erfc(X) numeric.Erfc(X)`: Returns the error function of `x`.
 pub inline fn erfc(x: anytype) numeric.Erfc(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Erfc(X);
@@ -72,13 +72,13 @@ pub inline fn erfc(x: anytype) numeric.Erfc(@TypeOf(x)) {
         .custom => {
             const Impl: type = comptime types.anyHasMethod(
                 &.{ R, X },
-                "zmlErfc",
+                "erfc",
                 fn (X) numeric.Erfc(X),
                 &.{X},
             ) orelse
-                @compileError("zml.numeric.erfc: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlErfc(" ++ @typeName(X) ++ " ) " ++ @typeName(R) ++ "`");
+                @compileError("zsl.numeric.erfc: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn erfc(" ++ @typeName(X) ++ " ) " ++ @typeName(R) ++ "`");
 
-            return Impl.zmlErfc(x);
+            return Impl.erfc(x);
         },
     }
 }

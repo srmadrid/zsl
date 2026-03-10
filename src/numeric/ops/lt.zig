@@ -26,35 +26,38 @@ const numeric = @import("../../numeric.zig");
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` or `Y` must implement the required `zmlLt` method. The expected
-/// signature and behavior of `zmlLt` are as follows:
-/// * `fn zmlLt(X, Y) bool`: Compares `x` and `y` for less-than ordering.
+/// `X` or `Y` must implement the required `lt` method. The expected
+/// signature and behavior of `lt` are as follows:
+/// * `fn lt(X, Y) bool`: Compares `x` and `y` for less-than ordering.
 pub inline fn lt(x: anytype, y: anytype) bool {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
+
+    comptime if (!types.isNumeric(X) or !types.isNumeric(Y))
+        @compileError("zsl.numeric.lt: x and y must be numerics, got \n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
     if (comptime types.isCustomType(X)) {
         if (comptime types.isCustomType(Y)) { // X and Y both custom
             const Impl: type = comptime types.anyHasMethod(
                 &.{ X, Y },
-                "zmlLt",
+                "lt",
                 fn (X, Y) bool,
                 &.{ X, Y },
             ) orelse
-                @compileError("zml.numeric.lt: " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn zmlLt(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
+                @compileError("zsl.numeric.lt: " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn lt(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
 
-            return Impl.zmlLt(x, y);
+            return Impl.lt(x, y);
         } else { // only X custom
-            comptime if (!types.hasMethod(X, "zmlLt", fn (X, Y) bool, &.{ X, Y }))
-                @compileError("zml.numeric.lt: " ++ @typeName(X) ++ " must implement `fn zmlLt(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
+            comptime if (!types.hasMethod(X, "lt", fn (X, Y) bool, &.{ X, Y }))
+                @compileError("zsl.numeric.lt: " ++ @typeName(X) ++ " must implement `fn lt(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
 
-            return X.zmlLt(x, y);
+            return X.lt(x, y);
         }
     } else if (comptime types.isCustomType(Y)) { // only Y custom
-        comptime if (!types.hasMethod(Y, "zmlLt", fn (X, Y) bool, &.{ X, Y }))
-            @compileError("zml.numeric.lt: " ++ @typeName(Y) ++ " must implement `fn zmlLt(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
+        comptime if (!types.hasMethod(Y, "lt", fn (X, Y) bool, &.{ X, Y }))
+            @compileError("zsl.numeric.lt: " ++ @typeName(Y) ++ " must implement `fn lt(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
 
-        return Y.zmlLt(x, y);
+        return Y.lt(x, y);
     }
 
     switch (comptime types.numericType(X)) {
@@ -64,7 +67,7 @@ pub inline fn lt(x: anytype, y: anytype) bool {
             .rational => return rational.lt(x, y),
             .float => return float.lt(x, y),
             .dyadic => return dyadic.lt(x, y),
-            .complex => @compileError("zml.numeric.lt: not defiltd for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+            .complex => @compileError("zsl.numeric.lt: not defiltd for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
         .int => switch (comptime types.numericType(Y)) {
@@ -72,28 +75,28 @@ pub inline fn lt(x: anytype, y: anytype) bool {
             .rational => return rational.lt(x, y),
             .float => return float.lt(x, y),
             .dyadic => return dyadic.lt(x, y),
-            .complex => @compileError("zml.numeric.lt: not defiltd for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+            .complex => @compileError("zsl.numeric.lt: not defiltd for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
         .rational => switch (comptime types.numericType(Y)) {
             .bool, .int, .rational => return rational.lt(x, y),
             .float => return float.lt(x, y),
             .dyadic => return dyadic.lt(x, y),
-            .complex => @compileError("zml.numeric.lt: not defiltd for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+            .complex => @compileError("zsl.numeric.lt: not defiltd for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
         .float => switch (comptime types.numericType(Y)) {
             .bool, .int, .rational, .float => return float.lt(x, y),
             .dyadic => return dyadic.lt(x, y),
-            .complex => @compileError("zml.numeric.lt: not defiltd for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+            .complex => @compileError("zsl.numeric.lt: not defiltd for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
         .dyadic => switch (comptime types.numericType(Y)) {
             .bool, .int, .rational, .float, .dyadic => return dyadic.lt(x, y),
-            .complex => @compileError("zml.numeric.lt: not defiltd for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+            .complex => @compileError("zsl.numeric.lt: not defiltd for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
-        .complex => @compileError("zml.numeric.lt: not defiltd for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+        .complex => @compileError("zsl.numeric.lt: not defiltd for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
         .custom => unreachable,
     }
 }

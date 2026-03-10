@@ -8,7 +8,7 @@ const scast = types.scast;
 const cast = types.cast;
 const validateContext = types.validateContext;
 
-const ops = @import("../ops.zig");
+const numeric = @import("../numeric.zig");
 const int = @import("../int.zig");
 
 const array = @import("../array.zig");

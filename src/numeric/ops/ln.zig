@@ -10,20 +10,20 @@ const numeric = @import("../../numeric.zig");
 
 pub fn Ln(X: type) type {
     comptime if (!types.isNumeric(X))
-        @compileError("zml.numeric.ln: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.numeric.ln: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
 
     switch (comptime types.numericType(X)) {
-        .bool => @compileError("zml.numeric.ln: not defined for " ++ @typeName(X) ++ "."),
-        .int => @compileError("zml.numeric.ln: not defined for " ++ @typeName(X) ++ "."),
+        .bool => @compileError("zsl.numeric.ln: not defined for " ++ @typeName(X) ++ "."),
+        .int => @compileError("zsl.numeric.ln: not defined for " ++ @typeName(X) ++ "."),
         .rational => return X,
         .float => return X,
         .dyadic => return X,
         .complex => return X,
         .custom => {
-            if (comptime !types.hasMethod(X, "ZmlLn", fn (type) type, &.{X}))
-                @compileError("zml.numeric.ln: " ++ @typeName(X) ++ " must implement `fn ZmlLn(type) type`");
+            if (comptime !types.hasMethod(X, "Ln", fn (type) type, &.{X}))
+                @compileError("zsl.numeric.ln: " ++ @typeName(X) ++ " must implement `fn Ln(type) type`");
 
-            return X.ZmlLn(X);
+            return X.Ln(X);
         },
     }
 }
@@ -45,13 +45,13 @@ pub fn Ln(X: type) type {
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` must implement the required `ZmlLn` method. The expected signature and
-/// behavior of `ZmlLn` are as follows:
-/// * `fn ZmlLn(type) type`: Returns the type of the natural logarithm of `x`.
+/// `X` must implement the required `Ln` method. The expected signature and
+/// behavior of `Ln` are as follows:
+/// * `fn Ln(type) type`: Returns the type of the natural logarithm of `x`.
 ///
-/// `numeric.Ln(X)` or `X` must implement the required `zmlLn` method. The
-/// expected signature and behavior of `zmlLn` are as follows:
-/// * `fn zmlLn(X) numeric.Ln(X)`: Returns the natural logarithm of `x`.
+/// `numeric.Ln(X)` or `X` must implement the required `ln` method. The
+/// expected signature and behavior of `ln` are as follows:
+/// * `fn ln(X) numeric.Ln(X)`: Returns the natural logarithm of `x`.
 pub inline fn ln(x: anytype) numeric.Ln(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Ln(X);
@@ -66,13 +66,13 @@ pub inline fn ln(x: anytype) numeric.Ln(@TypeOf(x)) {
         .custom => {
             const Impl: type = comptime types.anyHasMethod(
                 &.{ R, X },
-                "zmlLn",
+                "ln",
                 fn (X) numeric.Ln(X),
                 &.{X},
             ) orelse
-                @compileError("zml.numeric.ln: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlLn(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
+                @compileError("zsl.numeric.ln: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn ln(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
 
-            return Impl.zmlLn(x);
+            return Impl.ln(x);
         },
     }
 }

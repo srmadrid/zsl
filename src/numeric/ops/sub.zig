@@ -10,35 +10,35 @@ const numeric = @import("../../numeric.zig");
 
 pub fn Sub(X: type, Y: type) type {
     comptime if (!types.isNumeric(X) or !types.isNumeric(Y))
-        @compileError("zml.numeric.sub: x and y must be numerics, got \n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
+        @compileError("zsl.numeric.sub: x and y must be numerics, got \n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
     if (comptime types.isCustomType(X)) {
         if (comptime types.isCustomType(Y)) { // X and Y both custom
             const Impl: type = comptime types.anyHasMethod(
                 &.{ X, Y },
-                "ZmlSub",
+                "Sub",
                 fn (type, type) type,
                 &.{ X, Y },
             ) orelse
-                @compileError("zml.numeric.sub: " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn ZmlSub(type, type) type`");
+                @compileError("zsl.numeric.sub: " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn Sub(type, type) type`");
 
-            return Impl.ZmlSub(X, Y);
+            return Impl.Sub(X, Y);
         } else { // only X custom
-            comptime if (!types.hasMethod(X, "ZmlSub", fn (type, type) type, &.{ X, Y }))
-                @compileError("zml.numeric.sub: " ++ @typeName(X) ++ " must implement `fn ZmlSub(type, type) type`");
+            comptime if (!types.hasMethod(X, "Sub", fn (type, type) type, &.{ X, Y }))
+                @compileError("zsl.numeric.sub: " ++ @typeName(X) ++ " must implement `fn Sub(type, type) type`");
 
-            return X.ZmlSub(X, Y);
+            return X.Sub(X, Y);
         }
     } else if (comptime types.isCustomType(Y)) { // only Y custom
-        comptime if (!types.hasMethod(Y, "ZmlSub", fn (type, type) type, &.{ X, Y }))
-            @compileError("zml.numeric.sub: " ++ @typeName(Y) ++ " must implement `fn ZmlSub(type, type) type`");
+        comptime if (!types.hasMethod(Y, "Sub", fn (type, type) type, &.{ X, Y }))
+            @compileError("zsl.numeric.sub: " ++ @typeName(Y) ++ " must implement `fn Sub(type, type) type`");
 
-        return Y.ZmlSub(X, Y);
+        return Y.Sub(X, Y);
     }
 
     switch (comptime types.numericType(X)) {
         .bool => switch (comptime types.numericType(Y)) {
-            .bool => @compileError("zml.numeric.sub: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+            .bool => @compileError("zsl.numeric.sub: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .int => return int.Sub(X, Y),
             .rational => return rational.Sub(X, Y),
             .float => return float.Sub(X, Y),
@@ -98,13 +98,13 @@ pub fn Sub(X: type, Y: type) type {
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` or `Y` must implement the required `ZmlSub` method. The expected
-/// signature and behavior of `ZmlSub` are as follows:
-/// * `fn ZmlSub(type, type) type`: Returns the type of `x - y`.
+/// `X` or `Y` must implement the required `Sub` method. The expected
+/// signature and behavior of `Sub` are as follows:
+/// * `fn Sub(type, type) type`: Returns the type of `x - y`.
 ///
-/// `numeric.Sub(X, Y)`, `X` or `Y` must implement the required `zmlSub` method.
-/// The expected signatures and behavior of `zmlSub` are as follows:
-/// * `fn zmlSub(X, Y) numeric.Sub(X, Y)`: Returns the subtraction of `x` and
+/// `numeric.Sub(X, Y)`, `X` or `Y` must implement the required `sub` method.
+/// The expected signatures and behavior of `sub` are as follows:
+/// * `fn sub(X, Y) numeric.Sub(X, Y)`: Returns the subtraction of `x` and
 ///   `y`.
 pub inline fn sub(x: anytype, y: anytype) numeric.Sub(@TypeOf(x), @TypeOf(y)) {
     const X: type = @TypeOf(x);
@@ -115,34 +115,34 @@ pub inline fn sub(x: anytype, y: anytype) numeric.Sub(@TypeOf(x), @TypeOf(y)) {
         if (comptime types.isCustomType(Y)) { // X and Y both custom
             const Impl: type = comptime types.anyHasMethod(
                 &.{ R, X, Y },
-                "zmlSub",
+                "sub",
                 fn (X, Y) R,
                 &.{ X, Y },
             ) orelse
-                @compileError("zml.numeric.sub: " ++ @typeName(R) ++ ", " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn zmlSub(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
+                @compileError("zsl.numeric.sub: " ++ @typeName(R) ++ ", " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn sub(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
 
-            return Impl.zmlSub(x, y);
+            return Impl.sub(x, y);
         } else { // only X custom
             const Impl: type = comptime types.anyHasMethod(
                 &.{ R, X },
-                "zmlSub",
+                "sub",
                 fn (X, Y) R,
                 &.{ X, Y },
             ) orelse
-                @compileError("zml.numeric.sub: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlSub(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
+                @compileError("zsl.numeric.sub: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn sub(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
 
-            return Impl.zmlSub(x, y);
+            return Impl.sub(x, y);
         }
     } else if (comptime types.isCustomType(Y)) { // only Y custom
         const Impl: type = comptime types.anyHasMethod(
             &.{ R, Y },
-            "zmlSub",
+            "sub",
             fn (X, Y) R,
             &.{ X, Y },
         ) orelse
-            @compileError("zml.numeric.sub: " ++ @typeName(R) ++ " or " ++ @typeName(Y) ++ " must implement `fn zmlSub(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
+            @compileError("zsl.numeric.sub: " ++ @typeName(R) ++ " or " ++ @typeName(Y) ++ " must implement `fn sub(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") " ++ @typeName(R) ++ "`");
 
-        return Impl.zmlSub(x, y);
+        return Impl.sub(x, y);
     }
 
     switch (comptime types.numericType(X)) {

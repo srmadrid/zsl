@@ -14,8 +14,7 @@ const ReturnType2 = types.ReturnType2;
 const Numeric = types.Numeric;
 const Order = types.Order;
 const Uplo = types.Uplo;
-const ops = @import("../../ops.zig");
-const constants = @import("../../constants.zig");
+const numeric = @import("../../numeric.zig");
 const int = @import("../../int.zig");
 
 const matrix = @import("../../matrix.zig");
@@ -141,7 +140,7 @@ pub fn Block(T: type, border: Order, order: Order) type {
                 }
             }
 
-            return constants.zero(T, .{}) catch unreachable;
+            return numeric.zero(T, .{}) catch unreachable;
         }
 
         pub fn at(self: *Block(T, border, order), r: u32, c: u32) T {
@@ -165,7 +164,7 @@ pub fn Block(T: type, border: Order, order: Order) type {
                 }
             }
 
-            return constants.zero(T, .{}) catch unreachable;
+            return numeric.zero(T, .{}) catch unreachable;
         }
 
         pub fn getBlock(self: *const Block(T, border, order), br: u32, bc: u32) !matrix.general.Dense(T, border) {
@@ -394,7 +393,7 @@ pub fn Block(T: type, border: Order, order: Order) type {
             var i: u32 = 0;
             while (i < self.nnzb) : (i += 1) {
                 if (self.row[i] == br and self.col[i] == bc) {
-                    try ops.add_(
+                    try numeric.add_(
                         &self.data[i * self.bsize * self.bsize + if (comptime border == .col_major) ri + cj * self.bsize else ri * self.bsize + cj],
                         self.data[i * self.bsize * self.bsize + if (comptime border == .col_major) ri + cj * self.bsize else ri * self.bsize + cj],
                         value,
@@ -460,7 +459,7 @@ pub fn Block(T: type, border: Order, order: Order) type {
                         while (bj < self.bsize) : (bj += 1) {
                             var bi: u32 = 0;
                             while (bi < self.bsize) : (bi += 1) {
-                                try ops.add_(
+                                try numeric.add_(
                                     &self.data[i * self.bsize * self.bsize + bi + bj * self.bsize],
                                     self.data[i * self.bsize * self.bsize + bi + bj * self.bsize],
                                     block.data[bi + bj * block.ld],
@@ -473,7 +472,7 @@ pub fn Block(T: type, border: Order, order: Order) type {
                         while (bi < self.bsize) : (bi += 1) {
                             var bj: u32 = 0;
                             while (bj < self.bsize) : (bj += 1) {
-                                try ops.add_(
+                                try numeric.add_(
                                     &self.data[i * self.bsize * self.bsize + bi * self.bsize + bj],
                                     self.data[i * self.bsize * self.bsize + bi * self.bsize + bj],
                                     block.data[bi * block.ld + bj],
@@ -617,12 +616,12 @@ pub fn Block(T: type, border: Order, order: Order) type {
 
             i = 0;
             while (i < self.nnzb) : (i += 1) {
-                data[i] = try ops.copy(self.data[i], ctx);
+                data[i] = try numeric.copy(self.data[i], ctx);
                 idx[i] = if (comptime order == .col_major) self.row[i] else self.col[i];
             }
 
             while (i < self.nnzb * self.bsize * self.bsize) : (i += 1) {
-                data[i] = try ops.copy(self.data[i], ctx);
+                data[i] = try numeric.copy(self.data[i], ctx);
             }
 
             const result = matrix.general.Block(T, border, order){

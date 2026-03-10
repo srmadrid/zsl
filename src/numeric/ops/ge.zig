@@ -26,36 +26,39 @@ const numeric = @import("../../numeric.zig");
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` or `Y` must implement the required `zmlGe` method. The expected
-/// signature and behavior of `zmlGe` are as follows:
-/// * `fn zmlGe(X, Y) bool`: Compares `x` and `y` for greater-than or equal
+/// `X` or `Y` must implement the required `ge` method. The expected
+/// signature and behavior of `ge` are as follows:
+/// * `fn ge(X, Y) bool`: Compares `x` and `y` for greater-than or equal
 ///   ordering.
 pub inline fn ge(x: anytype, y: anytype) bool {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 
+    comptime if (!types.isNumeric(X) or !types.isNumeric(Y))
+        @compileError("zsl.numeric.ge: x and y must be numerics, got \n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
+
     if (comptime types.isCustomType(X)) {
         if (comptime types.isCustomType(Y)) { // X and Y both custom
             const Impl: type = comptime types.anyHasMethod(
                 &.{ X, Y },
-                "zmlGe",
+                "ge",
                 fn (X, Y) bool,
                 &.{ X, Y },
             ) orelse
-                @compileError("zml.numeric.ge: " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn zmlGe(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
+                @compileError("zsl.numeric.ge: " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn ge(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
 
-            return Impl.zmlGe(x, y);
+            return Impl.ge(x, y);
         } else { // only X custom
-            comptime if (!types.hasMethod(X, "zmlGe", fn (X, Y) bool, &.{ X, Y }))
-                @compileError("zml.numeric.ge: " ++ @typeName(X) ++ " must implement `fn zmlGe(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
+            comptime if (!types.hasMethod(X, "ge", fn (X, Y) bool, &.{ X, Y }))
+                @compileError("zsl.numeric.ge: " ++ @typeName(X) ++ " must implement `fn ge(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
 
-            return X.zmlGe(x, y);
+            return X.ge(x, y);
         }
     } else if (comptime types.isCustomType(Y)) { // only Y custom
-        comptime if (!types.hasMethod(Y, "zmlGe", fn (X, Y) bool, &.{ X, Y }))
-            @compileError("zml.numeric.ge: " ++ @typeName(Y) ++ " must implement `fn zmlGe(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
+        comptime if (!types.hasMethod(Y, "ge", fn (X, Y) bool, &.{ X, Y }))
+            @compileError("zsl.numeric.ge: " ++ @typeName(Y) ++ " must implement `fn ge(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
 
-        return Y.zmlGe(x, y);
+        return Y.ge(x, y);
     }
 
     switch (comptime types.numericType(X)) {
@@ -65,7 +68,7 @@ pub inline fn ge(x: anytype, y: anytype) bool {
             .rational => return rational.ge(x, y),
             .float => return float.ge(x, y),
             .dyadic => return dyadic.ge(x, y),
-            .complex => @compileError("zml.numeric.ge: not defiged for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+            .complex => @compileError("zsl.numeric.ge: not defiged for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
         .int => switch (comptime types.numericType(Y)) {
@@ -73,28 +76,28 @@ pub inline fn ge(x: anytype, y: anytype) bool {
             .rational => return rational.ge(x, y),
             .float => return float.ge(x, y),
             .dyadic => return dyadic.ge(x, y),
-            .complex => @compileError("zml.numeric.ge: not defiged for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+            .complex => @compileError("zsl.numeric.ge: not defiged for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
         .rational => switch (comptime types.numericType(Y)) {
             .bool, .int, .rational => return rational.ge(x, y),
             .float => return float.ge(x, y),
             .dyadic => return dyadic.ge(x, y),
-            .complex => @compileError("zml.numeric.ge: not defiged for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+            .complex => @compileError("zsl.numeric.ge: not defiged for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
         .float => switch (comptime types.numericType(Y)) {
             .bool, .int, .rational, .float => return float.ge(x, y),
             .dyadic => return dyadic.ge(x, y),
-            .complex => @compileError("zml.numeric.ge: not defiged for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+            .complex => @compileError("zsl.numeric.ge: not defiged for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
         .dyadic => switch (comptime types.numericType(Y)) {
             .bool, .int, .rational, .float, .dyadic => return dyadic.ge(x, y),
-            .complex => @compileError("zml.numeric.ge: not defiged for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+            .complex => @compileError("zsl.numeric.ge: not defiged for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
-        .complex => @compileError("zml.numeric.ge: not defiged for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+        .complex => @compileError("zsl.numeric.ge: not defiged for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
         .custom => unreachable,
     }
 }

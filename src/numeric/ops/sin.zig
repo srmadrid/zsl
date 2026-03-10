@@ -10,20 +10,20 @@ const numeric = @import("../../numeric.zig");
 
 pub fn Sin(X: type) type {
     comptime if (!types.isNumeric(X))
-        @compileError("zml.numeric.sin: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.numeric.sin: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
 
     switch (comptime types.numericType(X)) {
-        .bool => @compileError("zml.numeric.sin: not defined for " ++ @typeName(X) ++ "."),
-        .int => @compileError("zml.numeric.sin: not defined for " ++ @typeName(X) ++ "."),
+        .bool => @compileError("zsl.numeric.sin: not defined for " ++ @typeName(X) ++ "."),
+        .int => @compileError("zsl.numeric.sin: not defined for " ++ @typeName(X) ++ "."),
         .rational => return X,
         .float => return X,
         .dyadic => return X,
         .complex => return X,
         .custom => {
-            if (comptime !types.hasMethod(X, "ZmlSin", fn (type) type, &.{X}))
-                @compileError("zml.numeric.sin: " ++ @typeName(X) ++ " must implement `fn ZmlSin(type) type`");
+            if (comptime !types.hasMethod(X, "Sin", fn (type) type, &.{X}))
+                @compileError("zsl.numeric.sin: " ++ @typeName(X) ++ " must implement `fn Sin(type) type`");
 
-            return X.ZmlSin(X);
+            return X.Sin(X);
         },
     }
 }
@@ -45,13 +45,13 @@ pub fn Sin(X: type) type {
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` must implement the required `ZmlSin` method. The expected signature and
-/// behavior of `ZmlSin` are as follows:
-/// * `fn ZmlSin(type) type`: Returns the type of the sine of `x`.
+/// `X` must implement the required `Sin` method. The expected signature and
+/// behavior of `Sin` are as follows:
+/// * `fn Sin(type) type`: Returns the type of the sine of `x`.
 ///
-/// `numeric.Sin(X)` or `X` must implement the required `zmlSin` method. The
-/// expected signature and behavior of `zmlSin` are as follows:
-/// * `fn zmlSin(X) numeric.Sin(X)`: Returns the sine of `x`.
+/// `numeric.Sin(X)` or `X` must implement the required `sin` method. The
+/// expected signature and behavior of `sin` are as follows:
+/// * `fn sin(X) numeric.Sin(X)`: Returns the sine of `x`.
 pub inline fn sin(x: anytype) numeric.Sin(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Sin(X);
@@ -66,13 +66,13 @@ pub inline fn sin(x: anytype) numeric.Sin(@TypeOf(x)) {
         .custom => {
             const Impl: type = comptime types.anyHasMethod(
                 &.{ R, X },
-                "zmlSin",
+                "sin",
                 fn (X) numeric.Sin(X),
                 &.{X},
             ) orelse
-                @compileError("zml.numeric.sin: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlSin(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
+                @compileError("zsl.numeric.sin: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn sin(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
 
-            return Impl.zmlSin(x);
+            return Impl.sin(x);
         },
     }
 }

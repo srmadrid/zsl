@@ -28,12 +28,12 @@ const numeric = @import("../../numeric.zig");
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `O`, `X` or `Y` should implement the required `zmlDiv_` method. The expected
-/// signature and behavior of `zmlDiv_` are as follows:
-/// * `fn zmlDiv_(*O, X, Y) void`: Computes the division of `x` and `y` and
+/// `O`, `X` or `Y` should implement the required `div_` method. The expected
+/// signature and behavior of `div_` are as follows:
+/// * `fn div_(*O, X, Y) void`: Computes the division of `x` and `y` and
 ///   stores it in `o`.
 ///
-/// If none of `O`, `X` and `Y` implement the required `zmlDiv_` method, the
+/// If none of `O`, `X` and `Y` implement the required `div_` method, the
 /// function will fall back to using `numeric.set` with the result of
 /// `numeric.div`, potentially resulting in a less efficient implementation. In
 /// this case, `O`, `X` and `Y` must adhere to the requirements of these
@@ -47,40 +47,40 @@ pub inline fn div_(o: anytype, x: anytype, y: anytype) void {
         !types.isNumeric(types.Child(O)) or
         !types.isNumeric(X) or
         !types.isNumeric(Y))
-        @compileError("zml.numeric.div_: o must be a mutable one-item pointer to a numeric, and x and y must be numerics, got \n\to: " ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
+        @compileError("zsl.numeric.div_: o must be a mutable one-item pointer to a numeric, and x and y must be numerics, got \n\to: " ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
     O = types.Child(O);
 
     if (comptime types.isCustomType(O)) {
         if (comptime types.isCustomType(X)) {
             if (comptime types.isCustomType(Y)) { // O, X and Y all custom
-                if (comptime types.anyHasMethod(&.{ O, X, Y }, "zmlDiv_", fn (*O, X, Y) void, &.{ *O, X, Y })) |Impl|
-                    return Impl.zmlDiv_(o, x, y);
+                if (comptime types.anyHasMethod(&.{ O, X, Y }, "div_", fn (*O, X, Y) void, &.{ *O, X, Y })) |Impl|
+                    return Impl.div_(o, x, y);
             } else { // only O and X custom
-                if (comptime types.anyHasMethod(&.{ O, X }, "zmlDiv_", fn (*O, X, Y) void, &.{ *O, X, Y })) |Impl|
-                    return Impl.zmlDiv_(o, x, y);
+                if (comptime types.anyHasMethod(&.{ O, X }, "div_", fn (*O, X, Y) void, &.{ *O, X, Y })) |Impl|
+                    return Impl.div_(o, x, y);
             }
         } else {
             if (comptime types.isCustomType(Y)) { // only O and Y custom
-                if (comptime types.anyHasMethod(&.{ O, Y }, "zmlDiv_", fn (*O, X, Y) void, &.{ *O, X, Y })) |Impl|
-                    return Impl.zmlDiv_(o, x, y);
+                if (comptime types.anyHasMethod(&.{ O, Y }, "div_", fn (*O, X, Y) void, &.{ *O, X, Y })) |Impl|
+                    return Impl.div_(o, x, y);
             } else { // only O custom
-                if (comptime types.hasMethod(O, "zmlDiv_", fn (*O, X, Y) void, &.{ *O, X, Y }))
-                    return O.zmlDiv_(o, x, y);
+                if (comptime types.hasMethod(O, "div_", fn (*O, X, Y) void, &.{ *O, X, Y }))
+                    return O.div_(o, x, y);
             }
         }
     } else {
         if (comptime types.isCustomType(X)) {
             if (comptime types.isCustomType(Y)) { // only X and Y custom
-                if (comptime types.anyHasMethod(&.{ X, Y }, "zmlDiv_", fn (*O, X, Y) void, &.{ *O, X, Y })) |Impl|
-                    return Impl.zmlDiv_(o, x, y);
+                if (comptime types.anyHasMethod(&.{ X, Y }, "div_", fn (*O, X, Y) void, &.{ *O, X, Y })) |Impl|
+                    return Impl.div_(o, x, y);
             } else { // only X custom
-                if (comptime types.hasMethod(X, "zmlDiv_", fn (*O, X, Y) void, &.{ *O, X, Y }))
-                    return X.zmlDiv_(o, x, y);
+                if (comptime types.hasMethod(X, "div_", fn (*O, X, Y) void, &.{ *O, X, Y }))
+                    return X.div_(o, x, y);
             }
         } else if (comptime types.isCustomType(Y)) { // only Y custom
-            if (comptime types.hasMethod(Y, "zmlDiv_", fn (*O, X, Y) void, &.{ *O, X, Y }))
-                return Y.zmlDiv_(o, x, y);
+            if (comptime types.hasMethod(Y, "div_", fn (*O, X, Y) void, &.{ *O, X, Y }))
+                return Y.div_(o, x, y);
         }
     }
 

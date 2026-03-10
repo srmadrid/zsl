@@ -10,20 +10,20 @@ const numeric = @import("../../numeric.zig");
 
 pub fn Atanh(X: type) type {
     comptime if (!types.isNumeric(X))
-        @compileError("zml.numeric.atanh: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.numeric.atanh: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
 
     switch (comptime types.numericType(X)) {
-        .bool => @compileError("zml.numeric.atanh: not defined for " ++ @typeName(X) ++ "."),
-        .int => @compileError("zml.numeric.atanh: not defined for " ++ @typeName(X) ++ "."),
+        .bool => @compileError("zsl.numeric.atanh: not defined for " ++ @typeName(X) ++ "."),
+        .int => @compileError("zsl.numeric.atanh: not defined for " ++ @typeName(X) ++ "."),
         .rational => return X,
         .float => return X,
         .dyadic => return X,
         .complex => return X,
         .custom => {
-            if (comptime !types.hasMethod(X, "ZmlAtanh", fn (type) type, &.{X}))
-                @compileError("zml.numeric.atanh: " ++ @typeName(X) ++ " must implement `fn ZmlAtanh(type) type`");
+            if (comptime !types.hasMethod(X, "Atanh", fn (type) type, &.{X}))
+                @compileError("zsl.numeric.atanh: " ++ @typeName(X) ++ " must implement `fn Atanh(type) type`");
 
-            return X.ZmlAtanh(X);
+            return X.Atanh(X);
         },
     }
 }
@@ -45,14 +45,14 @@ pub fn Atanh(X: type) type {
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` must implement the required `ZmlAtanh` method. The expected signature
-/// and behavior of `ZmlAtanh` are as follows:
-/// * `fn ZmlAtanh(type) type`: Returns the type of the hyperbolic arctangent of
+/// `X` must implement the required `Atanh` method. The expected signature
+/// and behavior of `Atanh` are as follows:
+/// * `fn Atanh(type) type`: Returns the type of the hyperbolic arctangent of
 ///   `x`.
 ///
-/// `numeric.Atanh(X)` or `X` must implement the required `zmlAtanh` method. The
-/// expected signature and behavior of `zmlAtanh` are as follows:
-/// * `fn zmlAtanh(X) numeric.Atanh(X)`: Returns the hyperbolic arctangent of `x`.
+/// `numeric.Atanh(X)` or `X` must implement the required `atanh` method. The
+/// expected signature and behavior of `atanh` are as follows:
+/// * `fn atanh(X) numeric.Atanh(X)`: Returns the hyperbolic arctangent of `x`.
 pub inline fn atanh(x: anytype) numeric.Atanh(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Atanh(X);
@@ -67,13 +67,13 @@ pub inline fn atanh(x: anytype) numeric.Atanh(@TypeOf(x)) {
         .custom => {
             const Impl: type = comptime types.anyHasMethod(
                 &.{ R, X },
-                "zmlAtanh",
+                "atanh",
                 fn (X) numeric.Atanh(X),
                 &.{X},
             ) orelse
-                @compileError("zml.numeric.atanh: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlAtanh(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
+                @compileError("zsl.numeric.atanh: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn atanh(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
 
-            return Impl.zmlAtanh(x);
+            return Impl.atanh(x);
         },
     }
 }

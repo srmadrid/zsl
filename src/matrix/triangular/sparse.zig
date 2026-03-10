@@ -4,8 +4,7 @@ const types = @import("../../types.zig");
 const Layout = types.Layout;
 const Uplo = types.Uplo;
 const Diag = types.Diag;
-const ops = @import("../../ops.zig");
-const constants = @import("../../constants.zig");
+const numeric = @import("../../numeric.zig");
 
 const matrix = @import("../../matrix.zig");
 const Flags = matrix.Flags;
@@ -108,15 +107,15 @@ pub fn Sparse(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
 
             if (comptime uplo == .upper) {
                 if (r > c)
-                    return constants.zero(T, .{}) catch unreachable;
+                    return numeric.zero(T, .{}) catch unreachable;
             } else {
                 if (r < c)
-                    return constants.zero(T, .{}) catch unreachable;
+                    return numeric.zero(T, .{}) catch unreachable;
             }
 
             if (comptime diag == .unit) {
                 if (r == c)
-                    return constants.one(T, .{}) catch unreachable;
+                    return numeric.one(T, .{}) catch unreachable;
             }
 
             if (comptime layout == .col_major) {
@@ -143,7 +142,7 @@ pub fn Sparse(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
                 }
             }
 
-            return constants.zero(T, .{}) catch unreachable;
+            return numeric.zero(T, .{}) catch unreachable;
         }
 
         /// Gets the element at the specified position without bounds checking.
@@ -192,7 +191,7 @@ pub fn Sparse(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
                 }
             }
 
-            return constants.zero(T, .{}) catch unreachable;
+            return numeric.zero(T, .{}) catch unreachable;
         }
 
         /// Sets the element at the specified position.
@@ -383,7 +382,7 @@ pub fn Sparse(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
 
                     var i: u32 = 0;
                     while (i < self.nnz) : (i += 1) {
-                        ops.deinit(
+                        numeric.deinit(
                             &self.data[i],
                             types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
                         );

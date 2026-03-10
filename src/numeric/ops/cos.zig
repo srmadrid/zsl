@@ -10,20 +10,20 @@ const numeric = @import("../../numeric.zig");
 
 pub fn Cos(X: type) type {
     comptime if (!types.isNumeric(X))
-        @compileError("zml.numeric.cos: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.numeric.cos: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
 
     switch (comptime types.numericType(X)) {
-        .bool => @compileError("zml.numeric.cos: not defined for " ++ @typeName(X) ++ "."),
-        .int => @compileError("zml.numeric.cos: not defined for " ++ @typeName(X) ++ "."),
+        .bool => @compileError("zsl.numeric.cos: not defined for " ++ @typeName(X) ++ "."),
+        .int => @compileError("zsl.numeric.cos: not defined for " ++ @typeName(X) ++ "."),
         .rational => return X,
         .float => return X,
         .dyadic => return X,
         .complex => return X,
         .custom => {
-            if (comptime !types.hasMethod(X, "ZmlCos", fn (type) type, &.{X}))
-                @compileError("zml.numeric.cos: " ++ @typeName(X) ++ " must implement `fn ZmlCos(type) type`");
+            if (comptime !types.hasMethod(X, "Cos", fn (type) type, &.{X}))
+                @compileError("zsl.numeric.cos: " ++ @typeName(X) ++ " must implement `fn Cos(type) type`");
 
-            return X.ZmlCos(X);
+            return X.Cos(X);
         },
     }
 }
@@ -45,12 +45,12 @@ pub fn Cos(X: type) type {
 /// This function supports custom numeric types via specific method
 /// implementations.
 ///
-/// `X` must implement the required `ZmlCos` method. The expected signature and
-/// behavior of `ZmlCos` are as follows:
-/// * `fn ZmlCos(type) type`: Returns the type of the cosine of `x`.
+/// `X` must implement the required `Cos` method. The expected signature and
+/// behavior of `Cos` are as follows:
+/// * `fn Cos(type) type`: Returns the type of the cosine of `x`.
 ///
-/// `numeric.Cos(X)` or `X` must implement the required `zmlCos` method. The
-/// expected signature and behavior of `zmlCos` are as follows:
+/// `numeric.Cos(X)` or `X` must implement the required `cos` method. The
+/// expected signature and behavior of `cos` are as follows:
 /// * `fn Cos(X) numeric.Cos(X)`: Returns the cosine of `x`.
 pub inline fn cos(x: anytype) numeric.Cos(@TypeOf(x)) {
     const X: type = @TypeOf(x);
@@ -66,13 +66,13 @@ pub inline fn cos(x: anytype) numeric.Cos(@TypeOf(x)) {
         .custom => {
             const Impl: type = comptime types.anyHasMethod(
                 &.{ R, X },
-                "zmlCos",
+                "cos",
                 fn (X) numeric.Cos(X),
                 &.{X},
             ) orelse
-                @compileError("zml.numeric.cos: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn zmlCos(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
+                @compileError("zsl.numeric.cos: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn cos(" ++ @typeName(X) ++ ") " ++ @typeName(R) ++ "`");
 
-            return Impl.zmlCos(x);
+            return Impl.cos(x);
         },
     }
 }
