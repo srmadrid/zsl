@@ -1,5 +1,7 @@
 //! Namespace for dyadic operations.
 
+const dyadic = @This();
+
 const std = @import("std");
 
 const types = @import("types.zig");
@@ -15,87 +17,27 @@ pub fn Dyadic(mantissa_bits: u16, exponent_bits: u16) type {
             .{ int.maxVal(u16) / 2, mantissa_bits, exponent_bits },
         ));
 
-    return packed struct {
+    return struct {
         mantissa: Mantissa,
         exponent: Exponent,
         positive: bool,
 
-        /// Type flags
+        /// Type signature
         pub const is_numeric = true;
         pub const is_dyadic = true;
         pub const is_real_type = true;
         pub const is_signed = true;
 
         pub const Mantissa = std.meta.Int(.unsigned, mantissa_bits);
+        const WideMantissa = std.meta.Int(.unsigned, 2 * mantissa_bits);
         pub const Exponent = std.meta.Int(.signed, exponent_bits);
+        const WideExponent = std.meta.Int(.signed, 2 * exponent_bits);
 
-        pub const inf: Dyadic(mantissa_bits, exponent_bits) = .{
-            .mantissa = 0,
-            .exponent = int.maxVal(Exponent),
-            .positive = true,
-        };
-        pub const nan: Dyadic(mantissa_bits, exponent_bits) = .{
-            .mantissa = 1,
-            .exponent = int.maxVal(Exponent),
-            .positive = true,
-        };
-        pub const zero: Dyadic(mantissa_bits, exponent_bits) = .{
-            .mantissa = 0,
-            .exponent = int.minVal(Exponent),
-            .positive = true,
-        };
-        pub const one: Dyadic(mantissa_bits, exponent_bits) = .{
-            .mantissa = @as(Mantissa, 1) << (mantissa_bits - 1),
-            .exponent = int.minVal(Exponent) +| 1,
-            .positive = true,
-        };
-
-        /// Initializes a new dyadic with the specified value.
-        ///
-        /// Signature
-        /// ---------
-        /// ```zig
-        /// fn initSet(value: V) Dyadic(mantissa_bits, exponent_bits)
-        /// ```
-        ///
-        /// Parameters
-        /// ----------
-        /// `value` (`anytype`):
-        /// The value to set the dyadic to. Must be a numeric type or a string.
-        ///
-        /// Returns
-        /// -------
-        /// `Dyadic(mantissa_bits, exponent_bits)`:
-        /// The newly initialized dyadic.
-        pub fn initSet(value: anytype) Dyadic(mantissa_bits, exponent_bits) {
-            _ = value;
-            return .{ .mantissa = 0, .exponent = 0, .positive = true }; // TODO: implement
-        }
-
-        /// Sets the value of the dyadic in-place.
-        ///
-        /// Signature
-        /// ---------
-        /// ```zig
-        /// fn set(value: V) void
-        /// ```
-        ///
-        /// Parameters
-        /// ----------
-        /// `self` (`*Dyadic(mantissa_bits, exponent_bits)`):
-        /// A pointer to the dyadic to set.
-        ///
-        /// `value` (`anytype`):
-        /// The value to set the dyadic to. Must be a numeric type or a string.
-        ///
-        /// Returns
-        /// -------
-        /// `void`
-        pub fn set(self: *Dyadic(mantissa_bits, exponent_bits), value: anytype) void {
-            // TODO: implement
-            _ = value;
-            self.* = .{ .mantissa = 0, .exponent = 0, .positive = true };
-        }
+        /// Constants
+        pub const inf: Dyadic(mantissa_bits, exponent_bits) = .{ .mantissa = 0, .exponent = int.maxVal(Exponent), .positive = true };
+        pub const nan: Dyadic(mantissa_bits, exponent_bits) = .{ .mantissa = 1, .exponent = int.maxVal(Exponent), .positive = true };
+        pub const zero: Dyadic(mantissa_bits, exponent_bits) = .{ .mantissa = 0, .exponent = int.minVal(Exponent), .positive = true };
+        pub const one: Dyadic(mantissa_bits, exponent_bits) = .{ .mantissa = @as(Mantissa, 1) << (mantissa_bits - 1), .exponent = 1 - types.cast(Exponent, mantissa_bits) };
 
         pub fn isInf(self: Dyadic(mantissa_bits, exponent_bits)) bool {
             return self.exponent == int.maxVal(Exponent) and self.mantissa == 0;
@@ -109,16 +51,45 @@ pub fn Dyadic(mantissa_bits: u16, exponent_bits: u16) type {
             return self.exponent == int.minVal(Exponent) and self.mantissa == 0;
         }
 
+        /// Initializes a dyadic from any numeric value.
+        ///
+        /// ## Arguments
+        /// * `value` (`anytype`): The value to set the dyadic to. Must be a
+        ///   numeric.
+        ///
+        /// ## Returns
+        /// `Dyadic(mantissa_bits, exponent_bits)`: The new dyadic.
+        pub fn init(value: anytype) Dyadic(mantissa_bits, exponent_bits) {
+            const V: type = @TypeOf(value);
+
+            comptime if (!types.isNumeric(V))
+                @compileError("zsl.Dyadic(mantissa_bits, exponent_bits).init: value must be a numeric, got \n\tvalue: " ++ @typeName(V) ++ "\n");
+
+            switch (comptime types.numericType(V)) {
+                .bool => if (value) .one else .zero,
+                .int => {
+                    var result: Dyadic(mantissa_bits, exponent_bits) = .{
+                        .mantissa = types.cast(Mantissa, int.abs(value)),
+                        .exponent = 0,
+                        .positive = value >= 0,
+                    };
+                    result.normalize();
+                    return result;
+                },
+                .float, .dyadic => {},
+                .complex => return .init(value.re),
+                .custom => return types.cast(Dyadic(mantissa_bits, exponent_bits), value),
+            }
+        }
+
         /// Normalizes the dyadic in place, ensuring the mantissa is
         /// left-aligned (i.e., the most significant bit is set).
         ///
-        /// Parameters
-        /// ----------
-        /// `self` (`*Dyadic(mantissa_bits, exponent_bits)`):
-        /// A pointer to the dyadic to normalize.
+        /// ## Arguments
+        /// * `self` (`*Dyadic(mantissa_bits, exponent_bits)`): A pointer to the
+        ///   dyadic to normalize.
         ///
-        /// Returns
-        /// -------
+        /// ## Returns
         /// `void`
         pub fn normalize(self: *Dyadic(mantissa_bits, exponent_bits)) void {
             if (self.mantissa == 0) {
@@ -128,15 +99,15 @@ pub fn Dyadic(mantissa_bits: u16, exponent_bits: u16) type {
 
             const lz = @clz(self.mantissa);
             self.mantissa <<= lz;
-            self.exponent -= types.scast(Exponent, lz);
+            self.exponent -|= types.cast(Exponent, lz);
+
+            if (self.exponent == int.minVal(Exponent))
+                self.mantissa = 0;
 
             return;
         }
 
-        pub fn add(
-            x: Dyadic(mantissa_bits, exponent_bits),
-            y: Dyadic(mantissa_bits, exponent_bits),
-        ) Dyadic(mantissa_bits, exponent_bits) {
+        pub fn add(x: Dyadic(mantissa_bits, exponent_bits), y: Dyadic(mantissa_bits, exponent_bits)) Dyadic(mantissa_bits, exponent_bits) {
             // NaN check
             if (x.isNan() or y.isNan())
                 return .nan;
@@ -164,10 +135,11 @@ pub fn Dyadic(mantissa_bits: u16, exponent_bits: u16) type {
             // Addition or subtraction
             const cmp_abs: types.Cmp = x.abs().cmp(y.abs());
             if (x.positive == y.positive) {
-                var result: Dyadic(mantissa_bits, exponent_bits) = if (cmp_abs == .gt)
-                    _addAbs(x, y)
-                else
-                    _addAbs(y, x);
+                var result: Dyadic(mantissa_bits, exponent_bits) =
+                    if (cmp_abs == .gt)
+                        _addAbs(x, y)
+                    else
+                        _addAbs(y, x);
                 result.positive = x.positive;
                 return result;
             }
@@ -175,49 +147,40 @@ pub fn Dyadic(mantissa_bits: u16, exponent_bits: u16) type {
             if (cmp_abs == .eq)
                 return .zero;
 
-            var result: Dyadic(mantissa_bits, exponent_bits) = if (cmp_abs == .gt)
-                _subAbs(x, y)
-            else
-                _subAbs(y, x);
+            var result: Dyadic(mantissa_bits, exponent_bits) =
+                if (cmp_abs == .gt)
+                    _subAbs(x, y)
+                else
+                    _subAbs(y, x);
             result.positive = if (cmp_abs == .gt) x.positive else y.positive;
             return result;
         }
 
-        pub fn sub(
-            x: Dyadic(mantissa_bits, exponent_bits),
-            y: Dyadic(mantissa_bits, exponent_bits),
-        ) Dyadic(mantissa_bits, exponent_bits) {
+        pub fn sub(x: Dyadic(mantissa_bits, exponent_bits), y: Dyadic(mantissa_bits, exponent_bits)) Dyadic(mantissa_bits, exponent_bits) {
             return x.add(y.neg());
         }
 
-        fn _addAbs(
-            x: Dyadic(mantissa_bits, exponent_bits),
-            y: Dyadic(mantissa_bits, exponent_bits),
-        ) Dyadic(mantissa_bits, exponent_bits) {
-            const Wide = std.meta.Int(.unsigned, mantissa_bits * 2);
-
+        fn _addAbs(x: Dyadic(mantissa_bits, exponent_bits), y: Dyadic(mantissa_bits, exponent_bits)) Dyadic(mantissa_bits, exponent_bits) {
             // |x| >= |y|, so exponent difference is non-negative
-            const exp_diff: Exponent = x.exponent - y.exponent;
+            const exp_diff: WideExponent = types.cast(WideExponent, x.exponent) - types.cast(WideExponent, y.exponent);
 
-            const x_wide: Wide = types.scast(Wide, x.mantissa) << @intCast(mantissa_bits);
-            const y_wide: Wide = types.scast(Wide, y.mantissa) << @intCast(mantissa_bits);
+            const x_wide: WideMantissa = types.cast(WideMantissa, x.mantissa) << @intCast(mantissa_bits);
+            const y_wide: WideMantissa = types.cast(WideMantissa, y.mantissa) << @intCast(mantissa_bits);
 
-            var y_shifted: Wide = undefined;
+            var y_shifted: WideMantissa = undefined;
             var sticky: u1 = 0;
-            if (exp_diff >= 2 * mantissa_bits + 2) {
+            if (exp_diff >= 2 * mantissa_bits) {
                 y_shifted = 0;
-
-                if (y.mantissa != 0)
-                    sticky = 1;
+                sticky = 1;
             } else {
                 y_shifted = y_wide >> @intCast(exp_diff);
 
-                if ((y_wide & ((@as(Wide, 1) << @intCast(exp_diff)) - 1)) != 0)
+                if ((y_wide & ((@as(WideMantissa, 1) << @intCast(exp_diff)) - 1)) != 0)
                     sticky = 1;
             }
 
             const sum_ov = @addWithOverflow(x_wide, y_shifted);
-            var sum: Wide = sum_ov[0];
+            var sum: WideMantissa = sum_ov[0];
             const carry: u1 = sum_ov[1];
             var exponent: Exponent = x.exponent;
             if (carry != 0) {
@@ -225,13 +188,13 @@ pub fn Dyadic(mantissa_bits: u16, exponent_bits: u16) type {
                     sticky = 1;
 
                 sum >>= 1;
-                sum |= (@as(Wide, 1) << (mantissa_bits * 2 - 1));
-                exponent += 1;
+                sum |= (@as(WideMantissa, 1) << (mantissa_bits * 2 - 1));
+                exponent +|= 1;
             }
 
             var mantissa: Mantissa = @truncate(sum >> @intCast(mantissa_bits));
-            const remainder: Wide = sum & ((@as(Wide, 1) << @intCast(mantissa_bits)) - 1);
-            const halfway: Wide = @as(Wide, 1) << @intCast(mantissa_bits - 1);
+            const remainder: WideMantissa = sum & ((@as(WideMantissa, 1) << @intCast(mantissa_bits)) - 1);
+            const halfway: WideMantissa = @as(WideMantissa, 1) << @intCast(mantissa_bits - 1);
             var round_up = false;
             if (remainder > halfway) {
                 round_up = true;
@@ -266,33 +229,26 @@ pub fn Dyadic(mantissa_bits: u16, exponent_bits: u16) type {
             };
         }
 
-        fn _subAbs(
-            x: Dyadic(mantissa_bits, exponent_bits),
-            y: Dyadic(mantissa_bits, exponent_bits),
-        ) Dyadic(mantissa_bits, exponent_bits) {
-            const Wide = std.meta.Int(.unsigned, mantissa_bits * 2);
-
+        fn _subAbs(x: Dyadic(mantissa_bits, exponent_bits), y: Dyadic(mantissa_bits, exponent_bits)) Dyadic(mantissa_bits, exponent_bits) {
             // |x| >= |y|, so exponent difference is non-negative
-            const exp_diff: Exponent = x.exponent - y.exponent;
+            const exp_diff: WideExponent = types.cast(WideExponent, x.exponent) - types.cast(WideExponent, y.exponent);
 
-            const x_wide: Wide = types.scast(Wide, x.mantissa) << @intCast(mantissa_bits);
-            const y_wide: Wide = types.scast(Wide, y.mantissa) << @intCast(mantissa_bits);
+            const x_wide: WideMantissa = types.cast(WideMantissa, x.mantissa) << @intCast(mantissa_bits);
+            const y_wide: WideMantissa = types.cast(WideMantissa, y.mantissa) << @intCast(mantissa_bits);
 
-            var y_shifted: Wide = undefined;
+            var y_shifted: WideMantissa = undefined;
             var sticky: u1 = 0;
-            if (exp_diff >= mantissa_bits * 2) {
+            if (exp_diff >= 2 * mantissa_bits) {
                 y_shifted = 0;
-
-                if (y.mantissa != 0)
-                    sticky = 1;
+                sticky = 1;
             } else {
                 y_shifted = y_wide >> @intCast(exp_diff);
 
-                if ((y_wide & ((@as(Wide, 1) << @intCast(exp_diff)) - 1)) != 0)
+                if ((y_wide & ((@as(WideMantissa, 1) << @intCast(exp_diff)) - 1)) != 0)
                     sticky = 1;
             }
 
-            var diff: Wide = x_wide - y_shifted;
+            var diff: WideMantissa = x_wide - y_shifted;
             if (sticky == 1)
                 diff -= 1;
 
@@ -301,10 +257,10 @@ pub fn Dyadic(mantissa_bits: u16, exponent_bits: u16) type {
 
             const lz = @clz(diff);
 
-            var exponent: Exponent = x.exponent -| types.scast(Exponent, lz);
+            var exponent: WideExponent = types.cast(WideExponent, x.exponent) - types.cast(WideExponent, lz);
             var mantissa: Mantissa = @truncate((diff << @intCast(lz)) >> @intCast(mantissa_bits));
-            const remainder: Wide = (diff << @intCast(lz)) & ((@as(Wide, 1) << @intCast(mantissa_bits)) - 1);
-            const halfway: Wide = @as(Wide, 1) << @intCast(mantissa_bits - 1);
+            const remainder: WideMantissa = (diff << @intCast(lz)) & ((@as(WideMantissa, 1) << @intCast(mantissa_bits)) - 1);
+            const halfway: WideMantissa = @as(WideMantissa, 1) << @intCast(mantissa_bits - 1);
             var round_up = false;
             if (remainder > halfway) {
                 round_up = true;
@@ -325,20 +281,17 @@ pub fn Dyadic(mantissa_bits: u16, exponent_bits: u16) type {
             }
 
             // Check for underflow
-            if (exponent == int.minVal(Exponent))
+            if (exponent <= int.minVal(Exponent))
                 return .zero;
 
             return .{
                 .mantissa = mantissa,
-                .exponent = exponent,
+                .exponent = types.cast(Exponent, exponent),
                 .positive = true,
             };
         }
 
-        pub fn mul(
-            x: Dyadic(mantissa_bits, exponent_bits),
-            y: Dyadic(mantissa_bits, exponent_bits),
-        ) Dyadic(mantissa_bits, exponent_bits) {
+        pub fn mul(x: Dyadic(mantissa_bits, exponent_bits), y: Dyadic(mantissa_bits, exponent_bits)) Dyadic(mantissa_bits, exponent_bits) {
             // NaN check
             if (x.isNan() or y.isNan())
                 return .nan;
@@ -373,26 +326,25 @@ pub fn Dyadic(mantissa_bits: u16, exponent_bits: u16) type {
                 };
 
             // Multiplication
-            const Wide = std.meta.Int(.unsigned, mantissa_bits * 2);
 
             // MSB will be at bit position mantissa_bits * 2 - 1 or mantissa_bits * 2 - 2
-            const product: Wide = types.scast(Wide, x.mantissa) * types.scast(Wide, y.mantissa);
-            var exponent: Exponent = x.exponent +| y.exponent -| types.scast(Exponent, mantissa_bits - 1);
+            const product: WideMantissa = types.cast(WideMantissa, x.mantissa) * types.cast(WideMantissa, y.mantissa);
+            var exponent: WideExponent = types.cast(WideExponent, x.exponent) + types.cast(WideExponent, y.exponent) + types.cast(WideExponent, mantissa_bits - 1);
 
             var mantissa: Mantissa = undefined;
-            var remainder: Wide = undefined;
-            var halfway: Wide = undefined;
-            if ((product & (@as(Wide, 1) << @intCast(mantissa_bits * 2 - 1))) != 0) {
+            var remainder: WideMantissa = undefined;
+            var halfway: WideMantissa = undefined;
+            if ((product & (@as(WideMantissa, 1) << @intCast(mantissa_bits * 2 - 1))) != 0) {
                 // MSB at mantissa_bits * 2 - 1
                 mantissa = @truncate(product >> @intCast(mantissa_bits));
-                remainder = product & ((@as(Wide, 1) << @intCast(mantissa_bits)) - 1);
-                halfway = @as(Wide, 1) << @intCast(mantissa_bits - 1);
+                remainder = product & ((@as(WideMantissa, 1) << @intCast(mantissa_bits)) - 1);
+                halfway = @as(WideMantissa, 1) << @intCast(mantissa_bits - 1);
                 exponent +|= 1;
             } else {
                 // MSB at mantissa_bits * 2 - 2
                 mantissa = @truncate(product >> @intCast(mantissa_bits - 1));
-                remainder = product & ((@as(Wide, 1) << @intCast(mantissa_bits - 1)) - 1);
-                halfway = @as(Wide, 1) << @intCast(mantissa_bits - 2);
+                remainder = product & ((@as(WideMantissa, 1) << @intCast(mantissa_bits - 1)) - 1);
+                halfway = @as(WideMantissa, 1) << @intCast(mantissa_bits - 2);
             }
 
             if (remainder > halfway or (remainder == halfway and (mantissa & 1) == 1)) {
@@ -406,7 +358,7 @@ pub fn Dyadic(mantissa_bits: u16, exponent_bits: u16) type {
             }
 
             // Check for overflow
-            if (exponent == int.maxVal(Exponent))
+            if (exponent >= int.maxVal(Exponent))
                 return .{
                     .mantissa = 0,
                     .exponent = int.maxVal(Exponent),
@@ -414,7 +366,7 @@ pub fn Dyadic(mantissa_bits: u16, exponent_bits: u16) type {
                 };
 
             // Check for underflow
-            if (exponent == int.minVal(Exponent))
+            if (exponent <= int.minVal(Exponent))
                 return .{
                     .mantissa = 0,
                     .exponent = int.minVal(Exponent),
@@ -423,31 +375,27 @@ pub fn Dyadic(mantissa_bits: u16, exponent_bits: u16) type {
 
             return .{
                 .mantissa = mantissa,
-                .exponent = exponent,
+                .exponent = types.cast(Exponent, exponent),
                 .positive = x.positive == y.positive,
             };
         }
 
-        pub fn div(
-            x: Dyadic(mantissa_bits, exponent_bits),
-            y: Dyadic(mantissa_bits, exponent_bits),
-        ) Dyadic(mantissa_bits, exponent_bits) {
+        pub fn div(x: Dyadic(mantissa_bits, exponent_bits), y: Dyadic(mantissa_bits, exponent_bits)) Dyadic(mantissa_bits, exponent_bits) {
             // NaN check
             if (x.isNan() or y.isNan())
                 return .nan;
 
             // Infinity check
             if (x.isInf()) {
-                if (y.isInf())
-                    return .nan // Inf / Inf = NaN
-                else
+                if (y.isInf()) // Inf / Inf = NaN
+                    return .nan
+                else // Inf / Finite = Inf
                     return .{
                         .mantissa = 0,
                         .exponent = int.maxVal(Exponent),
                         .positive = x.positive == y.positive,
                     };
-            } else if (y.isInf()) {
-                // Finite / Inf = 0
+            } else if (y.isInf()) { // Finite / Inf = 0
                 return .{
                     .mantissa = 0,
                     .exponent = int.minVal(Exponent),
@@ -457,15 +405,15 @@ pub fn Dyadic(mantissa_bits: u16, exponent_bits: u16) type {
 
             // Zero check
             if (y.isZero()) {
-                if (x.isZero())
-                    return .nan // 0 / 0 = NaN
-                else
+                if (x.isZero()) // 0 / 0 = NaN
+                    return .nan
+                else // Finite / 0 = Inf
                     return .{
                         .mantissa = 0,
                         .exponent = int.maxVal(Exponent),
                         .positive = x.positive == y.positive,
                     };
-            } else if (x.isZero()) {
+            } else if (x.isZero()) { // 0 / Finite = 0
                 return .{
                     .mantissa = 0,
                     .exponent = int.minVal(Exponent),
@@ -474,42 +422,58 @@ pub fn Dyadic(mantissa_bits: u16, exponent_bits: u16) type {
             }
 
             // Division
-            const Wide = std.meta.Int(.unsigned, mantissa_bits * 2);
+            const x_wide: WideMantissa = types.cast(WideMantissa, x.mantissa) << @intCast(mantissa_bits);
+            const y_wide: WideMantissa = types.cast(WideMantissa, y.mantissa);
+            const quotient: WideMantissa = x_wide / y_wide;
+            const remainder: WideMantissa = x_wide % y_wide;
 
-            const x_wide: Wide = types.scast(Wide, x.mantissa) << @intCast(mantissa_bits);
-            const y_wide: Wide = types.scast(Wide, y.mantissa);
-            const quotient: Wide = x_wide / y_wide;
-            const remainder: Wide = x_wide % y_wide;
-
-            var exponent: Exponent = x.exponent -| y.exponent +| types.scast(Exponent, mantissa_bits - 1);
+            var exponent: WideExponent = types.cast(WideExponent, x.exponent) - types.cast(WideExponent, y.exponent) - types.cast(WideExponent, mantissa_bits);
             var mantissa: Mantissa = undefined;
-            var round_remainder: Wide = undefined;
-            var halfway: Wide = undefined;
-            if ((quotient & (@as(Wide, 1) << @intCast(mantissa_bits))) != 0) {
-                // MSB at mantissa_bits
+            var round_up = false;
+            if ((quotient & (@as(WideMantissa, 1) << @intCast(mantissa_bits))) != 0) {
+                // MSB is at mantissa_bits. We must shift right by 1 to normalize.
                 mantissa = @truncate(quotient >> 1);
-                round_remainder = (quotient & 1) * y_wide + remainder;
-                halfway = y_wide;
                 exponent +|= 1;
+
+                const dropped_bit = quotient & 1;
+
+                // If dropped_bit is 1, the discarded fraction is >= 0.5
+                if (dropped_bit == 1) {
+                    if (remainder > 0) {
+                        round_up = true; // Strictly > 0.5
+                    } else if ((mantissa & 1) == 1) {
+                        round_up = true; // Exactly 0.5, round to nearest even
+                    }
+                }
             } else {
-                // MSB at mantissa_bits - 1
+                // MSB is at mantissa_bits - 1. Fits perfectly.
                 mantissa = @truncate(quotient);
-                round_remainder = remainder;
-                halfway = y_wide >> 1;
+
+                // Discarded fraction is remainder / y_wide. Check if it's >= 0.5
+                const rem_doubled = remainder << 1;
+
+                if (rem_doubled > y_wide) {
+                    round_up = true;
+                } else if (rem_doubled == y_wide) {
+                    if ((mantissa & 1) == 1) {
+                        round_up = true; // Exactly 0.5, round to nearest even
+                    }
+                }
             }
 
-            if (round_remainder > halfway or (round_remainder == halfway and (mantissa & 1) == 1)) {
+            if (round_up) {
                 const round = @addWithOverflow(mantissa, 1);
                 mantissa = round[0];
 
                 if (round[1] != 0) {
+                    // Mantissa overflowed during rounding (e.g., 1111 + 1 = 10000)
                     mantissa = @as(Mantissa, 1) << (mantissa_bits - 1);
                     exponent +|= 1;
                 }
             }
 
             // Check for overflow
-            if (exponent == int.maxVal(Exponent))
+            if (exponent >= int.maxVal(Exponent))
                 return .{
                     .mantissa = 0,
                     .exponent = int.maxVal(Exponent),
@@ -517,7 +481,7 @@ pub fn Dyadic(mantissa_bits: u16, exponent_bits: u16) type {
                 };
 
             // Check for underflow
-            if (exponent == int.minVal(Exponent))
+            if (exponent <= int.minVal(Exponent))
                 return .{
                     .mantissa = 0,
                     .exponent = int.minVal(Exponent),
@@ -526,15 +490,12 @@ pub fn Dyadic(mantissa_bits: u16, exponent_bits: u16) type {
 
             return .{
                 .mantissa = mantissa,
-                .exponent = exponent,
+                .exponent = types.cast(Exponent, exponent),
                 .positive = x.positive == y.positive,
             };
         }
 
-        pub fn cmp(
-            x: Dyadic(mantissa_bits, exponent_bits),
-            y: Dyadic(mantissa_bits, exponent_bits),
-        ) Cmp {
+        pub fn cmp(x: Dyadic(mantissa_bits, exponent_bits), y: Dyadic(mantissa_bits, exponent_bits)) Cmp {
             // NaN check
             if (x.isNan()) {
                 if (y.isNan())
@@ -610,10 +571,26 @@ pub fn Add(comptime X: type, comptime Y: type) type {
     return types.Coerce(X, Y);
 }
 
-pub fn add(x: anytype, y: anytype) Add(@TypeOf(x), @TypeOf(y)) {
+/// Performs addition between two operands of dyadic, float, int or bool types,
+/// where at least one operand must be of dyadic type. The result type is
+/// determined by coercing the operand types, and the operation is performed by
+/// casting both operands to the result type, then adding them.
+///
+/// ## Signature
+/// ```zig
+/// dyadic.add(x: X, y: Y) dyadic.Add(X, Y)
+/// ```
+///
+/// ## Arguments
+/// * `x` (`anytype`): The left operand.
+/// * `y` (`anytype`): The right operand.
+///
+/// ## Returns
+/// `dyadic.Add(@TypeOf(x), @TypeOf(y))`: The result of the addition.
+pub fn add(x: anytype, y: anytype) dyadic.Add(@TypeOf(x), @TypeOf(y)) {
     const R: type = Add(@TypeOf(x), @TypeOf(y));
 
-    return types.scast(R, x).add(types.scast(R, y));
+    return R.add(types.cast(R, x), types.cast(R, y));
 }
 
 pub fn Sub(comptime X: type, comptime Y: type) type {
@@ -626,10 +603,26 @@ pub fn Sub(comptime X: type, comptime Y: type) type {
     return types.Coerce(X, Y);
 }
 
+/// Performs subtraction between two operands of dyadic, float, int or bool
+/// types, where at least one operand must be of dyadic type. The result type is
+/// determined by coercing the operand types, and the operation is performed by
+/// casting both operands to the result type, then subtracting them.
+///
+/// ## Signature
+/// ```zig
+/// dyadic.sub(x: X, y: Y) dyadic.Sub(X, Y)
+/// ```
+///
+/// ## Arguments
+/// * `x` (`anytype`): The left operand.
+/// * `y` (`anytype`): The right operand.
+///
+/// ## Returns
+/// `dyadic.Sub(@TypeOf(x), @TypeOf(y))`: The result of the subtraction.
 pub fn sub(x: anytype, y: anytype) Sub(@TypeOf(x), @TypeOf(y)) {
     const R: type = Sub(@TypeOf(x), @TypeOf(y));
 
-    return types.scast(R, x).sub(types.scast(R, y));
+    return R.sub(types.cast(R, x), types.cast(R, y));
 }
 
 pub fn Mul(comptime X: type, comptime Y: type) type {
@@ -642,10 +635,61 @@ pub fn Mul(comptime X: type, comptime Y: type) type {
     return types.Coerce(X, Y);
 }
 
+/// Performs multiplication between two operands of dyadic, float, int or bool
+/// types, where at least one operand must be of dyadic type. The result type is
+/// determined by coercing the operand types, and the operation is performed by
+/// casting both operands to the result type, then multiplication them.
+///
+/// ## Signature
+/// ```zig
+/// dyadic.mul(x: X, y: Y) dyadic.Mul(X, Y)
+/// ```
+///
+/// ## Arguments
+/// * `x` (`anytype`): The left operand.
+/// * `y` (`anytype`): The right operand.
+///
+/// ## Returns
+/// `dyadic.Mul(@TypeOf(x), @TypeOf(y))`: The result of the multiplication.
 pub fn mul(x: anytype, y: anytype) Mul(@TypeOf(x), @TypeOf(y)) {
     const R: type = Mul(@TypeOf(x), @TypeOf(y));
 
-    return types.scast(R, x).mul(types.scast(R, y));
+    return R.mul(types.cast(R, x), types.cast(R, y));
+}
+
+pub fn Fma(comptime X: type, comptime Y: type, comptime Z: type) type {
+    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or !types.isNumeric(Z) or
+        !types.numericType(X).le(.dyadic) or !types.numericType(Y).le(.dyadic) or !types.numericType(Z).le(.dyadic) or
+        (types.numericType(X) != .dyadic and types.numericType(Y) != .dyadic and types.numericType(Z) != .dyadic))
+        @compileError("zsl.dyadic.fma: at least one of x, y or z must be a dyadic, the others must be bool, int, float or dyadic, got\n\tx: " ++
+            @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\tz: " ++ @typeName(Z) ++ "\n");
+
+    return types.Coerce(X, types.Coerce(Y, Z));
+}
+
+/// Performs fused multiplication and addition (x * y + z) between three
+/// operands of dyadic, float, int or bool types, where at least one operand
+/// must be of dyadic type. The result type is determined by coercing the
+/// operand types, and the operation is performed by casting all three operands
+/// to the result type, then performing the fused operation.
+///
+/// ## Signature
+/// ```zig
+/// dyadic.fma(x: X, y: Y, z: Z) dyadic.Fma(X, Y, Z)
+/// ```
+///
+/// ## Arguments
+/// * `x` (`anytype`): The left multiplication operand.
+/// * `y` (`anytype`): The right multiplication operand.
+/// * `z` (`anytype`): The addition operand.
+///
+/// ## Returns
+/// `dyadic.Fma(@TypeOf(x), @TypeOf(y), @TypeOf(z))`: The result of the fused
+/// multiplication and addition.
+pub inline fn fma(x: anytype, y: anytype, z: anytype) dyadic.Fma(@TypeOf(x), @TypeOf(y), @TypeOf(z)) {
+    const R: type = dyadic.Fma(@TypeOf(x), @TypeOf(y), @TypeOf(z));
+
+    return R.fma(types.cast(R, x), types.cast(R, y), types.cast(R, z));
 }
 
 pub fn Div(comptime X: type, comptime Y: type) type {
@@ -658,10 +702,26 @@ pub fn Div(comptime X: type, comptime Y: type) type {
     return types.Coerce(X, Y);
 }
 
+/// Performs division between two operands of dyadic, float, int or bool types,
+/// where at least one operand must be of dyadic type. The result type is
+/// determined by coercing the operand types, and the operation is performed by
+/// casting both operands to the result type, then dividing them.
+///
+/// ## Signature
+/// ```zig
+/// dyadic.div(x: X, y: Y) dyadic.Div(X, Y)
+/// ```
+///
+/// ## Arguments
+/// * `x` (`anytype`): The left operand.
+/// * `y` (`anytype`): The right operand.
+///
+/// ## Returns
+/// `dyadic.Div(@TypeOf(x), @TypeOf(y))`: The result of the division.
 pub fn div(x: anytype, y: anytype) Div(@TypeOf(x), @TypeOf(y)) {
     const R: type = Div(@TypeOf(x), @TypeOf(y));
 
-    return types.scast(R, x).div(types.scast(R, y));
+    return types.cast(R, x).div(types.cast(R, y));
 }
 
 pub const sign = @import("dyadic/sign.zig").sign;

@@ -442,34 +442,34 @@ pub inline fn min(x: anytype, y: anytype) int.Min(@TypeOf(x), @TypeOf(y)) {
     return if (types.cast(R, x) < types.cast(R, y)) types.cast(R, x) else types.cast(R, y);
 }
 
-/// Returns the maximum representable value of the given int type `T`.
+/// Returns the maximum representable value of the given int type `Int`.
 ///
 /// ## Arguments
-/// * `T` (`type`): The int type to get the maximum value for.
+/// * `Int` (`type`): The int type to get the maximum value for.
 ///
 /// ## Returns
-/// `T`: The maximum representable value of type `T`.
-pub inline fn maxVal(comptime T: type) T {
-    comptime if (!types.isNumeric(T) or types.numericType(T) != .int)
-        @compileError("zsl.int.maxVal: T must be an int type, got \n\tT: " ++ @typeName(T) ++ "\n");
+/// `Int`: The maximum representable value of type `Int`.
+pub inline fn maxVal(comptime Int: type) Int {
+    comptime if (!types.isNumeric(Int) or types.numericType(Int) != .int)
+        @compileError("zsl.int.maxVal: Int must be an int type, got \n\tInt = " ++ @typeName(Int) ++ "\n");
 
-    const info = @typeInfo(T);
+    const info = @typeInfo(Int);
     const bits = info.int.bits;
     return (1 << (bits - types.cast(@TypeOf(bits), info.int.signedness == .signed))) - 1;
 }
 
-/// Returns the minimum representable value of the given int type `T`.
+/// Returns the minimum representable value of the given int type `Int`.
 ///
 /// ## Arguments
-/// * `T` (`type`): The int type to get the minimum value for.
+/// * `Int` (`type`): The int type to get the minimum value for.
 ///
 /// ## Returns
-/// `T`: The minimum representable value of type `T`.
-pub inline fn minVal(comptime T: type) T {
-    comptime if (!types.isNumeric(T) or types.numericType(T) != .int)
-        @compileError("zsl.int.minVal: T must be an int type, got \n\tT: " ++ @typeName(T) ++ "\n");
+/// `Int`: The minimum representable value of type `Int`.
+pub inline fn minVal(comptime Int: type) Int {
+    comptime if (!types.isNumeric(Int) or types.numericType(Int) != .int)
+        @compileError("zsl.int.minVal: Int must be an int type, got \n\tInt = " ++ @typeName(Int) ++ "\n");
 
-    const info = @typeInfo(T);
+    const info = @typeInfo(Int);
     const bits = info.int.bits;
     return if (info.int.signedness == .signed) -(1 << (bits - 1)) else 0;
 }
