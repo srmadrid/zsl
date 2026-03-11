@@ -1,7 +1,6 @@
 const types = @import("../types.zig");
 
 const int = @import("../int.zig");
-const rational = @import("../rational.zig");
 const float = @import("../float.zig");
 const dyadic = @import("../dyadic.zig");
 const complex = @import("../complex.zig");
@@ -28,7 +27,6 @@ pub inline fn zero(comptime N: type) N {
     switch (comptime types.numericType(N)) {
         .bool => return false,
         .int => return 0,
-        .rational => return .zero,
         .float => return 0.0,
         .dyadic => return .zero,
         .complex => return .zero,
@@ -63,7 +61,6 @@ pub inline fn one(comptime N: type) N {
     switch (comptime types.numericType(N)) {
         .bool => return true,
         .int => return 1,
-        .rational => return .one,
         .float => return 1.0,
         .dyadic => return .one,
         .complex => return .one,
@@ -97,6 +94,10 @@ pub inline fn two(comptime N: type) N {
 
     switch (comptime types.numericType(N)) {
         .bool => return true,
+        .int => return 2,
+        .float => return 2.0,
+        .dyadic => return .two,
+        .complex => return .two,
         .custom => {
             comptime if (!types.hasMethod(N, "two", fn () N, &.{}))
                 @compileError("zsl.numeric.two: " ++ @typeName(N) ++ " must implement `fn two() " ++ @typeName(N) ++ "`");

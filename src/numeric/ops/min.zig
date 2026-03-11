@@ -1,7 +1,6 @@
 const types = @import("../../types.zig");
 
 const int = @import("../../int.zig");
-const rational = @import("../../rational.zig");
 const float = @import("../../float.zig");
 const dyadic = @import("../../dyadic.zig");
 const complex = @import("../../complex.zig");
@@ -40,7 +39,6 @@ pub fn Min(X: type, Y: type) type {
         .bool => switch (comptime types.numericType(Y)) {
             .bool => return bool,
             .int => return int.Min(X, Y),
-            .rational => return rational.Min(X, Y),
             .float => return float.Min(X, Y),
             .dyadic => return dyadic.Min(X, Y),
             .complex => @compileError("zsl.numeric.min: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
@@ -48,27 +46,19 @@ pub fn Min(X: type, Y: type) type {
         },
         .int => switch (comptime types.numericType(Y)) {
             .bool, .int => return int.Min(X, Y),
-            .rational => return rational.Min(X, Y),
-            .float => return float.Min(X, Y),
-            .dyadic => return dyadic.Min(X, Y),
-            .complex => @compileError("zsl.numeric.min: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
-            .custom => unreachable,
-        },
-        .rational => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational => return rational.Min(X, Y),
             .float => return float.Min(X, Y),
             .dyadic => return dyadic.Min(X, Y),
             .complex => @compileError("zsl.numeric.min: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
         .float => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float => return float.Min(X, Y),
+            .bool, .int, .float => return float.Min(X, Y),
             .dyadic => return dyadic.Min(X, Y),
             .complex => @compileError("zsl.numeric.min: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
         .dyadic => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float, .dyadic => return dyadic.Min(X, Y),
+            .bool, .int, .float, .dyadic => return dyadic.Min(X, Y),
             .complex => @compileError("zsl.numeric.min: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
@@ -146,7 +136,6 @@ pub inline fn min(x: anytype, y: anytype) numeric.Min(@TypeOf(x), @TypeOf(y)) {
         .bool => switch (comptime types.numericType(Y)) {
             .bool => return x and y,
             .int => return int.min(x, y),
-            .rational => return rational.min(x, y),
             .float => return float.min(x, y),
             .dyadic => return dyadic.min(x, y),
             .complex => unreachable,
@@ -154,27 +143,19 @@ pub inline fn min(x: anytype, y: anytype) numeric.Min(@TypeOf(x), @TypeOf(y)) {
         },
         .int => switch (comptime types.numericType(Y)) {
             .bool, .int => return int.min(x, y),
-            .rational => return rational.min(x, y),
-            .float => return float.min(x, y),
-            .dyadic => return dyadic.min(x, y),
-            .complex => unreachable,
-            .custom => unreachable,
-        },
-        .rational => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational => return rational.min(x, y),
             .float => return float.min(x, y),
             .dyadic => return dyadic.min(x, y),
             .complex => unreachable,
             .custom => unreachable,
         },
         .float => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float => return float.min(x, y),
+            .bool, .int, .float => return float.min(x, y),
             .dyadic => return dyadic.min(x, y),
             .complex => unreachable,
             .custom => unreachable,
         },
         .dyadic => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float, .dyadic => return dyadic.min(x, y),
+            .bool, .int, .float, .dyadic => return dyadic.min(x, y),
             .complex => unreachable,
             .custom => unreachable,
         },

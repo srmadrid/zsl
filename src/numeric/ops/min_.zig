@@ -1,11 +1,4 @@
 const types = @import("../../types.zig");
-
-const int = @import("../../int.zig");
-const rational = @import("../../rational.zig");
-const float = @import("../../float.zig");
-const dyadic = @import("../../dyadic.zig");
-const complex = @import("../../complex.zig");
-
 const numeric = @import("../../numeric.zig");
 
 /// Performs in-place computation of the minimum between two numerics `x` and `y`

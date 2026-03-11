@@ -1,7 +1,6 @@
 const types = @import("../../types.zig");
 
 const int = @import("../../int.zig");
-const rational = @import("../../rational.zig");
 const float = @import("../../float.zig");
 const dyadic = @import("../../dyadic.zig");
 const complex = @import("../../complex.zig");
@@ -15,7 +14,6 @@ pub fn Sign(X: type) type {
     switch (comptime types.numericType(X)) {
         .bool => return X,
         .int => return X,
-        .rational => return X,
         .float => return X,
         .dyadic => return X,
         .complex => return X,
@@ -59,7 +57,6 @@ pub inline fn sign(x: anytype) numeric.Sign(@TypeOf(x)) {
     switch (comptime types.numericType(X)) {
         .bool => return x,
         .int => return int.sign(x),
-        .rational => return rational.sign(x),
         .float => return float.sign(x),
         .dyadic => return dyadic.sign(x),
         .complex => return complex.sign(x),

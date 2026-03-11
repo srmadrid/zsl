@@ -1,7 +1,6 @@
 const types = @import("../../types.zig");
 
 const int = @import("../../int.zig");
-const rational = @import("../../rational.zig");
 const float = @import("../../float.zig");
 const dyadic = @import("../../dyadic.zig");
 const complex = @import("../../complex.zig");
@@ -15,7 +14,6 @@ pub fn Tanh(X: type) type {
     switch (comptime types.numericType(X)) {
         .bool => @compileError("zsl.numeric.tanh: not defined for " ++ @typeName(X) ++ "."),
         .int => @compileError("zsl.numeric.tanh: not defined for " ++ @typeName(X) ++ "."),
-        .rational => return X,
         .float => return X,
         .dyadic => return X,
         .complex => return X,
@@ -59,7 +57,6 @@ pub inline fn tanh(x: anytype) numeric.Tanh(@TypeOf(x)) {
     switch (comptime types.numericType(X)) {
         .bool => unreachable,
         .int => unreachable,
-        .rational => return rational.tanh(x),
         .float => return float.tanh(x),
         .dyadic => return dyadic.tanh(x),
         .complex => return complex.tanh(x),

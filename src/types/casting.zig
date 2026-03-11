@@ -1,7 +1,6 @@
 const types = @import("../types.zig");
 const numeric = @import("../numeric.zig");
 
-const rational = @import("../rational.zig");
 const dyadic = @import("../dyadic.zig");
 const complex = @import("../complex.zig");
 
@@ -33,8 +32,6 @@ const complex = @import("../complex.zig");
 /// * `fn fromBool(V) N`: Creates a value of type `N` from a boolean value.
 /// * `fn fromInt(V) N`: Creates a value of type `N` from a value of int type
 ///   `V`.
-/// * `fn fromRational(V) N`: Creates a value of type `N` from a value of
-///   rational type `V`.
 /// * `fn fromFloat(V) N`: Creates a value of type `N` from a value of float type
 ///   `V`.
 /// * `fn fromDyadic(V) N`: Creates a value of type `N` from a value of dyadic
@@ -50,8 +47,6 @@ const complex = @import("../complex.zig");
 /// * `fn toBool(V) bool`: Converts a value of type `V` to a boolean value.
 /// * `fn toInt(V, N: type) N`: Converts a value of type `V` to a value of int
 ///   type `N`.
-/// * `fn toRational(V, N: type) N`: Converts a value of type `V` to a value of
-///   rational type `N`.
 /// * `fn toFloat(V, N: type) N`: Converts a value of type `V` to a value of
 ///   float type `N`.
 /// * `fn toDyadic(V, N: type) N`: Converts a value of type `V` to a value of
@@ -89,7 +84,7 @@ pub inline fn cast(comptime N: type, value: anytype) N {
     switch (comptime types.numericType(V)) {
         .bool => switch (comptime types.numericType(N)) {
             .bool => unreachable,
-            .int, .rational, .float, .dyadic, .complex => return if (value) numeric.one(N) else numeric.zero(N),
+            .int, .float, .dyadic, .complex => return if (value) numeric.one(N) else numeric.zero(N),
             .custom => {
                 if (comptime !types.hasMethod(N, "fromBool", fn (V) N, &.{V}))
                     return if (value) numeric.one(N) else numeric.zero(N);
@@ -100,7 +95,6 @@ pub inline fn cast(comptime N: type, value: anytype) N {
         .int => switch (comptime types.numericType(N)) {
             .bool => return numeric.ne(value, numeric.zero(V)),
             .int => return @intCast(value),
-            .rational => return .init(value),
             .float => return @floatFromInt(value),
             .dyadic => return .init(value),
             .complex => return .init(value),
@@ -111,24 +105,9 @@ pub inline fn cast(comptime N: type, value: anytype) N {
                 return N.fromInt(value);
             },
         },
-        .rational => switch (comptime types.numericType(N)) {
-            .bool => return numeric.ne(value, numeric.zero(V)),
-            .int => return value.toInt(N),
-            .rational => return .init(value),
-            .float => return value.toFloat(N),
-            .dyadic => return .init(value),
-            .complex => return .init(value),
-            .custom => {
-                comptime if (!types.hasMethod(N, "fromRational", fn (V) N, &.{V}))
-                    @compileError("zsl.cast: " ++ @typeName(N) ++ " must implement `fn fromRational(" ++ @typeName(V) ++ ") " ++ @typeName(N) ++ "`");
-
-                return N.fromRational(value);
-            },
-        },
         .float => switch (comptime types.numericType(N)) {
             .bool => return numeric.ne(value, numeric.zero(V)),
             .int => return @intFromFloat(value),
-            .rational => return .init(value),
             .float => return @floatCast(value),
             .dyadic => return .init(value),
             .complex => return .init(value),
@@ -142,7 +121,6 @@ pub inline fn cast(comptime N: type, value: anytype) N {
         .dyadic => switch (comptime types.numericType(N)) {
             .bool => return numeric.ne(value, numeric.zero(V)),
             .int => return value.toInt(N),
-            .rational => return .init(value),
             .float => return value.toFloat(N),
             .dyadic => return .init(value),
             .complex => return .init(value),
@@ -156,7 +134,6 @@ pub inline fn cast(comptime N: type, value: anytype) N {
         .complex => switch (comptime types.numericType(N)) {
             .bool => return numeric.ne(value, numeric.zero(V)),
             .int => return value.toInt(N),
-            .rational => return .init(value),
             .float => return value.toFloat(N),
             .dyadic => return .init(value),
             .complex => return .init(value),
@@ -179,12 +156,6 @@ pub inline fn cast(comptime N: type, value: anytype) N {
                     @compileError("zsl.cast: " ++ @typeName(V) ++ " must implement `fn toInt(" ++ @typeName(V) ++ ", type) " ++ @typeName(N) ++ "`");
 
                 return V.toInt(value, N);
-            },
-            .rational => {
-                comptime if (!types.hasMethod(V, "toRational", fn (V, type) N, &.{ V, N }))
-                    @compileError("zsl.cast: " ++ @typeName(V) ++ " must implement `fn toRational(" ++ @typeName(V) ++ ", type) " ++ @typeName(N) ++ "`");
-
-                return V.toRational(value, N);
             },
             .float => {
                 comptime if (!types.hasMethod(V, "toFloat", fn (V, type) N, &.{ V, N }))

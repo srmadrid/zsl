@@ -31,10 +31,10 @@ pub fn Add(comptime X: type, comptime Y: type) type {
     return types.Coerce(X, Y);
 }
 
-/// Performs addition between two operands of float, rational, int or bool types,
-/// where at least one operand must be of float type. The result type is
-/// determined by coercing the operand types, and the operation is performed by
-/// casting both operands to the result type, then adding them.
+/// Performs addition between two operands of float, int or bool types, where at
+/// least one operand must be of float type. The result type is determined by
+/// coercing the operand types, and the operation is performed by casting both
+/// operands to the result type, then adding them.
 ///
 /// ## Signature
 /// ```zig
@@ -57,16 +57,16 @@ pub fn Sub(comptime X: type, comptime Y: type) type {
     comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
         !types.numericType(X).le(.float) or !types.numericType(Y).le(.float) or
         (types.numericType(X) != .float and types.numericType(Y) != .float))
-        @compileError("zsl.float.sub: at least one of x or y must be a float, the other must be a bool, an int, a rational or a float, got\n\tx: " ++
+        @compileError("zsl.float.sub: at least one of x or y must be a float, the other must be a bool, an int or a float, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
     return types.Coerce(X, Y);
 }
 
-/// Performs subtraction between two operands of float, rational, int or bool
-/// types, where at least one operand must be of float type. The result type is
-/// determined by coercing the operand types, and the operation is performed by
-/// casting both operands to the result type, then subtracting them.
+/// Performs subtraction between two operands of float, int or bool types, where
+/// at least one operand must be of float type. The result type is determined by
+/// coercing the operand types, and the operation is performed by casting both
+/// operands to the result type, then subtracting them.
 ///
 /// ## Signature
 /// ```zig
@@ -89,14 +89,14 @@ pub fn Mul(comptime X: type, comptime Y: type) type {
     comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
         !types.numericType(X).le(.float) or !types.numericType(Y).le(.float) or
         (types.numericType(X) != .float and types.numericType(Y) != .float))
-        @compileError("zsl.float.mul: at least one of x or y must be a float, the other must be a bool, an int, a rational or a float, got\n\tx: " ++
+        @compileError("zsl.float.mul: at least one of x or y must be a float, the other must be a bool, an int or a float, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
     return types.Coerce(X, Y);
 }
 
-/// Performs multiplication between two operands of float, rational, int or bool
-/// types, where at least one operand must be of float type. The result type is
+/// Performs multiplication between two operands of float, int or bool types,
+/// where at least one operand must be of float type. The result type is
 /// determined by coercing the operand types, and the operation is performed by
 /// casting both operands to the result type, then multiplying them.
 ///
@@ -121,17 +121,17 @@ pub fn Fma(comptime X: type, comptime Y: type, comptime Z: type) type {
     comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or !types.isNumeric(Z) or
         !types.numericType(X).le(.float) or !types.numericType(Y).le(.float) or !types.numericType(Z).le(.float) or
         (types.numericType(X) != .float and types.numericType(Y) != .float and types.numericType(Z) != .float))
-        @compileError("zsl.float.fma: at least one of x, y or z must be a float, the others must be bool, int, rational or float, got\n\tx: " ++
+        @compileError("zsl.float.fma: at least one of x, y or z must be a float, the others must be bool, int or float, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\tz: " ++ @typeName(Z) ++ "\n");
 
     return types.Coerce(X, types.Coerce(Y, Z));
 }
 
 /// Performs fused multiplication and addition (x * y + z) between three
-/// operands of float, rational, int or bool types, where at least one operand
-/// must be of float type. The result type is determined by coercing the operand
-/// types, and the operation is performed by casting all three operands to the
-/// result type, then performing the fused operation.
+/// operands of float, int or bool types, where at least one operand must be of
+/// float type. The result type is determined by coercing the operand types, and
+/// the operation is performed by casting all three operands to the result type,
+/// then performing the fused operation.
 ///
 /// ## Signature
 /// ```zig
@@ -156,16 +156,16 @@ pub fn Div(comptime X: type, comptime Y: type) type {
     comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
         !types.numericType(X).le(.float) or !types.numericType(Y).le(.float) or
         (types.numericType(X) != .float and types.numericType(Y) != .float))
-        @compileError("zsl.float.div: at least one of x or y must be a float, the other must be a bool, an int, a rational or a float, got\n\tx: " ++
+        @compileError("zsl.float.div: at least one of x or y must be a float, the other must be a bool, an int or a float, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
     return types.Coerce(X, Y);
 }
 
-/// Performs division between two operands of float, rational, int or bool types,
-/// where at least one operand must be of float type. The result type is
-/// determined by coercing the operand types, and the operation is performed by
-/// casting both operands to the result type, then dividing them.
+/// Performs division between two operands of float, int or bool types, where at
+/// least one operand must be of float type. The result type is determined by
+/// coercing the operand types, and the operation is performed by casting both
+/// operands to the result type, then dividing them.
 ///
 /// ## Signature
 /// ```zig
@@ -184,9 +184,9 @@ pub inline fn div(x: anytype, y: anytype) float.Div(@TypeOf(x), @TypeOf(y)) {
     return types.cast(R, x) / types.cast(R, y);
 }
 
-/// Compares two operands of float, rational, int or bool types, where at least
-/// one operand must be of float type, for ordering. The operation is performed
-/// by casting both operands to the coerced type, then comparing them.
+/// Compares two operands of float, int or bool types, where at least one
+/// operand must be of float type, for ordering. The operation is performed by
+/// casting both operands to the coerced type, then comparing them.
 ///
 /// ## Signature
 /// ```zig
@@ -206,7 +206,7 @@ pub inline fn cmp(x: anytype, y: anytype) Cmp {
     comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
         !types.numericType(X).le(.float) or !types.numericType(Y).le(.float) or
         (types.numericType(X) != .float and types.numericType(Y) != .float))
-        @compileError("zsl.float.cmp: at least one of x or y must be a float, the other must be a bool, an int, a rational or a float, got\n\tx: " ++
+        @compileError("zsl.float.cmp: at least one of x or y must be a float, the other must be a bool, an int or a float, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
     const C: type = types.Coerce(X, Y);
@@ -216,9 +216,9 @@ pub inline fn cmp(x: anytype, y: anytype) Cmp {
     return .eq;
 }
 
-/// Compares two operands of float, rational, int or bool types, where at least
-/// one operand must be of float type, for equality. The operation is performed
-/// by casting both operands to the coerced type, then comparing them.
+/// Compares two operands of float, int or bool types, where at least one
+/// operand must be of float type, for equality. The operation is performed by
+/// casting both operands to the coerced type, then comparing them.
 ///
 /// ## Signature
 /// ```zig
@@ -238,7 +238,7 @@ pub inline fn eq(x: anytype, y: anytype) bool {
     comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
         !types.numericType(X).le(.float) or !types.numericType(Y).le(.float) or
         (types.numericType(X) != .float and types.numericType(Y) != .float))
-        @compileError("zsl.float.eq: at least one of x or y must be a float, the other must be a bool, an int, a rational or a float, got\n\tx: " ++
+        @compileError("zsl.float.eq: at least one of x or y must be a float, the other must be a bool, an int or a float, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
     const C: type = types.Coerce(X, Y);
@@ -246,9 +246,9 @@ pub inline fn eq(x: anytype, y: anytype) bool {
     return types.cast(C, x) == types.cast(C, y);
 }
 
-/// Compares two operands of float, rational, int or bool types, where at least
-/// one operand must be of float type, for inequality. The operation is performed
-/// by casting both operands to the coerced type, then comparing them.
+/// Compares two operands of float, int or bool types, where at least one
+/// operand must be of float type, for inequality. The operation is performed by
+/// casting both operands to the coerced type, then comparing them.
 ///
 /// ## Signature
 /// ```zig
@@ -268,7 +268,7 @@ pub inline fn ne(x: anytype, y: anytype) bool {
     comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
         !types.numericType(X).le(.float) or !types.numericType(Y).le(.float) or
         (types.numericType(X) != .float and types.numericType(Y) != .float))
-        @compileError("zsl.float.ne: at least one of x or y must be a float, the other must be a bool, an int, a rational or a float, got\n\tx: " ++
+        @compileError("zsl.float.ne: at least one of x or y must be a float, the other must be a bool, an int or a float, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
     const C: type = types.Coerce(X, Y);
@@ -276,9 +276,9 @@ pub inline fn ne(x: anytype, y: anytype) bool {
     return types.cast(C, x) != types.cast(C, y);
 }
 
-/// Compares two operands of float, rational, int or bool types, where at least
-/// one operand must be of float type, for for less-than ordering. The operation
-/// is performed by casting both operands to the coerced type, then comparing
+/// Compares two operands of float, int or bool types, where at least one
+/// operand must be of float type, for for less-than ordering. The operation is
+/// performed by casting both operands to the coerced type, then comparing
 /// them.
 ///
 /// ## Signature
@@ -299,7 +299,7 @@ pub inline fn lt(x: anytype, y: anytype) bool {
     comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
         !types.numericType(X).le(.float) or !types.numericType(Y).le(.float) or
         (types.numericType(X) != .float and types.numericType(Y) != .float))
-        @compileError("zsl.float.lt: at least one of x or y must be a float, the other must be a bool, an int, a rational or a float, got\n\tx: " ++
+        @compileError("zsl.float.lt: at least one of x or y must be a float, the other must be a bool, an int or a float, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
     const C: type = types.Coerce(X, Y);
@@ -307,8 +307,8 @@ pub inline fn lt(x: anytype, y: anytype) bool {
     return types.cast(C, x) < types.cast(C, y);
 }
 
-/// Compares two operands of float, rational, int or bool types, where at least
-/// one operand must be of float type, for less-than or equal ordering. The
+/// Compares two operands of float, int or bool types, where at least one
+/// operand must be of float type, for less-than or equal ordering. The
 /// operation is performed by casting both operands to the coerced type, then
 /// comparing them.
 ///
@@ -330,7 +330,7 @@ pub inline fn le(x: anytype, y: anytype) bool {
     comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
         !types.numericType(X).le(.float) or !types.numericType(Y).le(.float) or
         (types.numericType(X) != .float and types.numericType(Y) != .float))
-        @compileError("zsl.float.le: at least one of x or y must be a float, the other must be a bool, an int, a rational or a float, got\n\tx: " ++
+        @compileError("zsl.float.le: at least one of x or y must be a float, the other must be a bool, an int or a float, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
     const C: type = types.Coerce(X, Y);
@@ -338,10 +338,9 @@ pub inline fn le(x: anytype, y: anytype) bool {
     return types.cast(C, x) <= types.cast(C, y);
 }
 
-/// Compares two operands of float, rational, int or bool types, where at least
-/// one operand must be of float type, for greater-than ordering. The operation
-/// is performed by casting both operands to the coerced type, then comparing
-/// them.
+/// Compares two operands of float, int or bool types, where at least one
+/// operand must be of float type, for greater-than ordering. The operation is
+/// performed by casting both operands to the coerced type, then comparing them.
 ///
 /// ## Signature
 /// ```zig
@@ -361,7 +360,7 @@ pub inline fn gt(x: anytype, y: anytype) bool {
     comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
         !types.numericType(X).le(.float) or !types.numericType(Y).le(.float) or
         (types.numericType(X) != .float and types.numericType(Y) != .float))
-        @compileError("zsl.float.gt: at least one of x or y must be a float, the other must be a bool, an int, a rational or a float, got\n\tx: " ++
+        @compileError("zsl.float.gt: at least one of x or y must be a float, the other must be a bool, an int or a float, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
     const C: type = types.Coerce(X, Y);
@@ -369,8 +368,8 @@ pub inline fn gt(x: anytype, y: anytype) bool {
     return types.cast(C, x) > types.cast(C, y);
 }
 
-/// Compares two operands of float, rational, int or bool types, where at least
-/// one operand must be of float type, for greater-than or equality ordering. The
+/// Compares two operands of float, int or bool types, where at least one
+/// operand must be of float type, for greater-than or equality ordering. The
 /// operation is performed by casting both operands to the coerced type, then
 /// comparing them.
 ///
@@ -392,7 +391,7 @@ pub inline fn ge(x: anytype, y: anytype) bool {
     comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
         !types.numericType(X).le(.float) or !types.numericType(Y).le(.float) or
         (types.numericType(X) != .float and types.numericType(Y) != .float))
-        @compileError("zsl.float.ge: at least one of x or y must be a float, the other must be a bool, an int, a rational or a float, got\n\tx: " ++
+        @compileError("zsl.float.ge: at least one of x or y must be a float, the other must be a bool, an int or a float, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
     const C: type = types.Coerce(X, Y);
@@ -404,16 +403,16 @@ pub fn Max(comptime X: type, comptime Y: type) type {
     comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
         !types.numericType(X).le(.float) or !types.numericType(Y).le(.float) or
         (types.numericType(X) != .float and types.numericType(Y) != .float))
-        @compileError("zsl.float.max: at least one of x or y must be a float, the other must be a bool, an int, a rational or a float, got\n\tx: " ++
+        @compileError("zsl.float.max: at least one of x or y must be a float, the other must be a bool, an int or a float, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
     return types.Coerce(X, Y);
 }
 
-/// Returns the maximum of two operands of float, rational, int or bool types,
-/// where at least one operand must be of float type. The result type is
-/// determined by coercing the operand types, and the operation is performed by
-/// casting both operands to the result type, then comparing them.
+/// Returns the maximum of two operands of float, int or bool types, where at
+/// least one operand must be of float type. The result type is determined by
+/// coercing the operand types, and the operation is performed by casting both
+/// operands to the result type, then comparing them.
 ///
 /// ## Signature
 /// ```zig
@@ -436,16 +435,16 @@ pub fn Min(comptime X: type, comptime Y: type) type {
     comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
         !types.numericType(X).le(.float) or !types.numericType(Y).le(.float) or
         (types.numericType(X) != .float and types.numericType(Y) != .float))
-        @compileError("zsl.float.min: at least one of x or y must be a float, the other must be a bool, an int, a rational or a float, got\n\tx: " ++
+        @compileError("zsl.float.min: at least one of x or y must be a float, the other must be a bool, an int or a float, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
     return types.Coerce(X, Y);
 }
 
-/// Returns the minimum of two operands of float, rational, int or bool types,
-/// where at least one operand must be of float type. The result type is
-/// determined by coercing the operand types, and the operation is performed by
-/// casting both operands to the result type, then comparing them.
+/// Returns the minimum of two operands of float, int or bool types, where at
+/// least one operand must be of float type. The result type is determined by
+/// coercing the operand types, and the operation is performed by casting both
+/// operands to the result type, then comparing them.
 ///
 /// ## Signature
 /// ```zig

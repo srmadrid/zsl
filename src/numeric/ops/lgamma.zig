@@ -1,7 +1,6 @@
 const types = @import("../../types.zig");
 
 const int = @import("../../int.zig");
-const rational = @import("../../rational.zig");
 const float = @import("../../float.zig");
 const dyadic = @import("../../dyadic.zig");
 const complex = @import("../../complex.zig");
@@ -15,7 +14,6 @@ pub fn Lgamma(X: type) type {
     switch (comptime types.numericType(X)) {
         .bool => @compileError("zsl.numeric.lgamma: not defined for " ++ @typeName(X) ++ "."),
         .int => @compileError("zsl.numeric.lgamma: not defined for " ++ @typeName(X) ++ "."),
-        .rational => return X,
         .float => return X,
         .dyadic => return X,
         .complex => return X,
@@ -65,7 +63,6 @@ pub inline fn lgamma(x: anytype) numeric.Lgamma(@TypeOf(x)) {
     switch (comptime types.numericType(X)) {
         .bool => unreachable,
         .int => unreachable,
-        .rational => return rational.lgamma(x),
         .float => return float.lgamma(x),
         .dyadic => return dyadic.lgamma(x),
         .complex => return complex.lgamma(x),

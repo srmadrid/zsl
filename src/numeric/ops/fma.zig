@@ -1,7 +1,6 @@
 const types = @import("../../types.zig");
 
 const int = @import("../../int.zig");
-const rational = @import("../../rational.zig");
 const float = @import("../../float.zig");
 const dyadic = @import("../../dyadic.zig");
 const complex = @import("../../complex.zig");
@@ -82,7 +81,6 @@ pub fn Fma(X: type, Y: type, Z: type) type {
             .bool => switch (comptime types.numericType(Z)) {
                 .bool => @compileError("zsl.numeric.fma: not defined for " ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ " and " ++ @typeName(Z) ++ "."),
                 .int => return int.Fma(X, Y, Z),
-                .rational => return rational.Fma(X, Y, Z),
                 .float => return float.Fma(X, Y, Z),
                 .dyadic => return dyadic.Fma(X, Y, Z),
                 .complex => return complex.Fma(X, Y, Z),
@@ -90,32 +88,24 @@ pub fn Fma(X: type, Y: type, Z: type) type {
             },
             .int => switch (comptime types.numericType(Z)) {
                 .bool, .int => return int.Fma(X, Y, Z),
-                .rational => return rational.Fma(X, Y, Z),
-                .float => return float.Fma(X, Y, Z),
-                .dyadic => return dyadic.Fma(X, Y, Z),
-                .complex => return complex.Fma(X, Y, Z),
-                .custom => unreachable,
-            },
-            .rational => switch (comptime types.numericType(Z)) {
-                .bool, .int, .rational => return rational.Fma(X, Y, Z),
                 .float => return float.Fma(X, Y, Z),
                 .dyadic => return dyadic.Fma(X, Y, Z),
                 .complex => return complex.Fma(X, Y, Z),
                 .custom => unreachable,
             },
             .float => switch (comptime types.numericType(Z)) {
-                .bool, .int, .rational, .float => return float.Fma(X, Y, Z),
+                .bool, .int, .float => return float.Fma(X, Y, Z),
                 .dyadic => return dyadic.Fma(X, Y, Z),
                 .complex => return complex.Fma(X, Y, Z),
                 .custom => unreachable,
             },
             .dyadic => switch (comptime types.numericType(Z)) {
-                .bool, .int, .rational, .float, .dyadic => return dyadic.Fma(X, Y, Z),
+                .bool, .int, .float, .dyadic => return dyadic.Fma(X, Y, Z),
                 .complex => return complex.Fma(X, Y, Z),
                 .custom => unreachable,
             },
             .complex => switch (comptime types.numericType(Z)) {
-                .bool, .int, .rational, .float, .dyadic, .complex => return complex.Fma(X, Y, Z),
+                .bool, .int, .float, .dyadic, .complex => return complex.Fma(X, Y, Z),
                 .custom => unreachable,
             },
             .custom => unreachable,
@@ -123,94 +113,61 @@ pub fn Fma(X: type, Y: type, Z: type) type {
         .int => switch (comptime types.numericType(Y)) {
             .bool, .int => switch (comptime types.numericType(Z)) {
                 .bool, .int => return int.Fma(X, Y, Z),
-                .rational => return rational.Fma(X, Y, Z),
-                .float => return float.Fma(X, Y, Z),
-                .dyadic => return dyadic.Fma(X, Y, Z),
-                .complex => return complex.Fma(X, Y, Z),
-                .custom => unreachable,
-            },
-            .rational => switch (comptime types.numericType(Z)) {
-                .bool, .int, .rational => return rational.Fma(X, Y, Z),
                 .float => return float.Fma(X, Y, Z),
                 .dyadic => return dyadic.Fma(X, Y, Z),
                 .complex => return complex.Fma(X, Y, Z),
                 .custom => unreachable,
             },
             .float => switch (comptime types.numericType(Z)) {
-                .bool, .int, .rational, .float => return float.Fma(X, Y, Z),
+                .bool, .int, .float => return float.Fma(X, Y, Z),
                 .dyadic => return dyadic.Fma(X, Y, Z),
                 .complex => return complex.Fma(X, Y, Z),
                 .custom => unreachable,
             },
             .dyadic => switch (comptime types.numericType(Z)) {
-                .bool, .int, .rational, .float, .dyadic => return dyadic.Fma(X, Y, Z),
+                .bool, .int, .float, .dyadic => return dyadic.Fma(X, Y, Z),
                 .complex => return complex.Fma(X, Y, Z),
                 .custom => unreachable,
             },
             .complex => switch (comptime types.numericType(Z)) {
-                .bool, .int, .rational, .float, .dyadic, .complex => return complex.Fma(X, Y, Z),
-                .custom => unreachable,
-            },
-            .custom => unreachable,
-        },
-        .rational => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational => switch (comptime types.numericType(Z)) {
-                .bool, .int, .rational => return rational.Fma(X, Y, Z),
-                .float => return float.Fma(X, Y, Z),
-                .dyadic => return dyadic.Fma(X, Y, Z),
-                .complex => return complex.Fma(X, Y, Z),
-                .custom => unreachable,
-            },
-            .float => switch (comptime types.numericType(Z)) {
-                .bool, .int, .rational, .float => return float.Fma(X, Y, Z),
-                .dyadic => return dyadic.Fma(X, Y, Z),
-                .complex => return complex.Fma(X, Y, Z),
-                .custom => unreachable,
-            },
-            .dyadic => switch (comptime types.numericType(Z)) {
-                .bool, .int, .rational, .float, .dyadic => return dyadic.Fma(X, Y, Z),
-                .complex => return complex.Fma(X, Y, Z),
-                .custom => unreachable,
-            },
-            .complex => switch (comptime types.numericType(Z)) {
-                .bool, .int, .rational, .float, .dyadic, .complex => return complex.Fma(X, Y, Z),
+                .bool, .int, .float, .dyadic, .complex => return complex.Fma(X, Y, Z),
                 .custom => unreachable,
             },
             .custom => unreachable,
         },
         .float => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float => switch (comptime types.numericType(Z)) {
-                .bool, .int, .rational, .float => return float.Fma(X, Y, Z),
+            .bool, .int, .float => switch (comptime types.numericType(Z)) {
+                .bool, .int, .float => return float.Fma(X, Y, Z),
                 .dyadic => return dyadic.Fma(X, Y, Z),
                 .complex => return complex.Fma(X, Y, Z),
                 .custom => unreachable,
             },
             .dyadic => switch (comptime types.numericType(Z)) {
-                .bool, .int, .rational, .float, .dyadic => return dyadic.Fma(X, Y, Z),
+                .bool, .int, .float, .dyadic => return dyadic.Fma(X, Y, Z),
                 .complex => return complex.Fma(X, Y, Z),
                 .custom => unreachable,
             },
             .complex => switch (comptime types.numericType(Z)) {
-                .bool, .int, .rational, .float, .dyadic, .complex => return complex.Fma(X, Y, Z),
+                .bool, .int, .float, .dyadic, .complex => return complex.Fma(X, Y, Z),
                 .custom => unreachable,
             },
             .custom => unreachable,
         },
         .dyadic => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float, .dyadic => switch (comptime types.numericType(Z)) {
-                .bool, .int, .rational, .float, .dyadic => return dyadic.Fma(X, Y, Z),
+            .bool, .int, .float, .dyadic => switch (comptime types.numericType(Z)) {
+                .bool, .int, .float, .dyadic => return dyadic.Fma(X, Y, Z),
                 .complex => return complex.Fma(X, Y, Z),
                 .custom => unreachable,
             },
             .complex => switch (comptime types.numericType(Z)) {
-                .bool, .int, .rational, .float, .dyadic, .complex => return complex.Fma(X, Y, Z),
+                .bool, .int, .float, .dyadic, .complex => return complex.Fma(X, Y, Z),
                 .custom => unreachable,
             },
             .custom => unreachable,
         },
         .complex => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float, .dyadic, .complex => switch (comptime types.numericType(Z)) {
-                .bool, .int, .rational, .float, .dyadic, .complex => return complex.Fma(X, Y, Z),
+            .bool, .int, .float, .dyadic, .complex => switch (comptime types.numericType(Z)) {
+                .bool, .int, .float, .dyadic, .complex => return complex.Fma(X, Y, Z),
                 .custom => unreachable,
             },
             .custom => unreachable,
@@ -339,7 +296,6 @@ pub inline fn fma(x: anytype, y: anytype, z: anytype) numeric.Fma(@TypeOf(x), @T
             .bool => switch (comptime types.numericType(Z)) {
                 .bool => unreachable,
                 .int => return int.fma(x, y, z),
-                .rational => return rational.fma(x, y, z),
                 .float => return float.fma(x, y, z),
                 .dyadic => return dyadic.fma(x, y, z),
                 .complex => return complex.fma(x, y, z),
@@ -347,32 +303,24 @@ pub inline fn fma(x: anytype, y: anytype, z: anytype) numeric.Fma(@TypeOf(x), @T
             },
             .int => switch (comptime types.numericType(Z)) {
                 .bool, .int => return int.fma(x, y, z),
-                .rational => return rational.fma(x, y, z),
-                .float => return float.fma(x, y, z),
-                .dyadic => return dyadic.fma(x, y, z),
-                .complex => return complex.fma(x, y, z),
-                .custom => unreachable,
-            },
-            .rational => switch (comptime types.numericType(Z)) {
-                .bool, .int, .rational => return rational.fma(x, y, z),
                 .float => return float.fma(x, y, z),
                 .dyadic => return dyadic.fma(x, y, z),
                 .complex => return complex.fma(x, y, z),
                 .custom => unreachable,
             },
             .float => switch (comptime types.numericType(Z)) {
-                .bool, .int, .rational, .float => return float.fma(x, y, z),
+                .bool, .int, .float => return float.fma(x, y, z),
                 .dyadic => return dyadic.fma(x, y, z),
                 .complex => return complex.fma(x, y, z),
                 .custom => unreachable,
             },
             .dyadic => switch (comptime types.numericType(Z)) {
-                .bool, .int, .rational, .float, .dyadic => return dyadic.fma(x, y, z),
+                .bool, .int, .float, .dyadic => return dyadic.fma(x, y, z),
                 .complex => return complex.fma(x, y, z),
                 .custom => unreachable,
             },
             .complex => switch (comptime types.numericType(Z)) {
-                .bool, .int, .rational, .float, .dyadic, .complex => return complex.fma(x, y, z),
+                .bool, .int, .float, .dyadic, .complex => return complex.fma(x, y, z),
                 .custom => unreachable,
             },
             .custom => unreachable,
@@ -380,94 +328,61 @@ pub inline fn fma(x: anytype, y: anytype, z: anytype) numeric.Fma(@TypeOf(x), @T
         .int => switch (comptime types.numericType(Y)) {
             .bool, .int => switch (comptime types.numericType(Z)) {
                 .bool, .int => return int.fma(x, y, z),
-                .rational => return rational.fma(x, y, z),
-                .float => return float.fma(x, y, z),
-                .dyadic => return dyadic.fma(x, y, z),
-                .complex => return complex.fma(x, y, z),
-                .custom => unreachable,
-            },
-            .rational => switch (comptime types.numericType(Z)) {
-                .bool, .int, .rational => return rational.fma(x, y, z),
                 .float => return float.fma(x, y, z),
                 .dyadic => return dyadic.fma(x, y, z),
                 .complex => return complex.fma(x, y, z),
                 .custom => unreachable,
             },
             .float => switch (comptime types.numericType(Z)) {
-                .bool, .int, .rational, .float => return float.fma(x, y, z),
+                .bool, .int, .float => return float.fma(x, y, z),
                 .dyadic => return dyadic.fma(x, y, z),
                 .complex => return complex.fma(x, y, z),
                 .custom => unreachable,
             },
             .dyadic => switch (comptime types.numericType(Z)) {
-                .bool, .int, .rational, .float, .dyadic => return dyadic.fma(x, y, z),
+                .bool, .int, .float, .dyadic => return dyadic.fma(x, y, z),
                 .complex => return complex.fma(x, y, z),
                 .custom => unreachable,
             },
             .complex => switch (comptime types.numericType(Z)) {
-                .bool, .int, .rational, .float, .dyadic, .complex => return complex.fma(x, y, z),
-                .custom => unreachable,
-            },
-            .custom => unreachable,
-        },
-        .rational => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational => switch (comptime types.numericType(Z)) {
-                .bool, .int, .rational => return rational.fma(x, y, z),
-                .float => return float.fma(x, y, z),
-                .dyadic => return dyadic.fma(x, y, z),
-                .complex => return complex.fma(x, y, z),
-                .custom => unreachable,
-            },
-            .float => switch (comptime types.numericType(Z)) {
-                .bool, .int, .rational, .float => return float.fma(x, y, z),
-                .dyadic => return dyadic.fma(x, y, z),
-                .complex => return complex.fma(x, y, z),
-                .custom => unreachable,
-            },
-            .dyadic => switch (comptime types.numericType(Z)) {
-                .bool, .int, .rational, .float, .dyadic => return dyadic.fma(x, y, z),
-                .complex => return complex.fma(x, y, z),
-                .custom => unreachable,
-            },
-            .complex => switch (comptime types.numericType(Z)) {
-                .bool, .int, .rational, .float, .dyadic, .complex => return complex.fma(x, y, z),
+                .bool, .int, .float, .dyadic, .complex => return complex.fma(x, y, z),
                 .custom => unreachable,
             },
             .custom => unreachable,
         },
         .float => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float => switch (comptime types.numericType(Z)) {
-                .bool, .int, .rational, .float => return float.fma(x, y, z),
+            .bool, .int, .float => switch (comptime types.numericType(Z)) {
+                .bool, .int, .float => return float.fma(x, y, z),
                 .dyadic => return dyadic.fma(x, y, z),
                 .complex => return complex.fma(x, y, z),
                 .custom => unreachable,
             },
             .dyadic => switch (comptime types.numericType(Z)) {
-                .bool, .int, .rational, .float, .dyadic => return dyadic.fma(x, y, z),
+                .bool, .int, .float, .dyadic => return dyadic.fma(x, y, z),
                 .complex => return complex.fma(x, y, z),
                 .custom => unreachable,
             },
             .complex => switch (comptime types.numericType(Z)) {
-                .bool, .int, .rational, .float, .dyadic, .complex => return complex.fma(x, y, z),
+                .bool, .int, .float, .dyadic, .complex => return complex.fma(x, y, z),
                 .custom => unreachable,
             },
             .custom => unreachable,
         },
         .dyadic => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float, .dyadic => switch (comptime types.numericType(Z)) {
-                .bool, .int, .rational, .float, .dyadic => return dyadic.fma(x, y, z),
+            .bool, .int, .float, .dyadic => switch (comptime types.numericType(Z)) {
+                .bool, .int, .float, .dyadic => return dyadic.fma(x, y, z),
                 .complex => return complex.fma(x, y, z),
                 .custom => unreachable,
             },
             .complex => switch (comptime types.numericType(Z)) {
-                .bool, .int, .rational, .float, .dyadic, .complex => return complex.fma(x, y, z),
+                .bool, .int, .float, .dyadic, .complex => return complex.fma(x, y, z),
                 .custom => unreachable,
             },
             .custom => unreachable,
         },
         .complex => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float, .dyadic, .complex => switch (comptime types.numericType(Z)) {
-                .bool, .int, .rational, .float, .dyadic, .complex => return complex.fma(x, y, z),
+            .bool, .int, .float, .dyadic, .complex => switch (comptime types.numericType(Z)) {
+                .bool, .int, .float, .dyadic, .complex => return complex.fma(x, y, z),
                 .custom => unreachable,
             },
             .custom => unreachable,

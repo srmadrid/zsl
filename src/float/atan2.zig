@@ -10,16 +10,16 @@ pub fn Atan2(comptime X: type, comptime Y: type) type {
     comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
         !types.numericType(X).le(.float) or !types.numericType(Y).le(.float) or
         (types.numericType(X) != .float and types.numericType(Y) != .float))
-        @compileError("zsl.float.atan2: at least one of x or y must be a float, the other must be a bool, an int, a rational or a float, got\n\tx: " ++
+        @compileError("zsl.float.atan2: at least one of x or y must be a float, the other must be a bool, an int or a float, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
     return types.Coerce(X, Y);
 }
 
 /// Calculates the arctangent $\tan^{-1}\left(\frac{y}{x})$ of the coordinates
-/// given by two operands of float, rational, int or bool types, where at least
-/// one operand must be of float type. The result type is determined by coercing
-/// the operand types, and the operation is performed by casting both operands to
+/// given by two operands of float, int or bool types, where at least one
+/// operand must be of float type. The result type is determined by coercing the
+/// operand types, and the operation is performed by casting both operands to
 /// the result type, then calculating the arctangent.
 ///
 /// ## Signature

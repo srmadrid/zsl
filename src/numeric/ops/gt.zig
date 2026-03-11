@@ -1,7 +1,6 @@
 const types = @import("../../types.zig");
 
 const int = @import("../../int.zig");
-const rational = @import("../../rational.zig");
 const float = @import("../../float.zig");
 const dyadic = @import("../../dyadic.zig");
 const complex = @import("../../complex.zig");
@@ -64,7 +63,6 @@ pub inline fn gt(x: anytype, y: anytype) bool {
         .bool => switch (comptime types.numericType(Y)) {
             .bool => return x and !y,
             .int => return int.gt(x, y),
-            .rational => return rational.gt(x, y),
             .float => return float.gt(x, y),
             .dyadic => return dyadic.gt(x, y),
             .complex => @compileError("zsl.numeric.gt: not defigtd for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
@@ -72,27 +70,19 @@ pub inline fn gt(x: anytype, y: anytype) bool {
         },
         .int => switch (comptime types.numericType(Y)) {
             .bool, .int => return int.gt(x, y),
-            .rational => return rational.gt(x, y),
-            .float => return float.gt(x, y),
-            .dyadic => return dyadic.gt(x, y),
-            .complex => @compileError("zsl.numeric.gt: not defigtd for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
-            .custom => unreachable,
-        },
-        .rational => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational => return rational.gt(x, y),
             .float => return float.gt(x, y),
             .dyadic => return dyadic.gt(x, y),
             .complex => @compileError("zsl.numeric.gt: not defigtd for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
         .float => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float => return float.gt(x, y),
+            .bool, .int, .float => return float.gt(x, y),
             .dyadic => return dyadic.gt(x, y),
             .complex => @compileError("zsl.numeric.gt: not defigtd for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
         .dyadic => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float, .dyadic => return dyadic.gt(x, y),
+            .bool, .int, .float, .dyadic => return dyadic.gt(x, y),
             .complex => @compileError("zsl.numeric.gt: not defigtd for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },

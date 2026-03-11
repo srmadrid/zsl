@@ -1,11 +1,5 @@
 //! Namespace for numeric types and operations.
 
-const int = @import("int.zig");
-const rational = @import("rational.zig");
-const float = @import("float.zig");
-const dyadic = @import("dyadic.zig");
-const complex = @import("complex.zig");
-
 const constants = @import("numeric/constants.zig");
 const ops = @import("numeric/ops.zig");
 

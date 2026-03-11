@@ -55,7 +55,7 @@ pub fn Complex(comptime N: type) type {
                 @compileError("zsl.Complex(N).init: value must be a numeric, got \n\tvalue: " ++ @typeName(V) ++ "\n");
 
             switch (comptime types.numericType(V)) {
-                .bool, .int, .rational, .float, .dyadic => return .{
+                .bool, .int, .float, .dyadic => return .{
                     .re = types.cast(N, value),
                     .im = numeric.zero(N),
                 },
@@ -66,6 +66,8 @@ pub fn Complex(comptime N: type) type {
                 .custom => return types.cast(Complex(N), value),
             }
         }
+
+        // fn parse
 
         pub fn add(x: Complex(N), y: Complex(N)) Complex(N) {
             return .{
@@ -184,16 +186,16 @@ pub fn Add(comptime X: type, comptime Y: type) type {
     comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
         !types.numericType(X).le(.complex) or !types.numericType(Y).le(.complex) or
         (types.numericType(X) != .complex and types.numericType(Y) != .complex))
-        @compileError("zsl.complex.add: at least one of x or y must be a complex, the other must be a bool, an int, a rational, a float, a dyadic or a complex, got\n\tx: " ++
+        @compileError("zsl.complex.add: at least one of x or y must be a complex, the other must be a bool, an int, a float, a dyadic or a complex, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
     return types.Coerce(X, Y);
 }
 
-/// Performs addition between two operands of complex, dyadic, float, rational,
-/// int or bool types, where at least one operand must be of complex type. The
-/// result type is determined by coercing the operand types, and the operation
-/// is performed by casting both operands to the result type, then adding them.
+/// Performs addition between two operands of complex, dyadic, float, int or
+/// bool types, where at least one operand must be of complex type. The result
+/// type is determined by coercing the operand types, and the operation is
+/// performed by casting both operands to the result type, then adding them.
 ///
 /// ## Signature
 /// ```zig
@@ -212,12 +214,12 @@ pub inline fn add(x: anytype, y: anytype) complex.Add(@TypeOf(x), @TypeOf(y)) {
     const R: type = Add(X, Y);
 
     switch (comptime types.numericType(X)) {
-        .bool, .int, .rational, .float, .dyadic => switch (comptime types.numericType(Y)) {
+        .bool, .int, .float, .dyadic => switch (comptime types.numericType(Y)) {
             .complex => return .addReal(types.cast(R, y), types.cast(types.Scalar(R), x)),
             else => unreachable,
         },
         .complex => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float, .dyadic => return .addReal(types.cast(R, x), types.cast(types.Scalar(R), y)),
+            .bool, .int, .float, .dyadic => return .addReal(types.cast(R, x), types.cast(types.Scalar(R), y)),
             .complex => return .add(types.cast(R, x), types.cast(R, y)),
             .custom => unreachable,
         },
@@ -229,17 +231,17 @@ pub fn Sub(comptime X: type, comptime Y: type) type {
     comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
         !types.numericType(X).le(.complex) or !types.numericType(Y).le(.complex) or
         (types.numericType(X) != .complex and types.numericType(Y) != .complex))
-        @compileError("zsl.complex.sub: at least one of x or y to be a complex, the other must be a bool, an int, a rational, a float or a complex, got\n\tx: " ++
+        @compileError("zsl.complex.sub: at least one of x or y to be a complex, the other must be a bool, an int, a float or a complex, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
     return types.Coerce(X, Y);
 }
 
 /// Performs subtraction between two operands of complex, dyadic, float,
-/// rational, int or bool types, where at least one operand must be of complex
-/// type. The result type is determined by coercing the operand types, and the
-/// operation is performed by casting both operands to the result type, then
-/// subtracting them.
+/// int or bool types, where at least one operand must be of complex type. The
+/// result type is determined by coercing the operand types, and the operation
+/// is performed by casting both operands to the result type, then subtracting
+/// them.
 ///
 /// ## Signature
 /// ```zig
@@ -258,12 +260,12 @@ pub inline fn sub(x: anytype, y: anytype) Sub(@TypeOf(x), @TypeOf(y)) {
     const R: type = Sub(X, Y);
 
     switch (comptime types.numericType(X)) {
-        .bool, .int, .rational, .float, .dyadic => switch (comptime types.numericType(Y)) {
+        .bool, .int, .float, .dyadic => switch (comptime types.numericType(Y)) {
             .complex => return .addReal(types.cast(R, y).neg(), types.cast(types.Scalar(R), x)),
             else => unreachable,
         },
         .complex => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float, .dyadic => return .subReal(types.cast(R, x), types.cast(types.Scalar(R), y)),
+            .bool, .int, .float, .dyadic => return .subReal(types.cast(R, x), types.cast(types.Scalar(R), y)),
             .complex => return .sub(types.cast(R, x), types.cast(R, y)),
             .custom => unreachable,
         },
@@ -275,17 +277,17 @@ pub fn Mul(comptime X: type, comptime Y: type) type {
     comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
         !types.numericType(X).le(.complex) or !types.numericType(Y).le(.complex) or
         (types.numericType(X) != .complex and types.numericType(Y) != .complex))
-        @compileError("zsl.complex.mul: at least one of x or y to be a complex, the other must be a bool, an int, a rational, a float or a complex, got\n\tx: " ++
+        @compileError("zsl.complex.mul: at least one of x or y to be a complex, the other must be a bool, an int, a float or a complex, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
     return types.Coerce(X, Y);
 }
 
 /// Performs multiplication between two operands of complex, dyadic, float,
-/// rational, int or bool types, where at least one operand must be of complex
-/// type. The result type is determined by coercing the operand types, and the
-/// operation is performed by casting both operands to the result type, then
-/// multiplying them.
+/// int or bool types, where at least one operand must be of complex type. The
+/// result type is determined by coercing the operand types, and the operation
+/// is performed by casting both operands to the result type, then multiplying
+/// them.
 ///
 /// ## Signature
 /// ```zig
@@ -304,12 +306,12 @@ pub inline fn mul(x: anytype, y: anytype) Mul(@TypeOf(x), @TypeOf(y)) {
     const R: type = Mul(X, Y);
 
     switch (comptime types.numericType(X)) {
-        .bool, .int, .rational, .float, .dyadic => switch (comptime types.numericType(Y)) {
+        .bool, .int, .float, .dyadic => switch (comptime types.numericType(Y)) {
             .complex => return .mulReal(types.cast(R, y), types.cast(types.Scalar(R), x)),
             else => unreachable,
         },
         .complex => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float, .dyadic => return .mulReal(types.cast(R, x), types.cast(types.Scalar(R), y)),
+            .bool, .int, .float, .dyadic => return .mulReal(types.cast(R, x), types.cast(types.Scalar(R), y)),
             .complex => return .mul(types.cast(R, x), types.cast(R, y)),
             .custom => unreachable,
         },
@@ -321,17 +323,16 @@ pub fn Div(comptime X: type, comptime Y: type) type {
     comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
         !types.numericType(X).le(.complex) or !types.numericType(Y).le(.complex) or
         (types.numericType(X) != .complex and types.numericType(Y) != .complex))
-        @compileError("zsl.complex.div: at least one of x or y to be a complex, the other must be a bool, an int, a rational, a float or a complex, got\n\tx: " ++
+        @compileError("zsl.complex.div: at least one of x or y to be a complex, the other must be a bool, an int, a float or a complex, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
     return types.Coerce(X, Y);
 }
 
-/// Performs division between two operands of complex, dyadic, float, rational,
-/// int or bool types, where at least one operand must be of complex type. The
-/// result type is determined by coercing the operand types, and the operation
-/// is performed by casting both operands to the result type, then dividing
-/// them.
+/// Performs division between two operands of complex, dyadic, float, int or
+/// bool types, where at least one operand must be of complex type. The result
+/// type is determined by coercing the operand types, and the operation is
+/// performed by casting both operands to the result type, then dividing them.
 ///
 /// ## Signature
 /// ```zig
@@ -350,12 +351,12 @@ pub inline fn div(x: anytype, y: anytype) Div(@TypeOf(x), @TypeOf(y)) {
     const R: type = Div(X, Y);
 
     switch (comptime types.numericType(X)) {
-        .bool, .int, .rational, .float, .dyadic => switch (comptime types.numericType(Y)) {
+        .bool, .int, .float, .dyadic => switch (comptime types.numericType(Y)) {
             .complex => return .div(types.cast(R, x), types.cast(R, y)),
             else => unreachable,
         },
         .complex => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float, .dyadic => return .divReal(types.cast(R, x), types.cast(types.Scalar(R), y)),
+            .bool, .int, .float, .dyadic => return .divReal(types.cast(R, x), types.cast(types.Scalar(R), y)),
             .complex => return .div(types.cast(R, x), types.cast(R, y)),
             .custom => unreachable,
         },
@@ -363,10 +364,9 @@ pub inline fn div(x: anytype, y: anytype) Div(@TypeOf(x), @TypeOf(y)) {
     }
 }
 
-/// Compares two operands of complex, dyadic, float, rational, int or bool
-/// types, where at least one operand must be of complex type, for equality. The
-/// operation is performed by casting both operands to the coerced type, then
-/// comparing them.
+/// Compares two operands of complex, dyadic, float, int or bool types, where at
+/// least one operand must be of complex type, for equality. The operation is
+/// performed by casting both operands to the coerced type, then comparing them.
 ///
 /// ## Signature
 /// ```zig
@@ -386,16 +386,16 @@ pub inline fn eq(x: anytype, y: anytype) bool {
     comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
         !types.numericType(X).le(.complex) or !types.numericType(Y).le(.complex) or
         (types.numericType(X) != .complex and types.numericType(Y) != .complex))
-        @compileError("zsl.complex.eq: at least one of x or y to be a complex, the other must be a bool, an int, a rational, a float or a complex, got\n\tx: " ++
+        @compileError("zsl.complex.eq: at least one of x or y to be a complex, the other must be a bool, an int, a float or a complex, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
     switch (comptime types.numericType(X)) {
-        .bool, .int, .rational, .float, .dyadic => switch (comptime types.numericType(Y)) {
+        .bool, .int, .float, .dyadic => switch (comptime types.numericType(Y)) {
             .complex => return numeric.eq(x, y.re) and numeric.eq(numeric.zero(types.Scalar(Y)), y.im),
             else => unreachable,
         },
         .complex => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float, .dyadic => return numeric.eq(x.re, y) and numeric.eq(x.im, numeric.zero(types.Scalar(X))),
+            .bool, .int, .float, .dyadic => return numeric.eq(x.re, y) and numeric.eq(x.im, numeric.zero(types.Scalar(X))),
             .complex => return numeric.eq(x.re, y.re) and numeric.eq(x.im, y.im),
             .custom => unreachable,
         },
@@ -403,10 +403,9 @@ pub inline fn eq(x: anytype, y: anytype) bool {
     }
 }
 
-/// Compares two operands of complex, dyadic, float, rational, int or bool
-/// types, where at least one operand must be of complex type, for inequality.
-/// The operation is performed by casting both operands to the coerced type,
-/// then comparing them.
+/// Compares two operands of complex, dyadic, float, int or bool types, where at
+/// least one operand must be of complex type, for inequality. The operation is
+/// performed by casting both operands to the coerced type, then comparing them.
 ///
 /// ## Signature
 /// ```zig
@@ -426,16 +425,16 @@ pub inline fn ne(x: anytype, y: anytype) bool {
     comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
         !types.numericType(X).le(.complex) or !types.numericType(Y).le(.complex) or
         (types.numericType(X) != .complex and types.numericType(Y) != .complex))
-        @compileError("zsl.complex.ne: at least one of x or y to be a complex, the other must be a bool, an int, a rational, a float or a complex, got\n\tx: " ++
+        @compileError("zsl.complex.ne: at least one of x or y to be a complex, the other must be a bool, an int, a float or a complex, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
     switch (comptime types.numericType(X)) {
-        .bool, .int, .rational, .float, .dyadic => switch (comptime types.numericType(Y)) {
+        .bool, .int, .float, .dyadic => switch (comptime types.numericType(Y)) {
             .complex => return numeric.ne(x, y.re) or numeric.ne(numeric.zero(types.Scalar(Y)), y.im),
             else => unreachable,
         },
         .complex => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float, .dyadic => return numeric.ne(x.re, y) or numeric.ne(x.im, numeric.zero(types.Scalar(X))),
+            .bool, .int, .float, .dyadic => return numeric.ne(x.re, y) or numeric.ne(x.im, numeric.zero(types.Scalar(X))),
             .complex => return numeric.ne(x.re, y.re) or numeric.ne(x.im, y.im),
             .custom => unreachable,
         },

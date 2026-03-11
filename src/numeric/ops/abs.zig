@@ -1,7 +1,6 @@
 const types = @import("../../types.zig");
 
 const int = @import("../../int.zig");
-const rational = @import("../../rational.zig");
 const float = @import("../../float.zig");
 const dyadic = @import("../../dyadic.zig");
 const complex = @import("../../complex.zig");
@@ -15,7 +14,6 @@ pub fn Abs(X: type) type {
     switch (comptime types.numericType(X)) {
         .bool => return X,
         .int => return X,
-        .rational => return X,
         .float => return X,
         .dyadic => return X,
         .complex => return complex.Abs(X),
@@ -59,7 +57,6 @@ pub inline fn abs(x: anytype) numeric.Abs(@TypeOf(x)) {
     switch (comptime types.numericType(X)) {
         .bool => return x,
         .int => return int.abs(x),
-        .rational => return rational.abs(x),
         .float => return float.abs(x),
         .dyadic => return dyadic.abs(x),
         .complex => return complex.abs(x),

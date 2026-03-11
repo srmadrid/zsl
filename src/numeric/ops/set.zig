@@ -56,5 +56,5 @@ pub inline fn set(o: anytype, x: anytype) void {
         return X.set(o, x);
     }
 
-    o.* = types.scast(O, x);
+    o.* = types.cast(O, x);
 }

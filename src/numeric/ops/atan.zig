@@ -1,7 +1,6 @@
 const types = @import("../../types.zig");
 
 const int = @import("../../int.zig");
-const rational = @import("../../rational.zig");
 const float = @import("../../float.zig");
 const dyadic = @import("../../dyadic.zig");
 const complex = @import("../../complex.zig");
@@ -15,7 +14,6 @@ pub fn Atan(X: type) type {
     switch (comptime types.numericType(X)) {
         .bool => @compileError("zsl.numeric.atan: not defined for " ++ @typeName(X) ++ "."),
         .int => @compileError("zsl.numeric.atan: not defined for " ++ @typeName(X) ++ "."),
-        .rational => return X,
         .float => return X,
         .dyadic => return X,
         .complex => return X,
@@ -59,7 +57,6 @@ pub inline fn atan(x: anytype) numeric.Atan(@TypeOf(x)) {
     switch (comptime types.numericType(X)) {
         .bool => unreachable,
         .int => unreachable,
-        .rational => return rational.atan(x),
         .float => return float.atan(x),
         .dyadic => return dyadic.atan(x),
         .complex => return complex.atan(x),

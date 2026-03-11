@@ -1,7 +1,6 @@
 const types = @import("../../types.zig");
 
 const int = @import("../../int.zig");
-const rational = @import("../../rational.zig");
 const float = @import("../../float.zig");
 const dyadic = @import("../../dyadic.zig");
 const complex = @import("../../complex.zig");
@@ -40,7 +39,6 @@ pub fn Hypot(X: type, Y: type) type {
         .bool => switch (comptime types.numericType(Y)) {
             .bool => @compileError("zsl.numeric.hypot: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .int => @compileError("zsl.numeric.hypot: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
-            .rational => return rational.Hypot(X, Y),
             .float => return float.Hypot(X, Y),
             .dyadic => return dyadic.Hypot(X, Y),
             .complex => return complex.Hypot(X, Y),
@@ -48,32 +46,24 @@ pub fn Hypot(X: type, Y: type) type {
         },
         .int => switch (comptime types.numericType(Y)) {
             .bool, .int => @compileError("zsl.numeric.hypot: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
-            .rational => return rational.Hypot(X, Y),
-            .float => return float.Hypot(X, Y),
-            .dyadic => return dyadic.Hypot(X, Y),
-            .complex => return complex.Hypot(X, Y),
-            .custom => unreachable,
-        },
-        .rational => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational => return rational.Hypot(X, Y),
             .float => return float.Hypot(X, Y),
             .dyadic => return dyadic.Hypot(X, Y),
             .complex => return complex.Hypot(X, Y),
             .custom => unreachable,
         },
         .float => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float => return float.Hypot(X, Y),
+            .bool, .int, .float => return float.Hypot(X, Y),
             .dyadic => return dyadic.Hypot(X, Y),
             .complex => return complex.Hypot(X, Y),
             .custom => unreachable,
         },
         .dyadic => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float, .dyadic => return dyadic.Hypot(X, Y),
+            .bool, .int, .float, .dyadic => return dyadic.Hypot(X, Y),
             .complex => return complex.Hypot(X, Y),
             .custom => unreachable,
         },
         .complex => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float, .dyadic, .complex => return complex.Hypot(X, Y),
+            .bool, .int, .float, .dyadic, .complex => return complex.Hypot(X, Y),
             .custom => unreachable,
         },
         .custom => unreachable,
@@ -148,7 +138,6 @@ pub inline fn hypot(x: anytype, y: anytype) numeric.Hypot(@TypeOf(x), @TypeOf(y)
         .bool => switch (comptime types.numericType(Y)) {
             .bool => unreachable,
             .int => unreachable,
-            .rational => return rational.hypot(x, y),
             .float => return float.hypot(x, y),
             .dyadic => return dyadic.hypot(x, y),
             .complex => return complex.hypot(x, y),
@@ -156,32 +145,24 @@ pub inline fn hypot(x: anytype, y: anytype) numeric.Hypot(@TypeOf(x), @TypeOf(y)
         },
         .int => switch (comptime types.numericType(Y)) {
             .bool, .int => unreachable,
-            .rational => return rational.hypot(x, y),
-            .float => return float.hypot(x, y),
-            .dyadic => return dyadic.hypot(x, y),
-            .complex => return complex.hypot(x, y),
-            .custom => unreachable,
-        },
-        .rational => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational => return rational.hypot(x, y),
             .float => return float.hypot(x, y),
             .dyadic => return dyadic.hypot(x, y),
             .complex => return complex.hypot(x, y),
             .custom => unreachable,
         },
         .float => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float => return float.hypot(x, y),
+            .bool, .int, .float => return float.hypot(x, y),
             .dyadic => return dyadic.hypot(x, y),
             .complex => return complex.hypot(x, y),
             .custom => unreachable,
         },
         .dyadic => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float, .dyadic => return dyadic.hypot(x, y),
+            .bool, .int, .float, .dyadic => return dyadic.hypot(x, y),
             .complex => return complex.hypot(x, y),
             .custom => unreachable,
         },
         .complex => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float, .dyadic, .complex => return complex.hypot(x, y),
+            .bool, .int, .float, .dyadic, .complex => return complex.hypot(x, y),
             .custom => unreachable,
         },
         .custom => unreachable,

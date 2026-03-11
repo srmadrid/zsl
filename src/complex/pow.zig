@@ -7,17 +7,17 @@ pub fn Pow(comptime X: type, comptime Y: type) type {
     comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
         !types.numericType(X).le(.complex) or !types.numericType(Y).le(.complex) or
         (types.numericType(X) != .complex and types.numericType(Y) != .complex))
-        @compileError("zsl.complex.pow: at least one of x or y must be a complex, the other must be a bool, an int, a rational, a float, a dyadic or a complex, got\n\tx: " ++
+        @compileError("zsl.complex.pow: at least one of x or y must be a complex, the other must be a bool, an int, a float, a dyadic or a complex, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
     return types.Coerce(X, Y);
 }
 
 /// Performs exponentiation `xʸ` between two operands of complex, dyadic, float,
-/// rational, int or bool types, where at least one operand must be of float
-/// type. The result type is determined by coercing the operand types, and the
-/// operation is performed by casting both operands to the result type, then
-/// performing the exponentiation.
+/// int or bool types, where at least one operand must be of float type. The
+/// result type is determined by coercing the operand types, and the operation
+/// is performed by casting both operands to the result type, then performing
+/// the exponentiation.
 ///
 /// ## Signature
 /// ```zig

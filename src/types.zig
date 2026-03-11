@@ -157,7 +157,6 @@ pub const IterationOrder = enum {
 ///   * `isize`, `i8`, `i16`, `i32`, `i64`, `i128`
 ///   * `uX`, `iX` (where X is any bit size)
 ///   * `comptime_int`
-/// * `rational`: Represents rational types (`Rational(...)`).
 /// * `float`: Represents floating point types:
 ///   * `f16`, `f32`, `f64`, `f80`, `f128`
 ///   * `comptime_float`
@@ -165,13 +164,12 @@ pub const IterationOrder = enum {
 /// * `complex`: Represents complex types:
 ///   * `cf16`, `cf32`, `cf64`, `cf80`, `cf128`
 ///   * `Complex(Dyadic(...))`
-///   * `Complex(Rational(...))`
+///   * `Complex(<custom>)`
 ///   * `comptime_complex`
 /// * `custom`: Represents custom user-defined numeric types.
 pub const NumericType = enum {
     bool,
     int,
-    rational,
     float,
     dyadic,
     complex,
@@ -305,7 +303,6 @@ pub fn empty(comptime T: type) T {
         .numeric => switch (comptime numericType(T)) {
             .bool => return false,
             .int => return 0,
-            .rational => return .zero,
             .float => return 0.0,
             .dyadic => return .zero,
             .complex => return .zero,
@@ -371,9 +368,6 @@ pub inline fn numericType(comptime N: type) NumericType {
 
             if (comptime @hasDecl(N, "is_custom") and N.is_custom)
                 return .custom;
-
-            if (comptime @hasDecl(N, "is_rational") and N.is_rational)
-                return .rational;
 
             if (comptime @hasDecl(N, "is_dyadic") and N.is_dyadic)
                 return .dyadic;
@@ -594,7 +588,6 @@ pub fn Scalar(comptime T: type) type {
         .numeric => switch (comptime numericType(T)) {
             .bool => return T,
             .int => return T,
-            .rational => return T,
             .float => return T,
             .dyadic => return T,
             .complex => switch (T) {

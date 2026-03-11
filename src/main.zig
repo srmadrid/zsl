@@ -14,12 +14,14 @@ pub fn main() !void {
     const rand = prng.random();
 
     const a: zsl.cf64 = .{ .re = rand.float(f64), .im = rand.float(f64) };
-    const b: zsl.cf64 = .{ .re = rand.float(f64), .im = rand.float(f64) };
-    const c: zsl.cf64 = .{ .re = rand.float(f64), .im = rand.float(f64) };
+    const b: f64 = rand.float(f64);
+    var c: zsl.cf64 = .{ .re = rand.float(f64), .im = rand.float(f64) };
+
+    zsl.numeric.add_(&c, b, b);
 
     std.debug.print("a: {s} = {}, b: {s} = {}, c: {s} = {}\n", .{ @typeName(@TypeOf(a)), a, @typeName(@TypeOf(b)), b, @typeName(@TypeOf(c)), c });
 
-    const d = zsl.numeric.fma(a, b, c);
+    const d = zsl.numeric.mul(a, b);
     std.debug.print("d: {s} = {}\n", .{ @typeName(@TypeOf(d)), d });
 }
 

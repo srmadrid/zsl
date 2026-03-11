@@ -1,7 +1,6 @@
 const types = @import("../../types.zig");
 
 const int = @import("../../int.zig");
-const rational = @import("../../rational.zig");
 const float = @import("../../float.zig");
 const dyadic = @import("../../dyadic.zig");
 const complex = @import("../../complex.zig");
@@ -15,7 +14,6 @@ pub fn Ln(X: type) type {
     switch (comptime types.numericType(X)) {
         .bool => @compileError("zsl.numeric.ln: not defined for " ++ @typeName(X) ++ "."),
         .int => @compileError("zsl.numeric.ln: not defined for " ++ @typeName(X) ++ "."),
-        .rational => return X,
         .float => return X,
         .dyadic => return X,
         .complex => return X,
@@ -59,9 +57,8 @@ pub inline fn ln(x: anytype) numeric.Ln(@TypeOf(x)) {
     switch (comptime types.numericType(X)) {
         .bool => unreachable,
         .int => unreachable,
-        .rational => return rational.ln(x),
         .float => return float.ln(x),
-        .dyadic => return rational.ln(x),
+        .dyadic => return dyadic.ln(x),
         .complex => return complex.ln(x),
         .custom => {
             const Impl: type = comptime types.anyHasMethod(

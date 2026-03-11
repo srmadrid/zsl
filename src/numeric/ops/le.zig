@@ -1,7 +1,6 @@
 const types = @import("../../types.zig");
 
 const int = @import("../../int.zig");
-const rational = @import("../../rational.zig");
 const float = @import("../../float.zig");
 const dyadic = @import("../../dyadic.zig");
 const complex = @import("../../complex.zig");
@@ -65,7 +64,6 @@ pub inline fn le(x: anytype, y: anytype) bool {
         .bool => switch (comptime types.numericType(Y)) {
             .bool => return !x or y,
             .int => return int.le(x, y),
-            .rational => return rational.le(x, y),
             .float => return float.le(x, y),
             .dyadic => return dyadic.le(x, y),
             .complex => @compileError("zsl.numeric.le: not defiled for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
@@ -73,27 +71,19 @@ pub inline fn le(x: anytype, y: anytype) bool {
         },
         .int => switch (comptime types.numericType(Y)) {
             .bool, .int => return int.le(x, y),
-            .rational => return rational.le(x, y),
-            .float => return float.le(x, y),
-            .dyadic => return dyadic.le(x, y),
-            .complex => @compileError("zsl.numeric.le: not defiled for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
-            .custom => unreachable,
-        },
-        .rational => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational => return rational.le(x, y),
             .float => return float.le(x, y),
             .dyadic => return dyadic.le(x, y),
             .complex => @compileError("zsl.numeric.le: not defiled for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
         .float => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float => return float.le(x, y),
+            .bool, .int, .float => return float.le(x, y),
             .dyadic => return dyadic.le(x, y),
             .complex => @compileError("zsl.numeric.le: not defiled for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
         .dyadic => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float, .dyadic => return dyadic.le(x, y),
+            .bool, .int, .float, .dyadic => return dyadic.le(x, y),
             .complex => @compileError("zsl.numeric.le: not defiled for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },

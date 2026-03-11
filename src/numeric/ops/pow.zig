@@ -1,7 +1,6 @@
 const types = @import("../../types.zig");
 
 const int = @import("../../int.zig");
-const rational = @import("../../rational.zig");
 const float = @import("../../float.zig");
 const dyadic = @import("../../dyadic.zig");
 const complex = @import("../../complex.zig");
@@ -40,7 +39,6 @@ pub fn Pow(X: type, Y: type) type {
         .bool => switch (comptime types.numericType(Y)) {
             .bool => @compileError("zsl.numeric.pow: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .int => return int.Pow(X, Y),
-            .rational => return rational.Pow(X, Y),
             .float => return float.Pow(X, Y),
             .dyadic => return dyadic.Pow(X, Y),
             .complex => return complex.Pow(X, Y),
@@ -48,32 +46,24 @@ pub fn Pow(X: type, Y: type) type {
         },
         .int => switch (comptime types.numericType(Y)) {
             .bool, .int => return int.Pow(X, Y),
-            .rational => return rational.Pow(X, Y),
-            .float => return float.Pow(X, Y),
-            .dyadic => return dyadic.Pow(X, Y),
-            .complex => return complex.Pow(X, Y),
-            .custom => unreachable,
-        },
-        .rational => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational => return rational.Pow(X, Y),
             .float => return float.Pow(X, Y),
             .dyadic => return dyadic.Pow(X, Y),
             .complex => return complex.Pow(X, Y),
             .custom => unreachable,
         },
         .float => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float => return float.Pow(X, Y),
+            .bool, .int, .float => return float.Pow(X, Y),
             .dyadic => return dyadic.Pow(X, Y),
             .complex => return complex.Pow(X, Y),
             .custom => unreachable,
         },
         .dyadic => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float, .dyadic => return dyadic.Pow(X, Y),
+            .bool, .int, .float, .dyadic => return dyadic.Pow(X, Y),
             .complex => return complex.Pow(X, Y),
             .custom => unreachable,
         },
         .complex => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float, .dyadic, .complex => return complex.Pow(X, Y),
+            .bool, .int, .float, .dyadic, .complex => return complex.Pow(X, Y),
             .custom => unreachable,
         },
         .custom => unreachable,
@@ -149,7 +139,6 @@ pub inline fn pow(x: anytype, y: anytype) numeric.Pow(@TypeOf(x), @TypeOf(y)) {
         .bool => switch (comptime types.numericType(Y)) {
             .bool => unreachable,
             .int => return int.pow(x, y),
-            .rational => return rational.pow(x, y),
             .float => return float.pow(x, y),
             .dyadic => return dyadic.pow(x, y),
             .complex => return complex.pow(x, y),
@@ -157,32 +146,24 @@ pub inline fn pow(x: anytype, y: anytype) numeric.Pow(@TypeOf(x), @TypeOf(y)) {
         },
         .int => switch (comptime types.numericType(Y)) {
             .bool, .int => return int.pow(x, y),
-            .rational => return rational.pow(x, y),
-            .float => return float.pow(x, y),
-            .dyadic => return dyadic.pow(x, y),
-            .complex => return complex.pow(x, y),
-            .custom => unreachable,
-        },
-        .rational => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational => return rational.pow(x, y),
             .float => return float.pow(x, y),
             .dyadic => return dyadic.pow(x, y),
             .complex => return complex.pow(x, y),
             .custom => unreachable,
         },
         .float => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float => return float.pow(x, y),
+            .bool, .int, .float => return float.pow(x, y),
             .dyadic => return dyadic.pow(x, y),
             .complex => return complex.pow(x, y),
             .custom => unreachable,
         },
         .dyadic => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float, .dyadic => return dyadic.pow(x, y),
+            .bool, .int, .float, .dyadic => return dyadic.pow(x, y),
             .complex => return complex.pow(x, y),
             .custom => unreachable,
         },
         .complex => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float, .dyadic, .complex => return complex.pow(x, y),
+            .bool, .int, .float, .dyadic, .complex => return complex.pow(x, y),
             .custom => unreachable,
         },
         .custom => unreachable,

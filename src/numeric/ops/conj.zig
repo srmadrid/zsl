@@ -1,7 +1,6 @@
 const types = @import("../../types.zig");
 
 const int = @import("../../int.zig");
-const rational = @import("../../rational.zig");
 const float = @import("../../float.zig");
 const dyadic = @import("../../dyadic.zig");
 const complex = @import("../../complex.zig");
@@ -15,7 +14,6 @@ pub fn Conj(X: type) type {
     switch (comptime types.numericType(X)) {
         .bool => return X,
         .int => return X,
-        .rational => return X,
         .float => return X,
         .dyadic => return X,
         .complex => return X,
@@ -59,7 +57,6 @@ pub inline fn conj(x: anytype) numeric.Conj(@TypeOf(x)) {
     switch (comptime types.numericType(X)) {
         .bool => return x,
         .int => return x,
-        .rational => return x,
         .float => return x,
         .dyadic => return x,
         .complex => return complex.conj(x),

@@ -1,7 +1,6 @@
 const types = @import("../../types.zig");
 
 const int = @import("../../int.zig");
-const rational = @import("../../rational.zig");
 const float = @import("../../float.zig");
 const dyadic = @import("../../dyadic.zig");
 const complex = @import("../../complex.zig");
@@ -40,7 +39,6 @@ pub fn Mul(X: type, Y: type) type {
         .bool => switch (comptime types.numericType(Y)) {
             .bool => @compileError("zsl.numeric.mul: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .int => return int.Mul(X, Y),
-            .rational => return rational.Mul(X, Y),
             .float => return float.Mul(X, Y),
             .dyadic => return dyadic.Mul(X, Y),
             .complex => return complex.Mul(X, Y),
@@ -48,32 +46,24 @@ pub fn Mul(X: type, Y: type) type {
         },
         .int => switch (comptime types.numericType(Y)) {
             .bool, .int => return int.Mul(X, Y),
-            .rational => return rational.Mul(X, Y),
-            .float => return float.Mul(X, Y),
-            .dyadic => return dyadic.Mul(X, Y),
-            .complex => return complex.Mul(X, Y),
-            .custom => unreachable,
-        },
-        .rational => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational => return rational.Mul(X, Y),
             .float => return float.Mul(X, Y),
             .dyadic => return dyadic.Mul(X, Y),
             .complex => return complex.Mul(X, Y),
             .custom => unreachable,
         },
         .float => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float => return float.Mul(X, Y),
+            .bool, .int, .float => return float.Mul(X, Y),
             .dyadic => return dyadic.Mul(X, Y),
             .complex => return complex.Mul(X, Y),
             .custom => unreachable,
         },
         .dyadic => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float, .dyadic => return dyadic.Mul(X, Y),
+            .bool, .int, .float, .dyadic => return dyadic.Mul(X, Y),
             .complex => return complex.Mul(X, Y),
             .custom => unreachable,
         },
         .complex => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float, .dyadic, .complex => return complex.Mul(X, Y),
+            .bool, .int, .float, .dyadic, .complex => return complex.Mul(X, Y),
             .custom => unreachable,
         },
         .custom => unreachable,
@@ -149,7 +139,6 @@ pub inline fn mul(x: anytype, y: anytype) numeric.Mul(@TypeOf(x), @TypeOf(y)) {
         .bool => switch (comptime types.numericType(Y)) {
             .bool => unreachable,
             .int => return int.mul(x, y),
-            .rational => return rational.mul(x, y),
             .float => return float.mul(x, y),
             .dyadic => return dyadic.mul(x, y),
             .complex => return complex.mul(x, y),
@@ -157,32 +146,24 @@ pub inline fn mul(x: anytype, y: anytype) numeric.Mul(@TypeOf(x), @TypeOf(y)) {
         },
         .int => switch (comptime types.numericType(Y)) {
             .bool, .int => return int.mul(x, y),
-            .rational => return rational.mul(x, y),
-            .float => return float.mul(x, y),
-            .dyadic => return dyadic.mul(x, y),
-            .complex => return complex.mul(x, y),
-            .custom => unreachable,
-        },
-        .rational => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational => return rational.mul(x, y),
             .float => return float.mul(x, y),
             .dyadic => return dyadic.mul(x, y),
             .complex => return complex.mul(x, y),
             .custom => unreachable,
         },
         .float => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float => return float.mul(x, y),
+            .bool, .int, .float => return float.mul(x, y),
             .dyadic => return dyadic.mul(x, y),
             .complex => return complex.mul(x, y),
             .custom => unreachable,
         },
         .dyadic => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float, .dyadic => return dyadic.mul(x, y),
+            .bool, .int, .float, .dyadic => return dyadic.mul(x, y),
             .complex => return complex.mul(x, y),
             .custom => unreachable,
         },
         .complex => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float, .dyadic, .complex => return complex.mul(x, y),
+            .bool, .int, .float, .dyadic, .complex => return complex.mul(x, y),
             .custom => unreachable,
         },
         .custom => unreachable,

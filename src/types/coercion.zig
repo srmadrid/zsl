@@ -3,8 +3,6 @@ const std = @import("std");
 const types = @import("../types.zig");
 
 const int = @import("../int.zig");
-const rational = @import("../rational.zig");
-const Rational = rational.Rational;
 const dyadic = @import("../dyadic.zig");
 const Dyadic = dyadic.Dyadic;
 const complex = @import("../complex.zig");
@@ -579,7 +577,6 @@ pub fn Coerce(comptime X: type, comptime Y: type) type {
                     }
                 }
             },
-            .rational => return Rational(@typeInfo(Coerce(X, Y.Numerator)).int.bits),
             .float => {
                 if (Y == comptime_float)
                     return EnsureFloat(X);
@@ -600,22 +597,6 @@ pub fn Coerce(comptime X: type, comptime Y: type) type {
             .complex => return Complex(Coerce(X, types.Scalar(Y))),
             .custom => unreachable,
         },
-        .rational => switch (comptime types.numericType(Y)) {
-            .bool => return X,
-            .int => return Rational(@typeInfo(Coerce(X.Numerator, Y)).int.bits),
-            .rational => return Rational(int.max(@typeInfo(X.Numerator).int.bits, @typeInfo(Y.Numerator).int.bits)),
-            .float => return Coerce(EnsureFloat(X.Numerator), Y),
-            .dyadic => {
-                const xbits = @typeInfo(X.Numerator).int.bits;
-
-                return Dyadic(
-                    int.max(xbits, @typeInfo(Y.Mantissa).int.bits),
-                    int.max(std.math.log2_int_ceil(u16, xbits) + 2, @typeInfo(Y.Exponent).int.bits),
-                );
-            },
-            .complex => return Complex(Coerce(X, types.Scalar(Y))),
-            .custom => unreachable,
-        },
         .float => switch (comptime types.numericType(Y)) {
             .bool => return X,
             .int => {
@@ -624,7 +605,6 @@ pub fn Coerce(comptime X: type, comptime Y: type) type {
 
                 return Coerce(X, EnsureFloat(Y));
             },
-            .rational => return Coerce(X, EnsureFloat(Y.Numerator)),
             .float => {
                 if (X == comptime_float)
                     return Y;
@@ -668,14 +648,6 @@ pub fn Coerce(comptime X: type, comptime Y: type) type {
                     @typeInfo(X.Exponent).int.bits,
                 );
             },
-            .rational => {
-                const ybits = @typeInfo(Y.Numerator).int.bits;
-
-                return Dyadic(
-                    int.max(@typeInfo(X.Mantissa).int.bits, ybits),
-                    int.max(@typeInfo(X.Exponent).int.bits, std.math.log2_int_ceil(u16, ybits) + 2),
-                );
-            },
             .float => {
                 if (Y == comptime_float)
                     return X;
@@ -700,7 +672,6 @@ pub fn Coerce(comptime X: type, comptime Y: type) type {
         .complex => switch (comptime types.numericType(Y)) {
             .bool => X,
             .int => return Complex(Coerce(types.Scalar(X), Y)),
-            .rational => return Complex(Coerce(types.Scalar(X), Y)),
             .float => return Complex(Coerce(types.Scalar(X), Y)),
             .dyadic => return Complex(Coerce(types.Scalar(X), Y)),
             .complex => return Complex(Coerce(types.Scalar(X), types.Scalar(Y))),
@@ -1207,7 +1178,6 @@ pub fn EnsureFloat(comptime T: type) type {
 
             return f128;
         },
-        .rational => @compileError("zsl.types.EnsureFloat: not implemented yet for " ++ @typeName(T) ++ "."),
         .float => return T,
         .dyadic => return T,
         .complex => return T,

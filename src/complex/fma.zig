@@ -7,17 +7,17 @@ pub fn Fma(comptime X: type, comptime Y: type, comptime Z: type) type {
     comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or !types.isNumeric(Z) or
         !types.numericType(X).le(.complex) or !types.numericType(Y).le(.complex) or !types.numericType(Z).le(.complex) or
         (types.numericType(X) != .complex and types.numericType(Y) != .complex and types.numericType(Z) != .complex))
-        @compileError("zsl.complex.fma: at least one of x, y or z must be a complex, the others must be bool, int, rational, float, dyadic or complex, got\n\tx: " ++
+        @compileError("zsl.complex.fma: at least one of x, y or z must be a complex, the others must be bool, int, float, dyadic or complex, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\tz: " ++ @typeName(Z) ++ "\n");
 
     return types.Coerce(X, types.Coerce(Y, Z));
 }
 
 /// Performs fused multiplication and addition (x * y + z) between three
-/// operands of complex, dyadic, float, rational, int or bool types, where at
-/// least one operand must be of complex type. The result type is determined by
-/// coercing the operand types, and the operation is performed by casting all
-/// three operands to the result type, then performing the fused operation.
+/// operands of complex, dyadic, float, int or bool types, where at least one
+/// operand must be of complex type. The result type is determined by coercing
+/// the operand types, and the operation is performed by casting all three
+/// operands to the result type, then performing the fused operation.
 ///
 /// ## Signature
 /// ```zig

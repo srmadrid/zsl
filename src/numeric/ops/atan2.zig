@@ -1,7 +1,6 @@
 const types = @import("../../types.zig");
 
 const int = @import("../../int.zig");
-const rational = @import("../../rational.zig");
 const float = @import("../../float.zig");
 const dyadic = @import("../../dyadic.zig");
 const complex = @import("../../complex.zig");
@@ -40,7 +39,6 @@ pub fn Atan2(Y: type, X: type) type {
         .bool => switch (comptime types.numericType(X)) {
             .bool => @compileError("zsl.numeric.atan2: not defined for " ++ @typeName(Y) ++ " and " ++ @typeName(X) ++ "."),
             .int => @compileError("zsl.numeric.atan2: not defined for " ++ @typeName(Y) ++ " and " ++ @typeName(X) ++ "."),
-            .rational => return rational.Atan2(Y, X),
             .float => return float.Atan2(Y, X),
             .dyadic => return dyadic.Atan2(Y, X),
             .complex => return complex.Atan2(Y, X),
@@ -48,32 +46,24 @@ pub fn Atan2(Y: type, X: type) type {
         },
         .int => switch (comptime types.numericType(X)) {
             .bool, .int => @compileError("zsl.numeric.atan2: not defined for " ++ @typeName(Y) ++ " and " ++ @typeName(X) ++ "."),
-            .rational => return rational.Atan2(Y, X),
-            .float => return float.Atan2(Y, X),
-            .dyadic => return dyadic.Atan2(Y, X),
-            .complex => return complex.Atan2(Y, X),
-            .custom => unreachable,
-        },
-        .rational => switch (comptime types.numericType(X)) {
-            .bool, .int, .rational => return rational.Atan2(Y, X),
             .float => return float.Atan2(Y, X),
             .dyadic => return dyadic.Atan2(Y, X),
             .complex => return complex.Atan2(Y, X),
             .custom => unreachable,
         },
         .float => switch (comptime types.numericType(X)) {
-            .bool, .int, .rational, .float => return float.Atan2(Y, X),
+            .bool, .int, .float => return float.Atan2(Y, X),
             .dyadic => return dyadic.Atan2(Y, X),
             .complex => return complex.Atan2(Y, X),
             .custom => unreachable,
         },
         .dyadic => switch (comptime types.numericType(X)) {
-            .bool, .int, .rational, .float, .dyadic => return dyadic.Atan2(Y, X),
+            .bool, .int, .float, .dyadic => return dyadic.Atan2(Y, X),
             .complex => return complex.Atan2(Y, X),
             .custom => unreachable,
         },
         .complex => switch (comptime types.numericType(X)) {
-            .bool, .int, .rational, .float, .dyadic, .complex => return complex.Atan2(Y, X),
+            .bool, .int, .float, .dyadic, .complex => return complex.Atan2(Y, X),
             .custom => unreachable,
         },
         .custom => unreachable,
@@ -149,7 +139,6 @@ pub inline fn atan2(y: anytype, x: anytype) numeric.Atan2(@TypeOf(y), @TypeOf(x)
         .bool => switch (comptime types.numericType(X)) {
             .bool => unreachable,
             .int => unreachable,
-            .rational => return rational.atan2(y, x),
             .float => return float.atan2(y, x),
             .dyadic => return dyadic.atan2(y, x),
             .complex => return complex.atan2(y, x),
@@ -157,32 +146,24 @@ pub inline fn atan2(y: anytype, x: anytype) numeric.Atan2(@TypeOf(y), @TypeOf(x)
         },
         .int => switch (comptime types.numericType(X)) {
             .bool, .int => unreachable,
-            .rational => return rational.atan2(y, x),
-            .float => return float.atan2(y, x),
-            .dyadic => return dyadic.atan2(y, x),
-            .complex => return complex.atan2(y, x),
-            .custom => unreachable,
-        },
-        .rational => switch (comptime types.numericType(X)) {
-            .bool, .int, .rational => return rational.atan2(y, x),
             .float => return float.atan2(y, x),
             .dyadic => return dyadic.atan2(y, x),
             .complex => return complex.atan2(y, x),
             .custom => unreachable,
         },
         .float => switch (comptime types.numericType(X)) {
-            .bool, .int, .rational, .float => return float.atan2(y, x),
+            .bool, .int, .float => return float.atan2(y, x),
             .dyadic => return dyadic.atan2(y, x),
             .complex => return complex.atan2(y, x),
             .custom => unreachable,
         },
         .dyadic => switch (comptime types.numericType(X)) {
-            .bool, .int, .rational, .float, .dyadic => return dyadic.atan2(y, x),
+            .bool, .int, .float, .dyadic => return dyadic.atan2(y, x),
             .complex => return complex.atan2(y, x),
             .custom => unreachable,
         },
         .complex => switch (comptime types.numericType(X)) {
-            .bool, .int, .rational, .float, .dyadic, .complex => return complex.atan2(y, x),
+            .bool, .int, .float, .dyadic, .complex => return complex.atan2(y, x),
             .custom => unreachable,
         },
         .custom => unreachable,

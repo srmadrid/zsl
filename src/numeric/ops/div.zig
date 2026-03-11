@@ -1,7 +1,6 @@
 const types = @import("../../types.zig");
 
 const int = @import("../../int.zig");
-const rational = @import("../../rational.zig");
 const float = @import("../../float.zig");
 const dyadic = @import("../../dyadic.zig");
 const complex = @import("../../complex.zig");
@@ -40,7 +39,6 @@ pub fn Div(X: type, Y: type) type {
         .bool => switch (comptime types.numericType(Y)) {
             .bool => @compileError("zsl.numeric.div: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .int => return int.Div(X, Y),
-            .rational => return rational.Div(X, Y),
             .float => return float.Div(X, Y),
             .dyadic => return dyadic.Div(X, Y),
             .complex => return complex.Div(X, Y),
@@ -48,32 +46,24 @@ pub fn Div(X: type, Y: type) type {
         },
         .int => switch (comptime types.numericType(Y)) {
             .bool, .int => return int.Div(X, Y),
-            .rational => return rational.Div(X, Y),
-            .float => return float.Div(X, Y),
-            .dyadic => return dyadic.Div(X, Y),
-            .complex => return complex.Div(X, Y),
-            .custom => unreachable,
-        },
-        .rational => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational => return rational.Div(X, Y),
             .float => return float.Div(X, Y),
             .dyadic => return dyadic.Div(X, Y),
             .complex => return complex.Div(X, Y),
             .custom => unreachable,
         },
         .float => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float => return float.Div(X, Y),
+            .bool, .int, .float => return float.Div(X, Y),
             .dyadic => return dyadic.Div(X, Y),
             .complex => return complex.Div(X, Y),
             .custom => unreachable,
         },
         .dyadic => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float, .dyadic => return dyadic.Div(X, Y),
+            .bool, .int, .float, .dyadic => return dyadic.Div(X, Y),
             .complex => return complex.Div(X, Y),
             .custom => unreachable,
         },
         .complex => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float, .dyadic, .complex => return complex.Div(X, Y),
+            .bool, .int, .float, .dyadic, .complex => return complex.Div(X, Y),
             .custom => unreachable,
         },
         .custom => unreachable,
@@ -148,7 +138,6 @@ pub inline fn div(x: anytype, y: anytype) numeric.Div(@TypeOf(x), @TypeOf(y)) {
         .bool => switch (comptime types.numericType(Y)) {
             .bool => unreachable,
             .int => return int.div(x, y),
-            .rational => return rational.div(x, y),
             .float => return float.div(x, y),
             .dyadic => return dyadic.div(x, y),
             .complex => return complex.div(x, y),
@@ -156,32 +145,24 @@ pub inline fn div(x: anytype, y: anytype) numeric.Div(@TypeOf(x), @TypeOf(y)) {
         },
         .int => switch (comptime types.numericType(Y)) {
             .bool, .int => return int.div(x, y),
-            .rational => return rational.div(x, y),
-            .float => return float.div(x, y),
-            .dyadic => return dyadic.div(x, y),
-            .complex => return complex.div(x, y),
-            .custom => unreachable,
-        },
-        .rational => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational => return rational.div(x, y),
             .float => return float.div(x, y),
             .dyadic => return dyadic.div(x, y),
             .complex => return complex.div(x, y),
             .custom => unreachable,
         },
         .float => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float => return float.div(x, y),
+            .bool, .int, .float => return float.div(x, y),
             .dyadic => return dyadic.div(x, y),
             .complex => return complex.div(x, y),
             .custom => unreachable,
         },
         .dyadic => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float, .dyadic => return dyadic.div(x, y),
+            .bool, .int, .float, .dyadic => return dyadic.div(x, y),
             .complex => return complex.div(x, y),
             .custom => unreachable,
         },
         .complex => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float, .dyadic, .complex => return complex.div(x, y),
+            .bool, .int, .float, .dyadic, .complex => return complex.div(x, y),
             .custom => unreachable,
         },
         .custom => unreachable,

@@ -1,7 +1,6 @@
 const types = @import("../../types.zig");
 
 const int = @import("../../int.zig");
-const rational = @import("../../rational.zig");
 const float = @import("../../float.zig");
 const dyadic = @import("../../dyadic.zig");
 const complex = @import("../../complex.zig");
@@ -40,7 +39,6 @@ pub fn Max(X: type, Y: type) type {
         .bool => switch (comptime types.numericType(Y)) {
             .bool => return bool,
             .int => return int.Max(X, Y),
-            .rational => return rational.Max(X, Y),
             .float => return float.Max(X, Y),
             .dyadic => return dyadic.Max(X, Y),
             .complex => @compileError("zsl.numeric.max: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
@@ -48,27 +46,19 @@ pub fn Max(X: type, Y: type) type {
         },
         .int => switch (comptime types.numericType(Y)) {
             .bool, .int => return int.Max(X, Y),
-            .rational => return rational.Max(X, Y),
-            .float => return float.Max(X, Y),
-            .dyadic => return dyadic.Max(X, Y),
-            .complex => @compileError("zsl.numeric.max: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
-            .custom => unreachable,
-        },
-        .rational => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational => return rational.Max(X, Y),
             .float => return float.Max(X, Y),
             .dyadic => return dyadic.Max(X, Y),
             .complex => @compileError("zsl.numeric.max: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
         .float => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float => return float.Max(X, Y),
+            .bool, .int, .float => return float.Max(X, Y),
             .dyadic => return dyadic.Max(X, Y),
             .complex => @compileError("zsl.numeric.max: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
         .dyadic => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float, .dyadic => return dyadic.Max(X, Y),
+            .bool, .int, .float, .dyadic => return dyadic.Max(X, Y),
             .complex => @compileError("zsl.numeric.max: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
@@ -146,7 +136,6 @@ pub inline fn max(x: anytype, y: anytype) numeric.Max(@TypeOf(x), @TypeOf(y)) {
         .bool => switch (comptime types.numericType(Y)) {
             .bool => return x or y,
             .int => return int.max(x, y),
-            .rational => return rational.max(x, y),
             .float => return float.max(x, y),
             .dyadic => return dyadic.max(x, y),
             .complex => unreachable,
@@ -154,27 +143,19 @@ pub inline fn max(x: anytype, y: anytype) numeric.Max(@TypeOf(x), @TypeOf(y)) {
         },
         .int => switch (comptime types.numericType(Y)) {
             .bool, .int => return int.max(x, y),
-            .rational => return rational.max(x, y),
-            .float => return float.max(x, y),
-            .dyadic => return dyadic.max(x, y),
-            .complex => unreachable,
-            .custom => unreachable,
-        },
-        .rational => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational => return rational.max(x, y),
             .float => return float.max(x, y),
             .dyadic => return dyadic.max(x, y),
             .complex => unreachable,
             .custom => unreachable,
         },
         .float => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float => return float.max(x, y),
+            .bool, .int, .float => return float.max(x, y),
             .dyadic => return dyadic.max(x, y),
             .complex => unreachable,
             .custom => unreachable,
         },
         .dyadic => switch (comptime types.numericType(Y)) {
-            .bool, .int, .rational, .float, .dyadic => return dyadic.max(x, y),
+            .bool, .int, .float, .dyadic => return dyadic.max(x, y),
             .complex => unreachable,
             .custom => unreachable,
         },

@@ -1,7 +1,6 @@
 const types = @import("../../types.zig");
 
 const int = @import("../../int.zig");
-const rational = @import("../../rational.zig");
 const float = @import("../../float.zig");
 const dyadic = @import("../../dyadic.zig");
 const complex = @import("../../complex.zig");
@@ -15,7 +14,6 @@ pub fn Acos(X: type) type {
     switch (comptime types.numericType(X)) {
         .bool => @compileError("zsl.numeric.acos: not defined for " ++ @typeName(X) ++ "."),
         .int => @compileError("zsl.numeric.acos: not defined for " ++ @typeName(X) ++ "."),
-        .rational => return X,
         .float => return X,
         .dyadic => return X,
         .complex => return X,
@@ -59,7 +57,6 @@ pub inline fn acos(x: anytype) numeric.Acos(@TypeOf(x)) {
     switch (comptime types.numericType(X)) {
         .bool => unreachable,
         .int => unreachable,
-        .rational => return rational.acos(x),
         .float => return float.acos(x),
         .dyadic => return dyadic.acos(x),
         .complex => return complex.acos(x),

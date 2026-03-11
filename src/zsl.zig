@@ -7,8 +7,6 @@ pub const Diag = types.Diag;
 pub const IterationOrder = types.IterationOrder;
 
 pub const int = @import("int.zig");
-pub const rational = @import("rational.zig");
-pub const Rational = rational.Rational;
 pub const float = @import("float.zig");
 pub const dyadic = @import("dyadic.zig");
 pub const Dyadic = dyadic.Dyadic;
@@ -19,7 +17,7 @@ pub const cf32 = complex.cf32;
 pub const cf64 = complex.cf64;
 pub const cf80 = complex.cf80;
 pub const cf128 = complex.cf128;
-pub const comptime_ccomplex = complex.comptime_complex;
+pub const comptime_complex = complex.comptime_complex;
 
 // Domain namespaces
 pub const numeric = @import("numeric.zig");

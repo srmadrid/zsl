@@ -49,11 +49,6 @@ pub fn Dyadic(mantissa_bits: u16, exponent_bits: u16) type {
             .exponent = int.minVal(Exponent) +| 1,
             .positive = true,
         };
-        pub const negOne: Dyadic(mantissa_bits, exponent_bits) = .{
-            .mantissa = @as(Mantissa, 1) << (mantissa_bits - 1),
-            .exponent = int.minVal(Exponent) +| 1,
-            .positive = false,
-        };
 
         /// Initializes a new dyadic with the specified value.
         ///
