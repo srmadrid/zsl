@@ -10,7 +10,7 @@ pub fn Pow(comptime X: type, comptime Y: type) type {
         @compileError("zsl.complex.pow: at least one of x or y must be a complex, the other must be a bool, an int, a float, a dyadic or a complex, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    return types.Coerce(X, Y);
+    return complex.Coerce(X, Y);
 }
 
 /// Performs exponentiation `xʸ` between two operands of complex, dyadic, float,

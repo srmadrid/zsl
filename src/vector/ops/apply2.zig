@@ -1,13 +1,52 @@
 const std = @import("std");
 
 const types = @import("../../types.zig");
-const EnsureVector = types.EnsureVector;
-const Coerce = types.Coerce;
-const ReturnType2 = types.ReturnType2;
-const Numeric = types.Numeric;
 
 const dense = @import("../dense.zig");
 const sparse = @import("../sparse.zig");
+
+pub fn Apply2(comptime X: type, comptime Y: type, comptime op: anytype) type {
+    const Op = @TypeOf(op);
+    const opinfo = @typeInfo(Op);
+
+    comptime if ((!types.isVector(X) and !types.isNumeric(X)) or (!types.isVector(Y) and !types.isNumeric(Y)) or
+        (!types.isVector(X) and !types.isVector(Y)) or
+        opinfo != .@"fn" or opinfo.@"fn".params.len != 2)
+        @compileError("zsl.vector.apply2: at least one of x or y must be a vector, the other must be a vector or a numeric, and op must be a function of two arguments, got\n\tx: " ++
+            @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top: " ++ @typeName(Op) ++ "\n");
+
+    comptime var R = types.ReturnTypeFromInputs(op, &.{ types.Numeric(X), types.Numeric(Y) });
+    const rinfo = @typeInfo(R);
+    if (rinfo == .error_union)
+        R = rinfo.error_union.payload;
+
+    comptime if (!types.isNumeric(R))
+        @compileError("zsl.vector.apply2: calling op with arguments of types X and Y must return a numeric, got\n\tR = " ++ @typeName(R) ++ "\n");
+
+    const xv_type = types.vectorType(X);
+    const yv_type = types.vectorType(Y);
+    switch (comptime xv_type) {
+        .dense => switch (comptime yv_type) {
+            .dense => return EnsureVector(.dense, R),
+            .sparse => return EnsureVector(.dense, R),
+            .custom => return EnsureVector(.custom, R), // Obviously wont work
+            .numeric => return EnsureVector(.dense, R),
+        },
+        .sparse => switch (comptime yv_type) {
+            .dense => return EnsureVector(.dense, R),
+            .sparse => return EnsureVector(.sparse, R),
+            .custom => return EnsureVector(.custom, R), // Wont work
+            .numeric => return EnsureVector(.sparse, R),
+        },
+        .custom => return EnsureVector(.custom, R), // Wont work
+        .numeric => switch (comptime yv_type) {
+            .dense => return EnsureVector(.dense, R),
+            .sparse => return EnsureVector(.sparse, R),
+            .custom => return EnsureVector(.custom, R), // Wont work
+            .numeric => unreachable,
+        },
+    }
+}
 
 /// Applies a binary operation element-wise between two vectors, or between a
 /// vector and a scalar, handling all combinations of dense and sparse vectors.

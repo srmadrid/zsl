@@ -7,6 +7,8 @@ const options = @import("options");
 const types = @import("types.zig");
 const Cmp = types.Cmp;
 
+pub const Coerce = @import("int/coerce.zig").Coerce;
+
 pub fn Add(comptime X: type, comptime Y: type) type {
     comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
         !types.numericType(X).le(.int) or !types.numericType(Y).le(.int) or
@@ -14,7 +16,7 @@ pub fn Add(comptime X: type, comptime Y: type) type {
         @compileError("zsl.int.add: at least one of x or y must be an int, the other must be a bool or an int, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    return types.Coerce(X, Y);
+    return int.Coerce(X, Y);
 }
 
 /// Performs addition between two operands of int or bool types, where at least
@@ -56,7 +58,7 @@ pub fn Sub(comptime X: type, comptime Y: type) type {
         @compileError("zsl.int.sub: at least one of x or y must be an int, the other must be a bool or an int, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    return types.Coerce(X, Y);
+    return int.Coerce(X, Y);
 }
 
 /// Performs subtraction between two operands of int or bool types, where at
@@ -98,7 +100,7 @@ pub fn Mul(comptime X: type, comptime Y: type) type {
         @compileError("zsl.int.mul: at least one of x or y must be an int, the other must be a bool or an int, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y));
 
-    return types.Coerce(X, Y);
+    return int.Coerce(X, Y);
 }
 
 /// Performs multiplication between two operands of int or bool types, where at
@@ -140,7 +142,7 @@ pub fn Div(comptime X: type, comptime Y: type) type {
         @compileError("zsl.int.div: at least one of x or y must be an int, the other must be a bool or an int, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y));
 
-    return types.Coerce(X, Y);
+    return int.Coerce(X, Y);
 }
 
 /// Performs truncating division (rounding towards zero) between two operands of
@@ -191,7 +193,7 @@ pub inline fn cmp(x: anytype, y: anytype) Cmp {
         @compileError("zsl.int.cmp: at least one of x or y must be an int, the other must be a bool or an int, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y));
 
-    const C: type = types.Coerce(X, Y);
+    const C: type = int.Coerce(X, Y);
 
     if (types.cast(C, x) < types.cast(C, y)) return .lt;
     if (types.cast(C, x) > types.cast(C, y)) return .gt;
@@ -223,7 +225,7 @@ pub inline fn eq(x: anytype, y: anytype) bool {
         @compileError("zsl.int.eq: at least one of x or y must be an int, the other must be a bool or an int, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y));
 
-    const C: type = types.Coerce(X, Y);
+    const C: type = int.Coerce(X, Y);
 
     return types.cast(C, x) == types.cast(C, y);
 }
@@ -253,7 +255,7 @@ pub inline fn ne(x: anytype, y: anytype) bool {
         @compileError("zsl.int.ne: at least one of x or y must be an int, the other must be a bool or an int, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y));
 
-    const C: type = types.Coerce(X, Y);
+    const C: type = int.Coerce(X, Y);
 
     return types.cast(C, x) != types.cast(C, y);
 }
@@ -283,7 +285,7 @@ pub inline fn lt(x: anytype, y: anytype) bool {
         @compileError("zsl.int.lt: at least one of x or y must be an int, the other must be a bool or an int, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y));
 
-    const C: type = types.Coerce(X, Y);
+    const C: type = int.Coerce(X, Y);
 
     return types.cast(C, x) < types.cast(C, y);
 }
@@ -313,7 +315,7 @@ pub inline fn le(x: anytype, y: anytype) bool {
         @compileError("zsl.int.le: at least one of x or y must be an int, the other must be a bool or an int, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y));
 
-    const C: type = types.Coerce(X, Y);
+    const C: type = int.Coerce(X, Y);
 
     return types.cast(C, x) <= types.cast(C, y);
 }
@@ -343,7 +345,7 @@ pub inline fn gt(x: anytype, y: anytype) bool {
         @compileError("zsl.int.gt: at least one of x or y must be an int, the other must be a bool or an int, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y));
 
-    const C: type = types.Coerce(X, Y);
+    const C: type = int.Coerce(X, Y);
 
     return types.cast(C, x) > types.cast(C, y);
 }
@@ -373,7 +375,7 @@ pub inline fn ge(x: anytype, y: anytype) bool {
         @compileError("zsl.int.ge: at least one of x or y must be an int, the other must be a bool or an int, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y));
 
-    const C: type = types.Coerce(X, Y);
+    const C: type = int.Coerce(X, Y);
 
     return types.cast(C, x) >= types.cast(C, y);
 }
@@ -385,7 +387,7 @@ pub fn Max(comptime X: type, comptime Y: type) type {
         @compileError("zsl.int.max: at least one of x or y must be an int, the other must be a bool or an int, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y));
 
-    return types.Coerce(X, Y);
+    return int.Coerce(X, Y);
 }
 
 /// Returns the maximum of two operands of int or bool types, where at least
@@ -417,7 +419,7 @@ pub fn Min(comptime X: type, comptime Y: type) type {
         @compileError("zsl.int.min: at least one of x or y must be an int, the other must be a bool or an int, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y));
 
-    return types.Coerce(X, Y);
+    return int.Coerce(X, Y);
 }
 
 /// Returns the minimum of two operands of int or bool types, where at least

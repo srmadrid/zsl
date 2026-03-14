@@ -21,8 +21,15 @@ pub fn main() !void {
 
     std.debug.print("a: {s} = {}, b: {s} = {}, c: {s} = {}\n", .{ @typeName(@TypeOf(a)), a, @typeName(@TypeOf(b)), b, @typeName(@TypeOf(c)), c });
 
-    const d = zsl.numeric.mul(a, b);
+    const d = zsl.numeric.fma(a, b, c);
     std.debug.print("d: {s} = {}\n", .{ @typeName(@TypeOf(d)), d });
+
+    const e: zsl.Dyadic(64, 32) = .{ .mantissa = 0b1001010010101010100101010010100101010101001010100101001010101011, .exponent = -150, .positive = false };
+    const f: zsl.Dyadic(64, 32) = .{ .mantissa = 0b1001010010101010100101010010100101010101001010100101001010101010, .exponent = -150, .positive = false };
+    std.debug.print("e = {}, f = {}\n", .{ e, f });
+
+    const g = zsl.numeric.div(e, f);
+    std.debug.print("g = {}, g.m = {b}\n", .{ g, g.mantissa });
 }
 
 fn avg(values: []const f64) f64 {

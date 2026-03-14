@@ -10,7 +10,7 @@ pub fn Fma(comptime X: type, comptime Y: type, comptime Z: type) type {
         @compileError("zsl.complex.fma: at least one of x, y or z must be a complex, the others must be bool, int, float, dyadic or complex, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\tz: " ++ @typeName(Z) ++ "\n");
 
-    return types.Coerce(X, types.Coerce(Y, Z));
+    return complex.Coerce(X, numeric.Coerce(Y, Z));
 }
 
 /// Performs fused multiplication and addition (x * y + z) between three

@@ -5,6 +5,10 @@ const float = @This();
 const types = @import("types.zig");
 const Cmp = types.Cmp;
 
+const numeric = @import("numeric.zig");
+
+pub const Coerce = @import("float/coerce.zig").Coerce;
+
 // Constant functions
 pub inline fn pi(comptime Float: type) Float {
     comptime if (!types.isNumeric(Float) or types.numericType(Float) != .float)
@@ -28,7 +32,7 @@ pub fn Add(comptime X: type, comptime Y: type) type {
         @compileError("zsl.float.add: at least one of x or y must be a float, the other must be a bool, an int or a float, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    return types.Coerce(X, Y);
+    return float.Coerce(X, Y);
 }
 
 /// Performs addition between two operands of float, int or bool types, where at
@@ -60,7 +64,7 @@ pub fn Sub(comptime X: type, comptime Y: type) type {
         @compileError("zsl.float.sub: at least one of x or y must be a float, the other must be a bool, an int or a float, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    return types.Coerce(X, Y);
+    return float.Coerce(X, Y);
 }
 
 /// Performs subtraction between two operands of float, int or bool types, where
@@ -92,7 +96,7 @@ pub fn Mul(comptime X: type, comptime Y: type) type {
         @compileError("zsl.float.mul: at least one of x or y must be a float, the other must be a bool, an int or a float, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    return types.Coerce(X, Y);
+    return float.Coerce(X, Y);
 }
 
 /// Performs multiplication between two operands of float, int or bool types,
@@ -124,7 +128,7 @@ pub fn Fma(comptime X: type, comptime Y: type, comptime Z: type) type {
         @compileError("zsl.float.fma: at least one of x, y or z must be a float, the others must be bool, int or float, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\tz: " ++ @typeName(Z) ++ "\n");
 
-    return types.Coerce(X, types.Coerce(Y, Z));
+    return float.Coerce(X, numeric.Coerce(Y, Z));
 }
 
 /// Performs fused multiplication and addition (x * y + z) between three
@@ -159,7 +163,7 @@ pub fn Div(comptime X: type, comptime Y: type) type {
         @compileError("zsl.float.div: at least one of x or y must be a float, the other must be a bool, an int or a float, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    return types.Coerce(X, Y);
+    return float.Coerce(X, Y);
 }
 
 /// Performs division between two operands of float, int or bool types, where at
@@ -209,7 +213,7 @@ pub inline fn cmp(x: anytype, y: anytype) Cmp {
         @compileError("zsl.float.cmp: at least one of x or y must be a float, the other must be a bool, an int or a float, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    const C: type = types.Coerce(X, Y);
+    const C: type = float.Coerce(X, Y);
 
     if (types.cast(C, x) < types.cast(C, y)) return .lt;
     if (types.cast(C, x) > types.cast(C, y)) return .gt;
@@ -241,7 +245,7 @@ pub inline fn eq(x: anytype, y: anytype) bool {
         @compileError("zsl.float.eq: at least one of x or y must be a float, the other must be a bool, an int or a float, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    const C: type = types.Coerce(X, Y);
+    const C: type = float.Coerce(X, Y);
 
     return types.cast(C, x) == types.cast(C, y);
 }
@@ -271,7 +275,7 @@ pub inline fn ne(x: anytype, y: anytype) bool {
         @compileError("zsl.float.ne: at least one of x or y must be a float, the other must be a bool, an int or a float, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    const C: type = types.Coerce(X, Y);
+    const C: type = float.Coerce(X, Y);
 
     return types.cast(C, x) != types.cast(C, y);
 }
@@ -302,7 +306,7 @@ pub inline fn lt(x: anytype, y: anytype) bool {
         @compileError("zsl.float.lt: at least one of x or y must be a float, the other must be a bool, an int or a float, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    const C: type = types.Coerce(X, Y);
+    const C: type = float.Coerce(X, Y);
 
     return types.cast(C, x) < types.cast(C, y);
 }
@@ -333,7 +337,7 @@ pub inline fn le(x: anytype, y: anytype) bool {
         @compileError("zsl.float.le: at least one of x or y must be a float, the other must be a bool, an int or a float, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    const C: type = types.Coerce(X, Y);
+    const C: type = float.Coerce(X, Y);
 
     return types.cast(C, x) <= types.cast(C, y);
 }
@@ -363,7 +367,7 @@ pub inline fn gt(x: anytype, y: anytype) bool {
         @compileError("zsl.float.gt: at least one of x or y must be a float, the other must be a bool, an int or a float, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    const C: type = types.Coerce(X, Y);
+    const C: type = float.Coerce(X, Y);
 
     return types.cast(C, x) > types.cast(C, y);
 }
@@ -394,7 +398,7 @@ pub inline fn ge(x: anytype, y: anytype) bool {
         @compileError("zsl.float.ge: at least one of x or y must be a float, the other must be a bool, an int or a float, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    const C: type = types.Coerce(X, Y);
+    const C: type = float.Coerce(X, Y);
 
     return types.cast(C, x) >= types.cast(C, y);
 }
@@ -406,7 +410,7 @@ pub fn Max(comptime X: type, comptime Y: type) type {
         @compileError("zsl.float.max: at least one of x or y must be a float, the other must be a bool, an int or a float, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    return types.Coerce(X, Y);
+    return float.Coerce(X, Y);
 }
 
 /// Returns the maximum of two operands of float, int or bool types, where at
@@ -438,7 +442,7 @@ pub fn Min(comptime X: type, comptime Y: type) type {
         @compileError("zsl.float.min: at least one of x or y must be a float, the other must be a bool, an int or a float, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    return types.Coerce(X, Y);
+    return float.Coerce(X, Y);
 }
 
 /// Returns the minimum of two operands of float, int or bool types, where at

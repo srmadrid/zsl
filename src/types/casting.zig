@@ -96,8 +96,8 @@ pub inline fn cast(comptime N: type, value: anytype) N {
             .bool => return numeric.ne(value, numeric.zero(V)),
             .int => return @intCast(value),
             .float => return @floatFromInt(value),
-            .dyadic => return .init(value),
-            .complex => return .init(value),
+            .dyadic => return .initValue(value),
+            .complex => return .initValue(value),
             .custom => {
                 comptime if (!types.hasMethod(N, "fromInt", fn (V) N, &.{V}))
                     @compileError("zsl.cast: " ++ @typeName(N) ++ " must implement `fn fromInt(" ++ @typeName(V) ++ ") " ++ @typeName(N) ++ "`");
@@ -109,8 +109,8 @@ pub inline fn cast(comptime N: type, value: anytype) N {
             .bool => return numeric.ne(value, numeric.zero(V)),
             .int => return @intFromFloat(value),
             .float => return @floatCast(value),
-            .dyadic => return .init(value),
-            .complex => return .init(value),
+            .dyadic => return .initValue(value),
+            .complex => return .initValue(value),
             .custom => {
                 comptime if (!types.hasMethod(N, "fromFloat", fn (V) N, &.{V}))
                     @compileError("zsl.cast: " ++ @typeName(N) ++ " must implement `fn fromFloat(" ++ @typeName(V) ++ ") " ++ @typeName(N) ++ "`");
@@ -122,8 +122,8 @@ pub inline fn cast(comptime N: type, value: anytype) N {
             .bool => return numeric.ne(value, numeric.zero(V)),
             .int => return value.toInt(N),
             .float => return value.toFloat(N),
-            .dyadic => return .init(value),
-            .complex => return .init(value),
+            .dyadic => return .initValue(value),
+            .complex => return .initValue(value),
             .custom => {
                 comptime if (!types.hasMethod(N, "fromDyadic", fn (V) N, &.{V}))
                     @compileError("zsl.cast: " ++ @typeName(N) ++ " must implement `fn fromDyadic(" ++ @typeName(V) ++ ") " ++ @typeName(N) ++ "`");
@@ -135,8 +135,8 @@ pub inline fn cast(comptime N: type, value: anytype) N {
             .bool => return numeric.ne(value, numeric.zero(V)),
             .int => return value.toInt(N),
             .float => return value.toFloat(N),
-            .dyadic => return .init(value),
-            .complex => return .init(value),
+            .dyadic => return .initValue(value),
+            .complex => return .initValue(value),
             .custom => {
                 comptime if (!types.hasMethod(N, "fromComplex", fn (V) N, &.{V}))
                     @compileError("zsl.cast: " ++ @typeName(N) ++ " must implement `fn fromComplex(" ++ @typeName(V) ++ ") " ++ @typeName(N) ++ "`");

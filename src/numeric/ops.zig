@@ -1,4 +1,5 @@
 // Utilities
+pub const Coerce = @import("ops/coerce.zig").Coerce;
 pub const set = @import("ops/set.zig").set;
 
 // Basic operations

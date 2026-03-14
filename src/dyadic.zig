@@ -6,6 +6,9 @@ const std = @import("std");
 
 const types = @import("types.zig");
 const Cmp = types.Cmp;
+
+const numeric = @import("numeric.zig");
+
 const int = @import("int.zig");
 
 /// Arbitrary-precision dyadic type.
@@ -59,11 +62,11 @@ pub fn Dyadic(mantissa_bits: u16, exponent_bits: u16) type {
         ///
         /// ## Returns
         /// `Dyadic(mantissa_bits, exponent_bits)`: The new dyadic.
-        pub fn init(value: anytype) Dyadic(mantissa_bits, exponent_bits) {
+        pub fn initValue(value: anytype) Dyadic(mantissa_bits, exponent_bits) {
             const V: type = @TypeOf(value);
 
             comptime if (!types.isNumeric(V))
-                @compileError("zsl.Dyadic(mantissa_bits, exponent_bits).init: value must be a numeric, got \n\tvalue: " ++ @typeName(V) ++ "\n");
+                @compileError("zsl.Dyadic(mantissa_bits, exponent_bits).initValue: value must be a numeric, got \n\tvalue: " ++ @typeName(V) ++ "\n");
 
             switch (comptime types.numericType(V)) {
                 .bool => if (value) .one else .zero,
@@ -77,7 +80,7 @@ pub fn Dyadic(mantissa_bits: u16, exponent_bits: u16) type {
                     return result;
                 },
                 .float, .dyadic => {},
-                .complex => return .init(value.re),
+                .complex => return initValue(value.re),
                 .custom => return types.cast(Dyadic(mantissa_bits, exponent_bits), value),
             }
         }
@@ -558,8 +561,12 @@ pub fn Dyadic(mantissa_bits: u16, exponent_bits: u16) type {
                 .positive = !self.positive,
             };
         }
+
+        pub fn toFloat(comptime Float: type) Float {}
     };
 }
+
+pub const Coerce = @import("dyadic/coerce.zig").Coerce;
 
 pub fn Add(comptime X: type, comptime Y: type) type {
     comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
@@ -568,7 +575,7 @@ pub fn Add(comptime X: type, comptime Y: type) type {
         @compileError("zsl.dyadic.add: at least one of x or y must be a dyadic, the other must be a bool, an int, a float or a dyadic, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    return types.Coerce(X, Y);
+    return dyadic.Coerce(X, Y);
 }
 
 /// Performs addition between two operands of dyadic, float, int or bool types,
@@ -600,7 +607,7 @@ pub fn Sub(comptime X: type, comptime Y: type) type {
         @compileError("zsl.dyadic.sub: at least one of x or y must be a dyadic, the other must be a bool, an int, a float or a dyadic, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    return types.Coerce(X, Y);
+    return dyadic.Coerce(X, Y);
 }
 
 /// Performs subtraction between two operands of dyadic, float, int or bool
@@ -632,7 +639,7 @@ pub fn Mul(comptime X: type, comptime Y: type) type {
         @compileError("zsl.dyadic.mul: at least one of x or y must be a dyadic, the other must be a bool, an int, a float or a dyadic, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    return types.Coerce(X, Y);
+    return dyadic.Coerce(X, Y);
 }
 
 /// Performs multiplication between two operands of dyadic, float, int or bool
@@ -664,7 +671,7 @@ pub fn Fma(comptime X: type, comptime Y: type, comptime Z: type) type {
         @compileError("zsl.dyadic.fma: at least one of x, y or z must be a dyadic, the others must be bool, int, float or dyadic, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\tz: " ++ @typeName(Z) ++ "\n");
 
-    return types.Coerce(X, types.Coerce(Y, Z));
+    return dyadic.Coerce(X, numeric.Coerce(Y, Z));
 }
 
 /// Performs fused multiplication and addition (x * y + z) between three
@@ -699,7 +706,7 @@ pub fn Div(comptime X: type, comptime Y: type) type {
         @compileError("zsl.dyadic.div: at least one of x or y must be a dyadic, the other must be a bool, an int, a float or a dyadic, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    return types.Coerce(X, Y);
+    return dyadic.Coerce(X, Y);
 }
 
 /// Performs division between two operands of dyadic, float, int or bool types,

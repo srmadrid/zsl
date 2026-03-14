@@ -542,16 +542,6 @@ pub const isComplex = type_checks.isComplex;
 pub const isSigned = type_checks.isSigned;
 pub const isUnsigned = type_checks.isUnsigned;
 
-const coercion = @import("types/coercion.zig");
-pub const Coerce = coercion.Coerce;
-pub const MulCoerce = coercion.MulCoerce;
-pub const canCoerce = coercion.canCoerce;
-pub const EnsureDomain = coercion.EnsureDomain;
-pub const EnsureVector = coercion.EnsureVector;
-pub const EnsureMatrix = coercion.EnsureMatrix;
-pub const EnsureArray = coercion.EnsureArray;
-pub const EnsureFloat = coercion.EnsureFloat;
-
 const casting = @import("types/casting.zig");
 pub const cast = casting.cast;
 
@@ -989,4 +979,20 @@ pub fn anyHasMethod(
     }
 
     return null;
+}
+
+pub fn structToArrayOfTypes(comptime Struct: type) [@typeInfo(Struct).@"struct".fields.len]type {
+    const info = @typeInfo(Struct);
+
+    if (info != .@"struct")
+        @compileError("zsl.types.structToArrayOfTypes: Struct must be a struct type");
+
+    const fields = info.@"struct".fields;
+    comptime var types: [fields.len]type = undefined;
+
+    for (fields, 0..) |field, i| {
+        types[i] = field.type;
+    }
+
+    return types;
 }

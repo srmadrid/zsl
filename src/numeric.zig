@@ -9,6 +9,7 @@ pub const one = constants.one;
 pub const two = constants.two;
 
 // Utilities
+pub const Coerce = ops.Coerce;
 pub const set = ops.set;
 
 // Basic operations

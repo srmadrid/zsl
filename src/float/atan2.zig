@@ -13,7 +13,7 @@ pub fn Atan2(comptime X: type, comptime Y: type) type {
         @compileError("zsl.float.atan2: at least one of x or y must be a float, the other must be a bool, an int or a float, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    return types.Coerce(X, Y);
+    return float.Coerce(X, Y);
 }
 
 /// Calculates the arctangent $\tan^{-1}\left(\frac{y}{x})$ of the coordinates

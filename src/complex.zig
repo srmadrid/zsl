@@ -48,11 +48,11 @@ pub fn Complex(comptime N: type) type {
         ///
         /// ## Returns
         /// `Complex(N)`: The new complex.
-        pub fn init(value: anytype) Complex(N) {
+        pub fn initValue(value: anytype) Complex(N) {
             const V: type = @TypeOf(value);
 
             comptime if (!types.isNumeric(V))
-                @compileError("zsl.Complex(N).init: value must be a numeric, got \n\tvalue: " ++ @typeName(V) ++ "\n");
+                @compileError("zsl.Complex(N).initValue: value must be a numeric, got \n\tvalue: " ++ @typeName(V) ++ "\n");
 
             switch (comptime types.numericType(V)) {
                 .bool, .int, .float, .dyadic => return .{
@@ -182,6 +182,8 @@ pub fn Complex(comptime N: type) type {
     };
 }
 
+pub const Coerce = @import("complex/coerce.zig").Coerce;
+
 pub fn Add(comptime X: type, comptime Y: type) type {
     comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
         !types.numericType(X).le(.complex) or !types.numericType(Y).le(.complex) or
@@ -189,7 +191,7 @@ pub fn Add(comptime X: type, comptime Y: type) type {
         @compileError("zsl.complex.add: at least one of x or y must be a complex, the other must be a bool, an int, a float, a dyadic or a complex, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    return types.Coerce(X, Y);
+    return complex.Coerce(X, Y);
 }
 
 /// Performs addition between two operands of complex, dyadic, float, int or
@@ -234,7 +236,7 @@ pub fn Sub(comptime X: type, comptime Y: type) type {
         @compileError("zsl.complex.sub: at least one of x or y to be a complex, the other must be a bool, an int, a float or a complex, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    return types.Coerce(X, Y);
+    return complex.Coerce(X, Y);
 }
 
 /// Performs subtraction between two operands of complex, dyadic, float,
@@ -280,7 +282,7 @@ pub fn Mul(comptime X: type, comptime Y: type) type {
         @compileError("zsl.complex.mul: at least one of x or y to be a complex, the other must be a bool, an int, a float or a complex, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    return types.Coerce(X, Y);
+    return complex.Coerce(X, Y);
 }
 
 /// Performs multiplication between two operands of complex, dyadic, float,
@@ -326,7 +328,7 @@ pub fn Div(comptime X: type, comptime Y: type) type {
         @compileError("zsl.complex.div: at least one of x or y to be a complex, the other must be a bool, an int, a float or a complex, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    return types.Coerce(X, Y);
+    return complex.Coerce(X, Y);
 }
 
 /// Performs division between two operands of complex, dyadic, float, int or

@@ -10,7 +10,7 @@ pub fn Pow(comptime X: type, comptime Y: type) type {
         @compileError("zsl.int.pow: at least one of x or y must be an int, the other must be a bool or an int, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    return types.Coerce(X, Y);
+    return int.Coerce(X, Y);
 }
 
 /// Performs exponentiation $x^y$ between two operands of int or bool types,
