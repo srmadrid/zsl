@@ -27,7 +27,7 @@ pub fn Apply2(comptime X: type, comptime Y: type, comptime op: anytype) type {
     const yv_type = types.vectorType(Y);
     switch (comptime xv_type) {
         .dense => switch (comptime yv_type) {
-            .dense => return EnsureVector(.dense, R),
+            .dense => return EnsureVector(.dense, R), Make this take a vector type as it is now; make the custom type have an EnsureVector(V, N) type function
             .sparse => return EnsureVector(.dense, R),
             .custom => return EnsureVector(.custom, R), // Obviously wont work
             .numeric => return EnsureVector(.dense, R),
