@@ -1,5 +1,4 @@
 pub const types = @import("types.zig");
-pub const cast = types.cast;
 pub const Cmp = types.Cmp;
 pub const Layout = types.Layout;
 pub const Uplo = types.Uplo;
@@ -21,7 +20,7 @@ pub const comptime_complex = complex.comptime_complex;
 
 // Domain namespaces
 pub const numeric = @import("numeric.zig");
-// pub const vector = @import("vector.zig");
+pub const vector = @import("vector.zig");
 // pub const matrix = @import("matrix.zig");
 // pub const array = @import("array.zig");
 

@@ -2,8 +2,12 @@ const std = @import("std");
 
 const types = @import("../../types.zig");
 
-const dense = @import("../dense.zig");
-const sparse = @import("../sparse.zig");
+const vector = @import("../../vector.zig");
+
+const dede = @import("apply2/dede.zig");
+const desp = @import("apply2/desp.zig");
+const spde = @import("apply2/spde.zig");
+const spsp = @import("apply2/spsp.zig");
 
 pub fn Apply2(comptime X: type, comptime Y: type, comptime op: anytype) type {
     const Op = @TypeOf(op);
@@ -23,140 +27,155 @@ pub fn Apply2(comptime X: type, comptime Y: type, comptime op: anytype) type {
     comptime if (!types.isNumeric(R))
         @compileError("zsl.vector.apply2: calling op with arguments of types X and Y must return a numeric, got\n\tR = " ++ @typeName(R) ++ "\n");
 
-    const xv_type = types.vectorType(X);
-    const yv_type = types.vectorType(Y);
-    switch (comptime xv_type) {
-        .dense => switch (comptime yv_type) {
-            .dense => return EnsureVector(.dense, R), Make this take a vector type as it is now; make the custom type have an EnsureVector(V, N) type function
-            .sparse => return EnsureVector(.dense, R),
-            .custom => return EnsureVector(.custom, R), // Obviously wont work
-            .numeric => return EnsureVector(.dense, R),
+    if (comptime types.isCustomType(X) and types.isVector(X)) {
+        if (comptime types.isCustomType(Y) and types.isVector(Y)) { // X and Y both custom vectors
+            if (comptime types.anyHasMethod(&.{ X, Y }, "Apply2", fn (type, type, anytype) type, &.{ X, Y, Op })) |Impl|
+                return Impl.Apply2(X, Y, op);
+        } else { // only X custom vector
+            if (comptime types.hasMethod(X, "Apply2", fn (type, type, anytype) type, &.{ X, Y, Op }))
+                return X.Apply2(X, Y, op);
+        }
+    } else if (comptime types.isCustomType(Y) and types.isVector(Y)) { // only Y custom vector
+        if (comptime types.hasMethod(Y, "Apply2", fn (type, type, anytype) type, &.{ X, Y, Op }))
+            return Y.Apply2(X, Y, op);
+    }
+
+    switch (comptime types.vectorType(X)) {
+        .dense => switch (comptime types.vectorType(Y)) {
+            .dense => return vector.Dense(R),
+            .sparse => return vector.Dense(R),
+            .custom => return vector.EnsureVector(Y, R),
+            .numeric => return vector.Dense(R),
         },
-        .sparse => switch (comptime yv_type) {
-            .dense => return EnsureVector(.dense, R),
-            .sparse => return EnsureVector(.sparse, R),
-            .custom => return EnsureVector(.custom, R), // Wont work
-            .numeric => return EnsureVector(.sparse, R),
+        .sparse => switch (comptime types.vectorType(Y)) {
+            .dense => return vector.Dense(R),
+            .sparse => return vector.Sparse(R),
+            .custom => return vector.EnsureVector(Y, R),
+            .numeric => return vector.Sparse(R),
         },
-        .custom => return EnsureVector(.custom, R), // Wont work
-        .numeric => switch (comptime yv_type) {
-            .dense => return EnsureVector(.dense, R),
-            .sparse => return EnsureVector(.sparse, R),
-            .custom => return EnsureVector(.custom, R), // Wont work
+        .custom => switch (comptime types.vectorType(Y)) {
+            .dense => return vector.EnsureVector(X, R),
+            .sparse => return vector.EnsureVector(X, R),
+            .custom => {
+                if (comptime types.hasMethod(X, "EnsureVector", fn (type, type) type, &.{ X, R }))
+                    return X.EnsureVector(X, R);
+
+                return vector.EnsureVector(Y, R);
+            },
+            .numeric => return vector.EnsureVector(X, R),
+        },
+        .numeric => switch (comptime types.vectorType(Y)) {
+            .dense => return vector.Dense(R),
+            .sparse => return vector.Sparse(R),
+            .custom => return vector.EnsureVector(Y, R),
             .numeric => unreachable,
         },
     }
 }
 
-/// Applies a binary operation element-wise between two vectors, or between a
-/// vector and a scalar, handling all combinations of dense and sparse vectors.
+/// Applies a binary operation elementwise between two vectors, or between a
+/// vector and a numeric.
 ///
-/// Signature
-/// ---------
+/// For two sparse vectors, or a sparse vector and a numeric, the operation is
+/// only applied to the indices where at least one of the vectors has a non-zero
+/// element.
+///
+/// ## Signature
 /// ```zig
-/// fn apply2(x: X, y: Y, ctx: anytype) !EnsureVector(Coerce(X, Y), ReturnType2(op, Numeric(X), Numeric(Y)))
+/// vector.apply2(allocator: std.mem.Allocator, x: X, y: Y, op: Op) !vector.Apply2(X, Y, op)
 /// ```
 ///
-/// Parameters
-/// ----------
-/// `x` (`anytype`):
-/// The left operand.
+/// ## Arguments
+/// * `allocator` (`std.mem.Allocator`): The allocator to use for memory
+///   allocations.
+/// * `x` (`anytype`): The left operand.
+/// * `y` (`anytype`): The right operand.
+/// * `op` (`comptime anytype`): A binary numeric function to apply elementwise
+///   to `x` and `y`.
 ///
-/// `y` (`anytype`):
-/// The right operand.
+/// ## Returns
+/// `vector.Apply2(@TypeOf(x), @TypeOf(y), op)`: The result of the operation.
 ///
-/// `op` (`anytype`):
-/// A function that takes two arguments (the elements from `x` and `y`), or
-/// three arguments if a context is needed (the context is passed as the third
-/// argument).
+/// ## Errors
+/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
+/// * `vector.Error.DimensionMismatch`: If the two vectors do not have the same
+///   length. Can only happen if both operands are vectors.
 ///
-/// `ctx` (`anytype`):
-/// A context struct providing necessary resources and configuration for the
-/// operation. This function only performs partial validation of the context;
-/// the specific requirements depend on the operation being performed. If the
-/// context is missing required fields, the compiler will emit a detailed error
-/// message describing the expected structure.
+/// ## Custom type support
+/// This function supports custom vector types via specific method
+/// implementations.
 ///
-/// Returns
-/// -------
-/// `EnsureVector(Coerce(@TypeOf(x), @TypeOf(y)), ReturnType2(op, Numeric(@TypeOf(x)), Numeric(@TypeOf(y))))`:
-/// The result of the operation. If both operands are sparse, or one operand is
-/// sparse and the other is a scalar, the result is sparse. Otherwise, the
-/// result is dense.
+/// `X` or `Y` should implement the required `Apply2` method. The expected
+/// signature and behavior of `Apply2` are as follows:
+/// * `fn Apply2(type, type, anytype) type`: Returns the type of `x .op y`.
 ///
-/// Errors
-/// ------
-/// `std.mem.Allocator.Error.OutOfMemory`:
-/// If memory allocation fails.
+/// If neither `X` nor `Y` implement the required `Apply2` method, the return
+/// type will be obtained by using `op`'s return type and attempting to call
+/// `vector.EnsureVector` on `X` or `Y`.
 ///
-/// `vector.Error.DimensionMismatch`:
-/// If the two vectors do not have the same length. Can only happen if both
-/// operands are vectors.
-///
-/// Notes
-/// -----
-/// If both operands are sparse vectors, or one operand is a sparse vector and
-/// the other is a scalar, the operation is only applied to the indices where at
-/// least one of the vectors, has a non-zero element, i.e., it is assumed that
-/// `op(0, 0) == 0`, `op(scalar, 0) == 0`, and `op(0, scalar) == 0`.
-pub fn apply2(
-    allocator: std.mem.Allocator,
-    x: anytype,
-    y: anytype,
-    comptime op: anytype,
-    ctx: anytype,
-) !EnsureVector(Coerce(@TypeOf(x), @TypeOf(y)), ReturnType2(op, Numeric(@TypeOf(x)), Numeric(@TypeOf(y)))) {
+/// `vector.Apply2(X, Y, op)`, `X` or `Y` must implement the required `apply2`
+/// method. The expected signatures and behavior of `apply2` are as follows:
+/// * `fn apply2(std.mem.Allocator, X, Y, anytype) vector.Apply2(X, Y, op)`:
+///   Returns the elementwise application of `op` on `x` and `y`.
+pub fn apply2(allocator: std.mem.Allocator, x: anytype, y: anytype, comptime op: anytype) !vector.Apply2(@TypeOf(x), @TypeOf(y), op) {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
-    const R: type = ReturnType2(op, types.Numeric(X), types.Numeric(Y));
+    const Op: type = @TypeOf(op);
+    const R: type = vector.Apply2(X, Y, op);
 
-    comptime if (!types.isVector(X) and !types.isVector(Y))
-        @compileError("vector.apply2: at least one of x or y must be a vector, got " ++
-            @typeName(X) ++ " and " ++ @typeName(Y));
+    if (comptime types.isCustomType(X) and types.isVector(X)) {
+        if (comptime types.isCustomType(Y) and types.isVector(Y)) { // X and Y both custom vectors
+            const Impl: type = comptime types.anyHasMethod(
+                &.{ R, X, Y },
+                "apply2",
+                fn (std.mem.Allocator, X, Y, anytype) anyerror!R,
+                &.{ std.mem.Allocator, X, Y, Op },
+            ) orelse
+                @compileError("zsl.vector.apply2: " ++ @typeName(R) ++ ", " ++ @typeName(X) ++ " or " ++ @typeName(Y) ++ " must implement `fn apply2(std.mem.Allocator, " ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ", anytype) !" ++ @typeName(R) ++ "`");
 
-    comptime if (@typeInfo(@TypeOf(op)) != .@"fn" or (@typeInfo(@TypeOf(op)).@"fn".params.len != 2 and @typeInfo(@TypeOf(op)).@"fn".params.len != 3))
-        @compileError("vector.apply2: op must be a function of two arguments, or a function of three arguments with the third argument being a context, got " ++ @typeName(@TypeOf(op)));
+            return Impl.apply2(allocator, x, y, op);
+        } else { // only X custom vector
+            const Impl: type = comptime types.anyHasMethod(
+                &.{ R, X },
+                "apply2",
+                fn (std.mem.Allocator, X, Y, anytype) anyerror!R,
+                &.{ std.mem.Allocator, X, Y, Op },
+            ) orelse
+                @compileError("zsl.vector.apply2: " ++ @typeName(R) ++ " or " ++ @typeName(X) ++ " must implement `fn apply2(std.mem.Allocator, " ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ", anytype) !" ++ @typeName(R) ++ "`");
 
-    comptime switch (types.numericType(types.Numeric(R))) {
-        .bool => @compileError("vector.add not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y)),
-        .int, .float, .cfloat => {
-            types.partialValidateContext(@TypeOf(ctx), .{});
+            return Impl.apply2(allocator, x, y, op);
+        }
+    } else if (comptime types.isCustomType(Y) and types.isVector(Y)) { // only Y custom
+        const Impl: type = comptime types.anyHasMethod(
+            &.{ R, Y },
+            "apply2",
+            fn (std.mem.Allocator, X, Y, anytype) anyerror!R,
+            &.{ std.mem.Allocator, X, Y, Op },
+        ) orelse
+            @compileError("zsl.vector.apply2: " ++ @typeName(R) ++ " or " ++ @typeName(Y) ++ " must implement `fn apply2(std.mem.Allocator, " ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ", anytype) !" ++ @typeName(R) ++ "`");
+
+        return Impl.apply2(allocator, x, y, op);
+    }
+
+    switch (comptime types.vectorType(X)) {
+        .dense => switch (comptime types.vectorType(Y)) {
+            .dense => return dede.apply2(allocator, x, y, op),
+            .sparse => return desp.apply2(allocator, x, y, op),
+            .custom => unreachable,
+            .numeric => return dede.apply2(allocator, x, y, op),
         },
-        .integer, .rational, .real, .complex => {
-            types.partialValidateContext(
-                @TypeOf(ctx),
-                .{
-                    .allocator = .{ .type = std.mem.Allocator, .required = true },
-                },
-            );
+        .sparse => switch (comptime types.vectorType(Y)) {
+            .dense => return spde.apply2(allocator, x, y, op),
+            .sparse => return spsp.apply2(allocator, x, y, op),
+            .custom => unreachable,
+            .numeric => return spsp.apply2(allocator, x, y, op),
         },
-    };
-
-    if (comptime !types.isVector(X)) {
-        switch (comptime types.vectorType(Y)) {
-            .dense => return dense.apply2(allocator, x, y, op, ctx),
-            .sparse => return sparse.apply2(allocator, x, y, op, ctx),
+        .custom => unreachable,
+        .numeric => switch (comptime types.vectorType(Y)) {
+            .dense => return dede.apply2(allocator, x, y, op),
+            .sparse => return spsp.apply2(allocator, x, y, op),
+            .custom => unreachable,
             .numeric => unreachable,
-        }
-    } else if (comptime !types.isVector(Y)) {
-        switch (comptime types.vectorType(X)) {
-            .dense => return dense.apply2(allocator, x, y, op, ctx),
-            .sparse => return sparse.apply2(allocator, x, y, op, ctx),
-            .numeric => unreachable,
-        }
-    } else {
-        switch (comptime types.vectorType(X)) {
-            .dense => switch (comptime types.vectorType(Y)) {
-                .dense => return dense.apply2(allocator, x, y, op, ctx),
-                .sparse => return @import("apply2/desp.zig").apply2(allocator, x, y, op, ctx),
-                .numeric => unreachable,
-            },
-            .sparse => switch (comptime types.vectorType(Y)) {
-                .dense => return @import("apply2/spde.zig").apply2(allocator, x, y, op, ctx),
-                .sparse => return sparse.apply2(allocator, x, y, op, ctx),
-                .numeric => unreachable,
-            },
-            .numeric => unreachable,
-        }
+        },
     }
 }

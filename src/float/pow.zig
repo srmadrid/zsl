@@ -1,6 +1,8 @@
 const std = @import("std");
 
 const types = @import("../types.zig");
+const numeric = @import("../numeric.zig");
+
 const float = @import("../float.zig");
 
 const dbl64 = @import("dbl64.zig");
@@ -36,24 +38,24 @@ pub fn Pow(comptime X: type, comptime Y: type) type {
 /// of `y`.
 pub inline fn pow(x: anytype, y: anytype) float.Pow(@TypeOf(x), @TypeOf(y)) {
     switch (float.Pow(@TypeOf(x), @TypeOf(y))) {
-        f16 => return types.cast(f16, pow32(types.cast(f32, x), types.cast(f32, y))),
+        f16 => return numeric.cast(f16, pow32(numeric.cast(f32, x), numeric.cast(f32, y))),
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_powf.c
-            return pow32(types.cast(f32, x), types.cast(f32, y));
+            return pow32(numeric.cast(f32, x), numeric.cast(f32, y));
         },
         f64 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_pow.c
-            return pow64(types.cast(f64, x), types.cast(f64, y));
+            return pow64(numeric.cast(f64, x), numeric.cast(f64, y));
         },
         f80 => {
             // https://github.com/JuliaMath/openlibm/blob/master/ld80/e_powl.c
-            // return pow80(types.cast(f80, x), types.cast(f80, y));
+            // return pow80(numeric.cast(f80, x), numeric.cast(f80, y));
             // The f80 implementation is broken, fall back to f128
-            return types.cast(f80, pow128(types.cast(f128, x), types.cast(f128, y)));
+            return numeric.cast(f80, pow128(numeric.cast(f128, x), numeric.cast(f128, y)));
         },
         f128 => {
             // https://github.com/JuliaMath/openlibm/blob/master/ld128/e_logl.c
-            return pow128(types.cast(f128, x), types.cast(f128, y));
+            return pow128(numeric.cast(f128, x), numeric.cast(f128, y));
         },
         else => unreachable,
     }
@@ -142,7 +144,7 @@ fn pow32(x: f32, y: f32) f32 {
         return z;
     }
 
-    var n: i32 = types.cast(i32, @as(u32, @bitCast(hx)) >> 31) - 1;
+    var n: i32 = numeric.cast(i32, @as(u32, @bitCast(hx)) >> 31) - 1;
 
     // (x < 0)**non-int = NaN
     if ((n | yisint) == 0)
@@ -243,7 +245,7 @@ fn pow32(x: f32, y: f32) f32 {
             p_l * 9.6179670095e-1 + @as(f32, if (k == 0) 0.0 else 1.56322085e-6);
 
         // log2(ax) = (s + ...) * 2/(3 log(2))
-        const t: f32 = types.cast(f32, n);
+        const t: f32 = numeric.cast(f32, n);
         t1 = (((z_h + z_l) + @as(f32, if (k == 0) 0.0 else 5.84960938e-1)) + t);
         is = @bitCast(t1);
         t1 = @bitCast(@as(u32, @bitCast(is)) & 0xfffff000);
@@ -351,7 +353,7 @@ fn pow64(x: f64, y: f64) f64 {
         } else if (iy >= 0x3ff00000) {
             const k: i32 = (iy >> 20) -% 0x3ff;
             if (k > 20) {
-                const j: i32 = types.cast(i32, ly >> @intCast(52 -% k));
+                const j: i32 = numeric.cast(i32, ly >> @intCast(52 -% k));
                 if ((j << @intCast(52 -% k)) == ly)
                     yisint = 2 - (j & 1);
             } else if (ly == 0) {
@@ -411,7 +413,7 @@ fn pow64(x: f64, y: f64) f64 {
         }
     }
 
-    var n: i32 = types.cast(i32, @as(u32, @bitCast(hx)) >> 31) - 1;
+    var n: i32 = numeric.cast(i32, @as(u32, @bitCast(hx)) >> 31) - 1;
 
     // (x < 0)**non-int = NaN
     if ((n | yisint) == 0)
@@ -517,7 +519,7 @@ fn pow64(x: f64, y: f64) f64 {
             @as(f64, if (k == 0) 0.0 else 1.35003920212974897128e-8);
 
         // log2(ax) = (s + ...) * 2/(3 log(2))
-        const t: f64 = types.cast(f64, n);
+        const t: f64 = numeric.cast(f64, n);
         t1 = (((z_h + z_l) + @as(f64, if (k == 0) 0.0 else 5.84962487220764160156e-1)) + t);
         dbl64.setLowPart(&t1, 0);
         t2 = z_l - (((t1 - t) - @as(f64, if (k == 0) 0.0 else 5.84962487220764160156e-1)) - z_h);
@@ -720,7 +722,7 @@ fn pow80(x: f80, y: f80) f80 {
     if (iyflg) {
         w = float.floor(x);
         if (w == x and (float.abs(y) < 32768.0))
-            return powi80(x, types.cast(i32, y));
+            return powi80(x, numeric.cast(i32, y));
     }
 
     var xx: f80 = x;
@@ -736,11 +738,11 @@ fn pow80(x: f80, y: f80) f80 {
     i = 1;
     if (xx <= A_80[17])
         i = 17;
-    if (xx <= A_80[types.cast(u32, i + 8)])
+    if (xx <= A_80[numeric.cast(u32, i + 8)])
         i += 8;
-    if (xx <= A_80[types.cast(u32, i + 4)])
+    if (xx <= A_80[numeric.cast(u32, i + 4)])
         i += 4;
-    if (xx <= A_80[types.cast(u32, i + 2)])
+    if (xx <= A_80[numeric.cast(u32, i + 2)])
         i += 2;
     if (xx >= A_80[1])
         i = -1;
@@ -752,9 +754,9 @@ fn pow80(x: f80, y: f80) f80 {
     // log(x) = log(a * x/a) = log(a) + log(x/a)
     //
     // log(x/a) = log(1 + v), v = x/a - 1 = (x - a)/a
-    xx -= A_80[types.cast(u32, i)];
-    xx -= B_80[types.cast(u32, @divTrunc(i, 2))];
-    xx /= A_80[types.cast(u32, i)];
+    xx -= A_80[numeric.cast(u32, i)];
+    xx -= B_80[numeric.cast(u32, @divTrunc(i, 2))];
+    xx /= A_80[numeric.cast(u32, i)];
 
     // Rational approximation for log(1+v):
     //
@@ -779,9 +781,9 @@ fn pow80(x: f80, y: f80) f80 {
     z += xx;
 
     // Compute exponent term of the base 2 logarithm
-    w = types.cast(f80, -i);
+    w = numeric.cast(f80, -i);
     w = float.ldexp(w, -5);
-    w += types.cast(f80, e);
+    w += numeric.cast(f80, e);
     // Now base 2 log of x is w + z
 
     // Multiply base 2 log by y, in extended precision.
@@ -810,7 +812,7 @@ fn pow80(x: f80, y: f80) f80 {
     if (w < -32.0 * (16384.0 + 64.0))
         return 0.0;
 
-    e = types.cast(i32, w);
+    e = numeric.cast(i32, w);
     var hb: f80 = h - ha;
 
     if (hb > 0.0) {
@@ -839,7 +841,7 @@ fn pow80(x: f80, y: f80) f80 {
         i = 1;
     i +%= @divTrunc(e, 32);
     e = 32 *% i -% e;
-    w = A_80[types.cast(u32, e)];
+    w = A_80[numeric.cast(u32, e)];
     z *= w;
     z += w;
     z = float.ldexp(z, i);
@@ -967,11 +969,11 @@ fn pow128(x: f128, y: f128) f128 {
         }
     }
 
-    if (((types.cast(i32, @as(u32, @bitCast(hx)) >> 31) - 1) | yisint) == 0)
+    if (((numeric.cast(i32, @as(u32, @bitCast(hx)) >> 31) - 1) | yisint) == 0)
         return std.math.nan(f128); // (x < 0)**non-int = NaN
 
     var sn: f128 = 1.0;
-    if (((types.cast(i32, @as(u32, @bitCast(hx)) >> 31) - 1) | (yisint -% 1)) == 0)
+    if (((numeric.cast(i32, @as(u32, @bitCast(hx)) >> 31) - 1) | (yisint -% 1)) == 0)
         sn = -1.0;
 
     // |y| is huge.
@@ -1004,7 +1006,7 @@ fn pow128(x: f128, y: f128) f128 {
         ix = o.mswhi;
     }
 
-    n +%= types.cast(i32, ix >> 16) -% 0x3fff;
+    n +%= numeric.cast(i32, ix >> 16) -% 0x3fff;
     var j: i32 = @bitCast(ix & 0x0000ffff);
     // Determine interval
     ix = @bitCast(j | 0x3fff0000); // Normalize ix
@@ -1083,7 +1085,7 @@ fn pow128(x: f128, y: f128) f128 {
         @as(f128, if (k == 0) 0.0 else 1.0579781240112554492329533686862998106046e-16);
 
     // log2(ax) = (s + ...) * 2 / (3 * log(2)) = n + dp_h + z_h + z_l
-    var t: f128 = types.cast(f128, n);
+    var t: f128 = numeric.cast(f128, n);
     var t1: f128 = (((z_h + z_l) + @as(f128, if (k == 0) 0.0 else 5.8496250072115607565592654282227158546448e-1)) + t);
     o = .fromFloat(t1);
     o.lswlo = 0;
@@ -1121,8 +1123,8 @@ fn pow128(x: f128, y: f128) f128 {
     k = (i >> 16) -% 0x3fff;
     n = 0;
     if (i > 0x3ffe0000) { // if |z| > 0.5, set n = [z + 0.5]
-        n = types.cast(i32, float.floor(z + 0.5));
-        t = types.cast(f128, n);
+        n = numeric.cast(i32, float.floor(z + 0.5));
+        t = numeric.cast(f128, n);
         p_h -= t;
     }
 
@@ -1205,9 +1207,9 @@ fn powi80(x: f80, nn: i32) f80 {
     const e: i32 = (lx -% 1) * n;
     if (e == 0 or e > 64 or e < -64) {
         s = (s - 7.0710678118654752e-1) / (s + 7.0710678118654752e-1);
-        s = (2.9142135623730950 * s - 0.5 + types.cast(f80, lx)) * types.cast(f80, nn) * 6.9314718055994530941723e-1;
+        s = (2.9142135623730950 * s - 0.5 + numeric.cast(f80, lx)) * numeric.cast(f80, nn) * 6.9314718055994530941723e-1;
     } else {
-        s = 6.9314718055994530941723e-1 * types.cast(f80, e);
+        s = 6.9314718055994530941723e-1 * numeric.cast(f80, e);
     }
 
     if (s > 1.1356523406294143949492e4)

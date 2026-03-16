@@ -1,6 +1,6 @@
-const std = @import("std");
-
 const types = @import("../types.zig");
+const numeric = @import("../numeric.zig");
+
 const float = @import("../float.zig");
 
 const dbl64 = @import("dbl64.zig");
@@ -25,23 +25,23 @@ pub inline fn acosh(x: anytype) @TypeOf(x) {
         @compileError("zsl.float.acosh: x must be a float, got \n\tx: " ++ @typeName(X) ++ "\n");
 
     switch (X) {
-        f16 => return types.cast(f16, acosh32(types.cast(f32, x))),
+        f16 => return numeric.cast(f16, acosh32(numeric.cast(f32, x))),
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_acoshf.c
-            return acosh32(types.cast(f32, x));
+            return acosh32(numeric.cast(f32, x));
         },
         f64 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_acosh.c
-            return acosh64(types.cast(f64, x));
+            return acosh64(numeric.cast(f64, x));
         },
         f80 => {
             //
-            // return acosh80(types.cast(f80, x));
-            return types.cast(f80, acosh128(types.cast(f128, x)));
+            // return acosh80(numeric.cast(f80, x));
+            return numeric.cast(f80, acosh128(numeric.cast(f128, x)));
         },
         f128 => {
             // https://github.com/JuliaMath/openlibm/blob/master/ld128/e_acoshl.c
-            return acosh128(types.cast(f128, x));
+            return acosh128(numeric.cast(f128, x));
         },
         else => unreachable,
     }

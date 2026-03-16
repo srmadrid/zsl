@@ -1,82 +1,84 @@
 const std = @import("std");
 
 const types = @import("../../types.zig");
-const Coerce = types.Coerce;
-const ops = @import("../../ops.zig");
-const int = @import("../../int.zig");
 
-const vecops = @import("../ops.zig");
+const numeric = @import("../../numeric.zig");
+const vector = @import("../../vector.zig");
 
-/// Performs addition between two vectors, automatically handling any
-/// combination of dense and sparse vectors.
+pub fn Add(comptime X: type, comptime Y: type) type {
+    comptime if (!types.isVector(X) or !types.isVector(Y))
+        @compileError("zsl.vector.add: x and y must be vectors, got\n\tx: " ++
+            @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
+
+    if (comptime types.isCustomType(X) and types.isVector(X)) {
+        if (comptime types.isCustomType(Y) and types.isVector(Y)) { // X and Y both custom vectors
+            if (comptime types.anyHasMethod(&.{ X, Y }, "Add", fn (type, type) type, &.{ X, Y })) |Impl|
+                return Impl.Add(X, Y);
+        } else { // only X custom vector
+            if (comptime types.hasMethod(X, "Add", fn (type, type) type, &.{ X, Y }))
+                return X.Add(X, Y);
+        }
+    } else if (comptime types.isCustomType(Y) and types.isVector(Y)) { // only Y custom vector
+        if (comptime types.hasMethod(Y, "Add", fn (type, type) type, &.{ X, Y }))
+            return Y.Add(X, Y);
+    }
+
+    return vector.Apply2(X, Y, numeric.add);
+}
+
+/// Performs addition between two vectors.
 ///
-/// Signature
-/// ---------
+/// ## Signature
 /// ```zig
-/// fn add(x: X, y: Y, ctx: anytype) !Coerce(X, Y)
+/// vector.add(allocator: std.mem.Allocator, x: X, y: Y) !vector.Add(X, Y)
 /// ```
 ///
-/// Parameters
-/// ----------
-/// `x` (`anytype`):
-/// The left vector operand.
+/// ## Arguments
+/// * `allocator` (`std.mem.Allocator`): The allocator to use for memory
+///   allocations.
+/// * `x` (`anytype`): The left vector operand.
+/// * `y` (`anytype`): The right vector operand.
 ///
-/// `y` (`anytype`):
-/// The right vector operand.
+/// ## Returns
+/// `vector.Add(@TypeOf(x), @TypeOf(y))`: The result of the addition.
 ///
-/// `ctx` (`anytype`):
-/// A context struct providing necessary resources and configuration for the
-/// operation. The required fields depend on the operand types. If the context
-/// is missing required fields or contains unnecessary or wrongly typed fields,
-/// the compiler will emit a detailed error message describing the expected
-/// structure.
+/// ## Errors
+/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
+/// * `vector.Error.DimensionMismatch`: If the two vectors do not have the same
+///   length.
 ///
-/// Returns
-/// -------
-/// `Coerce(@TypeOf(x), @TypeOf(y))`:
-/// The result of the addition.
+/// ## Custom type support
+/// This function supports custom vector types via specific method
+/// implementations.
 ///
-/// Errors
-/// ------
-/// `std.mem.Allocator.Error.OutOfMemory`:
-/// If memory allocation fails.
+/// `X` or `Y` should implement the required `Add` method. The expected
+/// signature and behavior of `Add` are as follows:
+/// * `fn Add(type, type) type`: Returns the type of `x + y`.
 ///
-/// `vector.Error.DimensionMismatch`:
-/// If the two vectors do not have the same length.
-pub inline fn add(
-    allocator: std.mem.Allocator,
-    x: anytype,
-    y: anytype,
-    ctx: anytype,
-) !Coerce(@TypeOf(x), @TypeOf(y)) {
+/// If neither `X` nor `Y` implement the required `Add` method, the return
+/// type will be obtained by using `vector.Apply2` with `numeric.add` as `op`.
+///
+/// `vector.Add(X, Y)`, `X` or `Y` must implement the required `add` method. The
+/// expected signatures and behavior of `add` are as follows:
+/// * `fn add(std.mem.Allocator, X, Y) vector.Add(X, Y)`: Returns the addition
+///   of `x` and `y`.
+pub inline fn add(allocator: std.mem.Allocator, x: anytype, y: anytype) !vector.Add(@TypeOf(x), @TypeOf(y)) {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
-    const C: type = types.Coerce(X, Y);
+    const R: type = vector.Add(@TypeOf(x), @TypeOf(y));
 
-    comptime if (!types.isVector(@TypeOf(x)) or !types.isVector(@TypeOf(y)))
-        @compileError("vector.add: both x and y must be vectors, got " ++
-            @typeName(X) ++ " and " ++ @typeName(Y));
+    if (comptime types.isCustomType(X) and types.isVector(X)) {
+        if (comptime types.isCustomType(Y) and types.isVector(Y)) { // X and Y both custom vectors
+            if (comptime types.anyHasMethod(&.{ X, Y }, "add", fn (std.mem.Allocator, X, Y) anyerror!R, &.{ std.mem.Allocator, X, Y })) |Impl|
+                return Impl.add(allocator, x, y);
+        } else { // only X custom vector
+            if (comptime types.hasMethod(X, "add", fn (std.mem.Allocator, X, Y) anyerror!R, &.{ std.mem.Allocator, X, Y }))
+                return X.add(allocator, x, y);
+        }
+    } else if (comptime types.isCustomType(Y) and types.isVector(Y)) { // only Y custom vector
+        if (comptime types.hasMethod(Y, "add", fn (std.mem.Allocator, X, Y) anyerror!R, &.{ std.mem.Allocator, X, Y }))
+            return Y.add(allocator, x, y);
+    }
 
-    comptime switch (types.numericType(types.Numeric(C))) {
-        .bool => @compileError("vector.add not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y)),
-        .int, .float, .cfloat => {
-            types.validateContext(@TypeOf(ctx), .{});
-        },
-        .integer, .rational, .real, .complex => {
-            types.validateContext(
-                @TypeOf(ctx),
-                .{
-                    .element_allocator = .{ .type = std.mem.Allocator, .required = true },
-                },
-            );
-        },
-    };
-
-    return vecops.apply2(
-        allocator,
-        x,
-        y,
-        ops.add,
-        types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-    );
+    return vector.apply2(allocator, x, y, numeric.add);
 }

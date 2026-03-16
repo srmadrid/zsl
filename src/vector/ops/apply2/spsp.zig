@@ -1,66 +1,46 @@
-pub fn apply2(
-    allocator: std.mem.Allocator,
-    x: anytype,
-    y: anytype,
-    comptime op: anytype,
-    ctx: anytype,
-) !Sparse(ReturnType2(op, Numeric(@TypeOf(x)), Numeric(@TypeOf(y)))) {
+const std = @import("std");
+
+const types = @import("../../../types.zig");
+
+const numeric = @import("../../../numeric.zig");
+const vector = @import("../../../vector.zig");
+
+const int = @import("../../../int.zig");
+
+pub fn apply2(allocator: std.mem.Allocator, x: anytype, y: anytype, comptime op: anytype) !vector.Apply2(@TypeOf(x), @TypeOf(y), op) {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
-    const R: type = ReturnType2(op, Numeric(X), Numeric(Y));
+    comptime var R = types.ReturnTypeFromInputs(op, &.{ types.Numeric(X), types.Numeric(Y) });
+    const rinfo = @typeInfo(R);
+    if (rinfo == .error_union)
+        R = rinfo.error_union.payload;
 
-    if (comptime !types.isSparseVector(@TypeOf(x))) {
-        var result: Sparse(R) = try .init(allocator, y.len, y.nnz);
+    if (comptime !types.isSparseVector(X)) {
+        var result: vector.Sparse(R) = try .init(allocator, y.len, y.nnz);
         errdefer result.deinit(allocator);
 
-        var i: u32 = 0;
-
-        errdefer result.cleanup(
-            types.renameStructFields(
-                types.keepStructFields(
-                    ctx,
-                    &.{"allocator"},
-                ),
-                .{ .allocator = "element_allocator" },
-            ),
-        );
-
-        const opinfo = @typeInfo(@TypeOf(op));
+        var i: usize = 0;
         while (i < y.nnz) : (i += 1) {
-            if (comptime opinfo.@"fn".params.len == 2) {
-                result.data[i] = op(x, y.data[i]);
-            } else if (comptime opinfo.@"fn".params.len == 3) {
-                result.data[i] = try op(x, y.data[i], ctx);
-            }
+            result.data[i] = if (comptime rinfo != .error_union)
+                op(x, y.data[i])
+            else
+                try op(x, y.data[i]);
 
             result.idx[i] = y.idx[i];
             result.nnz += 1;
         }
 
         return result;
-    } else if (comptime !types.isSparseVector(@TypeOf(y))) {
-        var result: Sparse(R) = try .init(allocator, x.len, x.nnz);
+    } else if (comptime !types.isSparseVector(Y)) {
+        var result: vector.Sparse(R) = try .init(allocator, x.len, x.nnz);
         errdefer result.deinit(allocator);
 
-        var i: u32 = 0;
-
-        errdefer result.cleanup(
-            types.renameStructFields(
-                types.keepStructFields(
-                    ctx,
-                    &.{"allocator"},
-                ),
-                .{ .allocator = "element_allocator" },
-            ),
-        );
-
-        const opinfo = @typeInfo(@TypeOf(op));
+        var i: usize = 0;
         while (i < x.nnz) : (i += 1) {
-            if (comptime opinfo.@"fn".params.len == 2) {
-                result.data[i] = op(x.data[i], y);
-            } else if (comptime opinfo.@"fn".params.len == 3) {
-                result.data[i] = try op(x.data[i], y, ctx);
-            }
+            result.data[i] = if (comptime rinfo != .error_union)
+                op(x.data[i], y)
+            else
+                try op(x.data[i], y);
 
             result.idx[i] = x.idx[i];
             result.nnz += 1;
@@ -72,77 +52,60 @@ pub fn apply2(
     if (x.len != y.len)
         return vector.Error.DimensionMismatch;
 
-    var result: Sparse(R) = try .init(allocator, x.len, int.min(x.nnz + y.nnz, x.len));
+    var result: vector.Sparse(R) = try .init(allocator, x.len, int.min(x.nnz + y.nnz, x.len));
     errdefer result.deinit(allocator);
 
-    var i: u32 = 0;
-    var j: u32 = 0;
+    var ix: usize = 0;
+    var iy: usize = 0;
+    while (ix < x.nnz and iy < y.nnz) {
+        if (x.idx[ix] == y.idx[iy]) {
+            result.data[result.nnz] = if (comptime rinfo != .error_union)
+                op(x.data[ix], y.data[iy])
+            else
+                try op(x.data[ix], y.data[iy]);
 
-    errdefer result.cleanup(
-        types.renameStructFields(
-            types.keepStructFields(
-                ctx,
-                &.{"allocator"},
-            ),
-            .{ .allocator = "element_allocator" },
-        ),
-    );
-
-    const opinfo = @typeInfo(@TypeOf(op));
-    while (i < x.nnz and j < y.nnz) {
-        if (x.idx[i] == y.idx[j]) {
-            if (comptime opinfo.@"fn".params.len == 2) {
-                result.data[result.nnz] = op(x.data[i], y.data[j]);
-            } else if (comptime opinfo.@"fn".params.len == 3) {
-                result.data[result.nnz] = try op(x.data[i], y.data[j], ctx);
-            }
-
-            result.idx[result.nnz] = x.idx[i];
+            result.idx[result.nnz] = x.idx[ix];
             result.nnz += 1;
-            i += 1;
-            j += 1;
-        } else if (x.idx[i] < y.idx[j]) {
-            if (comptime opinfo.@"fn".params.len == 2) {
-                result.data[result.nnz] = op(x.data[i], numeric.zero(Numeric(Y), .{}) catch unreachable);
-            } else if (comptime opinfo.@"fn".params.len == 3) {
-                result.data[result.nnz] = try op(x.data[i], numeric.zero(Numeric(Y), .{}) catch unreachable, ctx);
-            }
+            ix += 1;
+            iy += 1;
+        } else if (x.idx[ix] < y.idx[iy]) {
+            result.data[result.nnz] = if (comptime rinfo != .error_union)
+                op(x.data[ix], numeric.zero(types.Numeric(Y)))
+            else
+                try op(x.data[ix], numeric.zero(types.Numeric(Y)));
 
-            result.idx[result.nnz] = x.idx[i];
+            result.idx[result.nnz] = x.idx[ix];
             result.nnz += 1;
-            i += 1;
+            ix += 1;
         } else {
-            if (comptime opinfo.@"fn".params.len == 2) {
-                result.data[result.nnz] = op(numeric.zero(Numeric(X), .{}) catch unreachable, y.data[j]);
-            } else if (comptime opinfo.@"fn".params.len == 3) {
-                result.data[result.nnz] = try op(numeric.zero(Numeric(X), .{}) catch unreachable, y.data[j], ctx);
-            }
+            result.data[result.nnz] = if (comptime rinfo != .error_union)
+                op(numeric.zero(types.Numeric(X)), y.data[iy])
+            else
+                try op(numeric.zero(types.Numeric(X)), y.data[iy]);
 
-            result.idx[result.nnz] = y.idx[j];
+            result.idx[result.nnz] = y.idx[iy];
             result.nnz += 1;
-            j += 1;
+            iy += 1;
         }
     }
 
-    while (i < x.nnz) : (i += 1) {
-        if (comptime opinfo.@"fn".params.len == 2) {
-            result.data[result.nnz] = op(x.data[i], numeric.zero(Numeric(Y), .{}) catch unreachable);
-        } else if (comptime opinfo.@"fn".params.len == 3) {
-            result.data[result.nnz] = try op(x.data[i], numeric.zero(Numeric(Y), .{}) catch unreachable, ctx);
-        }
+    while (ix < x.nnz) : (ix += 1) {
+        result.data[result.nnz] = if (comptime rinfo != .error_union)
+            op(x.data[ix], numeric.zero(types.Numeric(Y)))
+        else
+            try op(x.data[ix], numeric.zero(types.Numeric(Y)));
 
-        result.idx[result.nnz] = x.idx[i];
+        result.idx[result.nnz] = x.idx[ix];
         result.nnz += 1;
     }
 
-    while (j < y.nnz) : (j += 1) {
-        if (comptime opinfo.@"fn".params.len == 2) {
-            result.data[result.nnz] = op(numeric.zero(Numeric(X), .{}) catch unreachable, y.data[j]);
-        } else if (comptime opinfo.@"fn".params.len == 3) {
-            result.data[result.nnz] = try op(numeric.zero(Numeric(X), .{}) catch unreachable, y.data[j], ctx);
-        }
+    while (iy < y.nnz) : (iy += 1) {
+        result.data[result.nnz] = if (comptime rinfo != .error_union)
+            op(numeric.zero(types.Numeric(X)), y.data[iy])
+        else
+            try op(numeric.zero(types.Numeric(X)), y.data[iy]);
 
-        result.idx[result.nnz] = y.idx[j];
+        result.idx[result.nnz] = y.idx[iy];
         result.nnz += 1;
     }
 

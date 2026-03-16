@@ -1,6 +1,8 @@
 const std = @import("std");
 
 const types = @import("../types.zig");
+const numeric = @import("../numeric.zig");
+
 const float = @import("../float.zig");
 
 const rem_pio2 = @import("rem_pio2.zig");
@@ -24,18 +26,18 @@ pub inline fn sincos(x: anytype) Sincos(@TypeOf(x)) {
         f16 => {
             var s: f32 = undefined;
             var c: f32 = undefined;
-            sincos32(types.cast(f32, x), &s, &c);
+            sincos32(numeric.cast(f32, x), &s, &c);
 
             return .{
-                .sinx = types.cast(f16, s),
-                .cosx = types.cast(f16, c),
+                .sinx = numeric.cast(f16, s),
+                .cosx = numeric.cast(f16, c),
             };
         },
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_sincosf.c
             var s: f32 = undefined;
             var c: f32 = undefined;
-            sincos32(types.cast(f32, x), &s, &c);
+            sincos32(numeric.cast(f32, x), &s, &c);
 
             return .{
                 .sinx = s,
@@ -46,7 +48,7 @@ pub inline fn sincos(x: anytype) Sincos(@TypeOf(x)) {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_sincos.c
             var s: f64 = undefined;
             var c: f64 = undefined;
-            sincos64(types.cast(f64, x), &s, &c);
+            sincos64(numeric.cast(f64, x), &s, &c);
 
             return .{
                 .sinx = s,
@@ -57,18 +59,18 @@ pub inline fn sincos(x: anytype) Sincos(@TypeOf(x)) {
             //
             var s: f128 = undefined;
             var c: f128 = undefined;
-            sincos128(types.cast(f128, x), &s, &c);
+            sincos128(numeric.cast(f128, x), &s, &c);
 
             return .{
-                .sinx = types.cast(f80, s),
-                .cosx = types.cast(f80, c),
+                .sinx = numeric.cast(f80, s),
+                .cosx = numeric.cast(f80, c),
             };
         },
         f128 => {
             //
             var s: f128 = undefined;
             var c: f128 = undefined;
-            sincos128(types.cast(f128, x), &s, &c);
+            sincos128(numeric.cast(f128, x), &s, &c);
 
             return .{
                 .sinx = s,
@@ -109,7 +111,7 @@ fn sincos32(x: f32, sinx: *f32, cosx: *f32) void {
     if (ix <= 0x3f490fda) { // |x| ~<= pi/4
         if (ix < 0x39800000) { // |x| < 2**-12
             // Check if x is exactly zero
-            if (types.cast(i32, x) == 0) {
+            if (numeric.cast(i32, x) == 0) {
                 sinx.* = x;
                 cosx.* = 1.0;
                 return;
@@ -122,17 +124,17 @@ fn sincos32(x: f32, sinx: *f32, cosx: *f32) void {
     if (ix <= 0x407b53d1) { // |x| ~<= 5 * pi/4
         if (ix <= 0x4016cbe3) { // |x| ~<= 3 * pi/4
             if (hx > 0) {
-                k_sincos32(1.57079632679489661923 - types.cast(f64, x), cosx, sinx);
+                k_sincos32(1.57079632679489661923 - numeric.cast(f64, x), cosx, sinx);
             } else {
-                k_sincos32(1.57079632679489661923 + types.cast(f64, x), cosx, sinx);
+                k_sincos32(1.57079632679489661923 + numeric.cast(f64, x), cosx, sinx);
                 sinx.* = -sinx.*;
             }
         } else {
             if (hx > 0) {
-                k_sincos32(2.0 * 1.57079632679489661923 - types.cast(f64, x), sinx, cosx);
+                k_sincos32(2.0 * 1.57079632679489661923 - numeric.cast(f64, x), sinx, cosx);
                 cosx.* = -cosx.*;
             } else {
-                k_sincos32(-2.0 * 1.57079632679489661923 - types.cast(f64, x), sinx, cosx);
+                k_sincos32(-2.0 * 1.57079632679489661923 - numeric.cast(f64, x), sinx, cosx);
                 cosx.* = -cosx.*;
             }
         }
@@ -143,17 +145,17 @@ fn sincos32(x: f32, sinx: *f32, cosx: *f32) void {
     if (ix <= 0x40e231d5) { // |x| ~<= 9 * pi/4
         if (ix <= 0x40afeddf) { // |x| ~> 7 * pi/4
             if (hx > 0) {
-                k_sincos32(types.cast(f64, x) - 3.0 * 1.57079632679489661923, cosx, sinx);
+                k_sincos32(numeric.cast(f64, x) - 3.0 * 1.57079632679489661923, cosx, sinx);
                 sinx.* = -sinx.*;
             } else {
-                k_sincos32(types.cast(f64, x) + 3.0 * 1.57079632679489661923, cosx, sinx);
+                k_sincos32(numeric.cast(f64, x) + 3.0 * 1.57079632679489661923, cosx, sinx);
                 cosx.* = -cosx.*;
             }
         } else {
             if (hx > 0) {
-                k_sincos32(types.cast(f64, x) - 4.0 * 1.57079632679489661923, sinx, cosx);
+                k_sincos32(numeric.cast(f64, x) - 4.0 * 1.57079632679489661923, sinx, cosx);
             } else {
-                k_sincos32(types.cast(f64, x) + 4.0 * 1.57079632679489661923, sinx, cosx);
+                k_sincos32(numeric.cast(f64, x) + 4.0 * 1.57079632679489661923, sinx, cosx);
             }
         }
 
@@ -212,7 +214,7 @@ fn sincos64(x: f64, sinx: *f64, cosx: *f64) void {
         // Check for small x for sin and cos
         if (ix < 0x3e46a09e) {
             // Check for exact zero
-            if (types.cast(i32, x) == 0) {
+            if (numeric.cast(i32, x) == 0) {
                 sinx.* = x;
                 cosx.* = 1.0;
                 return;
@@ -264,13 +266,13 @@ fn k_sincos32(x: f64, sinx: *f32, cosx: *f32) void {
     // cos-specific computation; equivalent to calling
     // k_cos32(x, y) and storing in cosx
     var r: f64 = -0x16c087e80f1e27.0p-62 + z * 0x199342e0ee5069.0p-68;
-    cosx.* = types.cast(f32, ((1.0 + z * -0x1ffffffd0c5e81.0p-54) + w * 0x155553e1053a42.0p-57) + (w * z) * r);
+    cosx.* = numeric.cast(f32, ((1.0 + z * -0x1ffffffd0c5e81.0p-54) + w * 0x155553e1053a42.0p-57) + (w * z) * r);
 
     // sin-specific computation; equivalent to calling
     // k_sin32(x, y, 1) and storing in sinx
     r = -0x1a00f9e2cae774.0p-65 + z * 0x16cd878c3b46a7.0p-71;
     const v: f64 = z * x;
-    sinx.* = types.cast(f32, (x + v * (-0x15555554cbac77.0p-55 + z * 0x111110896efbb2.0p-59)) + v * w * r);
+    sinx.* = numeric.cast(f32, (x + v * (-0x15555554cbac77.0p-55 + z * 0x111110896efbb2.0p-59)) + v * w * r);
 }
 
 fn k_sincos64(x: f64, y: f64, iy: i32, sinx: *f64, cosx: *f64) void {

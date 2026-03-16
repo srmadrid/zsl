@@ -1,5 +1,6 @@
 const std = @import("std");
 const types = @import("../types.zig");
+const numeric = @import("../numeric.zig");
 const float = @import("../float.zig");
 
 pub fn Ldexp(comptime X: type) type {
@@ -10,7 +11,7 @@ pub fn Ldexp(comptime X: type) type {
 }
 
 pub inline fn ldexp(x: anytype, n: i32) Ldexp(@TypeOf(x)) {
-    const xx: Ldexp(@TypeOf(x)) = types.cast(Ldexp(@TypeOf(x)), x);
+    const xx: Ldexp(@TypeOf(x)) = numeric.cast(Ldexp(@TypeOf(x)), x);
 
     if (!std.math.isFinite(xx) or xx == 0)
         return xx + xx;

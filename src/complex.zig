@@ -56,14 +56,14 @@ pub fn Complex(comptime N: type) type {
 
             switch (comptime types.numericType(V)) {
                 .bool, .int, .float, .dyadic => return .{
-                    .re = types.cast(N, value),
+                    .re = numeric.cast(N, value),
                     .im = numeric.zero(N),
                 },
                 .complex => return .{
-                    .re = types.cast(N, value.re),
-                    .im = types.cast(N, value.im),
+                    .re = numeric.cast(N, value.re),
+                    .im = numeric.cast(N, value.im),
                 },
-                .custom => return types.cast(Complex(N), value),
+                .custom => return numeric.cast(Complex(N), value),
             }
         }
 
@@ -217,12 +217,12 @@ pub inline fn add(x: anytype, y: anytype) complex.Add(@TypeOf(x), @TypeOf(y)) {
 
     switch (comptime types.numericType(X)) {
         .bool, .int, .float, .dyadic => switch (comptime types.numericType(Y)) {
-            .complex => return .addReal(types.cast(R, y), types.cast(types.Scalar(R), x)),
+            .complex => return .addReal(numeric.cast(R, y), numeric.cast(types.Scalar(R), x)),
             else => unreachable,
         },
         .complex => switch (comptime types.numericType(Y)) {
-            .bool, .int, .float, .dyadic => return .addReal(types.cast(R, x), types.cast(types.Scalar(R), y)),
-            .complex => return .add(types.cast(R, x), types.cast(R, y)),
+            .bool, .int, .float, .dyadic => return .addReal(numeric.cast(R, x), numeric.cast(types.Scalar(R), y)),
+            .complex => return .add(numeric.cast(R, x), numeric.cast(R, y)),
             .custom => unreachable,
         },
         .custom => unreachable,
@@ -263,12 +263,12 @@ pub inline fn sub(x: anytype, y: anytype) Sub(@TypeOf(x), @TypeOf(y)) {
 
     switch (comptime types.numericType(X)) {
         .bool, .int, .float, .dyadic => switch (comptime types.numericType(Y)) {
-            .complex => return .addReal(types.cast(R, y).neg(), types.cast(types.Scalar(R), x)),
+            .complex => return .addReal(numeric.cast(R, y).neg(), numeric.cast(types.Scalar(R), x)),
             else => unreachable,
         },
         .complex => switch (comptime types.numericType(Y)) {
-            .bool, .int, .float, .dyadic => return .subReal(types.cast(R, x), types.cast(types.Scalar(R), y)),
-            .complex => return .sub(types.cast(R, x), types.cast(R, y)),
+            .bool, .int, .float, .dyadic => return .subReal(numeric.cast(R, x), numeric.cast(types.Scalar(R), y)),
+            .complex => return .sub(numeric.cast(R, x), numeric.cast(R, y)),
             .custom => unreachable,
         },
         .custom => unreachable,
@@ -309,12 +309,12 @@ pub inline fn mul(x: anytype, y: anytype) Mul(@TypeOf(x), @TypeOf(y)) {
 
     switch (comptime types.numericType(X)) {
         .bool, .int, .float, .dyadic => switch (comptime types.numericType(Y)) {
-            .complex => return .mulReal(types.cast(R, y), types.cast(types.Scalar(R), x)),
+            .complex => return .mulReal(numeric.cast(R, y), numeric.cast(types.Scalar(R), x)),
             else => unreachable,
         },
         .complex => switch (comptime types.numericType(Y)) {
-            .bool, .int, .float, .dyadic => return .mulReal(types.cast(R, x), types.cast(types.Scalar(R), y)),
-            .complex => return .mul(types.cast(R, x), types.cast(R, y)),
+            .bool, .int, .float, .dyadic => return .mulReal(numeric.cast(R, x), numeric.cast(types.Scalar(R), y)),
+            .complex => return .mul(numeric.cast(R, x), numeric.cast(R, y)),
             .custom => unreachable,
         },
         .custom => unreachable,
@@ -354,12 +354,12 @@ pub inline fn div(x: anytype, y: anytype) Div(@TypeOf(x), @TypeOf(y)) {
 
     switch (comptime types.numericType(X)) {
         .bool, .int, .float, .dyadic => switch (comptime types.numericType(Y)) {
-            .complex => return .div(types.cast(R, x), types.cast(R, y)),
+            .complex => return .div(numeric.cast(R, x), numeric.cast(R, y)),
             else => unreachable,
         },
         .complex => switch (comptime types.numericType(Y)) {
-            .bool, .int, .float, .dyadic => return .divReal(types.cast(R, x), types.cast(types.Scalar(R), y)),
-            .complex => return .div(types.cast(R, x), types.cast(R, y)),
+            .bool, .int, .float, .dyadic => return .divReal(numeric.cast(R, x), numeric.cast(types.Scalar(R), y)),
+            .complex => return .div(numeric.cast(R, x), numeric.cast(R, y)),
             .custom => unreachable,
         },
         .custom => unreachable,

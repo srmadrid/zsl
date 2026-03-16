@@ -1,6 +1,8 @@
 const std = @import("std");
 
 const types = @import("../types.zig");
+const numeric = @import("../numeric.zig");
+
 const float = @import("../float.zig");
 
 const dbl64 = @import("dbl64.zig");
@@ -25,23 +27,23 @@ pub inline fn log1p(x: anytype) @TypeOf(x) {
         @compileError("zsl.float.log1p: x must be a float, got \n\tx: " ++ @typeName(X) ++ "\n");
 
     switch (X) {
-        f16 => return types.cast(f16, log1p32(types.cast(f32, x))),
+        f16 => return numeric.cast(f16, log1p32(numeric.cast(f32, x))),
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_log1pf.c
-            return log1p32(types.cast(f32, x));
+            return log1p32(numeric.cast(f32, x));
         },
         f64 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_log1p.c
-            return log1p64(types.cast(f64, x));
+            return log1p64(numeric.cast(f64, x));
         },
         f80 => {
             //
-            // return log1p80(types.cast(f80, x));
-            return types.cast(f80, log1p128(types.cast(f128, x)));
+            // return log1p80(numeric.cast(f80, x));
+            return numeric.cast(f80, log1p128(numeric.cast(f128, x)));
         },
         f128 => {
             // https://github.com/JuliaMath/openlibm/blob/master/ld128/s_log1pl.c
-            return log1p128(types.cast(f128, x));
+            return log1p128(numeric.cast(f128, x));
         },
         else => unreachable,
     }
@@ -135,8 +137,8 @@ fn log1p32(x: f32) f32 {
             if (k == 0) {
                 return 0.0;
             } else {
-                c += types.cast(f32, k) * 9.0580006145e-6;
-                return types.cast(f32, k) * 6.9313812256e-1 + c;
+                c += numeric.cast(f32, k) * 9.0580006145e-6;
+                return numeric.cast(f32, k) * 6.9313812256e-1 + c;
             }
         }
 
@@ -144,7 +146,7 @@ fn log1p32(x: f32) f32 {
         if (k == 0)
             return f - R
         else
-            return types.cast(f32, k) * 6.9313812256e-1 - ((R - (types.cast(f32, k) * 9.0580006145e-6 + c)) - f);
+            return numeric.cast(f32, k) * 6.9313812256e-1 - ((R - (numeric.cast(f32, k) * 9.0580006145e-6 + c)) - f);
     }
 
     const s: f32 = f / (2.0 + f);
@@ -160,7 +162,7 @@ fn log1p32(x: f32) f32 {
     if (k == 0)
         return f - (hfsq - s * (hfsq + R))
     else
-        return types.cast(f32, k) * 6.9313812256e-1 - ((hfsq - (s * (hfsq + R) + (types.cast(f32, k) * 9.0580006145e-6 + c))) - f);
+        return numeric.cast(f32, k) * 6.9313812256e-1 - ((hfsq - (s * (hfsq + R) + (numeric.cast(f32, k) * 9.0580006145e-6 + c))) - f);
 }
 
 // Translation of:
@@ -249,8 +251,8 @@ fn log1p64(x: f64) f64 {
             if (k == 0) {
                 return 0.0;
             } else {
-                c += types.cast(f64, k) * 1.90821492927058770002e-10;
-                return types.cast(f64, k) * 6.93147180369123816490e-1 + c;
+                c += numeric.cast(f64, k) * 1.90821492927058770002e-10;
+                return numeric.cast(f64, k) * 6.93147180369123816490e-1 + c;
             }
         }
 
@@ -258,7 +260,7 @@ fn log1p64(x: f64) f64 {
         if (k == 0)
             return f - R
         else
-            return types.cast(f64, k) * 6.93147180369123816490e-1 - ((R - (types.cast(f64, k) * 1.90821492927058770002e-10 + c)) - f);
+            return numeric.cast(f64, k) * 6.93147180369123816490e-1 - ((R - (numeric.cast(f64, k) * 1.90821492927058770002e-10 + c)) - f);
     }
 
     const s: f64 = f / (2.0 + f);
@@ -274,7 +276,7 @@ fn log1p64(x: f64) f64 {
     if (k == 0)
         return f - (hfsq - s * (hfsq + R))
     else
-        return types.cast(f64, k) * 6.93147180369123816490e-1 - ((hfsq - (s * (hfsq + R) + (types.cast(f64, k) * 1.90821492927058770002e-10 + c))) - f);
+        return numeric.cast(f64, k) * 6.93147180369123816490e-1 - ((hfsq - (s * (hfsq + R) + (numeric.cast(f64, k) * 1.90821492927058770002e-10 + c))) - f);
 }
 
 // Translation of:
@@ -350,9 +352,9 @@ fn log1p128(x: f128) f128 {
             -1.332535117259762928288745111081235577029e6) * z +
             1.701761051846631278975701529965589676574e6;
         z = xx * (z * r / s);
-        z = z + types.cast(f128, e) * 1.428606820309417232121458176568075500134e-6;
+        z = z + numeric.cast(f128, e) * 1.428606820309417232121458176568075500134e-6;
         z = z + xx;
-        z = z + types.cast(f128, e) * 6.93145751953125e-1;
+        z = z + numeric.cast(f128, e) * 6.93145751953125e-1;
         return z;
     }
 
@@ -397,9 +399,9 @@ fn log1p128(x: f128) f128 {
         2.626900195321832660448791748036714883242e5) * xx +
         3.940717212190338497730839731583397586124e4;
     var y: f128 = xx * (z * r / s);
-    y = y + types.cast(f128, e) * 1.428606820309417232121458176568075500134e-6;
+    y = y + numeric.cast(f128, e) * 1.428606820309417232121458176568075500134e-6;
     z = y - 0.5 * z;
     z = z + xx;
-    z = z + types.cast(f128, e) * 6.93145751953125e-1;
+    z = z + numeric.cast(f128, e) * 6.93145751953125e-1;
     return z;
 }

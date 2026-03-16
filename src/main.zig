@@ -6,30 +6,24 @@ const ci = @cImport({
 
 pub fn main() !void {
     // const a: std.mem.Allocator = std.heap.page_allocator;
-    // var gpa: std.heap.DebugAllocator(.{}) = .init;
-    // defer _ = gpa.deinit();
-    // const a = gpa.allocator();
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
+    defer _ = gpa.deinit();
+    const allocator = gpa.allocator();
 
     var prng = std.Random.DefaultPrng.init(@bitCast(std.time.timestamp()));
     const rand = prng.random();
 
-    const a: zsl.cf64 = .{ .re = rand.float(f64), .im = rand.float(f64) };
-    const b: f64 = rand.float(f64);
-    var c: zsl.cf64 = .{ .re = rand.float(f64), .im = rand.float(f64) };
+    var u = try randomVector(zsl.vector.Sparse(f64), allocator, rand, 10);
+    defer u.deinit(allocator);
+    printVector("u", u);
 
-    zsl.numeric.add_(&c, b, b);
+    var v = try randomVector(zsl.vector.Dense(f64), allocator, rand, 10);
+    defer v.deinit(allocator);
+    printVector("v", v);
 
-    std.debug.print("a: {s} = {}, b: {s} = {}, c: {s} = {}\n", .{ @typeName(@TypeOf(a)), a, @typeName(@TypeOf(b)), b, @typeName(@TypeOf(c)), c });
-
-    const d = zsl.numeric.fma(a, b, c);
-    std.debug.print("d: {s} = {}\n", .{ @typeName(@TypeOf(d)), d });
-
-    const e: zsl.Dyadic(64, 32) = .{ .mantissa = 0b1001010010101010100101010010100101010101001010100101001010101011, .exponent = -150, .positive = false };
-    const f: zsl.Dyadic(64, 32) = .{ .mantissa = 0b1001010010101010100101010010100101010101001010100101001010101010, .exponent = -150, .positive = false };
-    std.debug.print("e = {}, f = {}\n", .{ e, f });
-
-    const g = zsl.numeric.div(e, f);
-    std.debug.print("g = {}, g.m = {b}\n", .{ g, g.mantissa });
+    var w = try zsl.vector.mul(allocator, v, 2);
+    defer w.deinit(allocator);
+    printVector("w", w);
 }
 
 fn avg(values: []const f64) f64 {
@@ -1750,84 +1744,52 @@ fn bigintTesting(a: std.mem.Allocator) !void {
     std.debug.print("2^16: {}\n", .{try zsl.int.pow(@as(u128, 2), @as(u128, 32))});
 }
 
-fn random_vector_t(
-    comptime T: type,
-    allocator: std.mem.Allocator,
-    rand: std.Random,
-    len: u32,
-) !T {
-    switch (comptime zsl.types.vectorType(T)) {
+fn randomVector(comptime V: type, allocator: std.mem.Allocator, rand: std.Random, len: usize) !V {
+    switch (comptime zsl.types.vectorType(V)) {
         .dense => {
-            var result: T = try .init(allocator, len);
+            var result: V = try .init(allocator, len);
 
-            var i: u32 = 0;
+            var i: usize = 0;
             while (i < len) : (i += 1) {
-                if (comptime !zsl.types.isArbitraryPrecision(zsl.types.Numeric(T))) {
-                    if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
-                        result.set(i, zsl.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
-                    } else {
-                        result.set(i, rand.float(zsl.types.Numeric(T))) catch unreachable;
-                    }
-                } else {
-                    if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
-                        var re: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                        re.num.positive = rand.boolean();
-                        var im: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                        im.num.positive = rand.boolean();
-                        const complex: zsl.Complex(zsl.Rational) = zsl.Complex(zsl.Rational){
-                            .re = re,
-                            .im = im,
-                            .flags = .{ .owns_data = true, .writable = true },
-                        };
-                        result.set(i, complex) catch unreachable;
-                    } else {
-                        var rational: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                        rational.num.positive = rand.float(f64) < 0.5;
-                        result.set(i, rational) catch unreachable;
-                    }
-                }
+                result.set(
+                    i,
+                    zsl.numeric.cast(
+                        zsl.types.Numeric(V),
+                        if (comptime zsl.types.isComplex(zsl.types.Numeric(V)))
+                            zsl.cf64.init(rand.float(f64), rand.float(f64))
+                        else
+                            rand.float(f64),
+                    ),
+                ) catch unreachable;
             }
 
             return result;
         },
         .sparse => {
-            const nnz: u32 = zsl.int.max(1, rand.intRangeAtMost(u32, len / 10, len / 2));
+            const nnz: usize = zsl.int.max(1, rand.intRangeAtMost(usize, len / 10, len / 2));
 
-            var result: zsl.vector.Sparse(zsl.types.Numeric(T)) = try .init(allocator, len, nnz);
+            var result: V = try .init(allocator, len, nnz);
             errdefer result.deinit(allocator);
 
             // generate random indices
-            var used: std.AutoHashMap(u32, void) = .init(allocator);
+            var used: std.AutoHashMap(usize, void) = .init(allocator);
             defer used.deinit();
-            var count: u32 = 0;
+            var count: usize = 0;
             while (count < nnz) : (count += 1) {
-                const i = rand.intRangeAtMost(u32, 0, len - 1);
+                const i = rand.intRangeAtMost(usize, 0, len - 1);
                 if (!used.contains(i)) {
                     try used.put(i, {});
-                    if (comptime !zsl.types.isArbitraryPrecision(zsl.types.Numeric(T))) {
-                        if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
-                            try result.set(allocator, i, zsl.types.Numeric(T).init(rand.float(f64), rand.float(f64)));
-                        } else {
-                            try result.set(allocator, i, rand.float(zsl.types.Numeric(T)));
-                        }
-                    } else {
-                        if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
-                            var re: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                            re.num.positive = rand.boolean();
-                            var im: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                            im.num.positive = rand.boolean();
-                            const complex: zsl.Complex(zsl.Rational) = zsl.Complex(zsl.Rational){
-                                .re = re,
-                                .im = im,
-                                .flags = .{ .owns_data = true, .writable = true },
-                            };
-                            try result.set(allocator, i, complex);
-                        } else {
-                            var rational: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                            rational.num.positive = rand.float(f64) < 0.5;
-                            try result.set(allocator, i, rational);
-                        }
-                    }
+                    try result.set(
+                        allocator,
+                        i,
+                        zsl.numeric.cast(
+                            zsl.types.Numeric(V),
+                            if (comptime zsl.types.isComplex(zsl.types.Numeric(V)))
+                                zsl.cf64.init(rand.float(f64), rand.float(f64))
+                            else
+                                rand.float(f64),
+                        ),
+                    );
                 } else {
                     count -= 1; // try again
                 }
@@ -1839,78 +1801,16 @@ fn random_vector_t(
     }
 }
 
-fn print_vector(a: std.mem.Allocator, desc: []const u8, v: anytype) !void {
+fn printVector(desc: []const u8, v: anytype) void {
     std.debug.print("\nVector {s}:\n", .{desc});
 
     var i: u32 = 0;
     while (i < v.len) : (i += 1) {
-        if (comptime !zsl.types.isArbitraryPrecision(zsl.types.Numeric(@TypeOf(v)))) {
-            if (comptime zsl.types.isComplex(zsl.types.Numeric(@TypeOf(v)))) {
-                std.debug.print("{d:7.4} + {d:7.4}i\n", .{ (v.get(i) catch unreachable).re, (v.get(i) catch unreachable).im });
-            } else {
-                std.debug.print("{d:5.4}\n", .{v.get(i) catch unreachable});
-            }
+        if (comptime zsl.types.isComplex(zsl.types.Numeric(@TypeOf(v)))) {
+            std.debug.print("{d:7.4} + {d:7.4}i\n", .{ (v.get(i) catch unreachable).re, (v.get(i) catch unreachable).im });
         } else {
-            if (comptime zsl.types.isComplex(zsl.types.Numeric(@TypeOf(v)))) {
-                std.debug.print("(", .{});
-                try printRational(a, (v.get(i) catch unreachable).re, 20);
-                std.debug.print(") + i * (", .{});
-                try printRational(a, (v.get(i) catch unreachable).im, 20);
-                std.debug.print(")\n", .{});
-            } else {
-                try printRational(a, v.get(i) catch unreachable, 20);
-                std.debug.print("\n", .{});
-            }
+            std.debug.print("{d:5.4}\n", .{v.get(i) catch unreachable});
         }
     }
     std.debug.print("\n", .{});
-}
-
-fn vectorTesting(a: std.mem.Allocator) !void {
-    var prng = std.Random.DefaultPrng.init(@bitCast(std.time.timestamp()));
-    const rand = prng.random();
-
-    var A = try random_matrix_t(
-        zsl.matrix.general.Dense(zsl.Rational, .col_major),
-        a,
-        rand,
-        12,
-        10,
-    );
-    // var A: zsl.matrix.Tridiagonal(zsl.Rational) =
-    //     try .eye(a, 6, .{ .element_allocator = a });
-    defer A.deinit(a);
-    defer A.cleanup(.{ .element_allocator = a });
-
-    try print_matrix(a, "A", A);
-
-    // var u = try random_vector_t(
-    //     zsl.vector.Sparse(f64),
-    //     a,
-    //     rand,
-    //     10,
-    // );
-    // defer u.deinit(a);
-    // //defer u.cleanup(.{ .element_allocator = a });
-
-    // try print_vector(a, "u", u);
-
-    // var w = try zsl.add(v, u, .{ .vector_allocator = a, .element_allocator = a });
-    // defer w.deinit(a);
-    // defer w.cleanup(.{ .element_allocator = a });
-
-    // try print_vector(a, "w = v + u", w);
-}
-
-fn symbolicTesting(a: std.mem.Allocator) !void {
-    // Does not work, just for design.
-    //const x = try zsl.Variable.init(a, "x", &zsl.Set.RealNumbers);
-    //const S = try zsl.Set.init.builder(a, "S", x, &[_]zsl.Expression{zsl.Expression.init.fromString(a, "sin(x) = 0", &[_]*zsl.Symbol{&x})});
-    //_ = S;
-    const expr = "S = \\{x\\in\\mathbb{R}\\mid x > 0, \\arcsin(x) = 2\\pi k, \\forall k\\in\\mathbb{N}\\}";
-    const arr = try zsl.Expression.tokenize(a, expr);
-    std.debug.print("{s}\n\nTokenized:\n", .{expr});
-    for (arr.items) |token| {
-        std.debug.print("<string = {s}, type = {}>\n", .{ token.string, token.type });
-    }
 }

@@ -10,6 +10,7 @@ pub const two = constants.two;
 
 // Utilities
 pub const Coerce = ops.Coerce;
+pub const cast = ops.cast;
 pub const set = ops.set;
 
 // Basic operations

@@ -6,13 +6,24 @@ const sparse = @import("vector/sparse.zig");
 pub const Sparse = sparse.Sparse;
 
 const vecops = @import("vector/ops.zig");
+pub const EnsureVector = vecops.EnsureVector;
+
 pub const Apply2 = vecops.Apply2;
 pub const apply2 = vecops.apply2;
+pub const apply2_ = vecops.apply2_;
 
+pub const Add = vecops.Add;
 pub const add = vecops.add;
+pub const add_ = vecops.add_;
+pub const Sub = vecops.Sub;
 pub const sub = vecops.sub;
+pub const sub_ = vecops.sub_;
+pub const Mul = vecops.Mul;
 pub const mul = vecops.mul;
+pub const mul_ = vecops.mul_;
+pub const Div = vecops.Div;
 pub const div = vecops.div;
+pub const div_ = vecops.div_;
 
 pub const Error = error{
     ZeroLength,

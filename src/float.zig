@@ -4,7 +4,6 @@ const float = @This();
 
 const types = @import("types.zig");
 const Cmp = types.Cmp;
-
 const numeric = @import("numeric.zig");
 
 pub const Coerce = @import("float/coerce.zig").Coerce;
@@ -54,7 +53,7 @@ pub fn Add(comptime X: type, comptime Y: type) type {
 pub inline fn add(x: anytype, y: anytype) float.Add(@TypeOf(x), @TypeOf(y)) {
     const R: type = float.Add(@TypeOf(x), @TypeOf(y));
 
-    return types.cast(R, x) + types.cast(R, y);
+    return numeric.cast(R, x) + numeric.cast(R, y);
 }
 
 pub fn Sub(comptime X: type, comptime Y: type) type {
@@ -86,7 +85,7 @@ pub fn Sub(comptime X: type, comptime Y: type) type {
 pub inline fn sub(x: anytype, y: anytype) float.Sub(@TypeOf(x), @TypeOf(y)) {
     const R: type = float.Sub(@TypeOf(x), @TypeOf(y));
 
-    return types.cast(R, x) - types.cast(R, y);
+    return numeric.cast(R, x) - numeric.cast(R, y);
 }
 
 pub fn Mul(comptime X: type, comptime Y: type) type {
@@ -118,7 +117,7 @@ pub fn Mul(comptime X: type, comptime Y: type) type {
 pub inline fn mul(x: anytype, y: anytype) float.Mul(@TypeOf(x), @TypeOf(y)) {
     const R: type = float.Mul(@TypeOf(x), @TypeOf(y));
 
-    return types.cast(R, x) * types.cast(R, y);
+    return numeric.cast(R, x) * numeric.cast(R, y);
 }
 
 pub fn Fma(comptime X: type, comptime Y: type, comptime Z: type) type {
@@ -153,7 +152,7 @@ pub fn Fma(comptime X: type, comptime Y: type, comptime Z: type) type {
 pub inline fn fma(x: anytype, y: anytype, z: anytype) float.Fma(@TypeOf(x), @TypeOf(y), @TypeOf(z)) {
     const R: type = float.Fma(@TypeOf(x), @TypeOf(y), @TypeOf(z));
 
-    return @mulAdd(R, types.cast(R, x), types.cast(R, y), types.cast(R, z));
+    return @mulAdd(R, numeric.cast(R, x), numeric.cast(R, y), numeric.cast(R, z));
 }
 
 pub fn Div(comptime X: type, comptime Y: type) type {
@@ -185,7 +184,7 @@ pub fn Div(comptime X: type, comptime Y: type) type {
 pub inline fn div(x: anytype, y: anytype) float.Div(@TypeOf(x), @TypeOf(y)) {
     const R: type = float.Div(@TypeOf(x), @TypeOf(y));
 
-    return types.cast(R, x) / types.cast(R, y);
+    return numeric.cast(R, x) / numeric.cast(R, y);
 }
 
 /// Compares two operands of float, int or bool types, where at least one
@@ -215,8 +214,8 @@ pub inline fn cmp(x: anytype, y: anytype) Cmp {
 
     const C: type = float.Coerce(X, Y);
 
-    if (types.cast(C, x) < types.cast(C, y)) return .lt;
-    if (types.cast(C, x) > types.cast(C, y)) return .gt;
+    if (numeric.cast(C, x) < numeric.cast(C, y)) return .lt;
+    if (numeric.cast(C, x) > numeric.cast(C, y)) return .gt;
     return .eq;
 }
 
@@ -247,7 +246,7 @@ pub inline fn eq(x: anytype, y: anytype) bool {
 
     const C: type = float.Coerce(X, Y);
 
-    return types.cast(C, x) == types.cast(C, y);
+    return numeric.cast(C, x) == numeric.cast(C, y);
 }
 
 /// Compares two operands of float, int or bool types, where at least one
@@ -277,7 +276,7 @@ pub inline fn ne(x: anytype, y: anytype) bool {
 
     const C: type = float.Coerce(X, Y);
 
-    return types.cast(C, x) != types.cast(C, y);
+    return numeric.cast(C, x) != numeric.cast(C, y);
 }
 
 /// Compares two operands of float, int or bool types, where at least one
@@ -308,7 +307,7 @@ pub inline fn lt(x: anytype, y: anytype) bool {
 
     const C: type = float.Coerce(X, Y);
 
-    return types.cast(C, x) < types.cast(C, y);
+    return numeric.cast(C, x) < numeric.cast(C, y);
 }
 
 /// Compares two operands of float, int or bool types, where at least one
@@ -339,7 +338,7 @@ pub inline fn le(x: anytype, y: anytype) bool {
 
     const C: type = float.Coerce(X, Y);
 
-    return types.cast(C, x) <= types.cast(C, y);
+    return numeric.cast(C, x) <= numeric.cast(C, y);
 }
 
 /// Compares two operands of float, int or bool types, where at least one
@@ -369,7 +368,7 @@ pub inline fn gt(x: anytype, y: anytype) bool {
 
     const C: type = float.Coerce(X, Y);
 
-    return types.cast(C, x) > types.cast(C, y);
+    return numeric.cast(C, x) > numeric.cast(C, y);
 }
 
 /// Compares two operands of float, int or bool types, where at least one
@@ -400,7 +399,7 @@ pub inline fn ge(x: anytype, y: anytype) bool {
 
     const C: type = float.Coerce(X, Y);
 
-    return types.cast(C, x) >= types.cast(C, y);
+    return numeric.cast(C, x) >= numeric.cast(C, y);
 }
 
 pub fn Max(comptime X: type, comptime Y: type) type {
@@ -432,7 +431,7 @@ pub fn Max(comptime X: type, comptime Y: type) type {
 pub inline fn max(x: anytype, y: anytype) float.Max(@TypeOf(x), @TypeOf(y)) {
     const R: type = float.Max(@TypeOf(x), @TypeOf(y));
 
-    return if (types.cast(R, x) > types.cast(R, y)) types.cast(R, x) else types.cast(R, y);
+    return if (numeric.cast(R, x) > numeric.cast(R, y)) numeric.cast(R, x) else numeric.cast(R, y);
 }
 
 pub fn Min(comptime X: type, comptime Y: type) type {
@@ -464,7 +463,7 @@ pub fn Min(comptime X: type, comptime Y: type) type {
 pub inline fn min(x: anytype, y: anytype) float.Min(@TypeOf(x), @TypeOf(y)) {
     const R: type = float.Min(@TypeOf(x), @TypeOf(y));
 
-    return if (types.cast(R, x) < types.cast(R, y)) types.cast(R, x) else types.cast(R, y);
+    return if (numeric.cast(R, x) < numeric.cast(R, y)) numeric.cast(R, x) else numeric.cast(R, y);
 }
 
 // Basic operations

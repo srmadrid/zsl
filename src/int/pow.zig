@@ -1,6 +1,6 @@
-const std = @import("std");
-
 const types = @import("../types.zig");
+const numeric = @import("../numeric.zig");
+
 const int = @import("../int.zig");
 
 pub fn Pow(comptime X: type, comptime Y: type) type {
@@ -39,8 +39,8 @@ pub inline fn pow(x: anytype, y: anytype) int.Pow(@TypeOf(x), @TypeOf(y)) {
 
     if (comptime R == comptime_int) {
         comptime var result: R = 1;
-        comptime var base: R = types.cast(R, x);
-        comptime var exponent: R = types.cast(R, y);
+        comptime var base: R = numeric.cast(R, x);
+        comptime var exponent: R = numeric.cast(R, y);
 
         if (exponent < 0)
             return 0;
@@ -55,8 +55,8 @@ pub inline fn pow(x: anytype, y: anytype) int.Pow(@TypeOf(x), @TypeOf(y)) {
         return result;
     } else {
         var result: R = 1;
-        var base: R = types.cast(R, x);
-        var exponent: R = types.cast(R, y);
+        var base: R = numeric.cast(R, x);
+        var exponent: R = numeric.cast(R, y);
 
         if (exponent < 0)
             return 0;

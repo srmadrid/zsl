@@ -1,6 +1,6 @@
-const std = @import("std");
-
 const types = @import("../types.zig");
+const numeric = @import("../numeric.zig");
+
 const float = @import("../float.zig");
 
 const dbl64 = @import("dbl64.zig");
@@ -25,23 +25,23 @@ pub inline fn cbrt(x: anytype) @TypeOf(x) {
         @compileError("zsl.float.cbrt: x must be a float, got \n\tx: " ++ @typeName(X) ++ "\n");
 
     switch (@TypeOf(x)) {
-        f16 => return types.cast(f16, cbrt32(types.cast(f32, x))),
+        f16 => return numeric.cast(f16, cbrt32(numeric.cast(f32, x))),
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_cbrtf.c
-            return cbrt32(types.cast(f32, x));
+            return cbrt32(numeric.cast(f32, x));
         },
         f64 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_cbrt.c
-            return cbrt64(types.cast(f64, x));
+            return cbrt64(numeric.cast(f64, x));
         },
         f80 => {
             //
-            // return cbrt80(types.cast(f80, x));
-            return types.cast(f80, cbrt128(types.cast(f128, x)));
+            // return cbrt80(numeric.cast(f80, x));
+            return numeric.cast(f80, cbrt128(numeric.cast(f128, x)));
         },
         f128 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_cbrtl.c
-            return cbrt128(types.cast(f128, x));
+            return cbrt128(numeric.cast(f128, x));
         },
         else => unreachable,
     }
@@ -88,17 +88,17 @@ fn cbrt32(x: f32) f32 {
     // First step Newton iteration (solving t * t - x/t == 0) to 16 bits.  In
     // double precision so that its terms can be arranged for efficiency
     // without causing overflow or underflow.
-    var T: f64 = types.cast(f64, t);
+    var T: f64 = numeric.cast(f64, t);
     var r: f64 = T * T * T;
-    T = T * (2.0 * types.cast(f64, x) + r) / (types.cast(f64, x) + r + r);
+    T = T * (2.0 * numeric.cast(f64, x) + r) / (numeric.cast(f64, x) + r + r);
 
     // Second step Newton iteration to 47 bits.  In double precision for
     // efficiency and accuracy.
     r = T * T * T;
-    T = T * (2.0 * types.cast(f64, x) + r) / (types.cast(f64, x) + r + r);
+    T = T * (2.0 * numeric.cast(f64, x) + r) / (numeric.cast(f64, x) + r + r);
 
     // Rounding to 24 bits is perfect in round-to-nearest mode
-    return types.cast(f32, T);
+    return numeric.cast(f32, T);
 }
 
 // Translation of:
@@ -190,7 +190,7 @@ fn cbrt64(x: f64) f64 {
 
 fn cbrt80(x: f80) f80 {
     _ = x;
-    return std.math.nan(f80);
+    return 0.0;
 }
 
 // Translation of:
@@ -255,13 +255,13 @@ fn cbrt128(x: f128) f128 {
     // but with most of the extra accuracy not discarded.
 
     // Rough cbrt to 5 bits
-    const fx: f32 = types.cast(f32, xx);
+    const fx: f32 = numeric.cast(f32, xx);
     const hx: u32 = @bitCast(fx);
     const ft: f32 = @bitCast((hx & 0x7fffffff) / 3 +% 709958130);
 
     // 16 bit estimate
-    const dx: f64 = types.cast(f64, xx);
-    var dt: f64 = types.cast(f64, ft);
+    const dx: f64 = numeric.cast(f64, xx);
+    var dt: f64 = numeric.cast(f64, ft);
     var dr: f64 = dt * dt * dt;
     dt = dt * (2.0 * dx + dr) / (dx + 2.0 * dr);
 
@@ -271,7 +271,7 @@ fn cbrt128(x: f128) f128 {
 
     // Final step Newton iteration to 64 or 113 bits with
     // error < 0.667 ulps
-    var t: f128 = types.cast(f128, dt);
+    var t: f128 = numeric.cast(f128, dt);
     const s: f128 = t * t; // t * t is exact
     var r: f128 = xx / s; // error <= 0.5 ulps; |r| < |t|
     const w: f128 = t + t; // t + t is exact

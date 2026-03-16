@@ -43,7 +43,7 @@ pub fn fma(x: anytype, y: anytype, z: anytype) complex.Fma(@TypeOf(x), @TypeOf(y
             // x, y are real, z is complex
             return .{
                 .re = numeric.fma(x, y, z.re),
-                .im = types.cast(types.Scalar(R), z.im),
+                .im = numeric.cast(types.Scalar(R), z.im),
             };
         } else {
             if (comptime !types.isComplex(Z)) {

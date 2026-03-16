@@ -1,6 +1,8 @@
 const std = @import("std");
 
 const types = @import("../types.zig");
+const numeric = @import("../numeric.zig");
+
 const float = @import("../float.zig");
 
 const dbl64 = @import("dbl64.zig");
@@ -14,5 +16,5 @@ pub fn Scalbn(comptime X: type) type {
 }
 
 pub inline fn scalbn(x: anytype, n: i32) Scalbn(@TypeOf(x)) {
-    return std.math.scalbn(types.cast(Scalbn(@TypeOf(x)), x), n);
+    return std.math.scalbn(numeric.cast(Scalbn(@TypeOf(x)), x), n);
 }

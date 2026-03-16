@@ -1,6 +1,6 @@
-const std = @import("std");
-
 const types = @import("../types.zig");
+const numeric = @import("../numeric.zig");
+
 const float = @import("../float.zig");
 
 const dbl64 = @import("dbl64.zig");
@@ -25,23 +25,23 @@ pub inline fn asin(x: anytype) @TypeOf(x) {
         @compileError("zsl.float.asin: x must be a float, got \n\tx: " ++ @typeName(X) ++ "\n");
 
     switch (X) {
-        f16 => return types.cast(f16, asin32(types.cast(f32, x))),
+        f16 => return numeric.cast(f16, asin32(numeric.cast(f32, x))),
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_asinf.c
-            return asin32(types.cast(f32, x));
+            return asin32(numeric.cast(f32, x));
         },
         f64 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_asin.c
-            return asin64(types.cast(f64, x));
+            return asin64(numeric.cast(f64, x));
         },
         f80 => {
             //
-            // return asin80(types.cast(f80, x));
-            return types.cast(f80, asin128(types.cast(f128, x)));
+            // return asin80(numeric.cast(f80, x));
+            return numeric.cast(f80, asin128(numeric.cast(f128, x)));
         },
         f128 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_asinl.c
-            return asin128(types.cast(f128, x));
+            return asin128(numeric.cast(f128, x));
         },
         else => unreachable,
     }
@@ -89,7 +89,7 @@ fn asin32(x: f32) f32 {
     const q: f32 = 1.0 + t * -7.0662963390e-1;
     const s: f64 = float.sqrt(t);
     w = p / q;
-    t = types.cast(f32, 1.570796326794896558e+0 - 2.0 * (s + s * types.cast(f64, w)));
+    t = numeric.cast(f32, 1.570796326794896558e+0 - 2.0 * (s + s * numeric.cast(f64, w)));
     if (hx > 0)
         return t
     else
@@ -176,7 +176,7 @@ fn asin64(x: f64) f64 {
 
 fn asin80(x: f80) f80 {
     _ = x;
-    return std.math.nan(f80);
+    return 0.0;
 }
 
 // Translation of:

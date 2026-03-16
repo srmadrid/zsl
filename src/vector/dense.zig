@@ -1,6 +1,7 @@
 const std = @import("std");
 
 const types = @import("../types.zig");
+const numeric = @import("../numeric.zig");
 
 const vector = @import("../vector.zig");
 const matrix = @import("../matrix.zig");
@@ -18,8 +19,8 @@ pub fn Dense(N: type) type {
         flags: vector.Flags,
 
         /// Type signatures
-        pub const is_vector = {};
-        pub const is_dense = {};
+        pub const is_vector = true;
+        pub const is_dense = true;
 
         /// Numeric type
         pub const Numeric = N;
@@ -248,9 +249,9 @@ pub fn Dense(N: type) type {
 
         inline fn _index(self: *const Dense(N), index: usize) usize {
             return if (self.inc > 0)
-                index * types.scast(usize, self.inc)
+                index * numeric.cast(usize, self.inc)
             else
-                types.scast(usize, (types.cast(isize, index) - types.scast(isize, self.len) + 1) * self.inc);
+                numeric.cast(usize, (numeric.cast(isize, index) - numeric.cast(isize, self.len) + 1) * self.inc);
         }
     };
 }

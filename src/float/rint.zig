@@ -2,6 +2,7 @@ const std = @import("std");
 
 const types = @import("../types.zig");
 const EnsureFloat = types.EnsureFloat;
+const numeric = @import("../numeric.zig");
 const float = @import("../float.zig");
 
 const dbl64 = @import("dbl64.zig");
@@ -14,7 +15,7 @@ pub inline fn rint(x: anytype) @TypeOf(x) {
         @compileError("zsl.float.rint: x must be a float, got \n\tx: " ++ @typeName(@TypeOf(x)) ++ "\n");
 
     switch (@TypeOf(x)) {
-        f16 => return types.cast(f16, rint32(types.cast(f32, x))),
+        f16 => return numeric.cast(f16, rint32(numeric.cast(f32, x))),
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_rintf.c
             return rint32(x);
@@ -23,7 +24,7 @@ pub inline fn rint(x: anytype) @TypeOf(x) {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_rint.c
             return rint64(x);
         },
-        f80 => return types.cast(f80, rint128(types.cast(f128, x, .{})), .{}),
+        f80 => return numeric.cast(f80, rint128(numeric.cast(f128, x, .{})), .{}),
         f128 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_rintl.c
             return rint128(x);
@@ -58,15 +59,15 @@ fn rint32(x: f32) f32 {
             if ((I0 & 0x7fffffff) == 0)
                 return x;
 
-            const w: f32 = TWO23[types.cast(u32, sx)] + x;
-            var t = w - TWO23[types.cast(u32, sx)];
+            const w: f32 = TWO23[numeric.cast(u32, sx)] + x;
+            var t = w - TWO23[numeric.cast(u32, sx)];
             I0 = @bitCast(t);
             t = @bitCast((I0 & 0x7fffffff) | (sx << 31));
             return t;
         }
 
-        const w: f32 = TWO23[types.cast(u32, sx)] + x;
-        return w - TWO23[types.cast(u32, sx)];
+        const w: f32 = TWO23[numeric.cast(u32, sx)] + x;
+        return w - TWO23[numeric.cast(u32, sx)];
     }
 
     if (j0 == 0x80)
@@ -107,8 +108,8 @@ fn rint64(x: f64) f64 {
             I0 |= ((I1 | -I1) >> 12) & 0x80000;
             var xx: f64 = x;
             dbl64.setHighPart(&xx, I0);
-            const w: f64 = TWO52[types.cast(u32, sx)] + xx;
-            var t: f64 = w - TWO52[types.cast(u32, sx)];
+            const w: f64 = TWO52[numeric.cast(u32, sx)] + xx;
+            var t: f64 = w - TWO52[numeric.cast(u32, sx)];
             I0 = @bitCast(dbl64.getHighPart(t));
             dbl64.setHighPart(&t, (I0 & 0x7fffffff) | (sx << 31));
             return t;
@@ -142,8 +143,8 @@ fn rint64(x: f64) f64 {
 
     var xx: f64 = x;
     dbl64.setFromParts(&xx, @bitCast(I0), @bitCast(I1));
-    const w: f64 = TWO52[types.cast(u32, sx)] + xx;
-    return w - TWO52[types.cast(u32, sx)];
+    const w: f64 = TWO52[numeric.cast(u32, sx)] + xx;
+    return w - TWO52[numeric.cast(u32, sx)];
 }
 
 // Translation of:

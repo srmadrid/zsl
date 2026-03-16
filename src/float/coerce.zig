@@ -29,6 +29,9 @@ pub fn Coerce(comptime X: type, comptime Y: type) type {
         },
         .int => switch (comptime types.numericType(Y)) {
             .float => {
+                if (X == comptime_int)
+                    return Y;
+
                 const xinfo = @typeInfo(X);
                 const FX = if (xinfo.int.bits <= 11)
                     f16

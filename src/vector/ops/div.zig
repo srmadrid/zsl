@@ -1,80 +1,74 @@
 const std = @import("std");
 
 const types = @import("../../types.zig");
-const Coerce = types.Coerce;
-const Numeric = types.Numeric;
-const ops = @import("../../ops.zig");
-const int = @import("../../int.zig");
 
-const vecops = @import("../ops.zig");
+const numeric = @import("../../numeric.zig");
+const vector = @import("../../vector.zig");
 
-/// Performs division of a vector by a scalar, automatically handling any
-/// combination of dense and sparse vectors.
+pub fn Div(comptime X: type, comptime Y: type) type {
+    comptime if (!types.isVector(X) or !types.isNumeric(Y))
+        @compileError("zsl.vector.div: x must be a vector and y must be a numeric, got\n\tx: " ++
+            @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
+
+    if (comptime types.isCustomType(X) and types.isVector(X)) {
+        if (comptime types.isCustomType(Y) and types.isVector(Y)) { // X and Y both custom vectors
+            if (comptime types.anyHasMethod(&.{ X, Y }, "Div", fn (type, type) type, &.{ X, Y })) |Impl|
+                return Impl.Div(X, Y);
+        } else { // only X custom vector
+            if (comptime types.hasMethod(X, "Div", fn (type, type) type, &.{ X, Y }))
+                return X.Div(X, Y);
+        }
+    } else if (comptime types.isCustomType(Y) and types.isVector(Y)) { // only Y custom vector
+        if (comptime types.hasMethod(Y, "Div", fn (type, type) type, &.{ X, Y }))
+            return Y.Div(X, Y);
+    }
+
+    return vector.Apply2(X, Y, numeric.div);
+}
+
+/// Performs division of vector by a numeric.
 ///
-/// Signature
-/// ---------
+/// ## Signature
 /// ```zig
-/// fn div(x: X, y: Y, ctx: anytype) !Coerce(X, Y)
+/// vector.div(allocator: std.mem.Allocator, x: X, y: Y) !vector.Div(X, Y)
 /// ```
 ///
-/// Parameters
-/// ----------
-/// `x` (`anytype`):
-/// The left vector operand.
+/// ## Arguments
+/// * `allocator` (`std.mem.Allocator`): The allocator to use for memory
+///   allocations.
+/// * `x` (`anytype`): The left vector operand.
+/// * `y` (`anytype`): The right numeric operand.
 ///
-/// `y` (`anytype`):
-/// The right scalar operand.
+/// ## Returns
+/// `vector.Div(@TypeOf(x), @TypeOf(y))`: The result of the division.
 ///
-/// `ctx` (`anytype`):
-/// A context struct providing necessary resources and configuration for the
-/// operation. The required fields depend on the operand types. If the context
-/// is missing required fields or contains unnecessary or wrongly typed fields,
-/// the compiler will emit a detailed error message describing the expected
-/// structure.
+/// ## Errors
+/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
 ///
-/// Returns
-/// -------
-/// `Coerce(@TypeOf(x), @TypeOf(y))`:
-/// The result of the division.
+/// ## Custom type support
+/// This function supports custom vector types via specific method
+/// implementations.
 ///
-/// Errors
-/// ------
-/// `std.mem.Allocator.Error.OutOfMemory`:
-/// If memory allocation fails.
-pub inline fn div(
-    allocator: std.mem.Allocator,
-    x: anytype,
-    y: anytype,
-    ctx: anytype,
-) !Coerce(@TypeOf(x), @TypeOf(y)) {
+/// `X` or `Y` should implement the required `Div` method. The expected
+/// signature and behavior of `Div` are as follows:
+/// * `fn Div(type, type) type`: Returns the type of `x/y`.
+///
+/// If neither `X` nor `Y` implement the required `Div` method, the return
+/// type will be obtained by using `vector.Apply2` with `numeric.div` as `op`.
+///
+/// `vector.Div(X, Y)`, `X` or `Y` must implement the required `div` method. The
+/// expected signatures and behavior of `div` are as follows:
+/// * `fn div(std.mem.Allocator, X, Y) vector.Div(X, Y)`: Returns the
+///   divition of `x` and `y`.
+pub inline fn div(allocator: std.mem.Allocator, x: anytype, y: anytype) !vector.Div(@TypeOf(x), @TypeOf(y)) {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
-    const C: type = Coerce(Numeric(X), Numeric(Y));
+    const R: type = vector.Div(@TypeOf(x), @TypeOf(y));
 
-    comptime if (!(types.isVector(@TypeOf(x)) and types.isNumeric(@TypeOf(y))))
-        @compileError("vector.div: x must be a vector and y must be a numeric, got " ++
-            @typeName(X) ++ " and " ++ @typeName(Y));
+    if (comptime types.isCustomType(X) and types.isVector(X)) { // only X custom vector
+        if (comptime types.hasMethod(X, "div", fn (std.mem.Allocator, X, Y) anyerror!R, &.{ std.mem.Allocator, X, Y }))
+            return X.div(allocator, x, y);
+    }
 
-    comptime switch (types.numericType(types.Numeric(C))) {
-        .bool => @compileError("vector.div not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y)),
-        .int, .float, .cfloat => {
-            types.validateContext(@TypeOf(ctx), .{});
-        },
-        .integer, .rational, .real, .complex => {
-            types.validateContext(
-                @TypeOf(ctx),
-                .{
-                    .element_allocator = .{ .type = std.mem.Allocator, .required = true },
-                },
-            );
-        },
-    };
-
-    return vecops.apply2(
-        allocator,
-        x,
-        y,
-        ops.div,
-        types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-    );
+    return vector.apply2(allocator, x, y, numeric.div);
 }

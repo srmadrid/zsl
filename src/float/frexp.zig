@@ -1,38 +1,35 @@
-const std = @import("std");
-
 const types = @import("../types.zig");
-const EnsureFloat = types.EnsureFloat;
+const numeric = @import("../numeric.zig");
+
 const float = @import("../float.zig");
 
 const dbl64 = @import("dbl64.zig");
 const ldbl128 = @import("ldbl128.zig");
 
-pub fn Frexp(comptime X: type) type {
-    comptime if (!types.isNumeric(X) or !types.numericType(X).le(.float))
-        @compileError("zsl.float.frexp: x must be a bool, an int or a float, got \n\tx: " ++ @typeName(X) ++ "\n");
+pub inline fn frexp(x: anytype, e: *i32) @TypeOf(x) {
+    const X: type = @TypeOf(x);
 
-    return types.EnsureFloat(X);
-}
+    comptime if (!types.isNumeric(X) or types.numericType(X) != .float)
+        @compileError("zsl.float.frexp: x must be a float, got \n\tx: " ++ @typeName(X) ++ "\n");
 
-pub inline fn frexp(x: anytype, e: *i32) Frexp(@TypeOf(x)) {
-    switch (Frexp(@TypeOf(x))) {
-        f16 => return types.cast(f16, frexp32(types.cast(f32, x), e)),
+    switch (X) {
+        f16 => return numeric.cast(f16, frexp32(numeric.cast(f32, x), e)),
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_frexpf.c
-            return frexp32(types.cast(f32, x), e);
+            return frexp32(numeric.cast(f32, x), e);
         },
         f64 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_frexp.c
-            return frexp64(types.cast(f64, x), e);
+            return frexp64(numeric.cast(f64, x), e);
         },
         f80 => {
             //
-            // return frexp80(types.types.cast(f80, x));
-            return types.cast(f80, frexp128(types.cast(f128, x), e));
+            // return frexp80(types.numeric.cast(f80, x));
+            return numeric.cast(f80, frexp128(numeric.cast(f128, x), e));
         },
         f128 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_frexpl.c
-            return frexp128(types.cast(f128, x), e);
+            return frexp128(numeric.cast(f128, x), e);
         },
         else => unreachable,
     }

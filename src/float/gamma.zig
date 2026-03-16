@@ -1,6 +1,6 @@
-const std = @import("std");
-
 const types = @import("../types.zig");
+const numeric = @import("../numeric.zig");
+
 const float = @import("../float.zig");
 
 const lgamma = @import("lgamma.zig");
@@ -32,24 +32,24 @@ pub inline fn gamma(x: anytype) @TypeOf(x) {
         @compileError("zsl.float.gamma: x must be a float, got \n\tx: " ++ @typeName(X) ++ "\n");
 
     switch (X) {
-        f16 => return types.cast(f16, gamma32(types.cast(f32, x))),
+        f16 => return numeric.cast(f16, gamma32(numeric.cast(f32, x))),
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_tgammaf.c
-            return gamma32(types.cast(f32, x));
+            return gamma32(numeric.cast(f32, x));
         },
         f64 => {
             //
-            // return gamma64(types.cast(f64, x));
-            return types.cast(f64, gamma128(types.cast(f128, x)));
+            // return gamma64(numeric.cast(f64, x));
+            return numeric.cast(f64, gamma128(numeric.cast(f128, x)));
         },
         f80 => {
             //
-            // return gamma80(types.cast(f80, x));
-            return types.cast(f80, gamma128(types.cast(f128, x)));
+            // return gamma80(numeric.cast(f80, x));
+            return numeric.cast(f80, gamma128(numeric.cast(f128, x)));
         },
         f128 => {
             // https://github.com/JuliaMath/openlibm/blob/master/ld128/e_tgammal.c
-            return gamma128(types.cast(f128, x));
+            return gamma128(numeric.cast(f128, x));
         },
         else => unreachable,
     }
@@ -83,11 +83,11 @@ pub inline fn gamma(x: anytype) @TypeOf(x) {
 // OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 // SUCH DAMAGE.
 fn gamma32(x: f32) f32 {
-    return types.cast(f32, gamma64(types.cast(f64, x)));
+    return numeric.cast(f32, gamma64(numeric.cast(f64, x)));
 }
 
 fn gamma64(x: f64) f64 {
-    return types.cast(f64, gamma128(types.cast(f128, x)));
+    return numeric.cast(f64, gamma128(numeric.cast(f128, x)));
 }
 
 // Translation of:
@@ -120,5 +120,5 @@ fn gamma128(x: f128) f128 {
         return x - x;
     var signamp: i32 = undefined;
     const lg: f128 = lgamma.lgamma_r128(x, &signamp);
-    return types.cast(f128, signamp) * float.exp(lg);
+    return numeric.cast(f128, signamp) * float.exp(lg);
 }

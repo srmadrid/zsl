@@ -1,83 +1,84 @@
 const std = @import("std");
 
 const types = @import("../../types.zig");
-const Coerce = types.Coerce;
-const Numeric = types.Numeric;
-const ops = @import("../../ops.zig");
-const int = @import("../../int.zig");
 
-const vecops = @import("../ops.zig");
+const numeric = @import("../../numeric.zig");
+const vector = @import("../../vector.zig");
 
-/// Performs subtraction between two vectors, automatically handling any
-/// combination of dense and sparse vectors.
+pub fn Sub(comptime X: type, comptime Y: type) type {
+    comptime if (!types.isVector(X) or !types.isVector(Y))
+        @compileError("zsl.vector.sub: x and y must be vectors, got\n\tx: " ++
+            @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
+
+    if (comptime types.isCustomType(X) and types.isVector(X)) {
+        if (comptime types.isCustomType(Y) and types.isVector(Y)) { // X and Y both custom vectors
+            if (comptime types.anyHasMethod(&.{ X, Y }, "Sub", fn (type, type) type, &.{ X, Y })) |Impl|
+                return Impl.Sub(X, Y);
+        } else { // only X custom vector
+            if (comptime types.hasMethod(X, "Sub", fn (type, type) type, &.{ X, Y }))
+                return X.Sub(X, Y);
+        }
+    } else if (comptime types.isCustomType(Y) and types.isVector(Y)) { // only Y custom vector
+        if (comptime types.hasMethod(Y, "Sub", fn (type, type) type, &.{ X, Y }))
+            return Y.Sub(X, Y);
+    }
+
+    return vector.Apply2(X, Y, numeric.sub);
+}
+
+/// Performs subtraction between two vectors.
 ///
-/// Signature
-/// ---------
+/// ## Signature
 /// ```zig
-/// fn sub(x: X, y: Y, ctx: anytype) !Coerce(X, Y)
+/// vector.sub(allocator: std.mem.Allocator, x: X, y: Y) !vector.Sub(X, Y)
 /// ```
 ///
-/// Parameters
-/// ----------
-/// `x` (`anytype`):
-/// The left vector operand.
+/// ## Arguments
+/// * `allocator` (`std.mem.Allocator`): The allocator to use for memory
+///   allocations.
+/// * `x` (`anytype`): The left vector operand.
+/// * `y` (`anytype`): The right vector operand.
 ///
-/// `y` (`anytype`):
-/// The right vector operand.
+/// ## Returns
+/// `vector.Sub(@TypeOf(x), @TypeOf(y))`: The result of the subtraction.
 ///
-/// `ctx` (`anytype`):
-/// A context struct providing necessary resources and configuration for the
-/// operation. The required fields depend on the operand types. If the context
-/// is missing required fields or contains unnecessary or wrongly typed fields,
-/// the compiler will emit a detailed error message describing the expected
-/// structure.
+/// ## Errors
+/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
+/// * `vector.Error.DimensionMismatch`: If the two vectors do not have the same
+///   length.
 ///
-/// Returns
-/// -------
-/// `Coerce(@TypeOf(x), @TypeOf(y))`:
-/// The result of the subtraction.
+/// ## Custom type support
+/// This function supports custom vector types via specific method
+/// implementations.
 ///
-/// Errors
-/// ------
-/// `std.mem.Allocator.Error.OutOfMemory`:
-/// If memory allocation fails.
+/// `X` or `Y` should implement the required `Sub` method. The expected
+/// signature and behavior of `Sub` are as follows:
+/// * `fn Sub(type, type) type`: Returns the type of `x - y`.
 ///
-/// `vector.Error.DimensionMismatch`:
-/// If the two vectors do not have the same length.
-pub inline fn sub(
-    allocator: std.mem.Allocator,
-    x: anytype,
-    y: anytype,
-    ctx: anytype,
-) !Coerce(@TypeOf(x), @TypeOf(y)) {
+/// If neither `X` nor `Y` implement the required `Sub` method, the return
+/// type will be obtained by using `vector.Apply2` with `numeric.sub` as `op`.
+///
+/// `vector.Sub(X, Y)`, `X` or `Y` must implement the required `sub` method. The
+/// expected signatures and behavior of `sub` are as follows:
+/// * `fn sub(std.mem.Allocator, X, Y) vector.Sub(X, Y)`: Returns the
+///   subtraction of `x` and `y`.
+pub inline fn sub(allocator: std.mem.Allocator, x: anytype, y: anytype) !vector.Sub(@TypeOf(x), @TypeOf(y)) {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
-    const C: type = types.Coerce(X, Y);
+    const R: type = vector.Sub(@TypeOf(x), @TypeOf(y));
 
-    comptime if (!types.isVector(@TypeOf(x)) or !types.isVector(@TypeOf(y)))
-        @compileError("vector.sub: both x and y must be vectors, got " ++
-            @typeName(X) ++ " and " ++ @typeName(Y));
+    if (comptime types.isCustomType(X) and types.isVector(X)) {
+        if (comptime types.isCustomType(Y) and types.isVector(Y)) { // X and Y both custom vectors
+            if (comptime types.anyHasMethod(&.{ X, Y }, "sub", fn (std.mem.Allocator, X, Y) anyerror!R, &.{ std.mem.Allocator, X, Y })) |Impl|
+                return Impl.sub(allocator, x, y);
+        } else { // only X custom vector
+            if (comptime types.hasMethod(X, "sub", fn (std.mem.Allocator, X, Y) anyerror!R, &.{ std.mem.Allocator, X, Y }))
+                return X.sub(allocator, x, y);
+        }
+    } else if (comptime types.isCustomType(Y) and types.isVector(Y)) { // only Y custom vector
+        if (comptime types.hasMethod(Y, "sub", fn (std.mem.Allocator, X, Y) anyerror!R, &.{ std.mem.Allocator, X, Y }))
+            return Y.sub(allocator, x, y);
+    }
 
-    comptime switch (types.numericType(types.Numeric(C))) {
-        .bool => @compileError("vector.sub not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y)),
-        .int, .float, .cfloat => {
-            types.validateContext(@TypeOf(ctx), .{});
-        },
-        .integer, .rational, .real, .complex => {
-            types.validateContext(
-                @TypeOf(ctx),
-                .{
-                    .element_allocator = .{ .type = std.mem.Allocator, .required = true },
-                },
-            );
-        },
-    };
-
-    return vecops.apply2(
-        allocator,
-        x,
-        y,
-        ops.sub,
-        types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-    );
+    return vector.apply2(allocator, x, y, numeric.sub);
 }

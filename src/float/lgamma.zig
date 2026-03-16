@@ -1,6 +1,8 @@
 const std = @import("std");
 
 const types = @import("../types.zig");
+const numeric = @import("../numeric.zig");
+
 const float = @import("../float.zig");
 
 const lgamma_data = @import("lgamma_data.zig");
@@ -34,21 +36,21 @@ pub fn lgamma(x: anytype) @TypeOf(x) {
 
     var local_signgam: i32 = undefined;
     switch (X) {
-        f16 => return types.cast(f16, lgamma_r32(types.cast(f32, x), &local_signgam)),
+        f16 => return numeric.cast(f16, lgamma_r32(numeric.cast(f32, x), &local_signgam)),
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_lgammaf_r.c
-            // return lgamma_r32(types.cast(f32, x), &local_signgam);
-            return types.cast(f32, lgamma_r128(types.cast(f128, x), &local_signgam));
+            // return lgamma_r32(numeric.cast(f32, x), &local_signgam);
+            return numeric.cast(f32, lgamma_r128(numeric.cast(f128, x), &local_signgam));
         },
         f64 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_lgamma_r.c
-            // return lgamma_r64(types.cast(f64, x), &local_signgam);
-            return types.cast(f64, lgamma_r128(types.cast(f128, x), &local_signgam));
+            // return lgamma_r64(numeric.cast(f64, x), &local_signgam);
+            return numeric.cast(f64, lgamma_r128(numeric.cast(f128, x), &local_signgam));
         },
-        f80 => return types.cast(f80, lgamma_r128(types.cast(f128, x), &local_signgam)),
+        f80 => return numeric.cast(f80, lgamma_r128(numeric.cast(f128, x), &local_signgam)),
         f128 => {
             // https://github.com/JuliaMath/openlibm/blob/master/ld128/e_lgammal_r.c
-            return lgamma_r128(types.cast(f128, x), &local_signgam);
+            return lgamma_r128(numeric.cast(f128, x), &local_signgam);
         },
         else => unreachable,
     }
@@ -100,7 +102,7 @@ pub fn lgamma_r128(x: f128, signgamp: *i32) f128 {
         if (p == q)
             return (1 / (p - p));
 
-        const i: i128 = types.cast(i128, p);
+        const i: i128 = numeric.cast(i128, p);
         if ((i & 1) == 0)
             signgamp.* = -1
         else
@@ -125,7 +127,7 @@ pub fn lgamma_r128(x: f128, signgamp: *i32) f128 {
     if (x < 13.5) {
         var p: f128 = 0;
         const nx: f128 = float.floor(x + 0.5);
-        const nn: i32 = types.cast(i32, nx);
+        const nn: i32 = numeric.cast(i32, nx);
         switch (nn) {
             0 => {
                 // log gamma (x + 1) = log(x) + log gamma(x)
@@ -300,7 +302,7 @@ pub fn lgamma_r128(x: f128, signgamp: *i32) f128 {
     }
 
     if (x > 1.0485738685148938358098967157129705071571e4928)
-        return types.cast(f128, signgamp.*) * std.math.inf(f128);
+        return numeric.cast(f128, signgamp.*) * std.math.inf(f128);
 
     if (x > 0x1p112)
         return x * (float.log(x) - 1);

@@ -1,6 +1,6 @@
-const std = @import("std");
-
 const types = @import("../types.zig");
+const numeric = @import("../numeric.zig");
+
 const float = @import("../float.zig");
 
 const dbl64 = @import("dbl64.zig");
@@ -25,23 +25,23 @@ pub inline fn atanh(x: anytype) @TypeOf(x) {
         @compileError("zsl.float.atanh: x must be a float, got \n\tx: " ++ @typeName(X) ++ "\n");
 
     switch (X) {
-        f16 => return types.cast(f16, atanh32(types.cast(f32, x))),
+        f16 => return numeric.cast(f16, atanh32(numeric.cast(f32, x))),
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_atanhf.c
-            return atanh32(types.cast(f32, x));
+            return atanh32(numeric.cast(f32, x));
         },
         f64 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_atanh.c
-            return atanh64(types.cast(f64, x));
+            return atanh64(numeric.cast(f64, x));
         },
         f80 => {
             //
-            // return atanh80(types.cast(f80, x));
-            return types.cast(f80, atanh128(types.cast(f128, x)));
+            // return atanh80(numeric.cast(f80, x));
+            return numeric.cast(f80, atanh128(numeric.cast(f128, x)));
         },
         f128 => {
             // https://github.com/JuliaMath/openlibm/blob/master/ld128/e_atanhl.c
-            return atanh128(types.cast(f128, x));
+            return atanh128(numeric.cast(f128, x));
         },
         else => unreachable,
     }

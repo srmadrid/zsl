@@ -6,6 +6,7 @@ const options = @import("options");
 
 const types = @import("types.zig");
 const Cmp = types.Cmp;
+const numeric = @import("numeric.zig");
 
 pub const Coerce = @import("int/coerce.zig").Coerce;
 
@@ -45,9 +46,9 @@ pub inline fn add(x: anytype, y: anytype) int.Add(@TypeOf(x), @TypeOf(y)) {
     const R: type = int.Add(@TypeOf(x), @TypeOf(y));
 
     switch (comptime options.int_mode) {
-        .default => return types.cast(R, x) + types.cast(R, y),
-        .wrap => return types.cast(R, x) +% types.cast(R, y),
-        .saturate => return types.cast(R, x) +| types.cast(R, y),
+        .default => return numeric.cast(R, x) + numeric.cast(R, y),
+        .wrap => return numeric.cast(R, x) +% numeric.cast(R, y),
+        .saturate => return numeric.cast(R, x) +| numeric.cast(R, y),
     }
 }
 
@@ -87,9 +88,9 @@ pub inline fn sub(x: anytype, y: anytype) int.Sub(@TypeOf(x), @TypeOf(y)) {
     const R: type = int.Sub(@TypeOf(x), @TypeOf(y));
 
     switch (comptime options.int_mode) {
-        .default => return types.cast(R, x) - types.cast(R, y),
-        .wrap => return types.cast(R, x) -% types.cast(R, y),
-        .saturate => return types.cast(R, x) -| types.cast(R, y),
+        .default => return numeric.cast(R, x) - numeric.cast(R, y),
+        .wrap => return numeric.cast(R, x) -% numeric.cast(R, y),
+        .saturate => return numeric.cast(R, x) -| numeric.cast(R, y),
     }
 }
 
@@ -129,9 +130,9 @@ pub inline fn mul(x: anytype, y: anytype) int.Mul(@TypeOf(x), @TypeOf(y)) {
     const R: type = int.Mul(@TypeOf(x), @TypeOf(y));
 
     switch (comptime options.int_mode) {
-        .default => return types.cast(R, x) * types.cast(R, y),
-        .wrap => return types.cast(R, x) *% types.cast(R, y),
-        .saturate => return types.cast(R, x) *| types.cast(R, y),
+        .default => return numeric.cast(R, x) * numeric.cast(R, y),
+        .wrap => return numeric.cast(R, x) *% numeric.cast(R, y),
+        .saturate => return numeric.cast(R, x) *| numeric.cast(R, y),
     }
 }
 
@@ -165,7 +166,7 @@ pub fn Div(comptime X: type, comptime Y: type) type {
 pub inline fn div(x: anytype, y: anytype) int.Div(@TypeOf(x), @TypeOf(y)) {
     const R: type = int.Div(@TypeOf(x), @TypeOf(y));
 
-    return @divTrunc(types.cast(R, x), types.cast(R, y));
+    return @divTrunc(numeric.cast(R, x), numeric.cast(R, y));
 }
 
 /// Compares two operands of int or bool types, where at least one operand must
@@ -195,8 +196,8 @@ pub inline fn cmp(x: anytype, y: anytype) Cmp {
 
     const C: type = int.Coerce(X, Y);
 
-    if (types.cast(C, x) < types.cast(C, y)) return .lt;
-    if (types.cast(C, x) > types.cast(C, y)) return .gt;
+    if (numeric.cast(C, x) < numeric.cast(C, y)) return .lt;
+    if (numeric.cast(C, x) > numeric.cast(C, y)) return .gt;
     return .eq;
 }
 
@@ -227,7 +228,7 @@ pub inline fn eq(x: anytype, y: anytype) bool {
 
     const C: type = int.Coerce(X, Y);
 
-    return types.cast(C, x) == types.cast(C, y);
+    return numeric.cast(C, x) == numeric.cast(C, y);
 }
 
 /// Compares two operands of int or bool types, where at least one operand must
@@ -257,7 +258,7 @@ pub inline fn ne(x: anytype, y: anytype) bool {
 
     const C: type = int.Coerce(X, Y);
 
-    return types.cast(C, x) != types.cast(C, y);
+    return numeric.cast(C, x) != numeric.cast(C, y);
 }
 
 /// Compares two operands of int or bool types, where at least one operand must
@@ -287,7 +288,7 @@ pub inline fn lt(x: anytype, y: anytype) bool {
 
     const C: type = int.Coerce(X, Y);
 
-    return types.cast(C, x) < types.cast(C, y);
+    return numeric.cast(C, x) < numeric.cast(C, y);
 }
 
 /// Compares two operands of int or bool types, where at least one operand must
@@ -317,7 +318,7 @@ pub inline fn le(x: anytype, y: anytype) bool {
 
     const C: type = int.Coerce(X, Y);
 
-    return types.cast(C, x) <= types.cast(C, y);
+    return numeric.cast(C, x) <= numeric.cast(C, y);
 }
 
 /// Compares two operands of int or bool types, where at least one operand must
@@ -347,7 +348,7 @@ pub inline fn gt(x: anytype, y: anytype) bool {
 
     const C: type = int.Coerce(X, Y);
 
-    return types.cast(C, x) > types.cast(C, y);
+    return numeric.cast(C, x) > numeric.cast(C, y);
 }
 
 /// Compares two operands of int or bool types, where at least one operand must
@@ -377,7 +378,7 @@ pub inline fn ge(x: anytype, y: anytype) bool {
 
     const C: type = int.Coerce(X, Y);
 
-    return types.cast(C, x) >= types.cast(C, y);
+    return numeric.cast(C, x) >= numeric.cast(C, y);
 }
 
 pub fn Max(comptime X: type, comptime Y: type) type {
@@ -409,7 +410,7 @@ pub fn Max(comptime X: type, comptime Y: type) type {
 pub inline fn max(x: anytype, y: anytype) int.Max(@TypeOf(x), @TypeOf(y)) {
     const R: type = int.Max(@TypeOf(x), @TypeOf(y));
 
-    return if (types.cast(R, x) > types.cast(R, y)) types.cast(R, x) else types.cast(R, y);
+    return if (numeric.cast(R, x) > numeric.cast(R, y)) numeric.cast(R, x) else numeric.cast(R, y);
 }
 
 pub fn Min(comptime X: type, comptime Y: type) type {
@@ -441,7 +442,7 @@ pub fn Min(comptime X: type, comptime Y: type) type {
 pub inline fn min(x: anytype, y: anytype) int.Min(@TypeOf(x), @TypeOf(y)) {
     const R: type = int.Min(@TypeOf(x), @TypeOf(y));
 
-    return if (types.cast(R, x) < types.cast(R, y)) types.cast(R, x) else types.cast(R, y);
+    return if (numeric.cast(R, x) < numeric.cast(R, y)) numeric.cast(R, x) else numeric.cast(R, y);
 }
 
 /// Returns the maximum representable value of the given int type `Int`.
@@ -457,7 +458,7 @@ pub inline fn maxVal(comptime Int: type) Int {
 
     const info = @typeInfo(Int);
     const bits = info.int.bits;
-    return (1 << (bits - types.cast(@TypeOf(bits), info.int.signedness == .signed))) - 1;
+    return (1 << (bits - numeric.cast(@TypeOf(bits), info.int.signedness == .signed))) - 1;
 }
 
 /// Returns the minimum representable value of the given int type `Int`.

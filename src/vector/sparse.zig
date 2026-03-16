@@ -21,8 +21,8 @@ pub fn Sparse(N: type) type {
         flags: vector.Flags,
 
         /// Type signatures
-        pub const is_vector = {};
-        pub const is_sparse = {};
+        pub const is_vector = true;
+        pub const is_sparse = true;
 
         /// Numeric type
         pub const Numeric = N;

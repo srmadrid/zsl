@@ -1,4 +1,6 @@
 const types = @import("../types.zig");
+const numeric = @import("../numeric.zig");
+
 const float = @import("../float.zig");
 
 const dbl64 = @import("dbl64.zig");
@@ -26,10 +28,10 @@ pub fn rem_pio2_32(x: f32, y: *f64) i32 {
 
     // 33 + 53 bit pi is good enough for medium size
     if (ix < 0x4dc90fdb) { // |x| ~< 2**28 * (pi/2), medium size
-        var f: f64 = types.cast(f64, x) * 6.36619772367581382433e-1 + 0x1.8p52;
+        var f: f64 = numeric.cast(f64, x) * 6.36619772367581382433e-1 + 0x1.8p52;
         f -= 0x1.8p52;
-        const n: i32 = types.cast(i32, f);
-        const r: f64 = types.cast(f64, x) - f * 1.57079631090164184570e+0;
+        const n: i32 = numeric.cast(i32, f);
+        const r: f64 = numeric.cast(f64, x) - f * 1.57079631090164184570e+0;
         const w: f64 = f * 1.58932547735281966916e-8;
         y.* = r - w;
         return n;
@@ -44,7 +46,7 @@ pub fn rem_pio2_32(x: f32, y: *f64) i32 {
     // Set z = scalbn(|x|, ilogb(|x|) - 23)
     const e0: i32 = (ix >> 23) -% 150; // e0 = ilogb(|x|) - 23
     const z: f32 = @bitCast(ix -% (e0 << 23));
-    var tx: f64 = types.cast(f64, z);
+    var tx: f64 = numeric.cast(f64, z);
     var ty: f64 = undefined;
     const n: i32 = k_rem_pio2_64(@ptrCast(&tx), @ptrCast(&ty), e0, 1, 0);
 
@@ -150,7 +152,7 @@ pub fn rem_pio2_64(x: f64, y: *[2]f64) i32 {
     if (ix < 0x413921fb or goto_medium) { // |x| ~< 2**20 * (pi/2), medium size
         var f: f64 = x * 6.36619772367581382433e-1 + 0x1.8p52;
         f -= 0x1.8p52;
-        const n: i32 = types.cast(i32, f);
+        const n: i32 = numeric.cast(i32, f);
         var r: f64 = x - f * 1.57079632673412561417e+0;
         var w: f64 = f * 6.07710050650619224932e-11; // 1st round good to 85 bit
         {
@@ -195,13 +197,13 @@ pub fn rem_pio2_64(x: f64, y: *[2]f64) i32 {
     var tx: [3]f64 = undefined;
     var i: u32 = 0;
     while (i < 2) : (i += 1) {
-        tx[i] = types.cast(f64, types.cast(i32, z));
+        tx[i] = numeric.cast(f64, numeric.cast(i32, z));
         z = (z - tx[i]) * 1.67772160000000000000e+7;
     }
 
     tx[2] = z;
     var nx: i32 = 3;
-    while (nx > 0 and tx[types.cast(u32, nx - 1)] == 0.0) : (nx -= 1) {}
+    while (nx > 0 and tx[numeric.cast(u32, nx - 1)] == 0.0) : (nx -= 1) {}
 
     var ty: [2]f64 = undefined;
     const n: i32 = k_rem_pio2_64(&tx, &ty, e0, nx, 1);
@@ -239,7 +241,7 @@ pub fn rem_pio2_128(x: f128, y: *[2]f128) i64 {
     { // |x| ~< 2**45 * (pi/2), medium size
         var f: f128 = x * 6.3661977236758134307553505349005747e-1 + 0x1.8p112;
         f = f - 0x1.8p112;
-        const n: i64 = types.cast(i64, f);
+        const n: i64 = numeric.cast(i64, f);
         var r: f128 = x - f * 1.5707963267948966192292994253909555e+0;
         var w: f128 = f * 2.0222662487959507323996846200947577e-21; // 1st round good to 180 bit
         {
@@ -288,17 +290,17 @@ pub fn rem_pio2_128(x: f128, y: *[2]f128) i64 {
     var i: u32 = 0;
     var tx: [5]f64 = undefined;
     while (i < 4) : (i += 1) {
-        tx[i] = types.cast(f64, types.cast(i32, z));
-        z = (z - types.cast(f128, tx[i])) * 1.67772160000000000000e+7;
+        tx[i] = numeric.cast(f64, numeric.cast(i32, z));
+        z = (z - numeric.cast(f128, tx[i])) * 1.67772160000000000000e+7;
     }
-    tx[4] = types.cast(f64, z);
+    tx[4] = numeric.cast(f64, z);
     var nx: i32 = 5;
-    while (nx > 0 and tx[types.cast(u32, nx - 1)] == 0.0) : (nx -= 1) {} // Skip zero term
+    while (nx > 0 and tx[numeric.cast(u32, nx - 1)] == 0.0) : (nx -= 1) {} // Skip zero term
     var ty: [3]f64 = undefined;
     const n: i32 = k_rem_pio2_64(@ptrCast(&tx), @ptrCast(&ty), e0, nx, 3);
-    const t: f128 = types.cast(f128, ty[2]) + types.cast(f128, ty[1]);
-    const r: f128 = t + types.cast(f128, ty[0]);
-    const w: f128 = types.cast(f128, ty[0]) - (r - t);
+    const t: f128 = numeric.cast(f128, ty[2]) + numeric.cast(f128, ty[1]);
+    const r: f128 = t + numeric.cast(f128, ty[0]);
+    const w: f128 = numeric.cast(f128, ty[0]) - (r - t);
     if (sign != 0) {
         y[0] = -r;
         y[1] = -w;
@@ -307,18 +309,18 @@ pub fn rem_pio2_128(x: f128, y: *[2]f128) i64 {
 
     y[0] = r;
     y[1] = w;
-    return types.cast(i64, n);
+    return numeric.cast(i64, n);
 }
 
 fn goto_recompute64(x: [*]f64, j: *i32, i: *i32, f: *[20]f64, q: *[20]f64, jz: *i32, iq: *[20]i32, z: *f64, n: *i32, ih: *i32, jk: i32, jx: i32, jv: i32, q0: i32) void {
     // Distill q[] into iq[] reversingly
     i.* = 0;
     j.* = jz.*;
-    z.* = q[types.cast(u32, jz.*)];
+    z.* = q[numeric.cast(u32, jz.*)];
     while (j.* > 0) {
-        const fw: f64 = types.cast(f64, types.cast(i32, 5.96046447753906250000e-8 * z.*));
-        iq[types.cast(u32, i.*)] = types.cast(i32, z.* - 1.67772160000000000000e+7 * fw);
-        z.* = q[types.cast(u32, j.* - 1)] + fw;
+        const fw: f64 = numeric.cast(f64, numeric.cast(i32, 5.96046447753906250000e-8 * z.*));
+        iq[numeric.cast(u32, i.*)] = numeric.cast(i32, z.* - 1.67772160000000000000e+7 * fw);
+        z.* = q[numeric.cast(u32, j.* - 1)] + fw;
 
         i.* += 1;
         j.* -= 1;
@@ -327,16 +329,16 @@ fn goto_recompute64(x: [*]f64, j: *i32, i: *i32, f: *[20]f64, q: *[20]f64, jz: *
     // Compute n
     z.* = float.scalbn(z.*, q0); // Actual value of z
     z.* -= 8.0 * float.floor(z.* * 0.125); // Trim off integer >= 8
-    n.* = types.cast(i32, z.*);
-    z.* -= types.cast(f64, n.*);
+    n.* = numeric.cast(i32, z.*);
+    z.* -= numeric.cast(f64, n.*);
     ih.* = 0;
     if (q0 > 0) { // Need iq[jz - 1] to determine n
-        i.* = (iq[types.cast(u32, jz.* -% 1)] >> @as(u5, @intCast(24 -% q0)));
+        i.* = (iq[numeric.cast(u32, jz.* -% 1)] >> @as(u5, @intCast(24 -% q0)));
         n.* +%= i.*;
-        iq[types.cast(u32, jz.* - 1)] -%= i.* << @as(u5, @intCast(24 -% q0));
-        ih.* = iq[types.cast(u32, jz.* - 1)] >> @as(u5, @intCast(23 -% q0));
+        iq[numeric.cast(u32, jz.* - 1)] -%= i.* << @as(u5, @intCast(24 -% q0));
+        ih.* = iq[numeric.cast(u32, jz.* - 1)] >> @as(u5, @intCast(23 -% q0));
     } else if (q0 == 0) {
-        ih.* = iq[types.cast(u32, jz.* - 1)] >> 23;
+        ih.* = iq[numeric.cast(u32, jz.* - 1)] >> 23;
     } else if (z.* >= 0.5) {
         ih.* = 2;
     }
@@ -346,21 +348,21 @@ fn goto_recompute64(x: [*]f64, j: *i32, i: *i32, f: *[20]f64, q: *[20]f64, jz: *
         var carry: i32 = 0;
         i.* = 0;
         while (i.* < jz.*) : (i.* += 1) { // compute 1-q
-            j.* = iq[types.cast(u32, i.*)];
+            j.* = iq[numeric.cast(u32, i.*)];
             if (carry == 0) {
                 if (j.* != 0) {
                     carry = 1;
-                    iq[types.cast(u32, i.*)] = 0x1000000 -% j.*;
+                    iq[numeric.cast(u32, i.*)] = 0x1000000 -% j.*;
                 }
             } else {
-                iq[types.cast(u32, i.*)] = 0xffffff -% j.*;
+                iq[numeric.cast(u32, i.*)] = 0xffffff -% j.*;
             }
         }
 
         if (q0 > 0) { // Rare case: chance is 1 in 12
             switch (q0) {
-                1 => iq[types.cast(u32, jz.* - 1)] &= 0x7fffff,
-                2 => iq[types.cast(u32, jz.* - 1)] &= 0x3fffff,
+                1 => iq[numeric.cast(u32, jz.* - 1)] &= 0x7fffff,
+                2 => iq[numeric.cast(u32, jz.* - 1)] &= 0x3fffff,
                 else => {},
             }
         }
@@ -377,24 +379,24 @@ fn goto_recompute64(x: [*]f64, j: *i32, i: *i32, f: *[20]f64, q: *[20]f64, jz: *
         j.* = 0;
         i.* = jz.* -% 1;
         while (i.* >= jk) : (i.* -= 1) {
-            j.* |= iq[types.cast(u32, i.*)];
+            j.* |= iq[numeric.cast(u32, i.*)];
         }
 
         if (j.* == 0) { // Need recomputation
             var k: i32 = 1;
-            while (iq[types.cast(u32, jk -% k)] == 0) : (k += 1) {} // k = no. of terms needed
+            while (iq[numeric.cast(u32, jk -% k)] == 0) : (k += 1) {} // k = no. of terms needed
 
             i.* = jz.* +% 1;
             while (i.* <= jz.* +% k) : (i.* += 1) { // Add q[jz+1] to q[jz+k]
-                f[types.cast(u32, jx +% i.*)] = types.cast(f64, ipio2_64[types.cast(u32, jv +% i.*)]);
+                f[numeric.cast(u32, jx +% i.*)] = numeric.cast(f64, ipio2_64[numeric.cast(u32, jv +% i.*)]);
 
                 j.* = 0;
                 var fw: f64 = 0;
                 while (j.* <= jx) : (j.* += 1) {
-                    fw += x[types.cast(u32, j.*)] * f[types.cast(u32, jx +% i.* -% j.*)];
+                    fw += x[numeric.cast(u32, j.*)] * f[numeric.cast(u32, jx +% i.* -% j.*)];
                 }
 
-                q[types.cast(u32, i.*)] = fw;
+                q[numeric.cast(u32, i.*)] = fw;
             }
 
             jz.* += k;
@@ -441,10 +443,10 @@ pub fn k_rem_pio2_64(x: [*]f64, y: [*]f64, e0: i32, nx: i32, prec: i32) i32 {
     var i: i32 = 0;
     var f: [20]f64 = undefined;
     while (i <= m) {
-        f[types.cast(u32, i)] = if (j < 0)
+        f[numeric.cast(u32, i)] = if (j < 0)
             0.0
         else
-            types.cast(f64, ipio2_64[types.cast(u32, j)]);
+            numeric.cast(f64, ipio2_64[numeric.cast(u32, j)]);
 
         i += 1;
         j += 1;
@@ -457,7 +459,7 @@ pub fn k_rem_pio2_64(x: [*]f64, y: [*]f64, e0: i32, nx: i32, prec: i32) i32 {
         j = 0;
         var fw: f64 = 0;
         while (j <= jx) {
-            fw += x[types.cast(u32, j)] * f[types.cast(u32, jx + i - j)];
+            fw += x[numeric.cast(u32, j)] * f[numeric.cast(u32, jx + i - j)];
 
             j += 1;
         }
@@ -480,20 +482,20 @@ pub fn k_rem_pio2_64(x: [*]f64, y: [*]f64, e0: i32, nx: i32, prec: i32) i32 {
         jz -%= 1;
         q0 -%= 24;
 
-        while (iq[types.cast(u32, jz)] == 0) {
+        while (iq[numeric.cast(u32, jz)] == 0) {
             jz -%= 1;
             q0 -%= 24;
         }
     } else { // Break z into 24-bit if necessary
         z = float.scalbn(z, -q0);
         if (z >= 1.67772160000000000000e+7) {
-            const fw: f64 = types.cast(f64, types.cast(i32, 5.96046447753906250000e-8 * z));
-            iq[types.cast(u32, jz)] = types.cast(i32, z - 1.67772160000000000000e+7 * fw);
+            const fw: f64 = numeric.cast(f64, numeric.cast(i32, 5.96046447753906250000e-8 * z));
+            iq[numeric.cast(u32, jz)] = numeric.cast(i32, z - 1.67772160000000000000e+7 * fw);
             jz +%= 1;
             q0 +%= 24;
-            iq[types.cast(u32, jz)] = types.cast(i32, fw);
+            iq[numeric.cast(u32, jz)] = numeric.cast(i32, fw);
         } else {
-            iq[types.cast(u32, jz)] = types.cast(i32, z);
+            iq[numeric.cast(u32, jz)] = numeric.cast(i32, z);
         }
     }
 
@@ -501,7 +503,7 @@ pub fn k_rem_pio2_64(x: [*]f64, y: [*]f64, e0: i32, nx: i32, prec: i32) i32 {
     var fw: f64 = float.scalbn(@as(f64, 1.0), q0);
     i = jz;
     while (i >= 0) : (i -= 1) {
-        q[types.cast(u32, i)] = fw * types.cast(f64, iq[types.cast(u32, i)]);
+        q[numeric.cast(u32, i)] = fw * numeric.cast(f64, iq[numeric.cast(u32, i)]);
         fw *= 5.96046447753906250000e-8;
     }
 
@@ -512,10 +514,10 @@ pub fn k_rem_pio2_64(x: [*]f64, y: [*]f64, e0: i32, nx: i32, prec: i32) i32 {
         fw = 0.0;
         var k: i32 = 0;
         while (k <= jp and k <= jz -% i) : (k += 1) {
-            fw += pio2_64[types.cast(u32, k)] * q[types.cast(u32, i +% k)];
+            fw += pio2_64[numeric.cast(u32, k)] * q[numeric.cast(u32, i +% k)];
         }
 
-        fq[types.cast(u32, jz -% i)] = fw;
+        fq[numeric.cast(u32, jz -% i)] = fw;
 
         i -= 1;
     }
@@ -526,7 +528,7 @@ pub fn k_rem_pio2_64(x: [*]f64, y: [*]f64, e0: i32, nx: i32, prec: i32) i32 {
             fw = 0.0;
             i = jz;
             while (i >= 0) : (i -= 1) {
-                fw += fq[types.cast(u32, i)];
+                fw += fq[numeric.cast(u32, i)];
             }
 
             y[0] = if (ih == 0) fw else -fw;
@@ -535,7 +537,7 @@ pub fn k_rem_pio2_64(x: [*]f64, y: [*]f64, e0: i32, nx: i32, prec: i32) i32 {
             var fv: f64 = 0.0;
             i = jz;
             while (i >= 0) : (i -= 1) {
-                fv = fv + fq[types.cast(u32, i)];
+                fv = fv + fq[numeric.cast(u32, i)];
             }
 
             y[0] = if (ih == 0) fv else -fv;
@@ -543,7 +545,7 @@ pub fn k_rem_pio2_64(x: [*]f64, y: [*]f64, e0: i32, nx: i32, prec: i32) i32 {
             fv = fq[0] - fv;
             i = 1;
             while (i <= jz) {
-                fv = fv + fq[types.cast(u32, i)];
+                fv = fv + fq[numeric.cast(u32, i)];
 
                 i += 1;
             }
@@ -553,24 +555,24 @@ pub fn k_rem_pio2_64(x: [*]f64, y: [*]f64, e0: i32, nx: i32, prec: i32) i32 {
         3 => { // Painful
             i = jz;
             while (i > 0) {
-                const fv: f64 = fq[types.cast(u32, i -% 1)] + fq[types.cast(u32, i)];
-                fq[types.cast(u32, i)] += fq[types.cast(u32, i -% 1)] - fv;
-                fq[types.cast(u32, i -% 1)] = fv;
+                const fv: f64 = fq[numeric.cast(u32, i -% 1)] + fq[numeric.cast(u32, i)];
+                fq[numeric.cast(u32, i)] += fq[numeric.cast(u32, i -% 1)] - fv;
+                fq[numeric.cast(u32, i -% 1)] = fv;
 
                 i -= 1;
             }
 
             i = jz;
             while (i > 1) : (i -= 1) {
-                const fv: f64 = fq[types.cast(u32, i -% 1)] + fq[types.cast(u32, i)];
-                fq[types.cast(u32, i)] += fq[types.cast(u32, i -% 1)] - fv;
-                fq[types.cast(u32, i -% 1)] = fv;
+                const fv: f64 = fq[numeric.cast(u32, i -% 1)] + fq[numeric.cast(u32, i)];
+                fq[numeric.cast(u32, i)] += fq[numeric.cast(u32, i -% 1)] - fv;
+                fq[numeric.cast(u32, i -% 1)] = fv;
             }
 
             fw = 0.0;
             i = jz;
             while (i >= 2) : (i -= 1) {
-                fw += fq[types.cast(u32, i)];
+                fw += fq[numeric.cast(u32, i)];
             }
 
             if (ih == 0) {

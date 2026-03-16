@@ -950,29 +950,6 @@ pub fn EnsureDomain(comptime X: type, comptime Y: type) type {
     }
 }
 
-pub fn EnsureVector(comptime X: type, comptime Y: type) type {
-    if (comptime !types.isNumeric(Y))
-        @compileError("zml.types.EnsureVector: " ++ @typeName(Y) ++ " is not a supported numeric type");
-
-    switch (comptime types.domain(X)) {
-        .numeric => return Y,
-        .vector => switch (types.vectorType(X)) {
-            .dense => return vector.Dense(Y),
-            .sparse => return vector.Sparse(Y),
-            .custom => {
-                if (comptime types.hasMethod(types.vectorType(X), "EnsureVector", fn (type, type) type, &.{}))
-                    return types.vectorType(X).EnsureVector(X, Y);
-
-                @compileError("zml.types.EnsureVector: " ++ @typeName(types.vectorType(X)) ++ " must implement `fn EnsureVector(type, type) type`");
-            },
-            .numeric => unreachable,
-        },
-        .matrix => return Y,
-        .array => return Y,
-        .expression => return Y,
-    }
-}
-
 pub fn EnsureMatrix(comptime X: type, comptime Y: type) type {
     if (comptime !types.isNumeric(Y))
         @compileError("zml.types.EnsureMatrix: " ++ @typeName(Y) ++ " is not a supported numeric type");

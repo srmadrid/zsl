@@ -542,9 +542,6 @@ pub const isComplex = type_checks.isComplex;
 pub const isSigned = type_checks.isSigned;
 pub const isUnsigned = type_checks.isUnsigned;
 
-const casting = @import("types/casting.zig");
-pub const cast = casting.cast;
-
 /// Returns the input type as is, without any modifications.
 ///
 /// ## Arguments
@@ -906,9 +903,7 @@ pub fn hasMethod(
     const spec_params = info_spec.@"fn".params;
     comptime var spec_return = info_spec.@"fn".return_type.?;
     const method_params = info_method.@"fn".params;
-    comptime var method_return = if (info_method.@"fn".return_type) |r|
-        r
-    else
+    comptime var method_return = info_method.@"fn".return_type orelse
         ReturnTypeFromInputs(@field(T, method_name), input_types);
 
     switch (comptime domain(T)) {

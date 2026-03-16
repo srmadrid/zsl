@@ -1,6 +1,6 @@
-const std = @import("std");
-
 const types = @import("../types.zig");
+const numeric = @import("../numeric.zig");
+
 const float = @import("../float.zig");
 
 const dbl64 = @import("dbl64.zig");
@@ -35,23 +35,23 @@ pub fn Hypot(comptime X: type, comptime Y: type) type {
 /// `float.Hypot(@TypeOf(x), @TypeOf(y))`: The hypotenuse of `x` and `y`.
 pub inline fn hypot(x: anytype, y: anytype) float.Hypot(@TypeOf(y), @TypeOf(x)) {
     switch (float.Hypot(@TypeOf(x), @TypeOf(y))) {
-        f16 => return types.cast(f16, hypot32(types.cast(f32, x), types.cast(f32, y))),
+        f16 => return numeric.cast(f16, hypot32(numeric.cast(f32, x), numeric.cast(f32, y))),
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_hypotf.c
-            return hypot32(types.cast(f32, x), types.cast(f32, y));
+            return hypot32(numeric.cast(f32, x), numeric.cast(f32, y));
         },
         f64 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_hypot.c
-            return hypot64(types.cast(f64, x), types.cast(f64, y));
+            return hypot64(numeric.cast(f64, x), numeric.cast(f64, y));
         },
         f80 => {
             // https://github.com/JuliaMath/openlibm/blob/master/ld80/e_hypotl.c
-            // return hypot80(types.cast(f80, x), types.cast(f80, y));
-            return types.cast(f80, hypot128(types.cast(f128, x), types.cast(f128, y)));
+            // return hypot80(numeric.cast(f80, x), numeric.cast(f80, y));
+            return numeric.cast(f80, hypot128(numeric.cast(f128, x), numeric.cast(f128, y)));
         },
         f128 => {
             // https://github.com/JuliaMath/openlibm/blob/master/ld128/e_hypotl.c
-            return hypot128(types.cast(f128, x), types.cast(f128, y));
+            return hypot128(numeric.cast(f128, x), numeric.cast(f128, y));
         },
         else => unreachable,
     }
@@ -273,7 +273,7 @@ fn hypot64(x: f64, y: f64) f64 {
 fn hypot80(x: f80, y: f80) f80 {
     _ = x;
     _ = y;
-    return std.math.nan(f80);
+    return 0.0;
 }
 
 // Translation of:

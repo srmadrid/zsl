@@ -1,8 +1,5 @@
-const types = @import("../types.zig");
-const numeric = @import("../numeric.zig");
-
-const dyadic = @import("../dyadic.zig");
-const complex = @import("../complex.zig");
+const types = @import("../../types.zig");
+const numeric = @import("../../numeric.zig");
 
 /// Casts a value of any numeric type to any numeric type. Some casts may lead
 /// to runtime panics if the value cannot be represented in the target type.

@@ -1,6 +1,6 @@
-const std = @import("std");
-
 const types = @import("../types.zig");
+const numeric = @import("../numeric.zig");
+
 const float = @import("../float.zig");
 
 const erf_data = @import("erf_data.zig");
@@ -32,23 +32,23 @@ pub inline fn erf(x: anytype) @TypeOf(x) {
         @compileError("zsl.float.erf: x must be a float, got \n\tx: " ++ @typeName(X) ++ "\n");
 
     switch (X) {
-        f16 => return types.cast(f16, erf32(types.cast(f32, x))),
+        f16 => return numeric.cast(f16, erf32(numeric.cast(f32, x))),
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_erff.c
-            return erf32(types.cast(f32, x));
+            return erf32(numeric.cast(f32, x));
         },
         f64 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_erf.c
-            return erf64(types.cast(f64, x));
+            return erf64(numeric.cast(f64, x));
         },
         f80 => {
             //
-            // return erf80(types.cast(f80, x));
-            return types.cast(f80, erf128(types.cast(f128, x)));
+            // return erf80(numeric.cast(f80, x));
+            return numeric.cast(f80, erf128(numeric.cast(f128, x)));
         },
         f128 => {
             // https://github.com/JuliaMath/openlibm/blob/master/ld128/s_erfl.c
-            return erf128(types.cast(f128, x));
+            return erf128(numeric.cast(f128, x));
         },
         else => unreachable,
     }
@@ -74,7 +74,7 @@ fn erf32(x: f32) f32 {
 
     if (ix >= 0x7f800000) { // erf(nan) = nan
         const i: i32 = @bitCast((@as(u32, @bitCast(hx)) >> 31) << 1);
-        return 1 - types.cast(f32, i); // erf(±inf) = ±1
+        return 1 - numeric.cast(f32, i); // erf(±inf) = ±1
     }
 
     if (ix < 0x3f580000) { // |x| < 0.84375
@@ -174,7 +174,7 @@ fn erf64(x: f64) f64 {
 
     if (ix >= 0x7ff00000) { // erf(nan) = nan
         const i: i32 = @bitCast((@as(u32, @bitCast(hx)) >> 31) << 1);
-        return 1 - types.cast(f64, i); // erf(±inf) = ±1
+        return 1 - numeric.cast(f64, i); // erf(±inf) = ±1
     }
 
     if (ix < 0x3feb0000) { // |x| < 0.84375
@@ -312,7 +312,7 @@ fn erf128(x: f128) f128 {
 
     if (ix >= 0x7fff0000) { // erf(nan) = nan
         const i: i32 = @bitCast(((@as(u32, @bitCast(sign)) & 0xffff0000) >> 31) << 1);
-        return types.cast(f128, (1 - i)); // erf(±inf) = ±1
+        return numeric.cast(f128, (1 - i)); // erf(±inf) = ±1
     }
 
     if (ix >= 0x3fff0000) { // |x| >= 1.0

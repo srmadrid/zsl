@@ -1,6 +1,8 @@
 const std = @import("std");
 
 const types = @import("../types.zig");
+const numeric = @import("../numeric.zig");
+
 const float = @import("../float.zig");
 
 const rem_pio2 = @import("rem_pio2.zig");
@@ -30,23 +32,23 @@ pub inline fn tan(x: anytype) @TypeOf(x) {
         @compileError("zsl.float.tan: x must be a float, got \n\tx: " ++ @typeName(X) ++ "\n");
 
     switch (@TypeOf(x)) {
-        f16 => return types.cast(f16, tan32(types.cast(f32, x))),
+        f16 => return numeric.cast(f16, tan32(numeric.cast(f32, x))),
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_tanf.c
-            return tan32(types.cast(f32, x));
+            return tan32(numeric.cast(f32, x));
         },
         f64 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_tan.c
-            return tan64(types.cast(f64, x));
+            return tan64(numeric.cast(f64, x));
         },
         f80 => {
             //
-            // return tan80(types.cast(f80, x));
-            return types.cast(f80, tan128(types.cast(f128, x)));
+            // return tan80(numeric.cast(f80, x));
+            return numeric.cast(f80, tan128(numeric.cast(f128, x)));
         },
         f128 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_tanl.c
-            return tan128(types.cast(f128, x));
+            return tan128(numeric.cast(f128, x));
         },
         else => unreachable,
     }
@@ -198,17 +200,17 @@ fn tan128(x: f128) f128 {
 }
 
 pub fn k_tan32(x: f64, iy: i32) f32 {
-    const z: f64 = types.cast(f64, x) * types.cast(f64, x);
+    const z: f64 = numeric.cast(f64, x) * numeric.cast(f64, x);
     var r: f64 = 0x185dadfcecf44e.0p-61 + z * 0x1362b9bf971bcd.0p-59;
     const t: f64 = 0x1b54c91d865afe.0p-57 + z * 0x191df3908c33ce.0p-58;
     const w: f64 = z * z;
-    const s: f64 = z * types.cast(f64, x);
+    const s: f64 = z * numeric.cast(f64, x);
     const u: f64 = 0x15554d3418c99f.0p-54 + z * 0x1112fd38999f72.0p-55;
-    r = (types.cast(f64, x) + s * u) + (s * w) * (t + w * r);
+    r = (numeric.cast(f64, x) + s * u) + (s * w) * (t + w * r);
     if (iy == 1)
-        return types.cast(f32, r)
+        return numeric.cast(f32, r)
     else
-        return types.cast(f32, -1.0 / r);
+        return numeric.cast(f32, -1.0 / r);
 }
 
 pub fn k_tan64(x: f64, y: f64, iy: i32) f64 {
@@ -249,8 +251,8 @@ pub fn k_tan64(x: f64, y: f64, iy: i32) f64 {
     r += 3.33333333333334091986e-1 * s;
     w = xx + r;
     if (ix >= 0x3fe59428) {
-        v = types.cast(f64, iy);
-        return types.cast(f64, 1 - ((hx >> 30) & 2)) *
+        v = numeric.cast(f64, iy);
+        return numeric.cast(f64, 1 - ((hx >> 30) & 2)) *
             (v - 2.0 * (xx - (w * w / (w + v) - r)));
     }
 
@@ -326,7 +328,7 @@ pub fn k_tan128(x: f128, y: f128, iy: i32) f128 {
     r += 0x1.5555555555555555555555555553p-2 * s;
     w = xx + r;
     if (i == 1) {
-        v = types.cast(f128, iiy);
+        v = numeric.cast(f128, iiy);
         return osign *
             (v - 2.0 * (xx - (w * w / (w + v) - r)));
     }

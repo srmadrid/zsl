@@ -1,6 +1,8 @@
 const std = @import("std");
 
 const types = @import("../types.zig");
+const numeric = @import("../numeric.zig");
+
 const float = @import("../float.zig");
 
 const dbl64 = @import("dbl64.zig");
@@ -25,23 +27,23 @@ pub inline fn tanh(x: anytype) @TypeOf(x) {
         @compileError("zsl.float.tanh: x must be a float, got \n\tx: " ++ @typeName(X) ++ "\n");
 
     switch (X) {
-        f16 => return types.cast(f16, tanh32(types.cast(f32, x))),
+        f16 => return numeric.cast(f16, tanh32(numeric.cast(f32, x))),
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_tanhf.c
-            return tanh32(types.cast(f32, x));
+            return tanh32(numeric.cast(f32, x));
         },
         f64 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_tanh.c
-            return tanh64(types.cast(f64, x));
+            return tanh64(numeric.cast(f64, x));
         },
         f80 => {
             //
-            // return tanh80(types.cast(f80, x));
-            return types.cast(f80, tanh128(types.cast(f128, x)));
+            // return tanh80(numeric.cast(f80, x));
+            return numeric.cast(f80, tanh128(numeric.cast(f128, x)));
         },
         f128 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_tanhl.c
-            return tanh128(types.cast(f128, x));
+            return tanh128(numeric.cast(f128, x));
         },
         else => unreachable,
     }

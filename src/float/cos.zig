@@ -1,6 +1,6 @@
-const std = @import("std");
-
 const types = @import("../types.zig");
+const numeric = @import("../numeric.zig");
+
 const float = @import("../float.zig");
 
 const sin = @import("sin.zig");
@@ -34,23 +34,23 @@ pub inline fn cos(x: anytype) @TypeOf(x) {
         @compileError("zsl.float.cos: x must be a float, got \n\tx: " ++ @typeName(X) ++ "\n");
 
     switch (X) {
-        f16 => return types.cast(f16, cos32(types.cast(f32, x))),
+        f16 => return numeric.cast(f16, cos32(numeric.cast(f32, x))),
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_cosf.c
-            return cos32(types.cast(f32, x));
+            return cos32(numeric.cast(f32, x));
         },
         f64 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_cos.c
-            return cos64(types.cast(f64, x));
+            return cos64(numeric.cast(f64, x));
         },
         f80 => {
             //
-            // return cos80(types.cast(f80, x));
-            return types.cast(f80, cos128(types.cast(f128, x)));
+            // return cos80(numeric.cast(f80, x));
+            return numeric.cast(f80, cos128(numeric.cast(f128, x)));
         },
         f128 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/s_cosl.c
-            return cos128(types.cast(f128, x));
+            return cos128(numeric.cast(f128, x));
         },
         else => unreachable,
     }
@@ -80,28 +80,28 @@ fn cos32(x: f32) f32 {
         if (ix < 0x39800000) // |x| < 2**-12
             return 1.0;
 
-        return k_cos32(types.cast(f64, x));
+        return k_cos32(numeric.cast(f64, x));
     }
 
     if (ix <= 0x407b53d1) { // |x| ~<= 5 * pi/4
         if (ix <= 0x4016cbe3) { // |x| ~<= 3 * pi/4
             if (hx > 0)
-                return k_sin32(1.57079632679489661923 - types.cast(f64, x))
+                return k_sin32(1.57079632679489661923 - numeric.cast(f64, x))
             else
-                return k_sin32(types.cast(f64, x) + 1.57079632679489661923);
+                return k_sin32(numeric.cast(f64, x) + 1.57079632679489661923);
         } else {
-            return -k_cos32(types.cast(f64, x) + @as(f64, if (hx > 0) -2.0 else 2.0) * 1.57079632679489661923);
+            return -k_cos32(numeric.cast(f64, x) + @as(f64, if (hx > 0) -2.0 else 2.0) * 1.57079632679489661923);
         }
     }
 
     if (ix <= 0x40e231d5) { // |x| ~<= 9 * pi/4
         if (ix <= 0x40afeddf) { // |x| ~<= 7 * pi/4
             if (hx > 0)
-                return k_sin32(types.cast(f64, x) - 3.0 * 1.57079632679489661923)
+                return k_sin32(numeric.cast(f64, x) - 3.0 * 1.57079632679489661923)
             else
-                return k_sin32(-3.0 * 1.57079632679489661923 - types.cast(f64, x));
+                return k_sin32(-3.0 * 1.57079632679489661923 - numeric.cast(f64, x));
         } else {
-            return k_cos32(types.cast(f64, x) + @as(f64, if (hx > 0) -4.0 else 4.0) * 1.57079632679489661923);
+            return k_cos32(numeric.cast(f64, x) + @as(f64, if (hx > 0) -4.0 else 4.0) * 1.57079632679489661923);
         }
     } else if (ix >= 0x7f800000) { // cos(Inf or NaN) is NaN
         return x - x;
@@ -154,7 +154,7 @@ fn cos64(x: f64) f64 {
 
 fn cos80(x: f80) f80 {
     _ = x;
-    return std.math.nan(f80);
+    return 0.0;
 }
 
 // Translation of:
@@ -217,7 +217,7 @@ pub fn k_cos32(x: f64) f32 {
     const z: f64 = x * x;
     const w: f64 = z * z;
     const r: f64 = -0x16c087e80f1e27.0p-62 + z * 0x199342e0ee5069.0p-68;
-    return types.cast(f32, ((1.0 + z * -0x1ffffffd0c5e81.0p-54) + w * 0x155553e1053a42.0p-57) + (w * z) * r);
+    return numeric.cast(f32, ((1.0 + z * -0x1ffffffd0c5e81.0p-54) + w * 0x155553e1053a42.0p-57) + (w * z) * r);
 }
 
 pub fn k_cos64(x: f64, y: f64) f64 {

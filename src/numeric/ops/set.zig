@@ -1,4 +1,5 @@
 const types = @import("../../types.zig");
+const numeric = @import("../../numeric.zig");
 
 /// Sets the value of `o` to `x`.
 ///
@@ -56,5 +57,5 @@ pub inline fn set(o: anytype, x: anytype) void {
         return X.set(o, x);
     }
 
-    o.* = types.cast(O, x);
+    o.* = numeric.cast(O, x);
 }

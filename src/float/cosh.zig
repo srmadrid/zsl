@@ -1,6 +1,8 @@
 const std = @import("std");
 
 const types = @import("../types.zig");
+const numeric = @import("../numeric.zig");
+
 const float = @import("../float.zig");
 
 const dbl64 = @import("dbl64.zig");
@@ -25,23 +27,23 @@ pub inline fn cosh(x: anytype) @TypeOf(x) {
         @compileError("zsl.float.cosh: x must be a float, got \n\tx: " ++ @typeName(X) ++ "\n");
 
     switch (X) {
-        f16 => return types.cast(f16, cosh32(types.cast(f32, x))),
+        f16 => return numeric.cast(f16, cosh32(numeric.cast(f32, x))),
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_coshf.c
-            return cosh32(types.cast(f32, x));
+            return cosh32(numeric.cast(f32, x));
         },
         f64 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_cosh.c
-            return cosh64(types.cast(f64, x));
+            return cosh64(numeric.cast(f64, x));
         },
         f80 => {
             //
-            // return cosh80(types.cast(f80, x));
-            return types.cast(f80, cosh128(types.cast(f128, x)));
+            // return cosh80(numeric.cast(f80, x));
+            return numeric.cast(f80, cosh128(numeric.cast(f128, x)));
         },
         f128 => {
             // https://github.com/JuliaMath/openlibm/blob/master/ld128/e_coshl.c
-            return cosh128(types.cast(f128, x));
+            return cosh128(numeric.cast(f128, x));
         },
         else => unreachable,
     }
