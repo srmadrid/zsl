@@ -13,17 +13,22 @@ pub fn main() !void {
     var prng = std.Random.DefaultPrng.init(@bitCast(std.time.timestamp()));
     const rand = prng.random();
 
-    var u = try randomVector(zsl.vector.Sparse(f64), allocator, rand, 10);
+    var u = try randomVector(zsl.vector.Dense(f64), allocator, rand, 10000);
     defer u.deinit(allocator);
-    printVector("u", u);
+    // printVector("u", u);
 
-    var v = try randomVector(zsl.vector.Dense(f64), allocator, rand, 10);
+    var v = try randomVector(zsl.vector.Dense(f64), allocator, rand, 10000);
     defer v.deinit(allocator);
-    printVector("v", v);
+    // printVector("v", v);
 
     var w = try zsl.vector.mul(allocator, v, 2);
     defer w.deinit(allocator);
-    printVector("w", w);
+    // printVector("w", w);
+
+    var buffer: [20000]f64 = .{0} ** 20000;
+    var x: zsl.vector.Dense(f64) = try .initBuffer(&buffer, -2);
+    try zsl.vector.div_(&x, u, 20);
+    // printVector("x", x);
 }
 
 fn avg(values: []const f64) f64 {

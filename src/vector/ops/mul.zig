@@ -59,8 +59,14 @@ pub fn Mul(comptime X: type, comptime Y: type) type {
 ///
 /// `vector.Mul(X, Y)`, `X` or `Y` must implement the required `mul` method. The
 /// expected signatures and behavior of `mul` are as follows:
-/// * `fn mul(std.mem.Allocator, X, Y) vector.Mul(X, Y)`: Returns the
+/// * `fn mul(std.mem.Allocator, X, Y) !vector.Mul(X, Y)`: Returns the
 ///   multiplication of `x` and `y`.
+///
+/// If none of `vector.Mul(X, Y)`, `X` and `Y` implement the required `mul`
+/// method, the function will fall back to using `vector.apply2` with
+/// `numeric.mul`, potentially resulting in a less efficient implementation. In
+/// this case, `vector.Mul(X, Y)`, `X` and `Y` must adhere to the requirements
+/// of these functions.
 pub inline fn mul(allocator: std.mem.Allocator, x: anytype, y: anytype) !vector.Mul(@TypeOf(x), @TypeOf(y)) {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);

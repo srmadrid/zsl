@@ -4,63 +4,67 @@ const types = @import("../../types.zig");
 
 const vector = @import("../../vector.zig");
 
-/// CHANGE DOCSApplies a binary operation elementwise between two vectors, or between a
-/// vector and a numeric.
+const dedede = @import("apply2_/dedede.zig");
+const dedesp = @import("apply2_/dedesp.zig");
+const dedenu = @import("apply2_/dedenu.zig");
+const despde = @import("apply2_/despde.zig");
+const despsp = @import("apply2_/despsp.zig");
+const despnu = @import("apply2_/despnu.zig");
+const denude = @import("apply2_/denude.zig");
+const denusp = @import("apply2_/denusp.zig");
+const spspsp = @import("apply2_/spspsp.zig");
+const spspnu = @import("apply2_/spspnu.zig");
+const spnusp = @import("apply2_/spnusp.zig");
+
+/// Applies a binary in-place operation elementwise between an output and two
+/// input vectors, or between an output vector, an input vector and an input
+/// numeric.
 ///
-/// For two sparse vectors, or a sparse vector and a numeric, the operation is
-/// only applied to the indices where at least one of the vectors has a non-zero
+/// For two input sparse vectors, or an input sparse vector and an input
+/// numeric, if the output is also a sparse vector, the operation is only
+/// applied to the indices where at least one of the vectors has a non-zero
 /// element.
 ///
 /// ## Signature
 /// ```zig
-/// vector.apply2_(*O, x: X, y: Y, op: Op) !vector.Apply2(X, Y, op)
+/// vector.apply2_(*O, x: X, y: Y, op_: Op) !void
 /// ```
 ///
 /// ## Arguments
-/// * `allocator` (`std.mem.Allocator`): The allocator to use for memory
-///   allocations.
-/// * `x` (`anytype`): The left operand.
-/// * `y` (`anytype`): The right operand.
-/// * `op` (`comptime anytype`): A binary numeric function to apply elementwise
-///   to `x` and `y`.
+/// * `o` (`anytype`): The output operand.
+/// * `x` (`anytype`): The left input operand.
+/// * `y` (`anytype`): The right input operand.
+/// * `op_` (`comptime anytype`): An in-place binary numeric function to apply
+///   elementwise to `o`, `x` and `y`.
 ///
 /// ## Returns
-/// `vector.Apply2(@TypeOf(x), @TypeOf(y), op)`: The result of the operation.
+/// `void`
 ///
 /// ## Errors
-/// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
-/// * `vector.Error.DimensionMismatch`: If the two vectors do not have the same
-///   length. Can only happen if both operands are vectors.
+/// * `vector.Error.DimensionMismatch`: If the vectors do not have the same
+///   length.
 ///
 /// ## Custom type support
 /// This function supports custom vector types via specific method
 /// implementations.
 ///
-/// `X` or `Y` should implement the required `Apply2` method. The expected
-/// signature and behavior of `Apply2` are as follows:
-/// * `fn Apply2(type, type, anytype) type`: Returns the type of `x .op y`.
-///
-/// If neither `X` nor `Y` implement the required `Apply2` method, the return
-/// type will be obtained by using `op`'s return type and attempting to call
-/// `vector.EnsureVector` on `X` or `Y`.
-///
-/// `vector.Apply2(X, Y, op)`, `X` or `Y` must implement the required `apply2`
-/// method. The expected signatures and behavior of `apply2` are as follows:
-/// * `fn apply2_(std.mem.Allocator, X, Y, anytype) vector.Apply2(X, Y, op)`:
-///   Returns the elementwise application of `op` on `x` and `y`.
+/// `O`, `X` or `Y` must implement the required `apply2_` method. The expected
+/// signatures and behavior of `apply2_` are as follows:
+/// * `fn apply2_(*O, X, Y, anytype) !void`: Returns the elementwise application
+///   of `op_` on `o`, `x` and `y`.
 pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void {
     comptime var O: type = @TypeOf(o);
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
     const Op: type = @TypeOf(op_);
-    const opinfo = @typeInfo(O);
+    const opinfo = @typeInfo(Op);
 
     comptime if (!types.isPointer(O) or types.isConstPointer(O) or !types.isVector(types.Child(O)) or
         (!types.isVector(X) and !types.isNumeric(X)) or (!types.isVector(Y) and !types.isNumeric(Y)) or
         (!types.isVector(X) and !types.isVector(Y)) or
         opinfo != .@"fn" or opinfo.@"fn".params.len != 3)
         @compileError("zsl.vector.apply2_: o must be a mutable one-itme pointer to a vector, at least one of x or y must be a vector, the other must be a vector or a numeric, and op_ must be a function of three arguments, got\n\to: " ++
-            @typeName(O) ++ "x: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n");
+            @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n");
 
     O = types.Child(O);
 
@@ -132,21 +136,21 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void 
     switch (comptime types.vectorType(O)) {
         .dense => switch (comptime types.vectorType(X)) {
             .dense => switch (comptime types.vectorType(Y)) {
-                .dense => return dedede.apply2_(allocator, x, y, op),
-                .sparse => return dedesp.apply2_(allocator, x, y, op),
+                .dense => return dedede.apply2_(o, x, y, op_),
+                .sparse => return dedesp.apply2_(o, x, y, op_),
                 .custom => unreachable,
-                .numeric => return dedede.apply2_(allocator, x, y, op),
+                .numeric => return dedenu.apply2_(o, x, y, op_),
             },
             .sparse => switch (comptime types.vectorType(Y)) {
-                .dense => return despde.apply2_(allocator, x, y, op),
-                .sparse => return despsp.apply2_(allocator, x, y, op),
+                .dense => return despde.apply2_(o, x, y, op_),
+                .sparse => return despsp.apply2_(o, x, y, op_),
                 .custom => unreachable,
-                .numeric => return despsp.apply2_(allocator, x, y, op),
+                .numeric => return despnu.apply2_(o, x, y, op_),
             },
             .custom => unreachable,
             .numeric => switch (comptime types.vectorType(Y)) {
-                .dense => return dedede.apply2_(allocator, x, y, op),
-                .sparse => return despsp.apply2_(allocator, x, y, op),
+                .dense => return denude.apply2_(o, x, y, op_),
+                .sparse => return denusp.apply2_(o, x, y, op_),
                 .custom => unreachable,
                 .numeric => unreachable,
             },
@@ -157,15 +161,15 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void 
             .sparse => switch (comptime types.vectorType(Y)) {
                 .dense => @compileError("zsl.vector.apply2_: o cannot point to a sparse vector if the result is dense, got\n\to: *" ++
                     @typeName(O) ++ "x: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n"),
-                .sparse => return spspsp.apply2_(allocator, x, y, op),
+                .sparse => return spspsp.apply2_(o, x, y, op_),
                 .custom => unreachable,
-                .numeric => return spspsp.apply2_(allocator, x, y, op),
+                .numeric => return spspnu.apply2_(o, x, y, op_),
             },
             .custom => unreachable,
             .numeric => switch (comptime types.vectorType(Y)) {
                 .dense => @compileError("zsl.vector.apply2_: o cannot point to a sparse vector if the result is dense, got\n\to: *" ++
                     @typeName(O) ++ "x: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n"),
-                .sparse => return spspsp.apply2_(allocator, x, y, op),
+                .sparse => return spnusp.apply2_(o, x, y, op_),
                 .custom => unreachable,
                 .numeric => unreachable,
             },

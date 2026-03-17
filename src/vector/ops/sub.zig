@@ -60,22 +60,28 @@ pub fn Sub(comptime X: type, comptime Y: type) type {
 ///
 /// `vector.Sub(X, Y)`, `X` or `Y` must implement the required `sub` method. The
 /// expected signatures and behavior of `sub` are as follows:
-/// * `fn sub(std.mem.Allocator, X, Y) vector.Sub(X, Y)`: Returns the
+/// * `fn sub(std.mem.Allocator, X, Y) !vector.Sub(X, Y)`: Returns the
 ///   subtraction of `x` and `y`.
+///
+/// If none of `vector.Sub(X, Y)`, `X` and `Y` implement the required `sub`
+/// method, the function will fall back to using `vector.apply2` with
+/// `numeric.sub`, potentially resulting in a less efficient implementation. In
+/// this case, `vector.Sub(X, Y)`, `X` and `Y` must adhere to the requirements
+/// of these functions.
 pub inline fn sub(allocator: std.mem.Allocator, x: anytype, y: anytype) !vector.Sub(@TypeOf(x), @TypeOf(y)) {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
     const R: type = vector.Sub(@TypeOf(x), @TypeOf(y));
 
-    if (comptime types.isCustomType(X) and types.isVector(X)) {
-        if (comptime types.isCustomType(Y) and types.isVector(Y)) { // X and Y both custom vectors
+    if (comptime types.isCustomType(X)) {
+        if (comptime types.isCustomType(Y)) { // X and Y both custom vectors
             if (comptime types.anyHasMethod(&.{ X, Y }, "sub", fn (std.mem.Allocator, X, Y) anyerror!R, &.{ std.mem.Allocator, X, Y })) |Impl|
                 return Impl.sub(allocator, x, y);
         } else { // only X custom vector
             if (comptime types.hasMethod(X, "sub", fn (std.mem.Allocator, X, Y) anyerror!R, &.{ std.mem.Allocator, X, Y }))
                 return X.sub(allocator, x, y);
         }
-    } else if (comptime types.isCustomType(Y) and types.isVector(Y)) { // only Y custom vector
+    } else if (comptime types.isCustomType(Y)) { // only Y custom vector
         if (comptime types.hasMethod(Y, "sub", fn (std.mem.Allocator, X, Y) anyerror!R, &.{ std.mem.Allocator, X, Y }))
             return Y.sub(allocator, x, y);
     }

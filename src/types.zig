@@ -296,6 +296,9 @@ fn free(context: *anyopaque, memory: []u8, alignment: std.mem.Alignment, ra: usi
 }
 
 pub fn empty(comptime T: type) T {
+    if (comptime isPointer(T))
+        return @ptrFromInt(@alignOf(Child(T)));
+
     if (comptime !isSupportedType(T))
         @compileError("zsl.types.empty: " ++ @typeName(T) ++ " is not a supported type");
 

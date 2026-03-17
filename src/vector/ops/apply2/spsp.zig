@@ -15,40 +15,6 @@ pub fn apply2(allocator: std.mem.Allocator, x: anytype, y: anytype, comptime op:
     if (rinfo == .error_union)
         R = rinfo.error_union.payload;
 
-    if (comptime !types.isSparseVector(X)) {
-        var result: vector.Sparse(R) = try .init(allocator, y.len, y.nnz);
-        errdefer result.deinit(allocator);
-
-        var i: usize = 0;
-        while (i < y.nnz) : (i += 1) {
-            result.data[i] = if (comptime rinfo != .error_union)
-                op(x, y.data[i])
-            else
-                try op(x, y.data[i]);
-
-            result.idx[i] = y.idx[i];
-            result.nnz += 1;
-        }
-
-        return result;
-    } else if (comptime !types.isSparseVector(Y)) {
-        var result: vector.Sparse(R) = try .init(allocator, x.len, x.nnz);
-        errdefer result.deinit(allocator);
-
-        var i: usize = 0;
-        while (i < x.nnz) : (i += 1) {
-            result.data[i] = if (comptime rinfo != .error_union)
-                op(x.data[i], y)
-            else
-                try op(x.data[i], y);
-
-            result.idx[i] = x.idx[i];
-            result.nnz += 1;
-        }
-
-        return result;
-    }
-
     if (x.len != y.len)
         return vector.Error.DimensionMismatch;
 

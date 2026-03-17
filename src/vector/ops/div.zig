@@ -49,23 +49,29 @@ pub fn Div(comptime X: type, comptime Y: type) type {
 /// This function supports custom vector types via specific method
 /// implementations.
 ///
-/// `X` or `Y` should implement the required `Div` method. The expected
-/// signature and behavior of `Div` are as follows:
+/// `X` should implement the required `Div` method. The expected signature and
+/// behavior of `Div` are as follows:
 /// * `fn Div(type, type) type`: Returns the type of `x/y`.
 ///
-/// If neither `X` nor `Y` implement the required `Div` method, the return
-/// type will be obtained by using `vector.Apply2` with `numeric.div` as `op`.
+/// If `X` does not implement the required `Div` method, the return type will be
+/// obtained by using `vector.Apply2` with `numeric.div` as `op`.
 ///
-/// `vector.Div(X, Y)`, `X` or `Y` must implement the required `div` method. The
+/// `vector.Div(X, Y)` or `X` must implement the required `div` method. The
 /// expected signatures and behavior of `div` are as follows:
-/// * `fn div(std.mem.Allocator, X, Y) vector.Div(X, Y)`: Returns the
-///   divition of `x` and `y`.
+/// * `fn div(std.mem.Allocator, X, Y) !vector.Div(X, Y)`: Returns the
+///   division of `x` and `y`.
+///
+/// If neither of `vector.Div(X, Y)` nor `X` implement the required `div`
+/// method, the function will fall back to using `vector.apply2` with
+/// `numeric.div`, potentially resulting in a less efficient implementation. In
+/// this case, `vector.Div(X, Y)`, `X` and `Y` must adhere to the requirements
+/// of these functions.
 pub inline fn div(allocator: std.mem.Allocator, x: anytype, y: anytype) !vector.Div(@TypeOf(x), @TypeOf(y)) {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
     const R: type = vector.Div(@TypeOf(x), @TypeOf(y));
 
-    if (comptime types.isCustomType(X) and types.isVector(X)) { // only X custom vector
+    if (comptime types.isCustomType(X)) { // only X custom vector
         if (comptime types.hasMethod(X, "div", fn (std.mem.Allocator, X, Y) anyerror!R, &.{ std.mem.Allocator, X, Y }))
             return X.div(allocator, x, y);
     }

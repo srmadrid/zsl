@@ -6,8 +6,12 @@ const vector = @import("../../vector.zig");
 
 const dede = @import("apply2/dede.zig");
 const desp = @import("apply2/desp.zig");
+const denu = @import("apply2/denu.zig");
 const spde = @import("apply2/spde.zig");
 const spsp = @import("apply2/spsp.zig");
+const spnu = @import("apply2/spnu.zig");
+const nude = @import("apply2/nude.zig");
+const nusp = @import("apply2/nusp.zig");
 
 pub fn Apply2(comptime X: type, comptime Y: type, comptime op: anytype) type {
     const Op = @TypeOf(op);
@@ -78,7 +82,8 @@ pub fn Apply2(comptime X: type, comptime Y: type, comptime op: anytype) type {
 ///
 /// For two sparse vectors, or a sparse vector and a numeric, the operation is
 /// only applied to the indices where at least one of the vectors has a non-zero
-/// element.
+/// element. If you need all operations to be performed, use instead
+/// `vector.apply2_` with a dense vector as the output operand.
 ///
 /// ## Signature
 /// ```zig
@@ -115,7 +120,7 @@ pub fn Apply2(comptime X: type, comptime Y: type, comptime op: anytype) type {
 ///
 /// `vector.Apply2(X, Y, op)`, `X` or `Y` must implement the required `apply2`
 /// method. The expected signatures and behavior of `apply2` are as follows:
-/// * `fn apply2(std.mem.Allocator, X, Y, anytype) vector.Apply2(X, Y, op)`:
+/// * `fn apply2(std.mem.Allocator, X, Y, anytype) !vector.Apply2(X, Y, op)`:
 ///   Returns the elementwise application of `op` on `x` and `y`.
 pub fn apply2(allocator: std.mem.Allocator, x: anytype, y: anytype, comptime op: anytype) !vector.Apply2(@TypeOf(x), @TypeOf(y), op) {
     const X: type = @TypeOf(x);
@@ -162,18 +167,18 @@ pub fn apply2(allocator: std.mem.Allocator, x: anytype, y: anytype, comptime op:
             .dense => return dede.apply2(allocator, x, y, op),
             .sparse => return desp.apply2(allocator, x, y, op),
             .custom => unreachable,
-            .numeric => return dede.apply2(allocator, x, y, op),
+            .numeric => return denu.apply2(allocator, x, y, op),
         },
         .sparse => switch (comptime types.vectorType(Y)) {
             .dense => return spde.apply2(allocator, x, y, op),
             .sparse => return spsp.apply2(allocator, x, y, op),
             .custom => unreachable,
-            .numeric => return spsp.apply2(allocator, x, y, op),
+            .numeric => return spnu.apply2(allocator, x, y, op),
         },
         .custom => unreachable,
         .numeric => switch (comptime types.vectorType(Y)) {
-            .dense => return dede.apply2(allocator, x, y, op),
-            .sparse => return spsp.apply2(allocator, x, y, op),
+            .dense => return nude.apply2(allocator, x, y, op),
+            .sparse => return nusp.apply2(allocator, x, y, op),
             .custom => unreachable,
             .numeric => unreachable,
         },

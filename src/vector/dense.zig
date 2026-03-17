@@ -6,6 +6,8 @@ const numeric = @import("../numeric.zig");
 const vector = @import("../vector.zig");
 const matrix = @import("../matrix.zig");
 
+const int = @import("../int.zig");
+
 /// Dense vector type, represented as a contiguous array of elements of type
 /// `N`.
 pub fn Dense(N: type) type {
@@ -54,6 +56,29 @@ pub fn Dense(N: type) type {
                 .len = len,
                 .inc = 1,
                 .flags = .{ .owns_data = true },
+            };
+        }
+
+        /// Initializes a new `vector.Dense(N)` with the given buffer.
+        ///
+        /// ## Arguments
+        /// * `buffer` (`[]N`): The buffer.
+        /// * `stride` (`isize`): The step size between elements in memory.
+        ///
+        /// ## Returns
+        /// `vector.Dense(N)`: The newly initialized vector.
+        ///
+        /// ## Errors
+        /// * `vector.Error.ZeroLength`: If if the length of the buffer is zero.
+        pub fn initBuffer(buffer: []N, stride: isize) !vector.Dense(N) {
+            if (buffer.len == 0)
+                return vector.Error.ZeroLength;
+
+            return .{
+                .data = buffer.ptr,
+                .len = int.div(buffer.len, numeric.cast(usize, int.abs(stride))),
+                .inc = stride,
+                .flags = .{ .owns_data = false },
             };
         }
 

@@ -75,6 +75,33 @@ pub fn Sparse(N: type) type {
             };
         }
 
+        /// Initializes a new `vector.Sparse(N)` with the given buffers.
+        ///
+        /// ## Arguments
+        /// * `data_buffer` (`[]N`): The buffer for `data`.
+        /// * `idx_buffer` (`[]usize`): The buffer for `idx`.
+        /// * `len` (`usize`): The length of the vector.
+        ///
+        /// ## Returns
+        /// `vector.Sparse(N)`: The newly initialized vector.
+        ///
+        /// ## Errors
+        /// * `vector.Error.ZeroLength`: If if the length of any buffer is zero.
+        pub fn initBuffer(data_buffer: []N, idx_buffer: []usize, len: usize) !vector.Sparse(N) {
+            if (data_buffer.len == 0 or idx_buffer.len == 0)
+                return vector.Error.ZeroLength;
+
+            return .{
+                .data = data_buffer.ptr,
+                .idx = idx_buffer.ptr,
+                .nnz = 0,
+                .len = len,
+                ._dlen = data_buffer.len,
+                ._ilen = idx_buffer.len,
+                .flags = .{ .owns_data = false },
+            };
+        }
+
         /// Deinitializes the vector, freeing any allocated memory and
         /// invalidating it.
         ///
