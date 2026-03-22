@@ -5,6 +5,8 @@ const types = @import("../../types.zig");
 const numeric = @import("../../numeric.zig");
 const vector = @import("../../vector.zig");
 
+const vecops = @import("../ops.zig");
+
 pub fn Mul(comptime X: type, comptime Y: type) type {
     comptime if ((!types.isVector(X) and !types.isNumeric(X)) or (!types.isVector(Y) and !types.isNumeric(Y)) or
         (!types.isVector(X) and !types.isVector(Y)) or (types.isVector(X) and types.isVector(Y)))
@@ -24,7 +26,7 @@ pub fn Mul(comptime X: type, comptime Y: type) type {
             return Y.Mul(X, Y);
     }
 
-    return vector.Apply2(X, Y, numeric.mul);
+    return vecops.Apply2(X, Y, numeric.mul);
 }
 
 /// Performs multiplication between a vector and a numeric.
@@ -80,5 +82,5 @@ pub inline fn mul(allocator: std.mem.Allocator, x: anytype, y: anytype) !vector.
             return Y.mul(allocator, x, y);
     }
 
-    return vector.apply2(allocator, x, y, numeric.mul);
+    return vecops.apply2(allocator, x, y, numeric.mul);
 }

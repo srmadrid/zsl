@@ -13,6 +13,8 @@ const int = @import("../int.zig");
 /// ## Returns
 /// `type`: The coerced type that can represent all values of both `X` and `Y`.
 pub fn Coerce(comptime X: type, comptime Y: type) type {
+    @setEvalBranchQuota(10000);
+
     comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
         !types.numericType(X).le(.float) or !types.numericType(Y).le(.float) or
         (types.numericType(X) != .float and types.numericType(Y) != .float))

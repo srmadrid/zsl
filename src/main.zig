@@ -13,22 +13,29 @@ pub fn main() !void {
     var prng = std.Random.DefaultPrng.init(@bitCast(std.time.timestamp()));
     const rand = prng.random();
 
-    var u = try randomVector(zsl.vector.Dense(f64), allocator, rand, 10000);
+    var n: usize = 5;
+    _ = &n;
+
+    var u = try randomVector(zsl.vector.Dense(zsl.cf64), allocator, rand, n);
     defer u.deinit(allocator);
-    // printVector("u", u);
+    printVector("u", u);
 
-    var v = try randomVector(zsl.vector.Dense(f64), allocator, rand, 10000);
+    var v = try randomVector(zsl.vector.Dense(f64), allocator, rand, n);
     defer v.deinit(allocator);
-    // printVector("v", v);
+    printVector("v", v);
 
-    var w = try zsl.vector.mul(allocator, v, 2);
-    defer w.deinit(allocator);
+    // var w = try zsl.vector.mul(allocator, v, 2);
+    // defer w.deinit(allocator);
     // printVector("w", w);
 
-    var buffer: [20000]f64 = .{0} ** 20000;
-    var x: zsl.vector.Dense(f64) = try .initBuffer(&buffer, -2);
-    try zsl.vector.div_(&x, u, 20);
-    // printVector("x", x);
+    var x: zsl.vector.Dense(zsl.cf64) = try .init(allocator, n);
+    defer x.deinit(allocator);
+
+    const start_time = std.time.nanoTimestamp();
+    try zsl.vector.sub_(&x, u, v);
+    const end_time = std.time.nanoTimestamp();
+    std.debug.print("zsl.vector.add_ took {d} seconds on vectors of length {}\n", .{ (zsl.numeric.cast(f128, end_time) - zsl.numeric.cast(f128, start_time)) / 1e9, n });
+    printVector("x", x);
 }
 
 fn avg(values: []const f64) f64 {
@@ -1761,7 +1768,7 @@ fn randomVector(comptime V: type, allocator: std.mem.Allocator, rand: std.Random
                     zsl.numeric.cast(
                         zsl.types.Numeric(V),
                         if (comptime zsl.types.isComplex(zsl.types.Numeric(V)))
-                            zsl.cf64.init(rand.float(f64), rand.float(f64))
+                            zsl.cf64{ .re = rand.float(f64), .im = rand.float(f64) }
                         else
                             rand.float(f64),
                     ),
@@ -1790,7 +1797,7 @@ fn randomVector(comptime V: type, allocator: std.mem.Allocator, rand: std.Random
                         zsl.numeric.cast(
                             zsl.types.Numeric(V),
                             if (comptime zsl.types.isComplex(zsl.types.Numeric(V)))
-                                zsl.cf64.init(rand.float(f64), rand.float(f64))
+                                zsl.cf64{ .re = rand.float(f64), .im = rand.float(f64) }
                             else
                                 rand.float(f64),
                         ),

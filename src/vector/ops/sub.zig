@@ -5,6 +5,8 @@ const types = @import("../../types.zig");
 const numeric = @import("../../numeric.zig");
 const vector = @import("../../vector.zig");
 
+const vecops = @import("../ops.zig");
+
 pub fn Sub(comptime X: type, comptime Y: type) type {
     comptime if (!types.isVector(X) or !types.isVector(Y))
         @compileError("zsl.vector.sub: x and y must be vectors, got\n\tx: " ++
@@ -23,7 +25,7 @@ pub fn Sub(comptime X: type, comptime Y: type) type {
             return Y.Sub(X, Y);
     }
 
-    return vector.Apply2(X, Y, numeric.sub);
+    return vecops.Apply2(X, Y, numeric.sub);
 }
 
 /// Performs subtraction between two vectors.
@@ -86,5 +88,5 @@ pub inline fn sub(allocator: std.mem.Allocator, x: anytype, y: anytype) !vector.
             return Y.sub(allocator, x, y);
     }
 
-    return vector.apply2(allocator, x, y, numeric.sub);
+    return vecops.apply2(allocator, x, y, numeric.sub);
 }

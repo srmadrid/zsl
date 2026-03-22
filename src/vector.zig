@@ -8,10 +8,6 @@ pub const Sparse = sparse.Sparse;
 const vecops = @import("vector/ops.zig");
 pub const EnsureVector = vecops.EnsureVector;
 
-pub const Apply2 = vecops.Apply2;
-pub const apply2 = vecops.apply2;
-pub const apply2_ = vecops.apply2_;
-
 pub const Add = vecops.Add;
 pub const add = vecops.add;
 pub const add_ = vecops.add_;

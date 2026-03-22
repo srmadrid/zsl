@@ -4,6 +4,8 @@ const types = @import("../../types.zig");
 
 const vector = @import("../../vector.zig");
 
+const vecops = @import("../ops.zig");
+
 const dede = @import("apply2/dede.zig");
 const desp = @import("apply2/desp.zig");
 const denu = @import("apply2/denu.zig");
@@ -122,11 +124,11 @@ pub fn Apply2(comptime X: type, comptime Y: type, comptime op: anytype) type {
 /// method. The expected signatures and behavior of `apply2` are as follows:
 /// * `fn apply2(std.mem.Allocator, X, Y, anytype) !vector.Apply2(X, Y, op)`:
 ///   Returns the elementwise application of `op` on `x` and `y`.
-pub fn apply2(allocator: std.mem.Allocator, x: anytype, y: anytype, comptime op: anytype) !vector.Apply2(@TypeOf(x), @TypeOf(y), op) {
+pub fn apply2(allocator: std.mem.Allocator, x: anytype, y: anytype, comptime op: anytype) !vecops.Apply2(@TypeOf(x), @TypeOf(y), op) {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
     const Op: type = @TypeOf(op);
-    const R: type = vector.Apply2(X, Y, op);
+    const R: type = vecops.Apply2(X, Y, op);
 
     if (comptime types.isCustomType(X) and types.isVector(X)) {
         if (comptime types.isCustomType(Y) and types.isVector(Y)) { // X and Y both custom vectors

@@ -5,6 +5,8 @@ const types = @import("../../types.zig");
 const numeric = @import("../../numeric.zig");
 const vector = @import("../../vector.zig");
 
+const vecops = @import("../ops.zig");
+
 pub fn Div(comptime X: type, comptime Y: type) type {
     comptime if (!types.isVector(X) or !types.isNumeric(Y))
         @compileError("zsl.vector.div: x must be a vector and y must be a numeric, got\n\tx: " ++
@@ -23,7 +25,7 @@ pub fn Div(comptime X: type, comptime Y: type) type {
             return Y.Div(X, Y);
     }
 
-    return vector.Apply2(X, Y, numeric.div);
+    return vecops.Apply2(X, Y, numeric.div);
 }
 
 /// Performs division of vector by a numeric.
@@ -76,5 +78,5 @@ pub inline fn div(allocator: std.mem.Allocator, x: anytype, y: anytype) !vector.
             return X.div(allocator, x, y);
     }
 
-    return vector.apply2(allocator, x, y, numeric.div);
+    return vecops.apply2(allocator, x, y, numeric.div);
 }

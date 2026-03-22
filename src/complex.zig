@@ -22,7 +22,7 @@ pub fn Complex(comptime N: type) type {
     if (!types.isNumeric(N) or types.isIntegral(N))
         @compileError("zsl.Complex: N must be a non-integral numeric type, got \n\tN = " ++ @typeName(N) ++ "\n");
 
-    return struct {
+    return extern struct {
         re: N,
         im: N,
 
@@ -65,6 +65,10 @@ pub fn Complex(comptime N: type) type {
                 },
                 .custom => return numeric.cast(Complex(N), value),
             }
+        }
+
+        pub fn toFloat(self: Complex(N), comptime Float: type) Float {
+            return numeric.cast(Float, self.re);
         }
 
         // fn parse

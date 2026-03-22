@@ -1,7 +1,8 @@
 const types = @import("../../types.zig");
 
 const numeric = @import("../../numeric.zig");
-const vector = @import("../../vector.zig");
+
+const vecops = @import("../ops.zig");
 
 /// Performs in-place computation of the division of a vector `x` and a numeric
 /// `y` into a vector `o`.
@@ -60,5 +61,5 @@ pub inline fn div_(o: anytype, x: anytype, y: anytype) !void {
             return X.div_(o, x, y);
     }
 
-    return vector.apply2_(o, x, y, numeric.div_);
+    return vecops.apply2_(o, x, y, numeric.div_);
 }

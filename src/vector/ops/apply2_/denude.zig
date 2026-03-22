@@ -1,7 +1,11 @@
 const types = @import("../../../types.zig");
 
+const int = @import("../../../int.zig");
+
 const numeric = @import("../../../numeric.zig");
 const vector = @import("../../../vector.zig");
+
+const simd = @import("../../../simd.zig");
 
 pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void {
     const O: type = types.Child(@TypeOf(o));
@@ -17,6 +21,24 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void 
 
     var i: usize = 0;
     if (o.inc == 1 and y.inc == 1) {
+        if (comptime op_ == numeric.mul_ or op_ == numeric.div_) {
+            const sblo = simd.suggestBaseLength(types.Numeric(O));
+            const sblx = simd.suggestBaseLength(X);
+            const sbly = simd.suggestBaseLength(types.Numeric(Y));
+
+            if (comptime sblo != null and sblx != null and sbly != null) {
+                const bl = int.min(sblo.?, int.min(sblx.?, sbly.?));
+                const len = o.len - (o.len % bl);
+
+                while (i < len) : (i += bl) {
+                    if (comptime op_ == numeric.mul_)
+                        simd.mul_(o.data + i, x, y.data + i, bl)
+                    else
+                        simd.div_(o.data + i, x, y.data + i, bl);
+                }
+            }
+        }
+
         while (i < o.len) : (i += 1) {
             if (comptime rinfo != .error_union)
                 op_(&o.data[i], x, y.data[i])

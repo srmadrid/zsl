@@ -1,7 +1,8 @@
 const types = @import("../../types.zig");
 
 const numeric = @import("../../numeric.zig");
-const vector = @import("../../vector.zig");
+
+const vecops = @import("../ops.zig");
 
 /// Performs in-place computation of the addition of two vectors `x` and `y`
 /// into a vector `o`.
@@ -78,5 +79,5 @@ pub inline fn add_(o: anytype, x: anytype, y: anytype) !void {
             return Y.add_(o, x, y);
     }
 
-    return vector.apply2_(o, x, y, numeric.add_);
+    return vecops.apply2_(o, x, y, numeric.add_);
 }

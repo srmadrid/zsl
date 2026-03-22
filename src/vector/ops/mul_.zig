@@ -1,7 +1,8 @@
 const types = @import("../../types.zig");
 
 const numeric = @import("../../numeric.zig");
-const vector = @import("../../vector.zig");
+
+const vecops = @import("../ops.zig");
 
 /// Performs in-place computation of the multiplication of a vectors and a
 /// numeric, `x` and `y`, into a vector `o`.
@@ -68,5 +69,5 @@ pub inline fn mul_(o: anytype, x: anytype, y: anytype) !void {
             return Y.mul_(o, x, y);
     }
 
-    return vector.apply2_(o, x, y, numeric.mul_);
+    return vecops.apply2_(o, x, y, numeric.mul_);
 }

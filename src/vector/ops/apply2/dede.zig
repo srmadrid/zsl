@@ -2,10 +2,16 @@ const std = @import("std");
 
 const types = @import("../../../types.zig");
 
+const int = @import("../../../int.zig");
+
 const numeric = @import("../../../numeric.zig");
 const vector = @import("../../../vector.zig");
 
-pub fn apply2(allocator: std.mem.Allocator, x: anytype, y: anytype, comptime op: anytype) !vector.Apply2(@TypeOf(x), @TypeOf(y), op) {
+const vecops = @import("../../ops.zig");
+
+const simd = @import("../../../simd.zig");
+
+pub fn apply2(allocator: std.mem.Allocator, x: anytype, y: anytype, comptime op: anytype) !vecops.Apply2(@TypeOf(x), @TypeOf(y), op) {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
     comptime var R = types.ReturnTypeFromInputs(op, &.{ types.Numeric(X), types.Numeric(Y) });
@@ -21,6 +27,24 @@ pub fn apply2(allocator: std.mem.Allocator, x: anytype, y: anytype, comptime op:
 
     var i: usize = 0;
     if (x.inc == 1 and y.inc == 1) {
+        if (comptime op == numeric.add or op == numeric.sub) {
+            const sblr = simd.suggestBaseLength(R);
+            const sblx = simd.suggestBaseLength(types.Numeric(X));
+            const sbly = simd.suggestBaseLength(types.Numeric(Y));
+
+            if (comptime sblr != null and sblx != null and sbly != null) {
+                const bl = int.min(sblr.?, int.min(sblx.?, sbly.?));
+                const len = result.len - (result.len % bl);
+
+                while (i < len) : (i += bl) {
+                    if (comptime op == numeric.add)
+                        simd.add_(result.data + i, x.data + i, y.data + i, bl)
+                    else if (comptime op == numeric.sub)
+                        simd.sub_(result.data + i, x.data + i, y.data + i, bl);
+                }
+            }
+        }
+
         while (i < result.len) : (i += 1) {
             result.data[i] = if (comptime rinfo != .error_union)
                 op(x.data[i], y.data[i])

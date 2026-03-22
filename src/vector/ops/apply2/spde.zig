@@ -5,7 +5,9 @@ const types = @import("../../../types.zig");
 const numeric = @import("../../../numeric.zig");
 const vector = @import("../../../vector.zig");
 
-pub fn apply2(allocator: std.mem.Allocator, x: anytype, y: anytype, comptime op: anytype) !vector.Apply2(@TypeOf(x), @TypeOf(y), op) {
+const vecops = @import("../../ops.zig");
+
+pub fn apply2(allocator: std.mem.Allocator, x: anytype, y: anytype, comptime op: anytype) !vecops.Apply2(@TypeOf(x), @TypeOf(y), op) {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
     comptime var R = types.ReturnTypeFromInputs(op, &.{ types.Numeric(X), types.Numeric(Y) });
@@ -22,38 +24,56 @@ pub fn apply2(allocator: std.mem.Allocator, x: anytype, y: anytype, comptime op:
     var i: usize = 0;
     if (y.inc == 1) {
         var ix: usize = 0;
-        while (i < result.len) : (i += 1) {
-            if (x.idx[ix] == i) {
-                result.data[i] = if (comptime rinfo != .error_union)
-                    op(x.data[ix], y.data[i])
+        while (ix < x.nnz) : (ix += 1) {
+            while (i < x.idx[ix]) : (i += 1) {
+                if (comptime rinfo != .error_union)
+                    op(&result.data[i], numeric.zero(types.Numeric(X)), y.data[i])
                 else
-                    try op(x.data[ix], y.data[i]);
-
-                ix += 1;
-            } else {
-                result.data[i] = if (comptime rinfo != .error_union)
-                    op(numeric.zero(types.Numeric(X)), y.data[i])
-                else
-                    try op(numeric.zero(types.Numeric(X)), y.data[i]);
+                    try op(&result.data[i], numeric.zero(types.Numeric(X)), y.data[i]);
             }
+
+            if (comptime rinfo != .error_union)
+                op(&result.data[i], x.data[ix], y.data[i])
+            else
+                try op(&result.data[i], x.data[ix], y.data[i]);
+
+            i += 1;
+        }
+
+        while (i < result.len) : (i += 1) {
+            if (comptime rinfo != .error_union)
+                op(&result.data[i], numeric.zero(types.Numeric(X)), y.data[i])
+            else
+                try op(&result.data[i], numeric.zero(types.Numeric(X)), y.data[i]);
         }
     } else {
         var ix: usize = 0;
         var iy: isize = if (y.inc < 0) (-numeric.cast(isize, y.len) + 1) * y.inc else 0;
-        while (i < result.len) : (i += 1) {
-            if (x.idx[ix] == i) {
-                result.data[i] = if (comptime rinfo != .error_union)
-                    op(x.data[ix], y.data[numeric.cast(usize, iy)])
-                else
-                    try op(x.data[ix], y.data[numeric.cast(usize, iy)]);
 
-                ix += 1;
-            } else {
-                result.data[i] = if (comptime rinfo != .error_union)
-                    op(numeric.zero(types.Numeric(X)), y.data[numeric.cast(usize, iy)])
+        while (ix < x.nnz) : (ix += 1) {
+            while (i < x.idx[ix]) : (i += 1) {
+                if (comptime rinfo != .error_union)
+                    op(&result.data[i], numeric.zero(types.Numeric(X)), y.data[numeric.cast(usize, iy)])
                 else
-                    try op(numeric.zero(types.Numeric(X)), y.data[numeric.cast(usize, iy)]);
+                    try op(&result.data[i], numeric.zero(types.Numeric(X)), y.data[numeric.cast(usize, iy)]);
+
+                iy += y.inc;
             }
+
+            if (comptime rinfo != .error_union)
+                op(&result.data[i], x.data[ix], y.data[numeric.cast(usize, iy)])
+            else
+                try op(&result.data[i], x.data[ix], y.data[numeric.cast(usize, iy)]);
+
+            i += 1;
+            iy += y.inc;
+        }
+
+        while (i < result.len) : (i += 1) {
+            if (comptime rinfo != .error_union)
+                op(&result.data[i], numeric.zero(types.Numeric(X)), y.data[numeric.cast(usize, iy)])
+            else
+                try op(&result.data[i], numeric.zero(types.Numeric(X)), y.data[numeric.cast(usize, iy)]);
 
             iy += y.inc;
         }
