@@ -59,7 +59,7 @@ pub inline fn conj(x: anytype) numeric.Conj(@TypeOf(x)) {
         .int => return x,
         .float => return x,
         .dyadic => return x,
-        .complex => return complex.conj(x),
+        .complex => return x.conj(),
         .custom => {
             const Impl: type = comptime types.anyHasMethod(
                 &.{ R, X },

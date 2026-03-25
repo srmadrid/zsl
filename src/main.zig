@@ -13,29 +13,13 @@ pub fn main() !void {
     var prng = std.Random.DefaultPrng.init(@bitCast(std.time.timestamp()));
     const rand = prng.random();
 
-    var n: usize = 5;
+    var n: usize = 10000000;
     _ = &n;
 
-    var u = try randomVector(zsl.vector.Dense(zsl.cf64), allocator, rand, n);
-    defer u.deinit(allocator);
-    printVector("u", u);
-
-    var v = try randomVector(zsl.vector.Dense(f64), allocator, rand, n);
-    defer v.deinit(allocator);
-    printVector("v", v);
-
-    // var w = try zsl.vector.mul(allocator, v, 2);
-    // defer w.deinit(allocator);
-    // printVector("w", w);
-
-    var x: zsl.vector.Dense(zsl.cf64) = try .init(allocator, n);
-    defer x.deinit(allocator);
-
-    const start_time = std.time.nanoTimestamp();
-    try zsl.vector.sub_(&x, u, v);
-    const end_time = std.time.nanoTimestamp();
-    std.debug.print("zsl.vector.add_ took {d} seconds on vectors of length {}\n", .{ (zsl.numeric.cast(f128, end_time) - zsl.numeric.cast(f128, start_time)) / 1e9, n });
-    printVector("x", x);
+    var A = try randomMatrix(zsl.matrix.triangular.Sparse(f64, .lower, .unit, .row_major), allocator, rand, 20, 10);
+    defer A.deinit(allocator);
+    printMatrix("A", A);
+    // printMatrix("A^T", A.transpose());
 }
 
 fn avg(values: []const f64) f64 {
@@ -592,879 +576,254 @@ fn print_complex_matrix(desc: []const u8, m: u32, n: u32, a: []zsl.cf64, lda: u3
     }
 }
 
-fn ask_user(default: u32) !u32 {
-    const stdin = std.io.getStdIn().reader();
-    const stdout = std.io.getStdOut().writer();
-
-    var buf: [10]u8 = undefined;
-
-    try stdout.print("Enter the number of iterations: ", .{});
-
-    if (try (stdin.readUntilDelimiterOrEof(buf[0..], '\n'))) |user_input| {
-        return std.fmt.parseInt(u32, user_input, 10);
-    } else {
-        return default;
-    }
-}
-
-fn fill(a: anytype, factor: u32) void {
-    const A: type = zsl.types.Numeric(@TypeOf(a));
-    if (comptime zsl.types.isVector(@TypeOf(a))) {
-        var i: u32 = 0;
-        while (i < a.len) : (i += 1) {
-            if (comptime zsl.types.isComplex(A)) {
-                a.data[i] = A.init(zsl.scast(zsl.types.Scalar(A), i + factor), zsl.scast(zsl.types.Scalar(A), i + factor));
-            } else {
-                a.data[i] = zsl.scast(A, i + factor);
-            }
-        }
-
-        return;
-    }
-
-    switch (comptime zsl.types.matrixType(@TypeOf(a))) {
-        .general, .triangular => {
-            var i: u32 = 0;
-            while (i < a.rows * a.cols) : (i += 1) {
-                if (comptime zsl.types.isComplex(A)) {
-                    a.data[i] = A.init(zsl.scast(zsl.types.Scalar(A), i + factor), zsl.scast(zsl.types.Scalar(A), i + factor));
-                } else {
-                    a.data[i] = zsl.scast(A, i + factor);
-                }
-            }
-        },
-        .symmetric, .hermitian => {
-            var i: u32 = 0;
-            while (i < a.size * a.size) : (i += 1) {
-                if (i % (a.size + 1) == 0) {
-                    if (comptime zsl.types.isComplex(A)) {
-                        a.data[i] = A.init(zsl.scast(zsl.types.Scalar(A), i + factor), if (comptime zsl.types.isHermitianMatrix(@TypeOf(a))) 0 else zsl.scast(zsl.types.Scalar(A), i + factor));
-                    } else {
-                        a.data[i] = zsl.scast(A, i + factor);
-                    }
-                } else {
-                    if (comptime zsl.types.isComplex(A)) {
-                        a.data[i] = A.init(zsl.scast(zsl.types.Scalar(A), i + factor), zsl.scast(zsl.types.Scalar(A), i + factor));
-                    } else {
-                        a.data[i] = zsl.scast(A, i + factor);
-                    }
-                }
-            }
-        },
-        .diagonal => {
-            var i: u32 = 0;
-            while (i < zsl.int.min(a.rows, a.cols)) : (i += 1) {
-                if (comptime zsl.types.isComplex(A)) {
-                    a.data[i] = A.init(zsl.scast(zsl.types.Scalar(A), i + factor), zsl.scast(zsl.types.Scalar(A), i + factor));
-                } else {
-                    a.data[i] = zsl.scast(A, i + factor);
-                }
-            }
-        },
-        .banded => {
-            var i: u32 = 0;
-            while (i < (a.lower + a.upper + 1) * if (zsl.types.orderOf(@TypeOf(a)) == .col_major) a.cols else a.rows) : (i += 1) {
-                if (comptime zsl.types.isComplex(A)) {
-                    a.data[i] = A.init(zsl.scast(zsl.types.Scalar(A), i + factor), zsl.scast(zsl.types.Scalar(A), i + factor));
-                } else {
-                    a.data[i] = zsl.scast(A, i + factor);
-                }
-            }
-        },
-        .tridiagonal => {
-            var i: u32 = 0;
-            while (i < (3 * a.size - 2)) : (i += 1) {
-                if (comptime zsl.types.isComplex(A)) {
-                    a.data[i] = A.init(zsl.scast(zsl.types.Scalar(A), i + factor), zsl.scast(zsl.types.Scalar(A), i + factor));
-                } else {
-                    a.data[i] = zsl.scast(A, i + factor);
-                }
-            }
-        },
-        .permutation => {
-            randomPermutation(a.data[0..a.size]);
-        },
-        else => unreachable,
-    }
-}
-
-fn print(name: []const u8, a: anytype) void {
-    if (comptime zsl.types.isVector(@TypeOf(a))) {
-        std.debug.print("Vector {s}:\n", .{name});
-        var i: u32 = 0;
-        while (i < a.len) : (i += 1) {
-            if (comptime zsl.types.isComplex(zsl.types.Numeric(@TypeOf(a)))) {
-                std.debug.print("{d:3} + {d:3}i\n", .{ (a.get(i) catch unreachable).re, (a.get(i) catch unreachable).im });
-            } else {
-                std.debug.print("{d:3}\n", .{a.get(i) catch unreachable});
-            }
-        }
-    } else {
-        std.debug.print("Matrix {s}:\n", .{name});
-        if (comptime zsl.types.isSymmetricDenseMatrix(@TypeOf(a)) or zsl.types.isHermitianDenseMatrix(@TypeOf(a)) or zsl.types.isTridiagonalDenseMatrix(@TypeOf(a)) or zsl.types.isSymmetricSparseMatrix(@TypeOf(a)) or zsl.types.isHermitianSparseMatrix(@TypeOf(a)) or zsl.types.isSymmetricBlockSparseMatrix(@TypeOf(a)) or zsl.types.isHermitianBlockSparseMatrix(@TypeOf(a))) {
-            var i: u32 = 0;
-            while (i < a.size) : (i += 1) {
-                var j: u32 = 0;
-                while (j < a.size) : (j += 1) {
-                    if (comptime zsl.types.isComplex(zsl.types.Numeric(@TypeOf(a)))) {
-                        std.debug.print("{d:8.4} + {d:8.4}i  ", .{ (a.get(i, j) catch unreachable).re, (a.get(i, j) catch unreachable).im });
-                    } else {
-                        std.debug.print("{d:8.4}  ", .{a.get(i, j) catch unreachable});
-                    }
-                }
-                std.debug.print("\n", .{});
-            }
-            std.debug.print("\n", .{});
-        } else if (comptime zsl.types.isPermutationSparseMatrix(@TypeOf(a))) {
-            var i: u32 = 0;
-            while (i < a.size) : (i += 1) {
-                var j: u32 = 0;
-                while (j < a.size) : (j += 1) {
-                    if (comptime zsl.types.isComplex(zsl.types.Numeric(@TypeOf(a)))) {
-                        std.debug.print("{d}  ", .{(a.get(i, j) catch unreachable).re});
-                    } else {
-                        std.debug.print("{d}  ", .{a.get(i, j) catch unreachable});
-                    }
-                }
-                std.debug.print("\n", .{});
-            }
-            std.debug.print("\n", .{});
-        } else {
-            var i: u32 = 0;
-            while (i < a.rows) : (i += 1) {
-                var j: u32 = 0;
-                while (j < a.cols) : (j += 1) {
-                    if (comptime zsl.types.isComplex(zsl.types.Numeric(@TypeOf(a)))) {
-                        std.debug.print("{d:8.4} + {d:8.4}i  ", .{ (a.get(i, j) catch unreachable).re, (a.get(i, j) catch unreachable).im });
-                    } else {
-                        std.debug.print("{d:8.4}  ", .{a.get(i, j) catch unreachable});
-                    }
-                }
-                std.debug.print("\n", .{});
-            }
-            std.debug.print("\n", .{});
-        }
-    }
-}
-
-fn randomPermutation(data: []u32) void {
-    //std.Thread.sleep(1000000000);
-
-    var prng = std.Random.DefaultPrng.init(@bitCast(std.time.timestamp()));
-    const rand = prng.random();
-
+fn randomPermutation(rand: std.Random, data: []usize) void {
     // Initialize with identity permutation
-    var i: u32 = 0;
+    var i: usize = 0;
     while (i < data.len) : (i += 1) {
         data[i] = i;
     }
 
     // Shuffle using Fisher-Yates algorithm
-    i = zsl.scast(u32, data.len - 1);
+    i = data.len - 1;
     while (i > 0) : (i -= 1) {
-        const j = rand.intRangeAtMost(u32, 0, i);
+        const j = rand.intRangeAtMost(usize, 0, i);
         const temp = data[i];
         data[i] = data[j];
         data[j] = temp;
     }
 }
 
-fn binopPerfTesting(a: std.mem.Allocator) !void {
-    const print_mats: bool = true;
-
-    var A: zsl.matrix.General(f64, .col_major) = try .init(a, 8, 8);
-    defer A.deinit(a);
-
-    fill(A, 1);
-    if (print_mats) print("A", A);
-
-    var B: zsl.matrix.Permutation(f64) = try .init(a, 8);
-    defer B.deinit(a);
-
-    fill(B, 2);
-    if (print_mats) print("B", B.transpose());
-
-    const start_time = std.time.nanoTimestamp();
-    var C = try zsl.mul(A, B.transpose(), .{ .matrix_allocator = a });
-    const end_time: i128 = std.time.nanoTimestamp();
-    defer C.deinit(a);
-
-    std.debug.print("Took: {d} seconds\n\n", .{zsl.float.div(end_time - start_time, 1e9)});
-
-    if (print_mats) print("C = A * B", C);
-}
-
-fn decompPerfTesting(a: std.mem.Allocator) !void {
-    const print_mats: bool = false;
-
-    var A: zsl.matrix.General(zsl.cf64, .row_major) = try .init(a, 2000, 1000);
-    defer A.deinit(a);
-
-    //fill(A, 2);
-    random_buffer_fill_complex(A.data[0 .. A.rows * A.cols]);
-    if (print_mats) print("A", A);
-
-    const tau: []zsl.cf64 = try a.alloc(zsl.cf64, zsl.int.min(A.rows, A.cols));
-    defer a.free(tau);
-    const work: []zsl.cf64 = try a.alloc(zsl.cf64, A.cols * 32);
-    defer a.free(work);
-
-    var start_time = std.time.nanoTimestamp();
-    var qr = try zsl.linalg.qr(a, A, .{});
-    var end_time: i128 = std.time.nanoTimestamp();
-    defer qr.deinit(a);
-
-    std.debug.print("Decomposition took: {d} seconds\n\n", .{zsl.float.div(end_time - start_time, 1e9)});
-
-    var q = try qr.q(a, .full, .{});
-    defer q.deinit(a);
-    const r = qr.r(.full);
-
-    if (print_mats) print("Q", q);
-    if (print_mats) print("R", r);
-
-    start_time = std.time.nanoTimestamp();
-    var A_reconstructed = try zsl.mul(q, r, .{ .matrix_allocator = a });
-    defer A_reconstructed.deinit(a);
-    end_time = std.time.nanoTimestamp();
-
-    std.debug.print("Reconstruction took: {d} seconds\n\n", .{zsl.float.div(end_time - start_time, 1e9)});
-
-    if (print_mats) print("A reconstructed", A_reconstructed);
-
-    std.debug.print("||A - A_r||_F = {d}\n", .{try frobernius_norm_difference_matrix(A, A_reconstructed)});
-}
-
-fn random_matrix_t(
-    comptime T: type,
-    allocator: std.mem.Allocator,
-    rand: std.Random,
-    rows: u32,
-    cols: u32,
-) !T {
-    switch (comptime zsl.types.matrixType(T)) {
+fn randomMatrix(comptime M: type, allocator: std.mem.Allocator, rand: std.Random, rows: usize, cols: usize) !M {
+    switch (comptime zsl.types.matrixType(M)) {
         .general_dense => {
-            var result: T = try .init(allocator, rows, cols);
+            var result: M = try .init(allocator, rows, cols);
 
-            var i: u32 = 0;
+            var i: usize = 0;
             while (i < rows) : (i += 1) {
-                var j: u32 = 0;
+                var j: usize = 0;
                 while (j < cols) : (j += 1) {
-                    if (comptime !zsl.types.isArbitraryPrecision(zsl.types.Numeric(T))) {
-                        if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
-                            result.set(i, j, zsl.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
-                        } else {
-                            result.set(i, j, rand.float(zsl.types.Numeric(T))) catch unreachable;
-                        }
-                    } else {
-                        if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
-                            var re: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                            re.num.positive = rand.boolean();
-                            var im: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                            im.num.positive = rand.boolean();
-                            const complex: zsl.Complex(zsl.Rational) = zsl.Complex(zsl.Rational){
-                                .re = re,
-                                .im = im,
-                                .flags = .{ .owns_data = true, .writable = true },
-                            };
-                            result.set(i, j, complex) catch unreachable;
-                        } else {
-                            var rational: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                            rational.num.positive = rand.float(f64) < 0.5;
-                            result.set(i, j, rational) catch unreachable;
-                        }
-                    }
+                    result.set(
+                        i,
+                        j,
+                        zsl.numeric.cast(
+                            zsl.types.Numeric(M),
+                            if (comptime zsl.types.isComplex(zsl.types.Numeric(M)))
+                                zsl.cf64{ .re = rand.float(f64), .im = rand.float(f64) }
+                            else
+                                rand.float(f64),
+                        ),
+                    ) catch unreachable;
                 }
             }
 
             return result;
         },
         .symmetric_dense, .hermitian_dense => {
-            var result: T = try .init(allocator, rows);
+            var result: M = try .init(allocator, rows);
 
-            if (comptime zsl.types.uploOf(T) == .upper) {
-                var i: u32 = 0;
-                while (i < rows) : (i += 1) {
-                    var j: u32 = i;
-                    while (j < rows) : (j += 1) {
-                        if (comptime !zsl.types.isArbitraryPrecision(zsl.types.Numeric(T))) {
-                            if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
-                                if ((comptime zsl.types.isHermitianDenseMatrix(T)) and i == j) {
-                                    result.set(i, j, zsl.types.Numeric(T).init(rand.float(f64), 0)) catch unreachable;
-                                } else {
-                                    result.set(i, j, zsl.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
-                                }
-                            } else {
-                                result.set(i, j, rand.float(zsl.types.Numeric(T))) catch unreachable;
-                            }
-                        } else {
-                            if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
-                                if ((comptime zsl.types.isHermitianDenseMatrix(T)) and i == j) {
-                                    var re: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                                    re.num.positive = rand.boolean();
-                                    const complex: zsl.Complex(zsl.Rational) = zsl.Complex(zsl.Rational){
-                                        .re = re,
-                                        .im = zsl.zero(zsl.Rational, .{}) catch unreachable,
-                                        .flags = .{ .owns_data = true, .writable = true },
-                                    };
-                                    result.set(i, j, complex) catch unreachable;
-                                } else {
-                                    var re: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                                    re.num.positive = rand.boolean();
-                                    var im: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                                    im.num.positive = rand.boolean();
-                                    const complex: zsl.Complex(zsl.Rational) = zsl.Complex(zsl.Rational){
-                                        .re = re,
-                                        .im = im,
-                                        .flags = .{ .owns_data = true, .writable = true },
-                                    };
-                                    result.set(i, j, complex) catch unreachable;
-                                }
-                            } else {
-                                var rational: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                                rational.num.positive = rand.float(f64) < 0.5;
-                                result.set(i, j, rational) catch unreachable;
-                            }
-                        }
-                    }
-                }
-            } else {
-                var i: u32 = 0;
-                while (i < rows) : (i += 1) {
-                    var j: u32 = 0;
-                    while (j < rows) : (j += 1) {
-                        if (comptime !zsl.types.isArbitraryPrecision(zsl.types.Numeric(T))) {
-                            if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
-                                if ((comptime zsl.types.isHermitianDenseMatrix(T)) and i == j) {
-                                    result.set(i, j, zsl.types.Numeric(T).init(rand.float(f64), 0)) catch unreachable;
-                                } else {
-                                    result.set(i, j, zsl.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
-                                }
-                            } else {
-                                result.set(i, j, rand.float(zsl.types.Numeric(T))) catch unreachable;
-                            }
-                        } else {
-                            if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
-                                if ((comptime zsl.types.isHermitianDenseMatrix(T)) and i == j) {
-                                    var re: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                                    re.num.positive = rand.boolean();
-                                    const complex: zsl.Complex(zsl.Rational) = zsl.Complex(zsl.Rational){
-                                        .re = re,
-                                        .im = zsl.zero(zsl.Rational, .{}) catch unreachable,
-                                        .flags = .{ .owns_data = true, .writable = true },
-                                    };
-                                    result.set(i, j, complex) catch unreachable;
-                                } else {
-                                    var re: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                                    re.num.positive = rand.boolean();
-                                    var im: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                                    im.num.positive = rand.boolean();
-                                    const complex: zsl.Complex(zsl.Rational) = zsl.Complex(zsl.Rational){
-                                        .re = re,
-                                        .im = im,
-                                        .flags = .{ .owns_data = true, .writable = true },
-                                    };
-                                    result.set(i, j, complex) catch unreachable;
-                                }
-                            } else {
-                                var rational: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                                rational.num.positive = rand.float(f64) < 0.5;
-                                result.set(i, j, rational) catch unreachable;
-                            }
-                        }
-                    }
+            var i: usize = 0;
+            while (i < rows) : (i += 1) {
+                var j: usize = i;
+                while (j < rows) : (j += 1) {
+                    result.set(
+                        i,
+                        j,
+                        zsl.numeric.cast(
+                            zsl.types.Numeric(M),
+                            if (comptime zsl.types.isComplex(zsl.types.Numeric(M)))
+                                zsl.cf64{ .re = rand.float(f64), .im = if ((comptime zsl.types.isHermitianMatrix(M)) and i == j) 0.0 else rand.float(f64) }
+                            else
+                                rand.float(f64),
+                        ),
+                    ) catch unreachable;
                 }
             }
 
             return result;
         },
         .triangular_dense => {
-            var result: T = try T.init(allocator, rows, cols);
+            var result: M = try M.init(allocator, rows, cols);
 
-            if (comptime zsl.types.uploOf(T) == .upper) {
-                var i: u32 = 0;
+            if (comptime zsl.types.uploOf(M) == .upper) {
+                var i: usize = 0;
                 while (i < zsl.int.min(rows, cols)) : (i += 1) {
-                    if (comptime zsl.types.diagOf(T) == .non_unit) {
-                        if (comptime !zsl.types.isArbitraryPrecision(zsl.types.Numeric(T))) {
-                            if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
-                                result.set(i, i, zsl.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
-                            } else {
-                                result.set(i, i, rand.float(zsl.types.Numeric(T))) catch unreachable;
-                            }
-                        } else {
-                            if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
-                                var re: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                                re.num.positive = rand.boolean();
-                                var im: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                                im.num.positive = rand.boolean();
-                                const complex: zsl.Complex(zsl.Rational) = zsl.Complex(zsl.Rational){
-                                    .re = re,
-                                    .im = im,
-                                    .flags = .{ .owns_data = true, .writable = true },
-                                };
-                                result.set(i, i, complex) catch unreachable;
-                            } else {
-                                var rational: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                                rational.num.positive = rand.float(f64) < 0.5;
-                                result.set(i, i, rational) catch unreachable;
-                            }
-                        }
+                    if (comptime zsl.types.diagOf(M) == .non_unit) {
+                        result.set(
+                            i,
+                            i,
+                            zsl.numeric.cast(
+                                zsl.types.Numeric(M),
+                                if (comptime zsl.types.isComplex(zsl.types.Numeric(M)))
+                                    zsl.cf64{ .re = rand.float(f64), .im = rand.float(f64) }
+                                else
+                                    rand.float(f64),
+                            ),
+                        ) catch unreachable;
                     }
 
-                    var j: u32 = i + 1;
+                    var j: usize = i + 1;
                     while (j < cols) : (j += 1) {
-                        if (comptime !zsl.types.isArbitraryPrecision(zsl.types.Numeric(T))) {
-                            if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
-                                result.set(i, j, zsl.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
-                            } else {
-                                result.set(i, j, rand.float(zsl.types.Numeric(T))) catch unreachable;
-                            }
-                        } else {
-                            if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
-                                var re: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                                re.num.positive = rand.boolean();
-                                var im: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                                im.num.positive = rand.boolean();
-                                const complex: zsl.Complex(zsl.Rational) = zsl.Complex(zsl.Rational){
-                                    .re = re,
-                                    .im = im,
-                                    .flags = .{ .owns_data = true, .writable = true },
-                                };
-                                result.set(i, j, complex) catch unreachable;
-                            } else {
-                                var rational: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                                rational.num.positive = rand.float(f64) < 0.5;
-                                result.set(i, j, rational) catch unreachable;
-                            }
-                        }
+                        result.set(
+                            i,
+                            j,
+                            zsl.numeric.cast(
+                                zsl.types.Numeric(M),
+                                if (comptime zsl.types.isComplex(zsl.types.Numeric(M)))
+                                    zsl.cf64{ .re = rand.float(f64), .im = rand.float(f64) }
+                                else
+                                    rand.float(f64),
+                            ),
+                        ) catch unreachable;
                     }
                 }
             } else {
-                var i: u32 = 0;
+                var i: usize = 0;
                 while (i < rows) : (i += 1) {
-                    var j: u32 = 0;
+                    var j: usize = 0;
                     while (j < i and j < cols) : (j += 1) {
-                        if (comptime !zsl.types.isArbitraryPrecision(zsl.types.Numeric(T))) {
-                            if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
-                                result.set(i, j, zsl.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
-                            } else {
-                                result.set(i, j, rand.float(zsl.types.Numeric(T))) catch unreachable;
-                            }
-                        } else {
-                            if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
-                                var re: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                                re.num.positive = rand.boolean();
-                                var im: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                                im.num.positive = rand.boolean();
-                                const complex: zsl.Complex(zsl.Rational) = zsl.Complex(zsl.Rational){
-                                    .re = re,
-                                    .im = im,
-                                    .flags = .{ .owns_data = true, .writable = true },
-                                };
-                                result.set(i, j, complex) catch unreachable;
-                            } else {
-                                var rational: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                                rational.num.positive = rand.float(f64) < 0.5;
-                                result.set(i, j, rational) catch unreachable;
-                            }
-                        }
+                        result.set(
+                            i,
+                            j,
+                            zsl.numeric.cast(
+                                zsl.types.Numeric(M),
+                                if (comptime zsl.types.isComplex(zsl.types.Numeric(M)))
+                                    zsl.cf64{ .re = rand.float(f64), .im = rand.float(f64) }
+                                else
+                                    rand.float(f64),
+                            ),
+                        ) catch unreachable;
                     }
 
-                    if ((comptime zsl.types.diagOf(T) == .non_unit) and i < cols) {
-                        if (comptime !zsl.types.isArbitraryPrecision(zsl.types.Numeric(T))) {
-                            if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
-                                result.set(i, i, zsl.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
-                            } else {
-                                result.set(i, i, rand.float(zsl.types.Numeric(T))) catch unreachable;
-                            }
-                        } else {
-                            if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
-                                var re: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                                re.num.positive = rand.boolean();
-                                var im: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                                im.num.positive = rand.boolean();
-                                const complex: zsl.Complex(zsl.Rational) = zsl.Complex(zsl.Rational){
-                                    .re = re,
-                                    .im = im,
-                                    .flags = .{ .owns_data = true, .writable = true },
-                                };
-                                result.set(i, i, complex) catch unreachable;
-                            } else {
-                                var rational: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                                rational.num.positive = rand.float(f64) < 0.5;
-                                result.set(i, i, rational) catch unreachable;
-                            }
-                        }
+                    if ((comptime zsl.types.diagOf(M) == .non_unit) and i < cols) {
+                        result.set(
+                            i,
+                            i,
+                            zsl.numeric.cast(
+                                zsl.types.Numeric(M),
+                                if (comptime zsl.types.isComplex(zsl.types.Numeric(M)))
+                                    zsl.cf64{ .re = rand.float(f64), .im = rand.float(f64) }
+                                else
+                                    rand.float(f64),
+                            ),
+                        ) catch unreachable;
                     }
                 }
             }
-
-            return result;
-        },
-        .banded => {
-            const lower = rand.intRangeAtMost(u32, 0, rows - 1);
-            const upper = rand.intRangeAtMost(u32, 0, cols - 1);
-            var result: T = try .init(allocator, rows, cols, lower, upper);
-            errdefer result.deinit(allocator);
-
-            var i: u32 = 0;
-            while (i < rows) : (i += 1) {
-                const j_start = if (i >= lower) i - lower else 0;
-                const j_end = zsl.int.min(cols, i + upper + 1);
-                var j: u32 = j_start;
-                while (j < j_end) : (j += 1) {
-                    if (comptime !zsl.types.isArbitraryPrecision(zsl.types.Numeric(T))) {
-                        if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
-                            result.set(i, j, zsl.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
-                        } else {
-                            result.set(i, j, rand.float(zsl.types.Numeric(T))) catch unreachable;
-                        }
-                    } else {
-                        if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
-                            var re: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                            re.num.positive = rand.boolean();
-                            var im: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                            im.num.positive = rand.boolean();
-                            const complex: zsl.Complex(zsl.Rational) = zsl.Complex(zsl.Rational){
-                                .re = re,
-                                .im = im,
-                                .flags = .{ .owns_data = true, .writable = true },
-                            };
-                            result.set(i, j, complex) catch unreachable;
-                        } else {
-                            var rational: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                            rational.num.positive = rand.float(f64) < 0.5;
-                            result.set(i, j, rational) catch unreachable;
-                        }
-                    }
-                }
-            }
-
-            return result;
-        },
-        .diagonal => {
-            var result: T = try .init(allocator, rows, cols);
-            errdefer result.deinit(allocator);
-
-            var i: u32 = 0;
-            while (i < zsl.int.min(rows, cols)) : (i += 1) {
-                if (comptime !zsl.types.isArbitraryPrecision(zsl.types.Numeric(T))) {
-                    if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
-                        result.set(i, i, zsl.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
-                    } else {
-                        result.set(i, i, rand.float(zsl.types.Numeric(T))) catch unreachable;
-                    }
-                } else {
-                    if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
-                        var re: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                        re.num.positive = rand.boolean();
-                        var im: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                        im.num.positive = rand.boolean();
-                        const complex: zsl.Complex(zsl.Rational) = zsl.Complex(zsl.Rational){
-                            .re = re,
-                            .im = im,
-                            .flags = .{ .owns_data = true, .writable = true },
-                        };
-                        result.set(i, i, complex) catch unreachable;
-                    } else {
-                        var rational: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                        rational.num.positive = rand.float(f64) < 0.5;
-                        result.set(i, i, rational) catch unreachable;
-                    }
-                }
-            }
-
-            return result;
-        },
-        .tridiagonal => {
-            var result: T = try .init(allocator, rows);
-            errdefer result.deinit(allocator);
-
-            var i: u32 = 0;
-            while (i < rows) : (i += 1) {
-                if (i > 0) {
-                    if (comptime !zsl.types.isArbitraryPrecision(zsl.types.Numeric(T))) {
-                        if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
-                            result.set(i, i - 1, zsl.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
-                        } else {
-                            result.set(i, i - 1, rand.float(zsl.types.Numeric(T))) catch unreachable;
-                        }
-                    } else {
-                        if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
-                            var re: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                            re.num.positive = rand.boolean();
-                            var im: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                            im.num.positive = rand.boolean();
-                            const complex: zsl.Complex(zsl.Rational) = zsl.Complex(zsl.Rational){
-                                .re = re,
-                                .im = im,
-                                .flags = .{ .owns_data = true, .writable = true },
-                            };
-                            result.set(i, i - 1, complex) catch unreachable;
-                        } else {
-                            var rational: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                            rational.num.positive = rand.float(f64) < 0.5;
-                            result.set(i, i - 1, rational) catch unreachable;
-                        }
-                    }
-                }
-
-                if (comptime !zsl.types.isArbitraryPrecision(zsl.types.Numeric(T))) {
-                    if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
-                        result.set(i, i, zsl.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
-                    } else {
-                        result.set(i, i, rand.float(zsl.types.Numeric(T))) catch unreachable;
-                    }
-                } else {
-                    if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
-                        var re: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                        re.num.positive = rand.boolean();
-                        var im: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                        im.num.positive = rand.boolean();
-                        const complex: zsl.Complex(zsl.Rational) = zsl.Complex(zsl.Rational){
-                            .re = re,
-                            .im = im,
-                            .flags = .{ .owns_data = true, .writable = true },
-                        };
-                        result.set(i, i, complex) catch unreachable;
-                    } else {
-                        var rational: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                        rational.num.positive = rand.float(f64) < 0.5;
-                        result.set(i, i, rational) catch unreachable;
-                    }
-                }
-
-                if (i + 1 < cols) {
-                    if (comptime !zsl.types.isArbitraryPrecision(zsl.types.Numeric(T))) {
-                        if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
-                            result.set(i, i + 1, zsl.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
-                        } else {
-                            result.set(i, i + 1, rand.float(zsl.types.Numeric(T))) catch unreachable;
-                        }
-                    } else {
-                        if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
-                            var re: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                            re.num.positive = rand.boolean();
-                            var im: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                            im.num.positive = rand.boolean();
-                            const complex: zsl.Complex(zsl.Rational) = zsl.Complex(zsl.Rational){
-                                .re = re,
-                                .im = im,
-                                .flags = .{ .owns_data = true, .writable = true },
-                            };
-                            result.set(i, i + 1, complex) catch unreachable;
-                        } else {
-                            var rational: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                            rational.num.positive = rand.float(f64) < 0.5;
-                            result.set(i, i + 1, rational) catch unreachable;
-                        }
-                    }
-                }
-            }
-
-            return result;
-        },
-        .permutation => {
-            var result: T = try .init(allocator, rows);
-            errdefer result.deinit(allocator);
-
-            randomPermutation(result.data[0..rows]);
 
             return result;
         },
         .general_sparse => {
-            const nnz: u32 = rand.intRangeAtMost(u32, zsl.int.max(rows, cols), rows * cols / 2);
+            const nnz: usize = zsl.int.max(rows, cols);
 
-            var builder: zsl.matrix.builder.Sparse(zsl.types.Numeric(T), zsl.types.orderOf(T)) = try .init(allocator, rows, cols, nnz);
+            var builder: zsl.matrix.builder.Sparse(zsl.types.Numeric(M), zsl.types.layoutOf(M)) = try .init(allocator, rows, cols, nnz);
             errdefer builder.deinit(allocator);
 
-            // generate random (i, j) pairs
-            var used: std.AutoHashMap([2]u32, void) = .init(allocator);
-            defer used.deinit();
-            var count: u32 = 0;
+            var count: usize = 0;
             while (count < nnz) : (count += 1) {
-                const i = rand.intRangeAtMost(u32, 0, rows - 1);
-                const j = rand.intRangeAtMost(u32, 0, cols - 1);
-                if (!used.contains(.{ i, j })) {
-                    try used.put(.{ i, j }, {});
-                    if (comptime !zsl.types.isArbitraryPrecision(zsl.types.Numeric(T))) {
-                        if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
-                            builder.set(allocator, i, j, zsl.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
-                        } else {
-                            builder.set(allocator, i, j, rand.float(zsl.types.Numeric(T))) catch unreachable;
-                        }
-                    } else {
-                        if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
-                            var re: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                            re.num.positive = rand.boolean();
-                            var im: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                            im.num.positive = rand.boolean();
-                            const complex: zsl.Complex(zsl.Rational) = zsl.Complex(zsl.Rational){
-                                .re = re,
-                                .im = im,
-                                .flags = .{ .owns_data = true, .writable = true },
-                            };
-                            builder.set(allocator, i, j, complex) catch unreachable;
-                        } else {
-                            var rational: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                            rational.num.positive = rand.float(f64) < 0.5;
-                            builder.set(allocator, i, j, rational) catch unreachable;
-                        }
-                    }
-                } else {
-                    count -|= 1; // try again
-                }
+                builder.appendAssumeCapacity(
+                    rand.intRangeAtMost(usize, 0, rows - 1),
+                    rand.intRangeAtMost(usize, 0, cols - 1),
+                    zsl.numeric.cast(
+                        zsl.types.Numeric(M),
+                        if (comptime zsl.types.isComplex(zsl.types.Numeric(M)))
+                            zsl.cf64{ .re = rand.float(f64), .im = rand.float(f64) }
+                        else
+                            rand.float(f64),
+                    ),
+                );
             }
 
             return try builder.compile(allocator);
         },
         .symmetric_sparse, .hermitian_sparse => {
-            const nnz: u32 = rand.intRangeAtMost(u32, zsl.int.max(rows, rows) / 2, (rows * rows / 2) / 2);
+            const nnz: usize = rows;
 
-            var builder: zsl.matrix.builder.Sparse(zsl.types.Numeric(T), zsl.types.orderOf(T)) = try .init(allocator, rows, rows, nnz);
+            var builder: zsl.matrix.builder.Sparse(zsl.types.Numeric(M), zsl.types.layoutOf(M)) = try .init(allocator, rows, rows, nnz);
             errdefer builder.deinit(allocator);
 
-            // generate random (i, j) pairs
-            var used: std.AutoHashMap([2]u32, void) = .init(allocator);
-            defer used.deinit();
-            var count: u32 = 0;
+            var count: usize = 0;
             while (count < nnz) : (count += 1) {
-                const i = rand.intRangeAtMost(u32, 0, rows - 1);
-                const j = rand.intRangeAtMost(
-                    u32,
-                    if (comptime zsl.types.uploOf(T) == .upper) 0 else 0,
-                    if (comptime zsl.types.uploOf(T) == .upper) rows - 1 else i,
+                const r = rand.intRangeAtMost(usize, 0, rows - 1);
+                const c = rand.intRangeAtMost(usize, 0, cols - 1);
+
+                builder.appendAssumeCapacity(
+                    r,
+                    c,
+                    zsl.numeric.cast(
+                        zsl.types.Numeric(M),
+                        if (comptime zsl.types.isComplex(zsl.types.Numeric(M)))
+                            zsl.cf64{ .re = rand.float(f64), .im = if ((comptime zsl.types.isHermitianMatrix(M)) and r == c) 0.0 else rand.float(f64) }
+                        else
+                            rand.float(f64),
+                    ),
                 );
-                if (!used.contains(.{ i, j })) {
-                    try used.put(.{ i, j }, {});
-                    if (comptime !zsl.types.isArbitraryPrecision(zsl.types.Numeric(T))) {
-                        if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
-                            builder.set(allocator, i, j, zsl.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
-                        } else {
-                            builder.set(allocator, i, j, rand.float(zsl.types.Numeric(T))) catch unreachable;
-                        }
-                    } else {
-                        if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
-                            var re: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                            re.num.positive = rand.boolean();
-                            var im: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                            im.num.positive = rand.boolean();
-                            const complex: zsl.Complex(zsl.Rational) = zsl.Complex(zsl.Rational){
-                                .re = re,
-                                .im = im,
-                                .flags = .{ .owns_data = true, .writable = true },
-                            };
-                            builder.set(allocator, i, j, complex) catch unreachable;
-                        } else {
-                            var rational: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                            rational.num.positive = rand.float(f64) < 0.5;
-                            builder.set(allocator, i, j, rational) catch unreachable;
-                        }
-                    }
-                } else {
-                    count -|= 1; // try again
-                }
             }
 
-            return if (comptime zsl.types.isSymmetricSparseMatrix(T))
-                try builder.compileSymmetric(allocator, zsl.types.uploOf(T), .{ .element_allocator = allocator })
+            return if (comptime zsl.types.isSymmetricSparseMatrix(M))
+                builder.compileSymmetric(allocator, zsl.types.uploOf(M))
             else
-                try builder.compileHermitian(allocator, zsl.types.uploOf(T), .{ .element_allocator = allocator });
+                builder.compileHermitian(allocator, zsl.types.uploOf(M));
         },
         .triangular_sparse => {
-            const nnz: u32 = rand.intRangeAtMost(u32, zsl.int.max(rows, cols) / 2, (rows * cols / 2) / 2);
-            var builder: zsl.matrix.builder.Sparse(zsl.types.Numeric(T), zsl.types.orderOf(T)) = try .init(allocator, rows, cols, nnz);
+            const nnz: usize = zsl.int.max(rows, cols);
+
+            var builder: zsl.matrix.builder.Sparse(zsl.types.Numeric(M), zsl.types.layoutOf(M)) = try .init(allocator, rows, cols, nnz);
             errdefer builder.deinit(allocator);
 
-            // generate random (i, j) pairs
-            var used: std.AutoHashMap([2]u32, void) = .init(allocator);
-            defer used.deinit();
-            var count: u32 = 0;
+            var count: usize = 0;
             while (count < nnz) : (count += 1) {
-                const i = rand.intRangeAtMost(u32, 0, rows - 1);
-                const j = rand.intRangeAtMost(
-                    u32,
-                    if (comptime zsl.types.uploOf(T) == .upper) i else 0,
-                    if (comptime zsl.types.uploOf(T) == .upper) cols - 1 else zsl.int.min(i, cols - 1),
+                const r = rand.intRangeAtMost(usize, 0, rows - 1);
+                const c = rand.intRangeAtMost(usize, 0, cols - 1);
+
+                builder.appendAssumeCapacity(
+                    r,
+                    c,
+                    zsl.numeric.cast(
+                        zsl.types.Numeric(M),
+                        if (comptime zsl.types.isComplex(zsl.types.Numeric(M)))
+                            zsl.cf64{ .re = rand.float(f64), .im = rand.float(f64) }
+                        else
+                            rand.float(f64),
+                    ),
                 );
-
-                if ((comptime zsl.types.diagOf(T) == .unit) and i == j) {
-                    count -|= 1; // skip diagonal elements for unit triangular
-                    continue;
-                }
-
-                if (!used.contains(.{ i, j })) {
-                    try used.put(.{ i, j }, {});
-                    if (comptime !zsl.types.isArbitraryPrecision(zsl.types.Numeric(T))) {
-                        if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
-                            builder.set(allocator, i, j, zsl.types.Numeric(T).init(rand.float(f64), rand.float(f64))) catch unreachable;
-                        } else {
-                            builder.set(allocator, i, j, rand.float(zsl.types.Numeric(T))) catch unreachable;
-                        }
-                    } else {
-                        if (comptime zsl.types.isComplex(zsl.types.Numeric(T))) {
-                            var re: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                            re.num.positive = rand.boolean();
-                            var im: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                            im.num.positive = rand.boolean();
-                            const complex: zsl.Complex(zsl.Rational) = zsl.Complex(zsl.Rational){
-                                .re = re,
-                                .im = im,
-                                .flags = .{ .owns_data = true, .writable = true },
-                            };
-                            builder.set(allocator, i, j, complex) catch unreachable;
-                        } else {
-                            var rational: zsl.Rational = try .initSet(allocator, rand.int(u128), rand.int(u128));
-                            rational.num.positive = rand.float(f64) < 0.5;
-                            builder.set(allocator, i, j, rational) catch unreachable;
-                        }
-                    }
-                } else {
-                    count -|= 1; // try again
-                }
             }
 
-            return try builder.compileTriangular(allocator, zsl.types.uploOf(T), zsl.types.diagOf(T), .{ .element_allocator = allocator });
+            return builder.compileTriangular(allocator, zsl.types.uploOf(M), zsl.types.diagOf(M));
         },
-        .general_block => {
-            var bsize: u32 = if (rows < 4 or cols < 4) 1 else rand.intRangeAtMost(u32, 2, zsl.int.min(rows, cols) / 2);
-            while (rows % bsize != 0 or cols % bsize != 0) : (bsize = rand.intRangeAtMost(u32, 2, zsl.int.min(rows, cols) / 2)) {}
-            const nnzb: u32 = rand.intRangeAtMost(u32, (rows / bsize + cols / bsize) / 2, (rows / bsize) * (cols / bsize) / 2);
+        .diagonal => {
+            var result: M = try .init(allocator, rows, cols);
+            errdefer result.deinit(allocator);
 
-            var builder: zsl.matrix.builder.Block(zsl.types.Numeric(T), zsl.types.borderOf(T), zsl.types.orderOf(T)) = try .init(allocator, bsize, rows, cols, nnzb);
-            errdefer builder.deinit(allocator);
-
-            // generate random (i, j) pairs
-            var used: std.AutoHashMap([2]u32, void) = .init(allocator);
-            defer used.deinit();
-            var count: u32 = 0;
-            while (count < nnzb) : (count += 1) {
-                const i = rand.intRangeAtMost(u32, 0, rows / bsize - 1);
-                const j = rand.intRangeAtMost(u32, 0, cols / bsize - 1);
-                if (!used.contains(.{ i, j })) {
-                    try used.put(.{ i, j }, {});
-                    var block = try random_matrix_t(
-                        zsl.matrix.general.Dense(zsl.types.Numeric(T), zsl.types.borderOf(T)),
-                        allocator,
-                        rand,
-                        bsize,
-                        bsize,
-                    );
-                    defer block.deinit(allocator);
-
-                    try builder.setBlock(allocator, i, j, block);
-                } else {
-                    count -= 1; // try again
-                }
+            var i: usize = 0;
+            while (i < zsl.int.min(rows, cols)) : (i += 1) {
+                result.set(
+                    i,
+                    i,
+                    zsl.numeric.cast(
+                        zsl.types.Numeric(M),
+                        if (comptime zsl.types.isComplex(zsl.types.Numeric(M)))
+                            zsl.cf64{ .re = rand.float(f64), .im = rand.float(f64) }
+                        else
+                            rand.float(f64),
+                    ),
+                ) catch unreachable;
             }
 
-            return try builder.compile(allocator);
+            return result;
+        },
+        .permutation => {
+            var result: M = try .init(allocator, rows);
+            errdefer result.deinit(allocator);
+
+            randomPermutation(rand, result.data[0..rows]);
+
+            return result;
         },
         else => unreachable,
     }
 }
 
-fn print_matrix(a: std.mem.Allocator, desc: []const u8, A: anytype) !void {
+fn printMatrix(desc: []const u8, A: anytype) void {
     std.debug.print("\nMatrix {s}:\n\n", .{desc});
 
     const rows = if (comptime zsl.types.isSquareMatrix(@TypeOf(A)))
@@ -1482,278 +841,15 @@ fn print_matrix(a: std.mem.Allocator, desc: []const u8, A: anytype) !void {
 
         var j: u32 = 0;
         while (j < cols) : (j += 1) {
-            if ((comptime zsl.types.isGeneralBlockMatrix(@TypeOf(A))) and j % A.bsize == 0 and j != 0) {
-                std.debug.print("    ", .{});
-            }
-
-            if (comptime !zsl.types.isArbitraryPrecision(zsl.types.Numeric(@TypeOf(A)))) {
-                if (comptime zsl.types.isComplex(zsl.types.Numeric(@TypeOf(A)))) {
-                    std.debug.print("{d:7.4} + {d:7.4}i,  ", .{ (A.get(i, j) catch unreachable).re, (A.get(i, j) catch unreachable).im });
-                } else {
-                    std.debug.print("{d:5.4},  ", .{A.get(i, j) catch unreachable});
-                }
+            if (comptime zsl.types.isComplex(zsl.types.Numeric(@TypeOf(A)))) {
+                std.debug.print("{d:7.4} + {d:7.4}i    ", .{ (A.get(i, j) catch unreachable).re, (A.get(i, j) catch unreachable).im });
             } else {
-                if (comptime zsl.types.isComplex(zsl.types.Numeric(@TypeOf(A)))) {
-                    std.debug.print("(", .{});
-                    try printRational(a, (A.get(i, j) catch unreachable).re, 20);
-                    std.debug.print(") + i * (", .{});
-                    try printRational(a, (A.get(i, j) catch unreachable).im, 20);
-                    std.debug.print("),  ", .{});
-                } else {
-                    try printRational(a, A.get(i, j) catch unreachable, 20);
-                    std.debug.print(",  ", .{});
-                }
+                std.debug.print("{d:5.4}    ", .{A.get(i, j) catch unreachable});
             }
         }
         std.debug.print("\n", .{});
-        if ((comptime zsl.types.isGeneralBlockMatrix(@TypeOf(A))) and i % A.bsize == A.bsize - 1 and i != rows - 1) {
-            std.debug.print("\n", .{});
-        }
     }
     std.debug.print("\n", .{});
-}
-
-fn matrixTesting(a: std.mem.Allocator) !void {
-    var prng = std.Random.DefaultPrng.init(@bitCast(std.time.timestamp()));
-    const rand = prng.random();
-
-    var A = try random_matrix_t(
-        zsl.matrix.general.Dense(f64, .row_major),
-        a,
-        rand,
-        8,
-        8,
-    );
-    defer A.deinit(a);
-
-    print_matrix("A", A);
-
-    var B = try random_matrix_t(
-        zsl.matrix.general.Dense(f64, .col_major),
-        a,
-        rand,
-        8,
-        8,
-    );
-    defer B.deinit(a);
-
-    print_matrix("B", B);
-
-    var R = try zsl.add(A, B, .{ .matrix_allocator = a });
-    defer R.deinit(a);
-
-    print_matrix("R = B + C", R);
-}
-
-// fn printBigint(a: std.mem.Allocator, x: zsl.Integer) !void {
-//     if (x.size == 0) {
-//         std.debug.print("0\n", .{});
-//         return;
-//     }
-
-//     var tmp: zsl.Integer = try zsl.abs(x, .{ .allocator = a });
-
-//     const BASE10: u64 = 1000000000; // 1e9 chunks
-//     var dec_chunks: []u32 = try a.alloc(u32, 0);
-//     defer a.free(dec_chunks);
-
-//     var dec_len: u32 = 0;
-//     var dec_cap: u32 = 0;
-//     while (tmp.size != 0) {
-//         // Divide tmp by 1e9, get remainder
-//         var q: zsl.Integer = try .init(a, tmp.size);
-//         var rem: u64 = 0;
-
-//         var i: i32 = zsl.scast(i32, tmp.size);
-//         while (i >= 0) : (i -= 1) {
-//             const cur: u64 = (rem << 32) | zsl.scast(u64, tmp.limbs[zsl.scast(u32, i)]);
-//             q.limbs[zsl.scast(u32, i)] = zsl.scast(u32, cur / BASE10);
-//             rem = cur % BASE10;
-//         }
-
-//         // store remainder chunk
-//         if (dec_len == dec_cap) {
-//             dec_cap = if (dec_cap != 0) dec_cap * 2 else 8;
-//             dec_chunks = try a.realloc(dec_chunks, dec_cap);
-//         }
-
-//         dec_chunks[dec_len] = zsl.scast(u32, rem);
-//         dec_len += 1;
-
-//         tmp.deinit(a);
-
-//         tmp = q; // continue dividing
-//     }
-
-//     // Print sign
-//     if (!x.positive)
-//         std.debug.print("-", .{});
-
-//     // Print highest chunk normally, others padded with zeros
-//     std.debug.print("{}", .{dec_chunks[dec_len - 1]});
-//     var i: i32 = zsl.scast(i32, dec_len - 1);
-//     while (i >= 0) : (i -= 1)
-//         std.debug.print("{d:0>9}", .{dec_chunks[zsl.scast(u32, i)]});
-
-//     std.debug.print("\n", .{});
-
-//     tmp.deinit(a);
-// }
-
-fn printBigint(a: std.mem.Allocator, x: zsl.Integer) !void {
-    if (x.size == 0) {
-        std.debug.print("0", .{});
-        return;
-    }
-
-    var tmp: zsl.Integer = try zsl.abs(x, .{ .allocator = a });
-    defer tmp.deinit(a);
-
-    if (!x.positive)
-        std.debug.print("-", .{});
-
-    var buf: [8192]u8 = undefined;
-    var len: u32 = 0;
-    while (tmp.size != 0) {
-        const remainder: u32 = divide_by_10(&tmp);
-        buf[len] = zsl.scast(u8, remainder + '0');
-        len += 1;
-    }
-
-    while (len > 0) : (len -= 1) {
-        std.debug.print("{c}", .{buf[len]});
-    }
-    std.debug.print("{c}", .{buf[len]});
-}
-
-fn divide_by_10(x: *zsl.Integer) u32 {
-    var remainder: u32 = 0;
-
-    var i: i32 = zsl.scast(i32, x.size - 1);
-    while (i >= 0) : (i -= 1) {
-        // Current value is remainder * 2^32 + limbs[i]
-        const current: u64 = zsl.scast(u64, remainder) * 0x100000000 + x.limbs[zsl.scast(u32, i)];
-        x.limbs[zsl.scast(u32, i)] = zsl.scast(u32, current / 10);
-
-        remainder = zsl.scast(u32, current % 10);
-    }
-
-    while (x.size > 0 and x.limbs[x.size - 1] == 0) {
-        x.size -= 1;
-    }
-
-    return remainder;
-}
-
-fn printRational(a: std.mem.Allocator, r: zsl.Rational, decimals: u32) !void {
-    // Handle sign
-    if (!r.num.positive and r.num.size != 0)
-        std.debug.print("-", .{});
-
-    // Absolute values
-    var num: zsl.Integer = try zsl.abs(r.num, .{ .allocator = a });
-    defer num.deinit(a);
-
-    var den: zsl.Integer = try zsl.abs(r.den, .{ .allocator = a });
-    defer den.deinit(a);
-
-    // Integer division: q = num / den, rem = num % den
-    var q: zsl.Integer = try zsl.div(num, den, .{ .allocator = a });
-    defer q.deinit(a);
-
-    var prod: zsl.Integer = try zsl.mul(q, den, .{ .allocator = a });
-    defer prod.deinit(a);
-
-    var rem: zsl.Integer = try zsl.sub(num, prod, .{ .allocator = a });
-    defer rem.deinit(a);
-
-    // Print integer part
-    try printBigint(a, q);
-
-    if (rem.size == 0 or decimals == 0) {
-        return;
-    }
-
-    std.debug.print(".", .{});
-
-    // Print fractional part
-    var i: u32 = 0;
-    while (i < decimals and rem.size != 0) : (i += 1) {
-        // rem = rem * 10
-        var rem_times_10: zsl.Integer = try zsl.mul(rem, 10, .{ .allocator = a });
-        defer rem_times_10.deinit(a);
-
-        // digit = rem / den
-        var digit: zsl.Integer = try zsl.div(rem_times_10, den, .{ .allocator = a });
-        defer digit.deinit(a);
-
-        // rem = rem % den
-        try zsl.mul_(&prod, digit, den, .{ .allocator = a });
-
-        const new_rem: zsl.Integer = try zsl.sub(rem_times_10, prod, .{ .allocator = a });
-
-        // Print digit
-        std.debug.print("{d}", .{if (digit.size == 0) 0 else digit.limbs[0]});
-
-        rem.deinit(a);
-        rem = new_rem;
-    }
-}
-
-fn bigintTesting(a: std.mem.Allocator) !void {
-    const aa1: comptime_int = 18743589740376145871634935141879840845719843570914875098417509843750198405;
-    std.debug.print("aa1: {d}\n", .{aa1});
-    const aa2: comptime_int = 19465187510498475189640985160943818237598150218932461028917543890757545138;
-    std.debug.print("aa2: {d}\n\n", .{aa2});
-    var ia: zsl.Rational = try .initSet(a, aa1, aa2);
-    defer ia.deinit(a);
-    std.debug.print("ia: ", .{});
-    try printRational(a, ia, 100);
-    std.debug.print("\n", .{});
-    std.debug.print("\n\nia as fraction:\n", .{});
-    try printBigint(a, ia.num);
-    std.debug.print("\n-----------------------------------------------\n", .{});
-    try printBigint(a, ia.den);
-    std.debug.print("\n\n", .{});
-
-    const bb1: comptime_int = 18743589740376145871634935141879840845719843570914875098417509843750198405;
-    std.debug.print("bb1: {d}\n", .{bb1});
-    const bb2: comptime_int = 19465187510498475189640985160943818237598150218932461028917543890757545138;
-    std.debug.print("bb2: {d}\n\n", .{bb2});
-    var ib: zsl.Rational = try .initSet(a, bb1, bb2);
-    defer ib.deinit(a);
-    std.debug.print("ib: ", .{});
-    try printRational(a, ib, 100);
-    std.debug.print("\n", .{});
-    std.debug.print("\n\nib as fraction:\n", .{});
-    try printBigint(a, ib.num);
-    std.debug.print("\n-----------------------------------------------\n", .{});
-    try printBigint(a, ib.den);
-    std.debug.print("\n\n", .{});
-
-    var ic: zsl.Rational = try zsl.add(ia, ib, .{ .allocator = a });
-    defer ic.deinit(a);
-    std.debug.print("ic: ", .{});
-    try printRational(a, ic, 50);
-    std.debug.print("\n", .{});
-    std.debug.print("\nic as fraction:\n", .{});
-    try printBigint(a, ic.num);
-    std.debug.print("\n-----------------------------------------------\n", .{});
-    try printBigint(a, ic.den);
-    std.debug.print("\n\n", .{});
-
-    var gpa2: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = gpa2.deinit();
-    const a2 = gpa2.allocator();
-
-    var buf: zsl.Rational = try .init(a2, 1, 1);
-    defer buf.deinit(a2);
-    try zsl.abs2_(&ic, ic, .{ .allocator = a });
-    std.debug.print("||ic||^2: ", .{});
-    try printRational(a, ic, 50);
-    std.debug.print("\n\n", .{});
-
-    std.debug.print("2^16: {}\n", .{try zsl.int.pow(@as(u128, 2), @as(u128, 32))});
 }
 
 fn randomVector(comptime V: type, allocator: std.mem.Allocator, rand: std.Random, len: usize) !V {
@@ -1816,7 +912,7 @@ fn randomVector(comptime V: type, allocator: std.mem.Allocator, rand: std.Random
 fn printVector(desc: []const u8, v: anytype) void {
     std.debug.print("\nVector {s}:\n", .{desc});
 
-    var i: u32 = 0;
+    var i: usize = 0;
     while (i < v.len) : (i += 1) {
         if (comptime zsl.types.isComplex(zsl.types.Numeric(@TypeOf(v)))) {
             std.debug.print("{d:7.4} + {d:7.4}i\n", .{ (v.get(i) catch unreachable).re, (v.get(i) catch unreachable).im });

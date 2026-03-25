@@ -234,7 +234,7 @@ pub fn isMatrix(comptime T: type) bool {
 /// `bool`: `true` if the type is a square matrix, `false` otherwise.
 pub fn isSquareMatrix(comptime T: type) bool {
     switch (comptime @typeInfo(T)) {
-        .@"struct" => return (@hasDecl(T, "is_symmetric") and T.is_symmetric) or (@hasDecl(T, "is_hermitian") and T.is_hermitian),
+        .@"struct" => return (@hasDecl(T, "is_symmetric") and T.is_symmetric) or (@hasDecl(T, "is_hermitian") and T.is_hermitian) or (@hasDecl(T, "is_permutation") and T.is_permutation),
         else => return false,
     }
 }

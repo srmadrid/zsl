@@ -3,269 +3,129 @@ const std = @import("std");
 const types = @import("../../types.zig");
 const Layout = types.Layout;
 const Uplo = types.Uplo;
-const IterationOrder = types.IterationOrder;
+
 const numeric = @import("../../numeric.zig");
 const int = @import("../../int.zig");
 
 const matrix = @import("../../matrix.zig");
-const Flags = matrix.Flags;
 
 const array = @import("../../array.zig");
 
-/// Dense hermitian matrix type, represented as a contiguous array of
-/// `size × size` elements of type `T`, stored in either column-major or
+/// Dense Hermitian matrix type, represented as a contiguous array of
+/// `size × size` elements of type `N`, stored in either column-major or
 /// row-major order with a specified leading dimension. Only the upper or lower
 /// triangular part of the matrix is accessed, depending on the `uplo`
 /// parameter.
-pub fn Dense(T: type, uplo: Uplo, layout: Layout) type {
-    if (!types.isNumeric(T) or !types.isComplex(T))
-        @compileError("matrix.hermitian.Dense requires a complex numeric type, got " ++ @typeName(T));
+pub fn Dense(N: type, uplo: Uplo, layout: Layout) type {
+    if (!types.isNumeric(N) or !types.isComplex(N))
+        @compileError("zsl.matrix.hermitian.Dense: N must be a complex numeric type, got \n\tN = " ++ @typeName(N) ++ "\n");
 
     return struct {
-        data: [*]T,
-        size: u32,
-        ld: u32, // leading dimension
-        flags: Flags = .{},
+        data: [*]N,
+        size: usize,
+        ld: usize,
+        flags: matrix.Flags = .{},
 
-        /// Type signatures
-        pub const is_matrix = {};
-        pub const is_dense = {};
-        pub const is_hermitian = {};
-        pub const storage_layout: Layout = layout;
+        // Type signatures
+        pub const is_matrix = true;
+        pub const is_dense = true;
+        pub const is_hermitian = true;
+        pub const storage_layout = layout;
         pub const storage_uplo = uplo;
         pub const storage_diag = types.default_diag;
 
-        /// Numeric type
-        pub const Numeric = T;
+        // Numeric type
+        pub const Numeric = N;
 
-        pub const empty: Dense(T, uplo, layout) = .{
+        pub const empty: Dense(N, uplo, layout) = .{
             .data = &.{},
             .size = 0,
             .ld = 0,
             .flags = .{ .owns_data = false },
         };
 
-        /// Initializes a new matrix with the specified size.
+        /// Initializes a new `matrix.hermitian.Dense(N, uplo, layout)` with the
+        /// specified size.
         ///
-        /// Parameters
-        /// ----------
-        /// `allocator` (`std.mem.Allocator`):
-        /// The allocator to use for memory allocations.
+        /// ## Arguments
+        /// * `allocator` (`std.mem.Allocator`): The allocator to use for memory
+        ///   allocations.
+        /// * `size` (`usize`): The size of the (square) matrix.
         ///
-        /// `size` (`u32`):
-        /// The size of the (square) matrix.
+        /// ## Returns
+        /// `matrix.hermitian.Dense(N, uplo, layout)`: The newly initialized
+        /// matrix.
         ///
-        /// Returns
-        /// -------
-        /// `matrix.hermitian.Dense(T, uplo, order)`:
-        /// The newly initialized matrix.
-        ///
-        /// Errors
-        /// ------
-        /// `std.mem.Allocator.Error.OutOfMemory`:
-        /// If memory allocation fails.
-        ///
-        /// `matrix.Error.ZeroDimension`:
-        /// If `size` is zero.
-        ///
-        /// Notes
-        /// -----
-        /// The elements are not initialized.
-        pub fn init(
-            allocator: std.mem.Allocator,
-            size: u32,
-        ) !Dense(T, uplo, layout) {
+        /// ## Errors
+        /// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
+        /// * `matrix.Error.ZeroDimension`: If `size` is zero.
+        pub fn init(allocator: std.mem.Allocator, size: usize) !matrix.hermitian.Dense(N, uplo, layout) {
             if (size == 0)
                 return matrix.Error.ZeroDimension;
 
             return .{
-                .data = (try allocator.alloc(T, size * size)).ptr,
+                .data = (try allocator.alloc(N, size * size)).ptr,
                 .size = size,
                 .ld = size,
                 .flags = .{ .owns_data = true },
             };
         }
 
-        /// Initializes a new matrix with the specified size, filled  with the
-        /// specified value.
-        ///
-        /// Parameters
-        /// ----------
-        /// `allocator` (`std.mem.Allocator`):
-        /// The allocator to use for memory allocations.
-        ///
-        /// `size` (`u32`):
-        /// The size of the (square) matrix.
-        ///
-        /// `value` (`anytype`):
-        /// The value to fill the matrix with.
-        ///
-        /// `ctx` (`anytype`):
-        /// A context struct providing necessary resources and configuration for
-        /// the operation. The required fields depend on the type `T` and the
-        /// type of `value`. If  the context is missing required fields or
-        /// contains unnecessary or wrongly typed fields, the compiler will emit
-        /// a detailed error message describing the expected structure.
-        ///
-        /// Returns
-        /// -------
-        /// `matrix.hermitian.Dense(T, uplo, order)`:
-        /// The newly initialized matrix.
-        ///
-        /// Errors
-        /// ------
-        /// `std.mem.Allocator.Error.OutOfMemory`:
-        /// If memory allocation fails.
-        ///
-        /// `matrix.Error.ZeroDimension`:
-        /// If `size` is zero.
-        ///
-        /// Notes
-        /// -----
-        /// The matrix does not take ownership of `value` if it is an arbitrary
-        /// precision type.
-        ///
-        /// For the diagonal elements, only the real part of `value` is used;
-        /// the imaginary part is ignored.
-        pub fn full(
-            allocator: std.mem.Allocator,
-            size: u32,
-            value: anytype,
-            ctx: anytype,
-        ) !Dense(T, uplo, layout) {
-            comptime switch (types.numericType(T)) {
-                .cfloat => {
-                    types.validateContext(@TypeOf(ctx), .{});
-                },
-                .complex => {
-                    types.validateContext(
-                        @TypeOf(ctx),
-                        .{
-                            .element_allocator = .{ .type = std.mem.Allocator, .required = true },
-                        },
-                    );
-                },
-                else => unreachable,
-            };
+        // pub fn initBuffer
 
-            var mat: Dense(T, uplo, layout) = try .init(allocator, size);
-            errdefer mat.deinit(allocator);
-
-            var i: u32 = 0;
-            var j: u32 = 0;
-
-            errdefer mat._cleanup(i, j, layout, ctx);
+        /// Initializes a new `matrix.hermitian.Dense(N, uplo, layout)` with the
+        /// specified size, with all elements set to the specified value.
+        ///
+        /// ## Arguments
+        /// * `allocator` (`std.mem.Allocator`): The allocator to use for memory
+        ///   allocations.
+        /// * `size` (`usize`): The size of the (square) matrix.
+        /// * `value` (`N`): The value to fill the matrix with.
+        ///
+        /// ## Returns
+        /// `matrix.hermitian.Dense(N, uplo, layout)`: The newly initialized
+        /// matrix.
+        ///
+        /// ## Errors
+        /// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
+        /// * `matrix.Error.ZeroDimension`: If `size` is zero.
+        pub fn initValue(allocator: std.mem.Allocator, size: usize, value: N) !matrix.hermitian.Dense(N, uplo, layout) {
+            const mat: Dense(N, uplo, layout) = try .init(allocator, size);
 
             if (comptime layout == .col_major) {
                 if (comptime uplo == .upper) { // cu
+                    var j: usize = 0;
                     while (j < size) : (j += 1) {
-                        i = 0;
-                        while (i < j) : (i += 1) {
-                            mat.data[mat._index(i, j)] = try numeric.init(
-                                T,
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
-
-                            try numeric.set(
-                                &mat.data[mat._index(i, j)],
-                                value,
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                        var i: usize = 0;
+                        while (i <= j) : (i += 1) {
+                            mat.data[i + j * mat.ld] = value;
                         }
-
-                        mat.data[mat._index(j, j)] = try numeric.init(
-                            T,
-                            types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                        );
-
-                        try numeric.set(
-                            &mat.data[mat._index(j, j)],
-                            numeric.re(value, .{}) catch unreachable,
-                            types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                        );
                     }
                 } else { // cl
+                    var j: usize = 0;
                     while (j < size) : (j += 1) {
-                        mat.data[mat._index(j, j)] = try numeric.init(
-                            T,
-                            types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                        );
-
-                        try numeric.set(
-                            &mat.data[mat._index(j, j)],
-                            numeric.re(value, .{}) catch unreachable,
-                            types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                        );
-
-                        i = j + 1;
+                        var i: usize = j;
                         while (i < size) : (i += 1) {
-                            mat.data[mat._index(i, j)] = try numeric.init(
-                                T,
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
-
-                            try numeric.set(
-                                &mat.data[mat._index(i, j)],
-                                value,
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                            mat.data[i + j * mat.ld] = value;
                         }
                     }
                 }
             } else {
                 if (comptime uplo == .upper) { // ru
+                    var i: usize = 0;
                     while (i < size) : (i += 1) {
-                        mat.data[mat._index(i, i)] = try numeric.init(
-                            T,
-                            types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                        );
-
-                        try numeric.set(
-                            &mat.data[mat._index(i, i)],
-                            numeric.re(value, .{}) catch unreachable,
-                            types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                        );
-
-                        j = i + 1;
+                        var j: usize = i;
                         while (j < size) : (j += 1) {
-                            mat.data[mat._index(i, j)] = try numeric.init(
-                                T,
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
-
-                            try numeric.set(
-                                &mat.data[mat._index(i, j)],
-                                value,
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                            mat.data[i * mat.ld + j] = value;
                         }
                     }
                 } else { // rl
+                    var i: usize = 0;
                     while (i < size) : (i += 1) {
-                        j = 0;
-                        while (j < i) : (j += 1) {
-                            mat.data[mat._index(i, j)] = try numeric.init(
-                                T,
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
-
-                            try numeric.set(
-                                &mat.data[mat._index(i, j)],
-                                value,
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                        var j: usize = 0;
+                        while (j <= i) : (j += 1) {
+                            mat.data[i * mat.ld + j] = value;
                         }
-
-                        mat.data[mat._index(i, i)] = try numeric.init(
-                            T,
-                            types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                        );
-
-                        try numeric.set(
-                            &mat.data[mat._index(i, i)],
-                            numeric.re(value, .{}) catch unreachable,
-                            types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                        );
                     }
                 }
             }
@@ -273,130 +133,156 @@ pub fn Dense(T: type, uplo: Uplo, layout: Layout) type {
             return mat;
         }
 
-        /// Initializes a new identity matrix of the specified size.
+        /// Initializes a new `matrix.hermitian.Dense(N, uplo, layout)` with the
+        /// specified size, with all elements set by calling the specified
+        /// function with the given arguments.
         ///
-        /// Parameters
-        /// ----------
-        /// `allocator` (`std.mem.Allocator`):
-        /// The allocator to use for memory allocations.
+        /// ## Arguments
+        /// * `allocator` (`std.mem.Allocator`): The allocator to use for memory
+        ///   allocations.
+        /// * `size` (`usize`): The size of the (square) matrix.
+        /// * `@"fn"` (`anytype`): The function to call to fill the matrix.
+        /// * `args` (`anytype`): A tuple of the arguments to call the function
+        ///   with.
         ///
-        /// `size` (`u32`):
-        /// The size of the (square) matrix.
+        /// ## Returns
+        /// `matrix.hermitian.Dense(N, uplo, layout)`: The newly initialized
+        /// matrix.
         ///
-        /// `ctx` (`anytype`):
-        /// A context struct providing necessary resources and configuration for
-        /// the operation. The required fields depend on the type `T`. If the
-        /// context is missing required fields or contains unnecessary or
-        /// wrongly typed fields, the compiler will emit a detailed error
-        /// message describing the expected structure.
-        ///
-        /// Returns
-        /// -------
-        /// `matrix.hermitian.Dense(T, uplo, order)`:
-        /// The newly initialized identity matrix.
-        ///
-        /// Errors
-        /// ------
-        /// `std.mem.Allocator.Error.OutOfMemory`:
-        /// If memory allocation fails.
-        ///
-        /// `matrix.Error.ZeroDimension`:
-        /// If `size` is zero.
-        pub fn eye(
-            allocator: std.mem.Allocator,
-            size: u32,
-            ctx: anytype,
-        ) !Dense(T, uplo, layout) {
-            comptime switch (types.numericType(T)) {
-                .cfloat => {
-                    types.validateContext(@TypeOf(ctx), .{});
-                },
-                .complex => {
-                    types.validateContext(
-                        @TypeOf(ctx),
-                        .{
-                            .element_allocator = .{ .type = std.mem.Allocator, .required = true },
-                        },
-                    );
-                },
-                else => unreachable,
-            };
+        /// ## Errors
+        /// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
+        /// * `matrix.Error.ZeroDimension`: If `size` is zero.
+        pub fn initFn(allocator: std.mem.Allocator, size: usize, comptime @"fn": anytype, args: anytype) !matrix.hermitian.Dense(N, uplo, layout) {
+            const Fn = @TypeOf(@"fn");
+            const Args = @TypeOf(args);
 
-            if (size == 0)
-                return matrix.Error.ZeroDimension;
+            const fn_info = @typeInfo(Fn);
+            const args_info = @typeInfo(Args);
 
-            var mat: Dense(T, uplo, layout) = try .init(allocator, size);
+            comptime if (fn_info != .@"fn" or args_info != .@"struct")
+                @compileError("zsl.matrix.hermitian.Dense(N, uplo, layout).initFn: @\"fn\" must be a function and args must be a struct, got \n\t@\"fn\": " ++ @typeName(Fn) ++ "\n\targs: " ++ @typeName(Args) ++ "\n");
+
+            var mat: matrix.hermitian.Dense(N, uplo, layout) = try .init(allocator, size);
             errdefer mat.deinit(allocator);
-
-            var i: u32 = 0;
-            var j: u32 = 0;
-
-            errdefer mat._cleanup(i, j, layout, ctx);
 
             if (comptime layout == .col_major) {
                 if (comptime uplo == .upper) { // cu
+                    var j: usize = 0;
                     while (j < size) : (j += 1) {
-                        i = 0;
-                        while (i < j) : (i += 1) {
-                            mat.data[mat._index(i, j)] = try numeric.zero(
-                                T,
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                        var i: usize = 0;
+                        while (i <= j) : (i += 1) {
+                            mat.data[i + j * mat.ld] = if (comptime @typeInfo(types.ReturnTypeFromInputs(@"fn", &types.structToArrayOfTypes(Args))) == .error_union)
+                                try @call(.auto, @"fn", args)
+                            else
+                                @call(.auto, @"fn", args);
                         }
-
-                        mat.data[mat._index(j, j)] = try numeric.one(
-                            T,
-                            types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                        );
                     }
                 } else { // cl
+                    var j: usize = 0;
                     while (j < size) : (j += 1) {
-                        mat.data[mat._index(j, j)] = try numeric.one(
-                            T,
-                            types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                        );
-
-                        i = j + 1;
-
+                        var i: usize = j;
                         while (i < size) : (i += 1) {
-                            mat.data[mat._index(i, j)] = try numeric.zero(
-                                T,
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                            mat.data[i + j * mat.ld] = if (comptime @typeInfo(types.ReturnTypeFromInputs(@"fn", &types.structToArrayOfTypes(Args))) == .error_union)
+                                try @call(.auto, @"fn", args)
+                            else
+                                @call(.auto, @"fn", args);
                         }
                     }
                 }
             } else {
                 if (comptime uplo == .upper) { // ru
+                    var i: usize = 0;
                     while (i < size) : (i += 1) {
-                        mat.data[mat._index(i, i)] = try numeric.one(
-                            T,
-                            types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                        );
-
-                        j = i + 1;
-
+                        var j: usize = i;
                         while (j < size) : (j += 1) {
-                            mat.data[mat._index(i, j)] = try numeric.zero(
-                                T,
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                            mat.data[i * mat.ld + j] = if (comptime @typeInfo(types.ReturnTypeFromInputs(@"fn", &types.structToArrayOfTypes(Args))) == .error_union)
+                                try @call(.auto, @"fn", args)
+                            else
+                                @call(.auto, @"fn", args);
                         }
                     }
                 } else { // rl
+                    var i: usize = 0;
                     while (i < size) : (i += 1) {
-                        j = 0;
-                        while (j < i) : (j += 1) {
-                            mat.data[mat._index(i, j)] = try numeric.zero(
-                                T,
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                        var j: usize = 0;
+                        while (j <= i) : (j += 1) {
+                            mat.data[i * mat.ld + j] = if (comptime @typeInfo(types.ReturnTypeFromInputs(@"fn", &types.structToArrayOfTypes(Args))) == .error_union)
+                                try @call(.auto, @"fn", args)
+                            else
+                                @call(.auto, @"fn", args);
+                        }
+                    }
+                }
+            }
+
+            return mat;
+        }
+
+        /// Initializes a new identity `matrix.hermitian.Dense(N, uplo, layout)`
+        /// of the specified size.
+        ///
+        /// ## Arguments
+        /// * `allocator` (`std.mem.Allocator`): The allocator to use for memory
+        ///   allocations.
+        /// * `size` (`usize`): The size of the (square) matrix.
+        ///
+        /// ## Returns
+        /// `matrix.hermitian.Dense(N, uplo, layout)`: The newly initialized
+        /// identity matrix.
+        ///
+        /// ## Errors
+        /// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
+        /// * `matrix.Error.ZeroDimension`: If `size` is zero.
+        pub fn initIdentity(allocator: std.mem.Allocator, size: usize) !matrix.hermitian.Dense(N, uplo, layout) {
+            if (size == 0)
+                return matrix.Error.ZeroDimension;
+
+            const mat: matrix.hermitian.Dense(N, uplo, layout) = try .init(allocator, size);
+
+            if (comptime layout == .col_major) {
+                if (comptime uplo == .upper) { // cu
+                    var j: usize = 0;
+                    while (j < size) : (j += 1) {
+                        var i: usize = 0;
+                        while (i < j) : (i += 1) {
+                            mat.data[i + j * mat.ld] = numeric.zero(N);
                         }
 
-                        mat.data[mat._index(i, i)] = try numeric.one(
-                            T,
-                            types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                        );
+                        mat.data[j + j * mat.ld] = numeric.one(N);
+                    }
+                } else { // cl
+                    var j: usize = 0;
+                    while (j < size) : (j += 1) {
+                        mat.data[j + j * mat.ld] = numeric.one(N);
+
+                        var i: usize = j + 1;
+
+                        while (i < size) : (i += 1) {
+                            mat.data[i + j * mat.ld] = numeric.zero(N);
+                        }
+                    }
+                }
+            } else {
+                if (comptime uplo == .upper) { // ru
+                    var i: usize = 0;
+                    while (i < size) : (i += 1) {
+                        mat.data[i * mat.ld + i] = numeric.one(N);
+
+                        var j: usize = i + 1;
+
+                        while (j < size) : (j += 1) {
+                            mat.data[i * mat.ld + j] = numeric.zero(N);
+                        }
+                    }
+                } else { // rl
+                    var i: usize = 0;
+                    while (i < size) : (i += 1) {
+                        var j: usize = 0;
+                        while (j < i) : (j += 1) {
+                            mat.data[i * mat.ld + j] = numeric.zero(N);
+                        }
+
+                        mat.data[i * mat.ld + i] = numeric.one(N);
                     }
                 }
             }
@@ -407,24 +293,16 @@ pub fn Dense(T: type, uplo: Uplo, layout: Layout) type {
         /// Deinitializes the matrix, freeing any allocated memory and
         /// invalidating it.
         ///
-        /// Parameters
-        /// ----------
-        /// `self` (`*matrix.hermitian.Dense(T, uplo, order)`):
-        /// A pointer to the matrix to deinitialize.
+        /// ## Arguments
+        /// * `self` (`*matrix.hermitian.Dense(N, uplo, layout)`): A pointer to
+        ///   the matrix to deinitialize.
+        /// * `allocator` (`std.mem.Allocator`): The allocator to use for memory
+        ///   deallocation. Must be the same allocator used to initialize
+        ///   `self`.
         ///
-        /// `allocator` (`std.mem.Allocator`):
-        /// The allocator to use for memory deallocation. Must be the same
-        /// allocator used to initialize `self`.
-        ///
-        /// Returns
-        /// -------
+        /// ## Returns
         /// `void`
-        ///
-        /// Notes
-        /// -----
-        /// If the elements are of arbitrary precision type, `cleanup` must be
-        /// called before `deinit` to properly deinitialize the elements.
-        pub fn deinit(self: *Dense(T, uplo, layout), allocator: std.mem.Allocator) void {
+        pub fn deinit(self: *matrix.hermitian.Dense(N, uplo, layout), allocator: std.mem.Allocator) void {
             if (self.flags.owns_data) {
                 allocator.free(self.data[0 .. self.size * self.size]);
             }
@@ -432,45 +310,37 @@ pub fn Dense(T: type, uplo: Uplo, layout: Layout) type {
             self.* = undefined;
         }
 
-        /// Gets the element at the specified position.
+        /// Gets the element at the specified index.
         ///
-        /// Parameters
-        /// ----------
-        /// `self` (`*const matrix.hermitian.Dense(T, uplo, order)`):
-        /// A pointer to the matrix to get the element from.
+        /// ## Arguments
+        /// * `self` (`matrix.hermitian.Dense(n, uplo, layout)`): The matrix to
+        ///   get the element from.
+        /// *  `r` (`usize`): The row index of the element to get.
+        /// * `c` (`usize`): The column index of the element to get.
         ///
-        /// `r` (`u32`):
-        /// The row index of the element to get.
+        /// ## Returns
+        /// `N`: The element at the specified index.
         ///
-        /// `c` (`u32`):
-        /// The column index of the element to get.
-        ///
-        /// Returns
-        /// -------
-        /// `T`:
-        /// The element at the specified position.
-        ///
-        /// Errors
-        /// ------
-        /// `matrix.Error.PositionOutOfBounds`:
-        /// If `r` or `c` is out of bounds.
-        pub fn get(self: *const Dense(T, uplo, layout), r: u32, c: u32) !T {
+        /// ## Errors
+        /// * `matrix.Error.PositionOutOfBounds`: If `r` or `c` is out of
+        ///   bounds.
+        pub fn get(self: matrix.hermitian.Dense(N, uplo, layout), r: usize, c: usize) !N {
             if (r >= self.size or c >= self.size)
                 return matrix.Error.PositionOutOfBounds;
 
-            var i: u32 = r;
-            var j: u32 = c;
+            var i: usize = r;
+            var j: usize = c;
             var noconj: bool = true;
             if (comptime uplo == .upper) {
                 if (i > j) {
-                    const temp: u32 = i;
+                    const temp: usize = i;
                     i = j;
                     j = temp;
                     noconj = false;
                 }
             } else {
                 if (i < j) {
-                    const temp: u32 = i;
+                    const temp: usize = i;
                     i = j;
                     j = temp;
                     noconj = false;
@@ -480,86 +350,62 @@ pub fn Dense(T: type, uplo: Uplo, layout: Layout) type {
             return if (noconj)
                 self.data[self._index(i, j)]
             else
-                numeric.conj(self.data[self._index(i, j)], .{}) catch unreachable;
+                numeric.conj(self.data[self._index(i, j)]);
         }
 
-        /// Gets the element at the specified position without bounds checking.
+        /// Gets the element at the specified index without bounds checking.
         ///
-        /// Parameters
-        /// ----------
-        /// `self` (`*const matrix.hermitian.Dense(T, uplo, order)`):
-        /// A pointer to the matrix to get the element from.
-        ///
-        /// `r` (`u32`):
-        /// The row index of the element to get. Assumed to be within bounds and
-        /// on the correct triangular part.
-        ///
-        /// `c` (`u32`):
-        /// The column index of the element to get. Assumed to be within bounds
-        /// and on the correct triangular part.
+        /// ## Arguments
+        /// * `self` (`matrix.hermitian.Dense(N, uplo, layout)`): The matrix to
+        ///   get the element from.
+        /// * `r` (`usize`): The row index of the element to get. Assumed to be
+        ///   within bounds and on the correct triangular part.
+        /// * `c` (`usize`): The column index of the element to get. Assumed to
+        ///   be within bounds and on the correct triangular part.
         ///
         /// Returns
-        /// -------
-        /// `T`:
-        /// The element at the specified position.
-        pub inline fn at(self: *const Dense(T, uplo, layout), r: u32, c: u32) T {
+        /// `N`: The element at the specified index.
+        pub inline fn at(self: matrix.hermitian.Dense(N, uplo, layout), r: usize, c: usize) N {
             return self.data[self._index(r, c)];
         }
 
-        /// Sets the element at the specified position.
+        /// Sets the element at the specified index.
         ///
-        /// Parameters
-        /// ----------
-        /// `self` (`*matrix.hermitian.Dense(T, uplo, order)`):
-        /// A pointer to the matrix to set the element in.
+        /// ## Arguments
+        /// * `self` (`*matrix.hermitian.Dense(N, uplo, layout)`): The matrix to
+        ///   set the element in.
+        /// * `r` (`usize`): The row index of the element to set.
+        /// * `c` (`usize`): The column index of the element to set.
+        /// * `value` (`N`): The value to set the element to.
         ///
-        /// `r` (`u32`):
-        /// The row index of the element to set.
-        ///
-        /// `c` (`u32`):
-        /// The column index of the element to set.
-        ///
-        /// `value` (`T`):
-        /// The value to set the element to.
-        ///
-        /// Returns
-        /// -------
+        /// ## Returns
         /// `void`
         ///
-        /// Errors
-        /// ------
-        /// `matrix.Error.PositionOutOfBounds`:
-        /// If `r` or `c` is out of bounds.
-        ///
-        /// `matrix.Error.BreaksStructure`:
-        /// If `r == c` and the imaginary part of `value` is not zero.
-        ///
-        /// Notes
-        /// -----
-        /// If the elements are of arbitrary precision type, the existing
-        /// element at the position is not deinitialized. The user must ensure
-        /// that no memory leaks occur. Additionally, the matrix takes ownership
-        /// of `value`.
-        pub fn set(self: *Dense(T, uplo, layout), r: u32, c: u32, value: T) !void {
+        /// ## Errors
+        /// * `matrix.Error.PositionOutOfBounds`: If `r` or `c` is out of
+        ///   bounds.
+        /// * `matrix.Error.BreaksStructure`: If `r == c` and the imaginary part
+        ///   of `value` is not zero.
+        pub fn set(self: *matrix.hermitian.Dense(N, uplo, layout), r: usize, c: usize, value: N) !void {
             if (r >= self.size or c >= self.size)
                 return matrix.Error.PositionOutOfBounds;
 
-            if (r == c and numeric.ne(value.im, 0, .{}) catch unreachable)
+            if (r == c and numeric.ne(value.im, 0))
                 return matrix.Error.BreaksStructure;
 
-            var i: u32 = r;
-            var j: u32 = c;
+            var i: usize = r;
+            var j: usize = c;
             var conj: bool = false;
             if (comptime uplo == .upper) {
                 if (i > j) {
-                    const temp: u32 = i;
+                    const temp: usize = i;
                     i = j;
                     j = temp;
                     conj = true;
                 }
             } else {
                 if (i < j) {
-                    const temp: u32 = i;
+                    const temp: usize = i;
                     i = j;
                     j = temp;
                     conj = true;
@@ -569,143 +415,77 @@ pub fn Dense(T: type, uplo: Uplo, layout: Layout) type {
             self.data[self._index(i, j)] = value;
 
             if (conj) {
-                numeric.conj_(
-                    &self.data[self._index(i, j)],
-                    self.data[self._index(i, j)],
-                    .{},
-                ) catch unreachable;
+                numeric.conj_(&self.data[self._index(i, j)], self.data[self._index(i, j)]);
             }
         }
 
-        /// Sets the element at the specified position without bounds checking.
+        /// Sets the element at the specified index without bounds checking.
         ///
-        /// Parameters
-        /// ----------
-        /// `self` (`*matrix.hermitian.Dense(T, uplo, order)`):
-        /// A pointer to the matrix to set the element in.
+        /// ## Arguments
+        /// * `self` (`*matrix.hermitian.Dense(N, uplo, layout)`): A pointer to
+        ///   the matrix to set the element in.
+        /// * `r` (`usize`): The row index of the element to set. Assumed to be
+        ///   within bounds and on the correct triangular part.
+        /// * `c` (`usize`): The column index of the element to set. Assumed to
+        ///   be within bounds and on the correct triangular part.
+        /// * `value` (`N`): The value to set the element to. Assumed to have
+        ///   zero imaginary part if `r == c`.
         ///
-        /// `r` (`u32`):
-        /// The row index of the element to set. Assumed to be within bounds and
-        /// on the correct triangular part.
-        ///
-        /// `c` (`u32`):
-        /// The column index of the element to set. Assumed to be within bounds
-        /// and on the correct triangular part.
-        ///
-        /// `value` (`T`):
-        /// The value to set the element to. Assumed to have zero imaginary part
-        /// if `r == c`.
-        ///
-        /// Returns
-        /// -------
+        /// ## Returns
         /// `void`
-        ///
-        /// Notes
-        /// -----
-        /// If the elements are of arbitrary precision type, the existing
-        /// element at the position is not deinitialized. The user must ensure
-        /// that no memory leaks occur. Additionally, the matrix takes ownership
-        /// of `value`.
-        pub inline fn put(self: *Dense(T, uplo, layout), r: u32, c: u32, value: T) void {
+        pub inline fn put(self: *matrix.hermitian.Dense(N, uplo, layout), r: usize, c: usize, value: N) void {
             self.data[self._index(r, c)] = value;
         }
 
         /// Creates a copy of the matrix.
         ///
-        /// Parameters
-        /// ----------
-        /// `self` (`*const matrix.hermitian.Dense(T, uplo, order)`):
-        /// A pointer to the matrix to copy.
+        /// ## Arguments
+        /// * `self` (`matrix.hermitian.Dense(N, uplo, layout)`): The matrix to
+        ///   copy.
+        /// * `allocator` (`std.mem.Allocator`): The allocator to use for memory
+        ///   allocations.
         ///
-        /// `allocator` (`std.mem.Allocator`):
-        /// The allocator to use for memory allocations.
+        /// ## Returns
+        /// `matrix.hermitian.Dense(N, uplo, layout)`: The copied matrix.
         ///
-        /// `ctx` (`anytype`):
-        /// A context struct providing necessary resources and configuration for
-        /// the operation. The required fields depend on the type `T`. If the
-        /// context is missing required fields or contains unnecessary or
-        /// wrongly typed fields, the compiler will emit a detailed error
-        /// message describing the expected structure.
-        ///
-        /// Returns
-        /// -------
-        /// `matrix.hermitian.Dense(T, uplo, order)`:
-        /// The copied matrix.
-        ///
-        /// Errors
-        /// ------
-        /// `std.mem.Allocator.Error.OutOfMemory`:
-        /// If memory allocation fails.
-        ///
-        /// Notes
-        /// -----
-        /// If the elements are of arbitrary precision type, they are deep
-        /// copied.
-        pub fn copy(self: *const Dense(T, uplo, layout), allocator: std.mem.Allocator, ctx: anytype) !Dense(T, uplo, layout) {
-            comptime switch (types.numericType(T)) {
-                .cfloat => {
-                    types.validateContext(@TypeOf(ctx), .{});
-                },
-                .complex => {
-                    types.validateContext(
-                        @TypeOf(ctx),
-                        .{
-                            .element_allocator = .{ .type = std.mem.Allocator, .required = true },
-                        },
-                    );
-                },
-                else => unreachable,
-            };
-
-            var mat: Dense(T, uplo, layout) = try .init(allocator, self.size);
-            errdefer mat.deinit(allocator);
-
-            var i: u32 = 0;
-            var j: u32 = 0;
-
-            errdefer mat._cleanup(i, j, layout, ctx);
+        /// ## Errors
+        /// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
+        pub fn copy(self: matrix.hermitian.Dense(N, uplo, layout), allocator: std.mem.Allocator) !matrix.hermitian.Dense(N, uplo, layout) {
+            const mat: matrix.hermitian.Dense(N, uplo, layout) = try .init(allocator, self.size);
 
             if (comptime layout == .col_major) {
                 if (comptime uplo == .upper) { // cu
+                    var j: usize = 0;
                     while (j < mat.size) : (j += 1) {
-                        i = 0;
+                        var i: usize = 0;
                         while (i <= j) : (i += 1) {
-                            mat.data[mat._index(i, j)] = try numeric.copy(
-                                self.data[self._index(i, j)],
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                            mat.data[i + j * mat.ld] = self.data[i + j * self.ld];
                         }
                     }
                 } else { // cl
+                    var j: usize = 0;
                     while (j < mat.size) : (j += 1) {
-                        i = j;
+                        var i: usize = j;
                         while (i < mat.size) : (i += 1) {
-                            mat.data[mat._index(i, j)] = try numeric.copy(
-                                self.data[self._index(i, j)],
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                            mat.data[i + j * mat.ld] = self.data[i + j * self.ld];
                         }
                     }
                 }
             } else {
                 if (comptime uplo == .upper) { // ru
+                    var i: usize = 0;
                     while (i < mat.size) : (i += 1) {
-                        j = i;
+                        var j: usize = i;
                         while (j < mat.size) : (j += 1) {
-                            mat.data[mat._index(i, j)] = try numeric.copy(
-                                self.data[self._index(i, j)],
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                            mat.data[i * mat.ld + j] = self.data[i * self.ld + j];
                         }
                     }
                 } else { // rl
+                    var i: usize = 0;
                     while (i < mat.size) : (i += 1) {
-                        j = 0;
+                        var j: usize = 0;
                         while (j <= i) : (j += 1) {
-                            mat.data[mat._index(i, j)] = try numeric.copy(
-                                self.data[self._index(i, j)],
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                            mat.data[i * mat.ld + j] = self.data[i * self.ld + j];
                         }
                     }
                 }
@@ -716,103 +496,54 @@ pub fn Dense(T: type, uplo: Uplo, layout: Layout) type {
 
         /// Creates a copy of the matrix with inverted `uplo`.
         ///
-        /// Parameters
-        /// ----------
-        /// `self` (`*const matrix.hermitian.Dense(T, uplo, order)`):
-        /// A pointer to the matrix to copy.
+        /// ## Arguments
+        /// * `self` (`matrix.hermitian.Dense(N, uplo, layout)`): The matrix to
+        ///   copy.
+        /// * `allocator` (`std.mem.Allocator`): The allocator to use for memory
+        ///   allocations.
         ///
-        /// `allocator` (`std.mem.Allocator`):
-        /// The allocator to use for memory allocations.
+        /// ## Returns
+        /// `matrix.hermitian.Dense(N, uplo.invert(), layout)`: The copied
+        /// matrix.
         ///
-        /// `ctx` (`anytype`):
-        /// A context struct providing necessary resources and configuration for
-        /// the operation. The required fields depend on the type `T`. If the
-        /// context is missing required fields or contains unnecessary or
-        /// wrongly typed fields, the compiler will emit a detailed error
-        /// message describing the expected structure.
-        ///
-        /// Returns
-        /// -------
-        /// `matrix.hermitian.Dense(T, uplo.invert(), order)`:
-        /// The copied matrix.
-        ///
-        /// Errors
-        /// ------
-        /// `std.mem.Allocator.Error.OutOfMemory`:
-        /// If memory allocation fails.
-        ///
-        /// Notes
-        /// -----
-        /// If the elements are of arbitrary precision type, they are deep
-        /// copied.
-        pub fn copyInverseUplo(
-            self: *const Dense(T, uplo, layout),
-            allocator: std.mem.Allocator,
-            ctx: anytype,
-        ) !Dense(T, uplo.invert(), layout) {
-            comptime switch (types.numericType(T)) {
-                .bool, .int, .float, .cfloat => {
-                    types.validateContext(@TypeOf(ctx), .{});
-                },
-                .integer, .rational, .real, .complex => {
-                    types.validateContext(
-                        @TypeOf(ctx),
-                        .{
-                            .element_allocator = .{ .type = std.mem.Allocator, .required = true },
-                        },
-                    );
-                },
-            };
-
-            var mat: Dense(T, uplo.invert(), layout) = try .init(allocator, self.size);
-            errdefer mat.deinit(allocator);
-
-            var i: u32 = 0;
-            var j: u32 = 0;
-
-            errdefer mat._cleanup(i, j, layout, ctx);
+        /// ## Errors
+        /// `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
+        pub fn copyInverseUplo(self: matrix.hermitian.Dense(N, uplo, layout), allocator: std.mem.Allocator) !matrix.hermitian.Dense(N, uplo.invert(), layout) {
+            const mat: Dense(N, uplo.invert(), layout) = try .init(allocator, self.size);
 
             if (comptime layout == .col_major) {
                 if (comptime uplo.invert() == .upper) { // cl -> cu
+                    var j: usize = 0;
                     while (j < mat.size) : (j += 1) {
-                        i = 0;
+                        var i: usize = 0;
                         while (i <= j) : (i += 1) {
-                            mat.data[mat._index(i, j)] = try numeric.copy(
-                                numeric.conj(self.data[self._index(j, i)], .{}) catch unreachable,
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                            numeric.conj_(&mat.data[i + j * mat.ld], self.data[j + i * self.ld]);
                         }
                     }
                 } else { // cu -> cl
+                    var j: usize = 0;
                     while (j < mat.size) : (j += 1) {
-                        i = j;
+                        var i: usize = j;
                         while (i < mat.size) : (i += 1) {
-                            mat.data[mat._index(i, j)] = try numeric.copy(
-                                numeric.conj(self.data[self._index(j, i)], .{}) catch unreachable,
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                            numeric.conj_(&mat.data[i + j * mat.ld], self.data[j + i * self.ld]);
                         }
                     }
                 }
             } else {
                 if (comptime uplo.invert() == .upper) { // rl -> ru
+                    var i: usize = 0;
                     while (i < mat.size) : (i += 1) {
-                        j = i;
+                        var j: usize = i;
                         while (j < mat.size) : (j += 1) {
-                            mat.data[mat._index(i, j)] = try numeric.copy(
-                                numeric.conj(self.data[self._index(j, i)], .{}) catch unreachable,
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                            numeric.conj_(&mat.data[i * mat.ld + j], self.data[j * self.ld + i]);
                         }
                     }
                 } else { // ru -> rl
+                    var i: usize = 0;
                     while (i < mat.size) : (i += 1) {
-                        j = 0;
+                        var j: usize = 0;
                         while (j <= i) : (j += 1) {
-                            mat.data[mat._index(i, j)] = try numeric.copy(
-                                numeric.conj(self.data[self._index(j, i)], .{}) catch unreachable,
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                            numeric.conj_(&mat.data[i * mat.ld + j], self.data[j * self.ld + i]);
                         }
                     }
                 }
@@ -823,16 +554,14 @@ pub fn Dense(T: type, uplo: Uplo, layout: Layout) type {
 
         /// Returns a transposed view of the matrix.
         ///
-        /// Parameters
-        /// ----------
-        /// `self` (`*const matrix.hermitian.Dense(T, uplo, order)`):
-        /// The matrix to transpose.
+        /// ## Arguments
+        /// * `self` (`matrix.hermitian.Dense(N, uplo, layout)`): The matrix to
+        ///   transpose.
         ///
-        /// Returns
-        /// -------
-        /// `matrix.general.Dense(T, uplo.invert(), order.invert())`:
-        /// The transposed matrix.
-        pub fn transpose(self: Dense(T, uplo, layout)) Dense(T, uplo.invert(), layout.invert()) {
+        /// ## Returns
+        /// `matrix.general.Dense(N, uplo.invert(), layout.invert())`: The
+        /// transposed matrix.
+        pub fn transpose(self: matrix.hermitian.Dense(N, uplo, layout)) Dense(N, uplo.invert(), layout.invert()) {
             return .{
                 .data = self.data,
                 .size = self.size,
@@ -843,40 +572,26 @@ pub fn Dense(T: type, uplo: Uplo, layout: Layout) type {
 
         /// Returns a submatrix view of the matrix.
         ///
-        /// Parameters
-        /// ----------
-        /// `self` (`*const matrix.hermitian.Dense(T, uplo, order)`):
-        /// The matrix to get the submatrix from.
+        /// ## Arguments
+        /// * `self` (`matrix.hermitian.Dense(N, uplo, layout)`): The matrix to
+        ///   get the submatrix from.
+        /// * `start` (`usize`): The starting diagonal index of the submatrix
+        ///   (inclusive).
+        /// * `end` (`usize`): The ending diagonal index of the submatrix
+        ///   (exclusive). Must be greater than `start`.
         ///
-        /// `start` (`u32`):
-        /// The starting diagonal index of the submatrix (inclusive).
-        ///
-        /// `end` (`u32`):
-        /// The ending diagonal index of the submatrix (exclusive). Must be
-        /// greater than `start`.
-        ///
-        /// Returns
-        /// -------
-        /// `matrix.hermitian.Dense(T, uplo, order)`:
-        /// The submatrix.
+        /// ## Returns
+        /// `matrix.hermitian.Dense(N, uplo, layout)`: The submatrix.
         ///
         /// Errors
-        /// ------
-        /// `matrix.Error.InvalidRange`:
-        /// If the specified range is invalid.
-        pub fn submatrix(
-            self: *const Dense(T, uplo, layout),
-            start: u32,
-            end: u32,
-        ) !Dense(T, uplo, layout) {
+        /// * `matrix.Error.InvalidRange`: If the specified range is invalid.
+        pub fn submatrix(self: matrix.hermitian.Dense(N, uplo, layout), start: usize, end: usize) !matrix.hermitian.Dense(N, uplo, layout) {
             if (start >= self.size or end > self.size or start >= end)
                 return matrix.Error.InvalidRange;
 
-            const sub_size = end - start;
-
             return .{
                 .data = self.data + self._index(start, start),
-                .size = sub_size,
+                .size = end - start,
                 .ld = self.ld,
                 .flags = .{ .owns_data = false },
             };
@@ -884,145 +599,66 @@ pub fn Dense(T: type, uplo: Uplo, layout: Layout) type {
 
         /// Copies the hermitian matrix to a general dense matrix.
         ///
-        /// Parameters
-        /// ----------
-        /// `self` (`*const matrix.hermitian.Dense(T, uplo, order)`):
-        /// A pointer to the matrix to copy.
+        /// ## Arguments
+        /// * `self` (`matrix.hermitian.Dense(N, uplo, layout)`): The matrix to
+        ///   copy.
+        /// * `allocator` (`std.mem.Allocator`): The allocator to use for memory
+        ///   allocations.
         ///
-        /// `allocator` (`std.mem.Allocator`):
-        /// The allocator to use for memory allocations.
+        /// ## Returns
+        /// `matrix.general.Dense(N, layout)`: The copied matrix.
         ///
-        /// `ctx` (`anytype`):
-        /// A context struct providing necessary resources and configuration for
-        /// the operation. The required fields depend on the type `T`. If the
-        /// context is missing required fields or contains unnecessary or
-        /// wrongly typed fields, the compiler will emit a detailed error
-        /// message describing the expected structure.
-        ///
-        /// Returns
-        /// -------
-        /// `matrix.general.Dense(T, order)`:
-        /// The copied matrix.
-        ///
-        /// Errors
-        /// ------
-        /// `std.mem.Allocator.Error.OutOfMemory`:
-        /// If memory allocation fails.
-        ///
-        /// Notes
-        /// -----
-        /// If the elements are of arbitrary precision type, they are deep
-        /// copied.
-        pub fn copyToGeneralDenseMatrix(
-            self: Dense(T, uplo, layout),
-            allocator: std.mem.Allocator,
-            ctx: anytype,
-        ) !matrix.general.Dense(T, layout) {
-            comptime switch (types.numericType(T)) {
-                .cfloat => {
-                    types.validateContext(@TypeOf(ctx), .{});
-                },
-                .complex => {
-                    types.validateContext(
-                        @TypeOf(ctx),
-                        .{
-                            .element_allocator = .{ .type = std.mem.Allocator, .required = true },
-                        },
-                    );
-                },
-                else => unreachable,
-            };
-
-            var mat: matrix.general.Dense(T, layout) = try .init(allocator, self.size, self.size);
-            errdefer mat.deinit(allocator);
-
-            var i: u32 = 0;
-            var j: u32 = 0;
-
-            errdefer mat._cleanup(i, j, layout, ctx);
+        /// ## Errors
+        /// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
+        pub fn copyToGeneralDenseMatrix(self: matrix.hermitian.Dense(N, uplo, layout), allocator: std.mem.Allocator) !matrix.general.Dense(N, layout) {
+            const mat: matrix.general.Dense(N, layout) = try .init(allocator, self.size, self.size);
 
             if (comptime layout == .col_major) {
                 if (comptime uplo == .upper) { // cu
+                    var j: usize = 0;
                     while (j < mat.cols) : (j += 1) {
-                        i = 0;
+                        var i: usize = 0;
                         while (i < j) : (i += 1) {
-                            mat.data[mat._index(i, j)] = try numeric.copy(
-                                self.data[self._index(i, j)],
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
-
-                            mat.data[mat._index(j, i)] = try numeric.copy(
-                                numeric.conj(self.data[self._index(i, j)], .{}) catch unreachable,
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                            mat.data[i + j * mat.ld] = self.data[i + j * self.ld];
+                            numeric.conj_(&mat.data[j + i * mat.ld], self.data[i + j * self.ld]);
                         }
 
-                        mat.data[mat._index(j, j)] = try numeric.copy(
-                            self.data[self._index(j, j)],
-                            types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                        );
+                        mat.data[j + j * mat.ld] = self.data[j + j * self.ld];
                     }
                 } else { // cl
+                    var j: usize = 0;
                     while (j < mat.cols) : (j += 1) {
-                        mat.data[mat._index(j, j)] = try numeric.copy(
-                            self.data[self._index(j, j)],
-                            types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                        );
+                        mat.data[j + j * mat.ld] = self.data[j + j * self.ld];
 
-                        i = j + 1;
+                        var i: usize = j + 1;
                         while (i < mat.rows) : (i += 1) {
-                            mat.data[mat._index(i, j)] = try numeric.copy(
-                                self.data[self._index(i, j)],
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
-
-                            mat.data[mat._index(j, i)] = try numeric.copy(
-                                numeric.conj(self.data[self._index(i, j)], .{}) catch unreachable,
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                            mat.data[i + j * mat.ld] = self.data[i + j * self.ld];
+                            numeric.conj_(&mat.data[j + i * mat.ld], self.data[i + j * self.ld]);
                         }
                     }
                 }
             } else {
                 if (comptime uplo == .upper) { // ru
+                    var i: usize = 0;
                     while (i < mat.rows) : (i += 1) {
-                        mat.data[mat._index(i, i)] = try numeric.copy(
-                            self.data[self._index(i, i)],
-                            types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                        );
+                        mat.data[i * mat.ld + i] = self.data[i * self.ld + i];
 
-                        j = i + 1;
+                        var j: usize = i + 1;
                         while (j < mat.cols) : (j += 1) {
-                            mat.data[mat._index(i, j)] = try numeric.copy(
-                                self.data[self._index(i, j)],
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
-
-                            mat.data[mat._index(j, i)] = try numeric.copy(
-                                numeric.conj(self.data[self._index(i, j)], .{}) catch unreachable,
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                            mat.data[i * mat.ld + j] = self.data[i * self.ld + j];
+                            numeric.conj_(&mat.data[j * mat.ld + i], self.data[i * self.ld + j]);
                         }
                     }
                 } else { // rl
+                    var i: usize = 0;
                     while (i < mat.rows) : (i += 1) {
-                        j = 0;
+                        var j: usize = 0;
                         while (j < i) : (j += 1) {
-                            mat.data[mat._index(i, j)] = try numeric.copy(
-                                self.data[self._index(i, j)],
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
-
-                            mat.data[mat._index(j, i)] = try numeric.copy(
-                                numeric.conj(self.data[self._index(i, j)], .{}) catch unreachable,
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                            mat.data[i * mat.ld + j] = self.data[i * self.ld + j];
+                            numeric.conj_(&mat.data[j * mat.ld + i], self.data[i * self.ld + j]);
                         }
 
-                        mat.data[mat._index(i, i)] = try numeric.copy(
-                            self.data[self._index(i, i)],
-                            types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                        );
+                        mat.data[i * mat.ld + i] = self.data[i * self.ld + i];
                     }
                 }
             }
@@ -1030,214 +666,78 @@ pub fn Dense(T: type, uplo: Uplo, layout: Layout) type {
             return mat;
         }
 
-        pub fn copyToDenseArray(
-            self: *const Dense(T, uplo, layout),
-            allocator: std.mem.Allocator,
-            ctx: anytype,
-        ) !array.Dense(T, layout) {
-            var result: array.Dense(T, layout) = try .init(allocator, &.{ self.size, self.size });
-            errdefer result.deinit(allocator);
+        // pub fn copyToDenseArray(
+        //     self: *const Dense(N, uplo, layout),
+        //     allocator: std.mem.Allocator,
+        //     ctx: anytype,
+        // ) !array.Dense(N, layout) {
+        //     var result: array.Dense(N, layout) = try .init(allocator, &.{ self.size, self.size });
+        //     errdefer result.deinit(allocator);
 
-            if (comptime !types.isArbitraryPrecision(T)) {
-                comptime types.validateContext(@TypeOf(ctx), .{});
+        //     if (comptime !types.isArbitraryPrecision(N)) {
+        //         comptime types.validateContext(@TypeOf(ctx), .{});
 
-                if (comptime layout == .col_major) {
-                    if (comptime uplo == .upper) { // cu
-                        var j: u32 = 0;
-                        while (j < self.size) : (j += 1) {
-                            var i: u32 = 0;
-                            while (i < j) : (i += 1) {
-                                result.data[i + j * result.strides[1]] = self.data[i + j * self.ld];
-                                result.data[j + i * result.strides[1]] = numeric.conj(self.data[i + j * self.ld], ctx) catch unreachable;
-                            }
+        //         if (comptime layout == .col_major) {
+        //             if (comptime uplo == .upper) { // cu
+        //                 var j: usize = 0;
+        //                 while (j < self.size) : (j += 1) {
+        //                     var i: usize = 0;
+        //                     while (i < j) : (i += 1) {
+        //                         result.data[i + j * result.strides[1]] = self.data[i + j * self.ld];
+        //                         result.data[j + i * result.strides[1]] = numeric.conj(self.data[i + j * self.ld], ctx) catch unreachable;
+        //                     }
 
-                            result.data[j + j * result.strides[1]] = self.data[j + j * self.ld];
-                        }
-                    } else {
-                        var j: u32 = 0;
-                        while (j < self.size) : (j += 1) {
-                            result.data[j + j * result.strides[1]] = self.data[j + j * self.ld];
+        //                     result.data[j + j * result.strides[1]] = self.data[j + j * self.ld];
+        //                 }
+        //             } else {
+        //                 var j: usize = 0;
+        //                 while (j < self.size) : (j += 1) {
+        //                     result.data[j + j * result.strides[1]] = self.data[j + j * self.ld];
 
-                            var i: u32 = j + 1;
-                            while (i < self.size) : (i += 1) {
-                                result.data[i + j * result.strides[1]] = self.data[i + j * self.ld];
-                                result.data[j + i * result.strides[1]] = numeric.conj(self.data[i + j * self.ld], ctx) catch unreachable;
-                            }
-                        }
-                    }
-                } else {
-                    if (comptime uplo == .upper) { // ru
-                        var i: u32 = 0;
-                        while (i < self.size) : (i += 1) {
-                            result.data[i * result.strides[0] + i] = self.data[i * self.ld + i];
+        //                     var i: usize = j + 1;
+        //                     while (i < self.size) : (i += 1) {
+        //                         result.data[i + j * result.strides[1]] = self.data[i + j * self.ld];
+        //                         result.data[j + i * result.strides[1]] = numeric.conj(self.data[i + j * self.ld], ctx) catch unreachable;
+        //                     }
+        //                 }
+        //             }
+        //         } else {
+        //             if (comptime uplo == .upper) { // ru
+        //                 var i: usize = 0;
+        //                 while (i < self.size) : (i += 1) {
+        //                     result.data[i * result.strides[0] + i] = self.data[i * self.ld + i];
 
-                            var j: u32 = i + 1;
-                            while (j < self.size) : (j += 1) {
-                                result.data[i * result.strides[0] + j] = self.data[i * self.ld + j];
-                                result.data[j * result.strides[0] + i] = numeric.conj(self.data[i * self.ld + j], ctx) catch unreachable;
-                            }
-                        }
-                    } else { // rl
-                        var i: u32 = 0;
-                        while (i < self.size) : (i += 1) {
-                            var j: u32 = 0;
-                            while (j < i) : (j += 1) {
-                                result.data[i * result.strides[0] + j] = self.data[i * self.ld + j];
-                                result.data[j * result.strides[0] + i] = numeric.conj(self.data[i * self.ld + j], ctx) catch unreachable;
-                            }
+        //                     var j: usize = i + 1;
+        //                     while (j < self.size) : (j += 1) {
+        //                         result.data[i * result.strides[0] + j] = self.data[i * self.ld + j];
+        //                         result.data[j * result.strides[0] + i] = numeric.conj(self.data[i * self.ld + j], ctx) catch unreachable;
+        //                     }
+        //                 }
+        //             } else { // rl
+        //                 var i: usize = 0;
+        //                 while (i < self.size) : (i += 1) {
+        //                     var j: usize = 0;
+        //                     while (j < i) : (j += 1) {
+        //                         result.data[i * result.strides[0] + j] = self.data[i * self.ld + j];
+        //                         result.data[j * result.strides[0] + i] = numeric.conj(self.data[i * self.ld + j], ctx) catch unreachable;
+        //                     }
 
-                            result.data[i * result.strides[0] + i] = self.data[i * self.ld + i];
-                        }
-                    }
-                }
-            } else {
-                @compileError("Arbitrary precision types not implemented yet");
-            }
+        //                     result.data[i * result.strides[0] + i] = self.data[i * self.ld + i];
+        //                 }
+        //             }
+        //         }
+        //     } else {
+        //         @compileError("Arbitrary precision types not implemented yet");
+        //     }
 
-            return result;
-        }
+        //     return result;
+        // }
 
-        pub inline fn _index(self: *const Dense(T, uplo, layout), r: u32, c: u32) u32 {
+        inline fn _index(self: *const Dense(N, uplo, layout), r: usize, c: usize) usize {
             return if (comptime layout == .col_major)
                 r + c * self.ld
             else
                 r * self.ld + c;
-        }
-
-        /// Cleans up the elements of the matrix, deinitializing them if
-        /// necessary.
-        ///
-        /// Parameters
-        /// ----------
-        /// `self` (`*matrix.hermitian.Dense(T, order)`):
-        /// A pointer to the matrix to clean up.
-        ///
-        /// `ctx` (`anytype`):
-        /// A context struct providing necessary resources and configuration for
-        /// the operation. The required fields depend on the type `T`. If the
-        /// context is missing required fields or contains unnecessary or
-        /// wrongly typed fields, the compiler will emit a detailed error
-        /// message describing the expected structure.
-        ///
-        /// Returns
-        /// -------
-        /// `void`
-        ///
-        /// Notes
-        /// -----
-        /// This function must be called before `deinit` if the elements are of
-        /// arbitrary precision type to properly deinitialize them.
-        pub fn cleanup(self: *Dense(T, uplo, layout), ctx: anytype) void {
-            return self._cleanup(self.size, self.size, layout, ctx);
-        }
-
-        /// Cleans up the elements of the matrix, deinitializing them if
-        /// necessary, in the specified order up to position (i, j), exclusive.
-        /// In other words, if iter_order is column-major, all elements from
-        /// (0, 0) to (i - 1, j) are cleaned up, and if iter_order is row-major,
-        /// all elements from (0, 0) to (i, j - 1) are cleaned up.
-        pub fn _cleanup(self: *Dense(T, uplo, layout), i: u32, j: u32, iter_order: IterationOrder, ctx: anytype) void {
-            switch (comptime types.numericType(T)) {
-                .bool, .int, .float, .cfloat => {
-                    comptime types.validateContext(@TypeOf(ctx), .{});
-
-                    // No cleanup needed for fixed precision types.
-                },
-                .integer, .rational, .real, .complex => {
-                    comptime types.validateContext(
-                        @TypeOf(ctx),
-                        .{
-                            .element_allocator = .{ .type = std.mem.Allocator, .required = true },
-                        },
-                    );
-
-                    if (iter_order == .left_to_right) {
-                        if (comptime uplo == .upper) {
-                            var _j: u32 = 0;
-                            while (_j <= int.min(j, self.size - 1)) : (_j += 1) {
-                                var _i: u32 = 0;
-                                if (_j == j) {
-                                    while (_i < int.min(i, _j + 1)) : (_i += 1) {
-                                        numeric.deinit(
-                                            &self.data[self._index(_i, _j)],
-                                            types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                                        );
-                                    }
-                                } else {
-                                    while (_i <= _j) : (_i += 1) {
-                                        numeric.deinit(
-                                            &self.data[self._index(_i, _j)],
-                                            types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                                        );
-                                    }
-                                }
-                            }
-                        } else {
-                            var _j: u32 = 0;
-                            while (_j <= int.min(j, self.size - 1)) : (_j += 1) {
-                                var _i: u32 = _j;
-                                if (_j == j) {
-                                    while (_i < int.min(i, self.size)) : (_i += 1) {
-                                        numeric.deinit(
-                                            &self.data[self._index(_i, _j)],
-                                            types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                                        );
-                                    }
-                                } else {
-                                    while (_i < self.size) : (_i += 1) {
-                                        numeric.deinit(
-                                            &self.data[self._index(_i, _j)],
-                                            types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                                        );
-                                    }
-                                }
-                            }
-                        }
-                    } else {
-                        if (comptime uplo == .upper) {
-                            var _i: u32 = 0;
-                            while (_i <= int.min(i, self.size - 1)) : (_i += 1) {
-                                var _j: u32 = _i;
-                                if (_i == i) {
-                                    while (_j < int.min(j, self.size)) : (_j += 1) {
-                                        numeric.deinit(
-                                            &self.data[self._index(_i, _j)],
-                                            types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                                        );
-                                    }
-                                } else {
-                                    while (_j < self.size) : (_j += 1) {
-                                        numeric.deinit(
-                                            &self.data[self._index(_i, _j)],
-                                            types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                                        );
-                                    }
-                                }
-                            }
-                        } else {
-                            var _i: u32 = 0;
-                            while (_i <= int.min(i, self.size - 1)) : (_i += 1) {
-                                var _j: u32 = 0;
-                                if (_i == i) {
-                                    while (_j < int.min(j, _i + 1)) : (_j += 1) {
-                                        numeric.deinit(
-                                            &self.data[self._index(_i, _j)],
-                                            types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                                        );
-                                    }
-                                } else {
-                                    while (_j <= _i) : (_j += 1) {
-                                        numeric.deinit(
-                                            &self.data[self._index(_i, _j)],
-                                            types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                                        );
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-            }
         }
     };
 }

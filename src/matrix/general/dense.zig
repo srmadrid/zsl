@@ -4,43 +4,42 @@ const types = @import("../../types.zig");
 const Layout = types.Layout;
 const Uplo = types.Uplo;
 const Diag = types.Diag;
-const IterationOrder = types.IterationOrder;
+
 const numeric = @import("../../numeric.zig");
 const int = @import("../../int.zig");
 
 const vector = @import("../../vector.zig");
 
 const matrix = @import("../../matrix.zig");
-const Flags = matrix.Flags;
 
 const array = @import("../../array.zig");
 
 /// Dense general matrix type, represented as a contiguous array of
-/// `rows × cols` elements of type `T`, stored in either column-major or
+/// `rows × cols` elements of type `N`, stored in either column-major or
 /// row-major order with a specified leading dimension.
-pub fn Dense(T: type, layout: Layout) type {
-    if (!types.isNumeric(T))
-        @compileError("matrix.general.Dense requires a numeric type, got " ++ @typeName(T));
+pub fn Dense(N: type, layout: Layout) type {
+    if (!types.isNumeric(N))
+        @compileError("zsl.matrix.general.Dense: N must be a numeric type, got \n\tN = " ++ @typeName(N) ++ "\n");
 
     return struct {
-        data: [*]T,
-        rows: u32,
-        cols: u32,
-        ld: u32, // leading dimension
-        flags: Flags = .{},
+        data: [*]N,
+        rows: usize,
+        cols: usize,
+        ld: usize,
+        flags: matrix.Flags,
 
-        /// Type signatures
-        pub const is_matrix = {};
-        pub const is_dense = {};
-        pub const is_general = {};
+        // Type signatures
+        pub const is_matrix = true;
+        pub const is_dense = true;
+        pub const is_general = true;
         pub const storage_layout = layout;
         pub const storage_uplo = types.default_uplo;
         pub const storage_diag = types.default_diag;
 
-        /// Numeric type
-        pub const Numeric = T;
+        // Numeric type
+        pub const Numeric = N;
 
-        pub const empty: Dense(T, layout) = .{
+        pub const empty: Dense(N, layout) = .{
             .data = &.{},
             .rows = 0,
             .cols = 0,
@@ -48,45 +47,27 @@ pub fn Dense(T: type, layout: Layout) type {
             .flags = .{ .owns_data = false },
         };
 
-        /// Initializes a new matrix with the specified rows and columns.
+        /// Initializes a new `matrix.general.Dense(N, layout)` with the
+        /// specified rows and columns.
         ///
-        /// Parameters
-        /// ----------
-        /// `allocator` (`std.mem.Allocator`):
-        /// The allocator to use for memory allocations.
+        /// ## Arguments
+        /// * `allocator` (`std.mem.Allocator`): The allocator to use for memory
+        ///   allocations.
+        /// * `rows` (`usize`): The rows of the matrix.
+        /// * `cols` (`usize`): The columns of the matrix.
         ///
-        /// `rows` (`u32`):
-        /// The rows of the matrix.
+        /// ## Returns
+        /// `matrix.general.Dense(N, layout)`: The newly initialized matrix.
         ///
-        /// `cols` (`u32`):
-        /// The columns of the matrix.
-        ///
-        /// Returns
-        /// -------
-        /// `matrix.general.Dense(T, order)`:
-        /// The newly initialized matrix.
-        ///
-        /// Errors
-        /// ------
-        /// `std.mem.Allocator.Error.OutOfMemory`:
-        /// If memory allocation fails.
-        ///
-        /// `matrix.Error.ZeroDimension`:
-        /// If either `rows` or `cols` is zero.
-        ///
-        /// Notes
-        /// -----
-        /// The elements are not initialized.
-        pub fn init(
-            allocator: std.mem.Allocator,
-            rows: u32,
-            cols: u32,
-        ) !Dense(T, layout) {
+        /// ## Errors
+        /// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
+        /// * `matrix.Error.ZeroDimension`: If either `rows` or `cols` is zero.
+        pub fn init(allocator: std.mem.Allocator, rows: usize, cols: usize) !matrix.general.Dense(N, layout) {
             if (rows == 0 or cols == 0)
                 return matrix.Error.ZeroDimension;
 
             return .{
-                .data = (try allocator.alloc(T, rows * cols)).ptr,
+                .data = (try allocator.alloc(N, rows * cols)).ptr,
                 .rows = rows,
                 .cols = cols,
                 .ld = if (comptime layout == .col_major) rows else cols,
@@ -94,106 +75,42 @@ pub fn Dense(T: type, layout: Layout) type {
             };
         }
 
-        /// Initializes a new matrix with the specified rows and columns, filled
-        /// with the specified value.
-        ///
-        /// Parameters
-        /// ----------
-        /// `allocator` (`std.mem.Allocator`):
-        /// The allocator to use for memory allocations.
-        ///
-        /// `rows` (`u32`):
-        /// The rows of the matrix.
-        ///
-        /// `cols` (`u32`):
-        /// The columns of the matrix.
-        ///
-        /// `value` (`anytype`):
-        /// The value to fill the matrix with.
-        ///
-        /// `ctx` (`anytype`):
-        /// A context struct providing necessary resources and configuration for
-        /// the operation. The required fields depend on the type `T` and the
-        /// type of `value`. If  the context is missing required fields or
-        /// contains unnecessary or wrongly typed fields, the compiler will emit
-        /// a detailed error message describing the expected structure.
-        ///
-        /// Returns
-        /// -------
-        /// `matrix.general.Dense(T, order)`:
-        /// The newly initialized matrix.
-        ///
-        /// Errors
-        /// ------
-        /// `std.mem.Allocator.Error.OutOfMemory`:
-        /// If memory allocation fails.
-        ///
-        /// `matrix.Error.ZeroDimension`:
-        /// If either `rows` or `cols` is zero.
-        ///
-        /// Notes
-        /// -----
-        /// The matrix does not take ownership of `value` if it is an arbitrary
-        /// precision type.
-        pub fn full(
-            allocator: std.mem.Allocator,
-            rows: u32,
-            cols: u32,
-            value: anytype,
-            ctx: anytype,
-        ) !Dense(T, layout) {
-            comptime switch (types.numericType(T)) {
-                .bool, .int, .float, .cfloat => {
-                    types.validateContext(@TypeOf(ctx), .{});
-                },
-                .integer, .rational, .real, .complex => {
-                    types.validateContext(
-                        @TypeOf(ctx),
-                        .{
-                            .element_allocator = .{ .type = std.mem.Allocator, .required = true },
-                        },
-                    );
-                },
-            };
+        // pub fn initBuffer
 
-            var mat: Dense(T, layout) = try .init(allocator, rows, cols);
-            errdefer mat.deinit(allocator);
-
-            var i: u32 = 0;
-            var j: u32 = 0;
-
-            errdefer mat._cleanup(i, j, layout, ctx);
+        /// Initializes a new `matrix.general.Dense(N, layout)` with the
+        /// specified rows and columns, with all elements set to the specified
+        /// value.
+        ///
+        /// ## Arguments
+        /// * `allocator` (`std.mem.Allocator`): The allocator to use for memory
+        ///   allocations.
+        /// * `rows` (`usize`): The rows of the matrix.
+        /// * `cols` (`usize`): The columns of the matrix.
+        /// * `value` (`N`): The value to fill the matrix with.
+        ///
+        /// ## Returns
+        /// `matrix.general.Dense(N, layout)`: The newly initialized matrix.
+        ///
+        /// ## Errors
+        /// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
+        /// * `matrix.Error.ZeroDimension`: If either `rows` or `cols` is zero.
+        pub fn initValue(allocator: std.mem.Allocator, rows: usize, cols: usize, value: N) !matrix.general.Dense(N, layout) {
+            const mat: matrix.general.Dense(N, layout) = try .init(allocator, rows, cols);
 
             if (comptime layout == .col_major) {
+                var j: usize = 0;
                 while (j < cols) : (j += 1) {
-                    i = 0;
+                    var i: usize = 0;
                     while (i < rows) : (i += 1) {
-                        mat.data[mat._index(i, j)] = try numeric.init(
-                            T,
-                            types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                        );
-
-                        try numeric.set(
-                            &mat.data[mat._index(i, j)],
-                            value,
-                            types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                        );
+                        mat.data[i + j * mat.ld] = value;
                     }
                 }
             } else {
+                var i: usize = 0;
                 while (i < rows) : (i += 1) {
-                    j = 0;
+                    var j: usize = 0;
                     while (j < cols) : (j += 1) {
-                        mat.data[mat._index(i, j)] = try numeric.init(
-                            T,
-                            types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                        );
-
-                        try numeric.set(
-                            &mat.data[mat._index(i, j)],
-                            value,
-                            types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                        );
+                        mat.data[i * mat.ld + j] = value;
                     }
                 }
             }
@@ -201,111 +118,116 @@ pub fn Dense(T: type, layout: Layout) type {
             return mat;
         }
 
-        /// Initializes a new identity matrix of the specified size.
+        /// Initializes a new `matrix.general.Dense(N, layout)` with the
+        /// specified rows and columns, with all elements set by calling the
+        /// specified function with the given arguments.
         ///
-        /// Parameters
-        /// ----------
-        /// `allocator` (`std.mem.Allocator`):
-        /// The allocator to use for memory allocations.
+        /// ## Arguments
+        /// * `allocator` (`std.mem.Allocator`): The allocator to use for memory
+        ///   allocations.
+        /// * `rows` (`usize`): The rows of the matrix.
+        /// * `cols` (`usize`): The columns of the matrix.
+        /// * `@"fn"` (`anytype`): The function to call to fill the matrix.
+        /// * `args` (`anytype`): A tuple of the arguments to call the function
+        ///   with.
         ///
-        /// `size` (`u32`):
-        /// The size of the (square) matrix.
+        /// ## Returns
+        /// `matrix.general.Dense(N, layout)`: The newly initialized matrix.
         ///
-        /// `ctx` (`anytype`):
-        /// A context struct providing necessary resources and configuration for
-        /// the operation. The required fields depend on the type `T`. If the
-        /// context is missing required fields or contains unnecessary or
-        /// wrongly typed fields, the compiler will emit a detailed error
-        /// message describing the expected structure.
-        ///
-        /// Returns
-        /// -------
-        /// `matrix.general.Dense(T, order)`:
-        /// The newly initialized identity matrix.
-        ///
-        /// Errors
-        /// ------
-        /// `std.mem.Allocator.Error.OutOfMemory`:
-        /// If memory allocation fails.
-        ///
-        /// `matrix.Error.ZeroDimension`:
-        /// If `size` is zero.
-        pub fn eye(
-            allocator: std.mem.Allocator,
-            size: u32,
-            ctx: anytype,
-        ) !Dense(T, layout) {
-            comptime switch (types.numericType(T)) {
-                .bool, .int, .float, .cfloat => {
-                    types.validateContext(@TypeOf(ctx), .{});
-                },
-                .integer, .rational, .real, .complex => {
-                    types.validateContext(
-                        @TypeOf(ctx),
-                        .{
-                            .element_allocator = .{ .type = std.mem.Allocator, .required = true },
-                        },
-                    );
-                },
-            };
+        /// ## Errors
+        /// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
+        /// * `matrix.Error.ZeroDimension`: If either `rows` or `cols` is zero.
+        pub fn initFn(allocator: std.mem.Allocator, rows: usize, cols: usize, comptime @"fn": anytype, args: anytype) !matrix.general.Dense(N, layout) {
+            const Fn = @TypeOf(@"fn");
+            const Args = @TypeOf(args);
 
+            const fn_info = @typeInfo(Fn);
+            const args_info = @typeInfo(Args);
+
+            comptime if (fn_info != .@"fn" or args_info != .@"struct")
+                @compileError("zsl.matrix.general.Dense(N, layout).initFn: @\"fn\" must be a function and args must be a struct, got \n\t@\"fn\": " ++ @typeName(Fn) ++ "\n\targs: " ++ @typeName(Args) ++ "\n");
+
+            var mat: matrix.general.Dense(N, layout) = try .init(allocator, rows, cols);
+            errdefer mat.deinit(allocator);
+
+            if (comptime layout == .col_major) {
+                var j: usize = 0;
+                while (j < cols) : (j += 1) {
+                    var i: usize = 0;
+                    while (i < rows) : (i += 1) {
+                        mat.data[i + j * mat.ld] = if (comptime @typeInfo(types.ReturnTypeFromInputs(@"fn", &types.structToArrayOfTypes(Args))) == .error_union)
+                            try @call(.auto, @"fn", args)
+                        else
+                            @call(.auto, @"fn", args);
+                    }
+                }
+            } else {
+                var i: usize = 0;
+                while (i < rows) : (i += 1) {
+                    var j: usize = 0;
+                    while (j < cols) : (j += 1) {
+                        mat.data[i * mat.ld + j] = if (comptime @typeInfo(types.ReturnTypeFromInputs(@"fn", &types.structToArrayOfTypes(Args))) == .error_union)
+                            try @call(.auto, @"fn", args)
+                        else
+                            @call(.auto, @"fn", args);
+                    }
+                }
+            }
+
+            return mat;
+        }
+
+        /// Initializes a new identity `matrix.general.Dense(N, layout)` of the
+        /// specified size.
+        ///
+        /// ## Arguments
+        /// * `allocator` (`std.mem.Allocator`): The allocator to use for memory
+        ///   allocations.
+        /// * `size` (`usize`): The size of the (square) matrix.
+        ///
+        /// ## Returns
+        /// `matrix.general.Dense(N, layout)`: The newly initialized identity
+        /// matrix.
+        ///
+        /// ## Errors
+        /// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
+        /// * `matrix.Error.ZeroDimension`: If `size` is zero.
+        pub fn initIdentity(allocator: std.mem.Allocator, size: usize) !matrix.general.Dense(N, layout) {
             if (size == 0)
                 return matrix.Error.ZeroDimension;
 
-            var mat: Dense(T, layout) = try .init(allocator, size, size);
-            errdefer mat.deinit(allocator);
-
-            var i: u32 = 0;
-            var j: u32 = 0;
-
-            errdefer mat._cleanup(i, j, layout, ctx);
+            const mat: Dense(N, layout) = try .init(allocator, size, size);
 
             if (comptime layout == .col_major) {
+                var j: usize = 0;
                 while (j < size) : (j += 1) {
-                    i = 0;
+                    var i: usize = 0;
                     while (i < j) : (i += 1) {
-                        mat.data[mat._index(i, j)] = try numeric.zero(
-                            T,
-                            types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                        );
+                        mat.data[i + j * mat.ld] = numeric.zero(N);
                     }
 
-                    mat.data[mat._index(j, j)] = try numeric.one(
-                        T,
-                        types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                    );
+                    mat.data[j + j * mat.ld] = numeric.one(N);
 
                     i += 1;
 
                     while (i < size) : (i += 1) {
-                        mat.data[mat._index(i, j)] = try numeric.zero(
-                            T,
-                            types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                        );
+                        mat.data[i + j * mat.ld] = numeric.zero(N);
                     }
                 }
             } else {
+                var i: usize = 0;
                 while (i < size) : (i += 1) {
-                    j = 0;
+                    var j: usize = 0;
                     while (j < i) : (j += 1) {
-                        mat.data[mat._index(i, j)] = try numeric.zero(
-                            T,
-                            types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                        );
+                        mat.data[i * mat.ld + j] = numeric.zero(N);
                     }
 
-                    mat.data[mat._index(i, i)] = try numeric.one(
-                        T,
-                        types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                    );
+                    mat.data[i * mat.ld + j] = numeric.one(N);
 
                     j += 1;
 
                     while (j < size) : (j += 1) {
-                        mat.data[mat._index(i, j)] = try numeric.zero(
-                            T,
-                            types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                        );
+                        mat.data[i * mat.ld + j] = numeric.zero(N);
                     }
                 }
             }
@@ -316,24 +238,15 @@ pub fn Dense(T: type, layout: Layout) type {
         /// Deinitializes the matrix, freeing any allocated memory and
         /// invalidating it.
         ///
-        /// Parameters
-        /// ----------
-        /// `self` (`*matrix.general.Dense(T, order)`):
-        /// A pointer to the matrix to deinitialize.
+        /// ## Arguments
+        /// * `self` (`*matrix.general.Dense(N, layout)`):  A pointer to the
+        ///   matrix to deinitialize.
+        /// * `allocator` (`std.mem.Allocator`): The allocator to use for memory
+        ///   deallocation. Must be the same allocator used to initialize `self`.
         ///
-        /// `allocator` (`std.mem.Allocator`):
-        /// The allocator to use for memory deallocation. Must be the same
-        /// allocator used to initialize `self`.
-        ///
-        /// Returns
-        /// -------
+        /// ## Returns
         /// `void`
-        ///
-        /// Notes
-        /// -----
-        /// If the elements are of arbitrary precision type, `cleanup` must be
-        /// called before `deinit` to properly deinitialize the elements.
-        pub fn deinit(self: *Dense(T, layout), allocator: std.mem.Allocator) void {
+        pub fn deinit(self: *matrix.general.Dense(N, layout), allocator: std.mem.Allocator) void {
             if (self.flags.owns_data) {
                 allocator.free(self.data[0 .. self.rows * self.cols]);
             }
@@ -341,196 +254,111 @@ pub fn Dense(T: type, layout: Layout) type {
             self.* = undefined;
         }
 
-        /// Gets the element at the specified position.
+        /// Gets the element at the specified index.
         ///
-        /// Parameters
-        /// ----------
-        /// `self` (`*const matrix.general.Dense(T, order)`):
-        /// A pointer to the matrix to get the element from.
+        /// ## Arguments
+        /// * `self` (`matrix.general.Dense(N, layout)`): The matrix to get the
+        ///   element from.
+        /// * `r` (`usize`): The row index of the element to get.
+        /// * `c` (`usize`): The column index of the element to get.
         ///
-        /// `r` (`u32`):
-        /// The row index of the element to get.
+        /// ## Returns
+        /// `N`: The element at the specified index.
         ///
-        /// `c` (`u32`):
-        /// The column index of the element to get.
-        ///
-        /// Returns
-        /// -------
-        /// `T`:
-        /// The element at the specified position.
-        ///
-        /// Errors
-        /// ------
-        /// `matrix.Error.PositionOutOfBounds`:
-        /// If `r` or `c` is out of bounds.
-        pub fn get(self: *const Dense(T, layout), r: u32, c: u32) !T {
+        /// ## Errors
+        /// * `matrix.Error.PositionOutOfBounds`: If `r` or `c` is out of
+        ///   bounds.
+        pub fn get(self: matrix.general.Dense(N, layout), r: usize, c: usize) !N {
             if (r >= self.rows or c >= self.cols)
                 return matrix.Error.PositionOutOfBounds;
 
             return self.data[self._index(r, c)];
         }
 
-        /// Gets the element at the specified position without bounds checking.
+        /// Gets the element at the specified index without bounds checking.
         ///
-        /// Parameters
-        /// ----------
-        /// `self` (`*const matrix.general.Dense(T, order)`):
-        /// A pointer to the matrix to get the element from.
+        /// ## Arguments
+        /// * `self` (`matrix.general.Dense(N, layout)`): The matrix to get the
+        ///   element from.
+        /// * `r` (`usize`): The row index of the element to get. Assumed to be
+        ///   within bounds.
+        /// * `c` (`usize`): The column index of the element to get. Assumed to
+        ///   be within bounds.
         ///
-        /// `r` (`u32`):
-        /// The row index of the element to get. Assumed to be within bounds.
-        ///
-        /// `c` (`u32`):
-        /// The column index of the element to get. Assumed to be within bounds.
-        ///
-        /// Returns
-        /// -------
-        /// `T`:
-        /// The element at the specified position.
-        pub inline fn at(self: *const Dense(T, layout), r: u32, c: u32) T {
+        /// ## Returns
+        /// `N`: The element at the specified index.
+        pub inline fn at(self: matrix.general.Dense(N, layout), r: usize, c: usize) N {
             return self.data[self._index(r, c)];
         }
 
-        /// Sets the element at the specified position.
+        /// Sets the element at the specified index.
         ///
-        /// Parameters
-        /// ----------
-        /// `self` (`*matrix.general.Dense(T, order)`):
-        /// A pointer to the matrix to set the element in.
+        /// ## Arguments
+        /// * `self` (`*matrix.general.Dense(N, layout)`): A pointer to the
+        ///   matrix to set the element in.
+        /// * `r` (`usize`): The row index of the element to set.
+        /// * `c` (`usize`): The column index of the element to set.
+        /// * `value` (`N`): The value to set the element to.
         ///
-        /// `r` (`u32`):
-        /// The row index of the element to set.
-        ///
-        /// `c` (`u32`):
-        /// The column index of the element to set.
-        ///
-        /// `value` (`T`):
-        /// The value to set the element to.
-        ///
-        /// Returns
-        /// -------
+        /// ## Returns
         /// `void`
         ///
-        /// Errors
-        /// ------
-        /// `matrix.Error.PositionOutOfBounds`:
-        /// If `r` or `c` is out of bounds.
-        ///
-        /// Notes
-        /// -----
-        /// If the elements are of arbitrary precision type, the existing
-        /// element at the position is not deinitialized. The user must ensure
-        /// that no memory leaks occur. Additionally, the matrix takes ownership
-        /// of `value`.
-        pub fn set(self: *Dense(T, layout), r: u32, c: u32, value: T) !void {
+        /// ## Errors
+        /// * `matrix.Error.PositionOutOfBounds`: If `r` or `c` is out of
+        ///   bounds.
+        pub fn set(self: *matrix.general.Dense(N, layout), r: usize, c: usize, value: N) !void {
             if (r >= self.rows or c >= self.cols)
                 return matrix.Error.PositionOutOfBounds;
 
             self.data[self._index(r, c)] = value;
         }
 
-        /// Sets the element at the specified position without bounds checking.
+        /// Sets the element at the specified index without bounds checking.
         ///
-        /// Parameters
-        /// ----------
-        /// `self` (`*matrix.general.Dense(T, order)`):
-        /// A pointer to the matrix to set the element in.
+        /// ## Arguments
+        /// * `self` (`*matrix.general.Dense(N, layout)`): A pointer to the
+        ///   matrix to set the element in.
+        /// * `r` (`usize`): The row index of the element to set. Assumed to be
+        ///   within bounds.
+        /// * `c` (`usize`): The column index of the element to set. Assumed to
+        ///   be within bounds.
+        /// * `value` (`N`): The value to set the element to.
         ///
-        /// `r` (`u32`):
-        /// The row index of the element to set. Assumed to be within bounds.
-        ///
-        /// `c` (`u32`):
-        /// The column index of the element to set. Assumed to be within bounds.
-        ///
-        /// `value` (`T`):
-        /// The value to set the element to.
-        ///
-        /// Returns
-        /// -------
+        /// ## Returns
         /// `void`
-        ///
-        /// Notes
-        /// -----
-        /// If the elements are of arbitrary precision type, the existing
-        /// element at the position is not deinitialized. The user must ensure
-        /// that no memory leaks occur. Additionally, the matrix takes ownership
-        /// of `value`.
-        pub inline fn put(self: *Dense(T, layout), r: u32, c: u32, value: T) void {
+        pub inline fn put(self: *matrix.general.Dense(N, layout), r: usize, c: usize, value: N) void {
             self.data[self._index(r, c)] = value;
         }
 
         /// Creates a copy of the matrix.
         ///
-        /// Parameters
-        /// ----------
-        /// `self` (`*const matrix.general.Dense(T, order)`):
-        /// A pointer to the matrix to copy.
+        /// ## Arguments
+        /// * `self` (`matrix.general.Dense(N, layout)`): The matrix to copy.
+        /// * `allocator` (`std.mem.Allocator`): The allocator to use for memory
+        ///   allocations.
         ///
-        /// `allocator` (`std.mem.Allocator`):
-        /// The allocator to use for memory allocations.
+        /// ## Returns
+        /// `matrix.general.Dense(N, layout)`: The copied matrix.
         ///
-        /// `ctx` (`anytype`):
-        /// A context struct providing necessary resources and configuration for
-        /// the operation. The required fields depend on the type `T`. If the
-        /// context is missing required fields or contains unnecessary or
-        /// wrongly typed fields, the compiler will emit a detailed error
-        /// message describing the expected structure.
-        ///
-        /// Returns
-        /// -------
-        /// `matrix.general.Dense(T, order)`:
-        /// The copied matrix.
-        ///
-        /// Errors
-        /// ------
-        /// `std.mem.Allocator.Error.OutOfMemory`:
-        /// If memory allocation fails.
-        ///
-        /// Notes
-        /// -----
-        /// If the elements are of arbitrary precision type, they are deep
-        /// copied.
-        pub fn copy(self: *const Dense(T, layout), allocator: std.mem.Allocator, ctx: anytype) !Dense(T, layout) {
-            comptime switch (types.numericType(T)) {
-                .bool, .int, .float, .cfloat => {
-                    types.validateContext(@TypeOf(ctx), .{});
-                },
-                .integer, .rational, .real, .complex => {
-                    types.validateContext(
-                        @TypeOf(ctx),
-                        .{
-                            .element_allocator = .{ .type = std.mem.Allocator, .required = true },
-                        },
-                    );
-                },
-            };
-
-            var mat: Dense(T, layout) = try .init(allocator, self.rows, self.cols);
-            errdefer mat.deinit(allocator);
-
-            var i: u32 = 0;
-            var j: u32 = 0;
-
-            errdefer mat._cleanup(i, j, layout, ctx);
+        /// ## Errors
+        /// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
+        pub fn copy(self: matrix.general.Dense(N, layout), allocator: std.mem.Allocator) !matrix.general.Dense(N, layout) {
+            const mat: matrix.general.Dense(N, layout) = try .init(allocator, self.rows, self.cols);
 
             if (comptime layout == .col_major) {
+                var j: usize = 0;
                 while (j < mat.cols) : (j += 1) {
-                    i = 0;
+                    var i: usize = 0;
                     while (i < mat.rows) : (i += 1) {
-                        mat.data[mat._index(i, j)] = try numeric.copy(
-                            self.data[self._index(i, j)],
-                            types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                        );
+                        mat.data[i + j * mat.ld] = self.data[i + j * self.ld];
                     }
                 }
             } else {
+                var i: usize = 0;
                 while (i < mat.rows) : (i += 1) {
-                    j = 0;
+                    var j: usize = 0;
                     while (j < mat.cols) : (j += 1) {
-                        mat.data[mat._index(i, j)] = try numeric.copy(
-                            self.data[self._index(i, j)],
-                            types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                        );
+                        mat.data[i * mat.ld + j] = self.data[i * self.ld + j];
                     }
                 }
             }
@@ -540,16 +368,13 @@ pub fn Dense(T: type, layout: Layout) type {
 
         /// Returns a transposed view of the matrix.
         ///
-        /// Parameters
-        /// ----------
-        /// `self` (`*const matrix.general.Dense(T, order)`):
-        /// The matrix to transpose.
+        /// ## Arguments
+        /// * `self` (`matrix.general.Dense(N, layout)`): The matrix to
+        ///   transpose.
         ///
-        /// Returns
-        /// -------
-        /// `matrix.general.Dense(T, order.invert())`:
-        /// The transposed matrix.
-        pub fn transpose(self: *const Dense(T, layout)) Dense(T, layout.invert()) {
+        /// ## Returns
+        /// `matrix.general.Dense(N, layout.invert())`: The transposed matrix.
+        pub fn transpose(self: matrix.general.Dense(N, layout)) matrix.general.Dense(N, layout.invert()) {
             return .{
                 .data = self.data,
                 .rows = self.cols,
@@ -561,53 +386,33 @@ pub fn Dense(T: type, layout: Layout) type {
 
         /// Returns a submatrix view of the matrix.
         ///
-        /// Parameters
-        /// ----------
-        /// `self` (`*const matrix.general.Dense(T, order)`):
-        /// The matrix to get the submatrix from.
+        /// ## Arguments
+        /// * `self` (`matrix.general.Dense(N, layout)`): The matrix to get the
+        ///   submatrix from.
+        /// * `row_start` (`usize`): The starting row index of the submatrix
+        ///   (inclusive).
+        /// * `row_end` (`usize`): The ending row index of the submatrix
+        ///   (exclusive). Must be greater than `row_start`.
+        /// * `col_start` (`usize`): The starting column index of the submatrix
+        ///   (inclusive).
+        /// * `col_end` (`usize`): The ending column index of the submatrix
+        ///   (exclusive). Must be greater than `col_start`.
         ///
-        /// `row_start` (`u32`):
-        /// The starting row index of the submatrix (inclusive).
+        /// ## Returns
+        /// `matrix.general.Dense(N, layout)`: The submatrix.
         ///
-        /// `row_end` (`u32`):
-        /// The ending row index of the submatrix (exclusive). Must be greater
-        /// than `row_start`.
-        ///
-        /// `col_start` (`u32`):
-        /// The starting column index of the submatrix (inclusive).
-        ///
-        /// `col_end` (`u32`):
-        /// The ending column index of the submatrix (exclusive). Must be
-        /// greater than `col_start`.
-        ///
-        /// Returns
-        /// -------
-        /// `matrix.general.Dense(T, order)`:
-        /// The submatrix.
-        ///
-        /// Errors
-        /// ------
-        /// `matrix.Error.InvalidRange`:
-        /// If the specified range is invalid.
-        pub fn submatrix(
-            self: *const Dense(T, layout),
-            row_start: u32,
-            row_end: u32,
-            col_start: u32,
-            col_end: u32,
-        ) !Dense(T, layout) {
+        /// ## Errors
+        /// * `matrix.Error.InvalidRange`: If the specified range is invalid.
+        pub fn submatrix(self: matrix.general.Dense(N, layout), row_start: usize, row_end: usize, col_start: usize, col_end: usize) !matrix.general.Dense(N, layout) {
             if (row_start >= self.rows or col_start >= self.cols or
                 row_end > self.rows or col_end > self.cols or
                 row_start >= row_end or col_start >= col_end)
                 return matrix.Error.InvalidRange;
 
-            const sub_rows = row_end - row_start;
-            const sub_cols = col_end - col_start;
-
             return .{
                 .data = self.data + self._index(row_start, col_start),
-                .rows = sub_rows,
-                .cols = sub_cols,
+                .rows = row_end - row_start,
+                .cols = col_end - col_start,
                 .ld = self.ld,
                 .flags = .{ .owns_data = false },
             };
@@ -615,24 +420,17 @@ pub fn Dense(T: type, layout: Layout) type {
 
         /// Returns a view of the specified row as a dense vector.
         ///
-        /// Parameters
-        /// ----------
-        /// `self` (`*const matrix.general.Dense(T, order)`):
-        /// The matrix to get the row from.
+        /// ## Arguments
+        /// * `self` (`matrix.general.Dense(N, layout)`): The matrix to get the
+        ///   row from.
+        /// * `r` (`usize`): The row index to get.
         ///
-        /// `r` (`u32`):
-        /// The row index to get.
+        /// ## Returns
+        /// `vector.Dense(N)`: The specified row as a dense vector.
         ///
-        /// Returns
-        /// -------
-        /// `vector.Dense(T)`:
-        /// The specified row as a dense vector.
-        ///
-        /// Errors
-        /// ------
-        /// `matrix.Error.PositionOutOfBounds`:
-        /// If `r` is out of bounds.
-        pub fn row(self: *const Dense(T, layout), r: u32) !vector.Dense(T) {
+        /// ## Errors
+        /// * `matrix.Error.PositionOutOfBounds`: If `r` is out of bounds.
+        pub fn row(self: matrix.general.Dense(N, layout), r: usize) !vector.Dense(N) {
             if (r >= self.rows)
                 return matrix.Error.PositionOutOfBounds;
 
@@ -640,7 +438,7 @@ pub fn Dense(T: type, layout: Layout) type {
                 .data = self.data + self._index(r, 0),
                 .len = self.cols,
                 .inc = if (comptime layout == .col_major)
-                    types.scast(i32, self.ld)
+                    types.scast(isize, self.ld)
                 else
                     1,
                 .flags = .{ .owns_data = false },
@@ -649,24 +447,17 @@ pub fn Dense(T: type, layout: Layout) type {
 
         /// Returns a view of the specified column as a dense vector.
         ///
-        /// Parameters
-        /// ----------
-        /// `self` (`*const matrix.general.Dense(T, order)`):
-        /// The matrix to get the column from.
+        /// ## Arguments
+        /// * `self` (`matrix.general.Dense(N, layout)`): The matrix to get the
+        ///   column from.
+        /// * `c` (`usize`): The column index to get.
         ///
-        /// `c` (`u32`):
-        /// The column index to get.
+        /// ## Returns
+        /// `vector.Dense(N)`: The specified column as a dense vector.
         ///
-        /// Returns
-        /// -------
-        /// `vector.Dense(T)`:
-        /// The specified column as a dense vector.
-        ///
-        /// Errors
-        /// ------
-        /// `matrix.Error.PositionOutOfBounds`:
-        /// If `c` is out of bounds.
-        pub fn col(self: *const Dense(T, layout), c: u32) !vector.Dense(T) {
+        /// ## Errors
+        /// * `matrix.Error.PositionOutOfBounds`: If `c` is out of bounds.
+        pub fn col(self: matrix.general.Dense(N, layout), c: usize) !vector.Dense(N) {
             if (c >= self.cols)
                 return matrix.Error.PositionOutOfBounds;
 
@@ -676,32 +467,26 @@ pub fn Dense(T: type, layout: Layout) type {
                 .inc = if (comptime layout == .col_major)
                     1
                 else
-                    types.scast(i32, self.ld),
+                    types.scast(isize, self.ld),
                 .flags = .{ .owns_data = false },
             };
         }
 
         /// Returns a view of the matrix as a symmetric dense matrix.
         ///
-        /// Parameters
-        /// ----------
-        /// `self` (`*const matrix.general.Dense(T, order)`):
-        /// The matrix to convert.
+        /// ## Arguments
+        /// * `self` (`matrix.general.Dense(N, layout)`): The matrix to get the
+        ///   view of.
+        /// * `uplo` (`comptime Uplo`): Specifies whether the upper or lower
+        ///   triangle of the matrix is used, the other triangle is ignored.
         ///
-        /// `uplo` (`Uplo`):
-        /// Specifies whether the upper or lower triangle of the matrix is used,
-        /// the other triangle is ignored.
+        /// ## Returns
+        /// `matrix.symmetric.Dense(T, uplo, layout)`: The symmetric dense
+        /// matrix view.
         ///
-        /// Returns
-        /// -------
-        /// `matrix.symmetric.Dense(T, uplo, order)`:
-        /// The symmetric dense matrix view.
-        ///
-        /// Errors
-        /// ------
-        /// `matrix.Error.NotSquare`:
-        /// If the matrix is not square.
-        pub fn asSymmetricDenseMatrix(self: *const Dense(T, layout), comptime uplo: Uplo) !matrix.symmetric.Dense(T, uplo, layout) {
+        /// ## Errors
+        /// * `matrix.Error.NotSquare`: If the matrix is not square.
+        pub fn asSymmetricDenseMatrix(self: matrix.general.Dense(N, layout), comptime uplo: Uplo) !matrix.symmetric.Dense(N, uplo, layout) {
             if (self.rows != self.cols)
                 return matrix.Error.NotSquare;
 
@@ -715,28 +500,19 @@ pub fn Dense(T: type, layout: Layout) type {
 
         /// Returns a view of the matrix as a Hermitian dense matrix.
         ///
-        /// Parameters
-        /// ----------
-        /// `self` (`*const matrix.general.Dense(T, order)`):
-        /// The matrix to convert.
+        /// ## Arguments
+        /// * `self` (`matrix.general.Dense(N, layout)`): The matrix to get the
+        ///   view of.
+        /// * `uplo` (`comptime Uplo`): Specifies whether the upper or lower
+        ///   triangle of the matrix is used, the other triangle is ignored.
         ///
-        /// `uplo` (`Uplo`):
-        /// Specifies whether the upper or lower triangle of the matrix is used,
-        /// the other triangle is ignored.
+        /// ## Returns
+        /// `matrix.hermitian.Dense(N, uplo, layout)`: The Hermitian dense
+        /// matrix view.
         ///
-        /// Returns
-        /// -------
-        /// `matrix.hermitian.Dense(T, uplo, order)`:
-        /// The Hermitian dense matrix view.
-        ///
-        /// Errors
-        /// ------
-        /// `matrix.Error.NotSquare`:
-        /// If the matrix is not square.
-        pub fn asHermitianDenseMatrix(self: *const Dense(T, layout), comptime uplo: Uplo) !matrix.hermitian.Dense(T, uplo, layout) {
-            comptime if (!types.isComplex(T))
-                @compileError("Hermitian matrices require a complex type, got " ++ @typeName(T));
-
+        /// ## Errors
+        /// * `matrix.Error.NotSquare`: If the matrix is not square.
+        pub fn asHermitianDenseMatrix(self: matrix.general.Dense(N, layout), comptime uplo: Uplo) !matrix.hermitian.Dense(N, uplo, layout) {
             if (self.rows != self.cols)
                 return matrix.Error.NotSquare;
 
@@ -750,24 +526,19 @@ pub fn Dense(T: type, layout: Layout) type {
 
         /// Returns a view of the matrix as a triangular dense matrix.
         ///
-        /// Parameters
-        /// ----------
-        /// `self` (`*const matrix.general.Dense(T, order)`):
-        /// The matrix to convert.
+        /// ## Arguments
+        /// * `self` (`matrix.general.Dense(N, layout)`): The matrix to get the
+        ///   view of.
+        /// * `uplo` (`comptime Uplo`): Specifies whether the upper or lower
+        ///   triangle of the matrix is used, the other triangle is ignored.
+        /// * `diag` (`comptime Diag`): Specifies whether the matrix is unit
+        ///   triangular (diagonal elements are assumed to be 1 and are ignored)
+        ///   or non-unit triangular.
         ///
-        /// `uplo` (`Uplo`):
-        /// Specifies whether the upper or lower triangle of the matrix is used,
-        /// the other triangle is ignored.
-        ///
-        /// `diag` (`Diag`):
-        /// Specifies whether the matrix is unit triangular (diagonal elements
-        /// are assumed to be 1 and are ignored) or non-unit triangular.
-        ///
-        /// Returns
-        /// -------
-        /// `matrix.triangular.Dense(T, uplo, diag, order)`:
-        /// The triangular dense matrix view.
-        pub fn asTriangularDenseMatrix(self: *const Dense(T, layout), comptime uplo: Uplo, comptime diag: Diag) matrix.triangular.Dense(T, uplo, diag, layout) {
+        /// ## Returns
+        /// `matrix.triangular.Dense(N, uplo, diag, layout)`: The triangular
+        /// dense matrix view.
+        pub fn asTriangularDenseMatrix(self: matrix.general.Dense(N, layout), comptime uplo: Uplo, comptime diag: Diag) matrix.triangular.Dense(N, uplo, diag, layout) {
             return .{
                 .data = self.data,
                 .rows = self.rows,
@@ -777,154 +548,62 @@ pub fn Dense(T: type, layout: Layout) type {
             };
         }
 
-        pub fn asDenseArray(self: *const Dense(T, layout)) array.Dense(T, layout) {
-            return .{
-                .data = self.data,
-                .ndim = 2,
-                .shape = .{ self.rows, self.cols } ++ .{0} ** (array.max_dim - 2),
-                .strides = if (comptime layout == .col_major)
-                    .{ 1, self.ld } ++ .{0} ** (array.max_dim - 2)
-                else
-                    .{ self.ld, 1 } ++ .{0} ** (array.max_dim - 2),
-                .flags = .{
-                    .order = self.flags.order,
-                    .owns_data = false,
-                },
-            };
-        }
+        // pub fn asDenseArray(self: *const Dense(N, layout)) array.Dense(N, layout) {
+        //     return .{
+        //         .data = self.data,
+        //         .ndim = 2,
+        //         .shape = .{ self.rows, self.cols } ++ .{0} ** (array.max_dim - 2),
+        //         .strides = if (comptime layout == .col_major)
+        //             .{ 1, self.ld } ++ .{0} ** (array.max_dim - 2)
+        //         else
+        //             .{ self.ld, 1 } ++ .{0} ** (array.max_dim - 2),
+        //         .flags = .{
+        //             .order = self.flags.order,
+        //             .owns_data = false,
+        //         },
+        //     };
+        // }
 
-        pub fn copyToDenseArray(
-            self: *const Dense(T, layout),
-            allocator: std.mem.Allocator,
-            ctx: anytype,
-        ) !array.Dense(T, layout) {
-            var result: array.Dense(T, layout) = try .init(allocator, &.{ self.rows, self.cols });
-            errdefer result.deinit(allocator);
+        // pub fn copyToDenseArray(
+        //     self: *const Dense(N, layout),
+        //     allocator: std.mem.Allocator,
+        //     ctx: anytype,
+        // ) !array.Dense(N, layout) {
+        //     var result: array.Dense(N, layout) = try .init(allocator, &.{ self.rows, self.cols });
+        //     errdefer result.deinit(allocator);
 
-            if (comptime !types.isArbitraryPrecision(T)) {
-                comptime types.validateContext(@TypeOf(ctx), .{});
+        //     if (comptime !types.isArbitraryPrecision(N)) {
+        //         comptime types.validateContext(@TypeOf(ctx), .{});
 
-                if (comptime layout == .col_major) {
-                    var j: u32 = 0;
-                    while (j < self.cols) : (j += 1) {
-                        var i: u32 = 0;
-                        while (i < self.rows) : (i += 1) {
-                            result.data[i + j * result.strides[1]] = self.data[i + j * self.ld];
-                        }
-                    }
-                } else {
-                    var i: u32 = 0;
-                    while (i < self.rows) : (i += 1) {
-                        var j: u32 = 0;
-                        while (j < self.cols) : (j += 1) {
-                            result.data[i * result.strides[0] + j] = self.data[i * self.ld + j];
-                        }
-                    }
-                }
-            } else {
-                @compileError("Arbitrary precision types not implemented yet");
-            }
+        //         if (comptime layout == .col_major) {
+        //             var j: usize = 0;
+        //             while (j < self.cols) : (j += 1) {
+        //                 var i: usize = 0;
+        //                 while (i < self.rows) : (i += 1) {
+        //                     result.data[i + j * result.strides[1]] = self.data[i + j * self.ld];
+        //                 }
+        //             }
+        //         } else {
+        //             var i: usize = 0;
+        //             while (i < self.rows) : (i += 1) {
+        //                 var j: usize = 0;
+        //                 while (j < self.cols) : (j += 1) {
+        //                     result.data[i * result.strides[0] + j] = self.data[i * self.ld + j];
+        //                 }
+        //             }
+        //         }
+        //     } else {
+        //         @compileError("Arbitrary precision types not implemented yet");
+        //     }
 
-            return result;
-        }
+        //     return result;
+        // }
 
-        pub inline fn _index(self: *const Dense(T, layout), r: u32, c: u32) u32 {
+        inline fn _index(self: *const Dense(N, layout), r: usize, c: usize) usize {
             return if (comptime layout == .col_major)
                 r + c * self.ld
             else
                 r * self.ld + c;
-        }
-
-        /// Cleans up the elements of the matrix, deinitializing them if
-        /// necessary.
-        ///
-        /// Parameters
-        /// ----------
-        /// `self` (`*matrix.general.Dense(T, order)`):
-        /// A pointer to the matrix to clean up.
-        ///
-        /// `ctx` (`anytype`):
-        /// A context struct providing necessary resources and configuration for
-        /// the operation. The required fields depend on the type `T`. If the
-        /// context is missing required fields or contains unnecessary or
-        /// wrongly typed fields, the compiler will emit a detailed error
-        /// message describing the expected structure.
-        ///
-        /// Returns
-        /// -------
-        /// `void`
-        ///
-        /// Notes
-        /// -----
-        /// This function must be called before `deinit` if the elements are of
-        /// arbitrary precision type to properly deinitialize them.
-        pub fn cleanup(self: *Dense(T, layout), ctx: anytype) void {
-            return self._cleanup(self.rows, self.cols, layout, ctx);
-        }
-
-        /// Cleans up the elements of the matrix, deinitializing them if
-        /// necessary, in the specified order up to position (i, j), exclusive.
-        /// In other words, if iter_order is column-major, all elements from
-        /// (0, 0) to (i - 1, j) are cleaned up, and if iter_order is row-major,
-        /// all elements from (0, 0) to (i, j - 1) are cleaned up.
-        pub fn _cleanup(self: *Dense(T, layout), i: u32, j: u32, iter_order: IterationOrder, ctx: anytype) void {
-            switch (comptime types.numericType(T)) {
-                .bool, .int, .float, .cfloat => {
-                    comptime types.validateContext(@TypeOf(ctx), .{});
-
-                    // No cleanup needed for fixed precision types.
-                },
-                .integer, .rational, .real, .complex => {
-                    comptime types.validateContext(
-                        @TypeOf(ctx),
-                        .{
-                            .element_allocator = .{ .type = std.mem.Allocator, .required = true },
-                        },
-                    );
-
-                    if (iter_order == .left_to_right) {
-                        var _j: u32 = 0;
-                        while (_j <= int.min(j, self.cols - 1)) : (_j += 1) {
-                            var _i: u32 = 0;
-                            if (_j == j) {
-                                while (_i < int.min(i, self.rows)) : (_i += 1) {
-                                    numeric.deinit(
-                                        &self.data[self._index(_i, _j)],
-                                        types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                                    );
-                                }
-                            } else {
-                                while (_i < self.rows) : (_i += 1) {
-                                    numeric.deinit(
-                                        &self.data[self._index(_i, _j)],
-                                        types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                                    );
-                                }
-                            }
-                        }
-                    } else {
-                        var _i: u32 = 0;
-                        while (_i <= int.min(i, self.rows - 1)) : (_i += 1) {
-                            var _j: u32 = 0;
-                            if (_i == i) {
-                                while (_j < int.min(j, self.cols)) : (_j += 1) {
-                                    numeric.deinit(
-                                        &self.data[self._index(_i, _j)],
-                                        types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                                    );
-                                }
-                            } else {
-                                while (_j < self.cols) : (_j += 1) {
-                                    numeric.deinit(
-                                        &self.data[self._index(_i, _j)],
-                                        types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                                    );
-                                }
-                            }
-                        }
-                    }
-                },
-            }
         }
     };
 }

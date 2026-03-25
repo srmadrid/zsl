@@ -296,55 +296,56 @@ fn free(context: *anyopaque, memory: []u8, alignment: std.mem.Alignment, ra: usi
 }
 
 pub fn empty(comptime T: type) T {
-    if (comptime isPointer(T))
-        return @ptrFromInt(@alignOf(Child(T)));
+    return undefined;
+    // if (comptime isPointer(T))
+    //     return @ptrFromInt(@alignOf(Child(T)));
 
-    if (comptime !isSupportedType(T))
-        @compileError("zsl.types.empty: " ++ @typeName(T) ++ " is not a supported type");
+    // if (comptime !isSupportedType(T))
+    //     @compileError("zsl.types.empty: " ++ @typeName(T) ++ " is not a supported type");
 
-    switch (comptime domain(T)) {
-        .numeric => switch (comptime numericType(T)) {
-            .bool => return false,
-            .int => return 0,
-            .float => return 0.0,
-            .dyadic => return .zero,
-            .complex => return .zero,
-            .custom => {
-                if (comptime !@hasDecl(T, "empty"))
-                    @compileError("zsl.types.empty: custom numeric type " ++ @typeName(T) ++ " must have a `empty` declaration");
+    // switch (comptime domain(T)) {
+    //     .numeric => switch (comptime numericType(T)) {
+    //         .bool => return false,
+    //         .int => return 0,
+    //         .float => return 0.0,
+    //         .dyadic => return .zero,
+    //         .complex => return .zero,
+    //         .custom => {
+    //             if (comptime !@hasDecl(T, "empty"))
+    //                 @compileError("zsl.types.empty: custom numeric type " ++ @typeName(T) ++ " must have a `empty` declaration");
 
-                return .empty;
-            },
-        },
-        .vector => switch (comptime vectorType(T)) {
-            else => return .empty,
-            .custom => {
-                if (comptime !@hasDecl(T, "empty"))
-                    @compileError("zsl.types.empty: custom vector type " ++ @typeName(T) ++ " must have an `empty` declaration");
+    //             return .empty;
+    //         },
+    //     },
+    //     .vector => switch (comptime vectorType(T)) {
+    //         else => return .empty,
+    //         .custom => {
+    //             if (comptime !@hasDecl(T, "empty"))
+    //                 @compileError("zsl.types.empty: custom vector type " ++ @typeName(T) ++ " must have an `empty` declaration");
 
-                return .empty;
-            },
-        },
-        .matrix => switch (comptime matrixType(T)) {
-            else => return .empty,
-            .custom => {
-                if (comptime !@hasDecl(T, "empty"))
-                    @compileError("zsl.types.empty: custom matrix type " ++ @typeName(T) ++ " must have an `empty` declaration");
+    //             return .empty;
+    //         },
+    //     },
+    //     .matrix => switch (comptime matrixType(T)) {
+    //         else => return .empty,
+    //         .custom => {
+    //             if (comptime !@hasDecl(T, "empty"))
+    //                 @compileError("zsl.types.empty: custom matrix type " ++ @typeName(T) ++ " must have an `empty` declaration");
 
-                return .empty;
-            },
-        },
-        .array => switch (comptime arrayType(T)) {
-            else => return .empty,
-            .custom => {
-                if (comptime !@hasDecl(T, "empty"))
-                    @compileError("zsl.types.empty: custom array type " ++ @typeName(T) ++ " must have an `empty` declaration");
+    //             return .empty;
+    //         },
+    //     },
+    //     .array => switch (comptime arrayType(T)) {
+    //         else => return .empty,
+    //         .custom => {
+    //             if (comptime !@hasDecl(T, "empty"))
+    //                 @compileError("zsl.types.empty: custom array type " ++ @typeName(T) ++ " must have an `empty` declaration");
 
-                return .empty;
-            },
-        },
-        .expression => return .empty,
-    }
+    //             return .empty;
+    //         },
+    //     },
+    //     .expression => return .empty,
+    // }
 }
 
 /// Checks the the input type `N` and returns the corresponding
@@ -844,13 +845,16 @@ pub fn ReturnTypeFromInputs(
     // - Otherwise, pass an empty value of the corresponding input type
     comptime var inputs: std.meta.Tuple(&corrected_input_types) = undefined;
     inline for (func_params, input_types, 0..) |func_param, input_type, i| {
-        inputs[i] = if (func_param.type == type)
+        @compileLog(input_type);
+        inputs[i] = if (comptime func_param.type == type)
             input_type // The type is passed directly
-        else if (input_type == std.mem.Allocator)
+        else if (comptime input_type == std.mem.Allocator)
             useless_allocator
         else
             empty(input_type);
     }
+
+    @compileLog(inputs);
 
     switch (comptime input_types.len) {
         0 => return @TypeOf(func()),

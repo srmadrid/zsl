@@ -20,11 +20,11 @@ pub fn Sparse(N: type) type {
         _ilen: usize, // allocated length of idx
         flags: vector.Flags,
 
-        /// Type signatures
+        // Type signatures
         pub const is_vector = true;
         pub const is_sparse = true;
 
-        /// Numeric type
+        // Numeric type
         pub const Numeric = N;
 
         pub const empty = vector.Sparse(N){
@@ -165,8 +165,8 @@ pub fn Sparse(N: type) type {
         /// Gets the element at the specified index.
         ///
         /// ## Arguments
-        /// * `self` (`*const vector.Sparse(N)`): A pointer to the vector to get
-        ///   the element from.
+        /// * `self` (`vector.Sparse(N)`): A pointer to the vector to get the
+        ///   element from.
         /// * `index` (`usize`): The index of the element to get.
         ///
         /// ## Returns
@@ -174,7 +174,7 @@ pub fn Sparse(N: type) type {
         ///
         /// ## Errors
         /// * `vector.Error.PositionOutOfBounds`: If `index` is out of bounds.
-        pub fn get(self: *const vector.Sparse(N), index: usize) !N {
+        pub fn get(self: vector.Sparse(N), index: usize) !N {
             if (index >= self.len)
                 return vector.Error.PositionOutOfBounds;
 
@@ -192,14 +192,14 @@ pub fn Sparse(N: type) type {
         /// Gets the element at the specified index without bounds checking.
         ///
         /// ## Arguments
-        /// * `self` (`*const vector.Sparse(N)`): A pointer to the vector to get
+        /// * `self` (`vector.Sparse(N)`): A pointer to the vector to get
         ///   the element from.
         /// * `index` (`usize`): The index of the element to get. Assumed to be
         ///   within bounds.
         ///
         /// ## Returns
         /// `N`: The element at the specified index.
-        pub fn at(self: *vector.Sparse(N), index: usize) N {
+        pub fn at(self: vector.Sparse(N), index: usize) N {
             var i: usize = 0;
             while (i < self.nnz) : (i += 1) {
                 if (self.idx[i] == index)

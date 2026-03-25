@@ -4,45 +4,44 @@ const types = @import("../../types.zig");
 const Layout = types.Layout;
 const Uplo = types.Uplo;
 const Diag = types.Diag;
-const IterationOrder = types.IterationOrder;
+
 const numeric = @import("../../numeric.zig");
 const int = @import("../../int.zig");
 
 const matrix = @import("../../matrix.zig");
-const Flags = matrix.Flags;
 
 const array = @import("../../array.zig");
 
 /// Dense triangular matrix type, represented as a contiguous array of
-/// `min(rows, cols) × cols` or `rows × min(rows, cols)` elements of type `T`,
-/// depending on `uplo`, stored in either column-major or row-major order with a
-/// specified leading dimension. Only the upper or lower triangular part of the
-/// matrix is accessed, depending on the `uplo` parameter, and the diagonal can
-/// be either unit, meaning all diagonal elements are assumed to be 1 and not
-/// accessed, or non-unit, meaning the diagonal elements are accessed normally.
-pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
-    if (!types.isNumeric(T))
-        @compileError("matrix.triangular.Dense requires a numeric type, got " ++ @typeName(T));
+/// `rows × cols` elements of type `N`, depending on `uplo`, stored in either
+/// column-major or row-major order with a specified leading dimension. Only the
+/// upper or lower triangular part of the matrix is accessed, depending on the
+/// `uplo` parameter, and the diagonal can be either unit, meaning all diagonal
+/// elements are assumed to be 1 and not accessed, or non-unit, meaning the
+/// diagonal elements are accessed normally.
+pub fn Dense(N: type, uplo: Uplo, diag: Diag, layout: Layout) type {
+    if (!types.isNumeric(N))
+        @compileError("zsl.matrix.triangular.Dense: N must be a numeric type, got \n\tN = " ++ @typeName(N) ++ "\n");
 
     return struct {
-        data: [*]T,
-        rows: u32,
-        cols: u32,
-        ld: u32, // leading dimension
-        flags: Flags = .{},
+        data: [*]N,
+        rows: usize,
+        cols: usize,
+        ld: usize,
+        flags: matrix.Flags,
 
-        /// Type signatures
-        pub const is_matrix = {};
-        pub const is_dense = {};
-        pub const is_triangular = {};
+        // Type signatures
+        pub const is_matrix = true;
+        pub const is_dense = true;
+        pub const is_triangular = true;
         pub const storage_layout = layout;
         pub const storage_uplo = uplo;
         pub const storage_diag = diag;
 
-        /// Numeric type
-        pub const Numeric = T;
+        // Numeric type
+        pub const Numeric = N;
 
-        pub const empty: Dense(T, uplo, diag, layout) = .{
+        pub const empty: Dense(N, uplo, diag, layout) = .{
             .data = &.{},
             .rows = 0,
             .cols = 0,
@@ -50,197 +49,92 @@ pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
             .flags = .{ .owns_data = false },
         };
 
-        /// Initializes a new matrix with the specified rows and columns.
+        /// Initializes a new `matrix.triangular.Dense(N, uplo, diag, layout)`
+        /// with the specified rows and columns.
         ///
-        /// Parameters
-        /// ----------
-        /// `allocator` (`std.mem.Allocator`):
-        /// The allocator to use for memory allocations.
+        /// ## Arguments
+        /// * `allocator` (`std.mem.Allocator`): The allocator to use for memory
+        ///   allocations.
+        /// * `rows` (`usize`): The rows of the matrix.
+        /// * `cols` (`usize`): The columns of the matrix.
         ///
-        /// `rows` (`u32`):
-        /// The rows of the matrix.
+        /// ## Returns
+        /// `matrix.triangular.Dense(N, uplo, diag, layout)`: The newly
+        /// initialized matrix.
         ///
-        /// `cols` (`u32`):
-        /// The columns of the matrix.
-        ///
-        /// Returns
-        /// -------
-        /// `matrix.triangular.Dense(T, uplo, diag, order)`:
-        /// The newly initialized matrix.
-        ///
-        /// Errors
-        /// ------
-        /// `std.mem.Allocator.Error.OutOfMemory`:
-        /// If memory allocation fails.
-        ///
-        /// `matrix.Error.ZeroDimension`:
-        /// If either `rows` or `cols` is zero.
-        ///
-        /// Notes
-        /// -----
-        /// The elements are not initialized.
-        pub fn init(
-            allocator: std.mem.Allocator,
-            rows: u32,
-            cols: u32,
-        ) !Dense(T, uplo, diag, layout) {
+        /// ## Errors
+        /// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
+        /// * `matrix.Error.ZeroDimension`: If either `rows` or `cols` is zero.
+        pub fn init(allocator: std.mem.Allocator, rows: usize, cols: usize) !matrix.triangular.Dense(N, uplo, diag, layout) {
             if (rows == 0 or cols == 0)
                 return matrix.Error.ZeroDimension;
 
-            const m: u32 = if (comptime uplo == .upper)
-                int.min(rows, cols)
-            else
-                rows;
-            const n: u32 = if (comptime uplo == .upper)
-                cols
-            else
-                int.min(rows, cols);
-
             return .{
-                .data = (try allocator.alloc(T, m * n)).ptr,
+                .data = (try allocator.alloc(N, rows * cols)).ptr,
                 .rows = rows,
                 .cols = cols,
-                .ld = if (comptime layout == .col_major) m else n,
+                .ld = if (comptime layout == .col_major) rows else cols,
                 .flags = .{ .owns_data = true },
             };
         }
 
-        /// Initializes a new matrix with the specified rows and columns, with
-        /// the triangular part of the matrix filled with the specified value.
-        ///
-        /// Parameters
-        /// ----------
-        /// `allocator` (`std.mem.Allocator`):
-        /// The allocator to use for memory allocations.
-        ///
-        /// `rows` (`u32`):
-        /// The rows of the matrix.
-        ///
-        /// `cols` (`u32`):
-        /// The columns of the matrix.
-        ///
-        /// `value` (`anytype`):
-        /// The value to fill the matrix with.
-        ///
-        /// `ctx` (`anytype`):
-        /// A context struct providing necessary resources and configuration for
-        /// the operation. The required fields depend on the type `T` and the
-        /// type of `value`. If  the context is missing required fields or
-        /// contains unnecessary or wrongly typed fields, the compiler will emit
-        /// a detailed error message describing the expected structure.
-        ///
-        /// Returns
-        /// -------
-        /// `matrix.triangular.Dense(T, uplo, diag, order)`:
-        /// The newly initialized matrix.
-        ///
-        /// Errors
-        /// ------
-        /// `std.mem.Allocator.Error.OutOfMemory`:
-        /// If memory allocation fails.
-        ///
-        /// `matrix.Error.ZeroDimension`:
-        /// If either `rows` or `cols` is zero.
-        ///
-        /// Notes
-        /// -----
-        /// The matrix does not take ownership of `value` if it is an arbitrary
-        /// precision type.
-        pub fn full(
-            allocator: std.mem.Allocator,
-            rows: u32,
-            cols: u32,
-            value: anytype,
-            ctx: anytype,
-        ) !Dense(T, uplo, diag, layout) {
-            comptime switch (types.numericType(T)) {
-                .bool, .int, .float, .cfloat => {
-                    types.validateContext(@TypeOf(ctx), .{});
-                },
-                .integer, .rational, .real, .complex => {
-                    types.validateContext(
-                        @TypeOf(ctx),
-                        .{
-                            .element_allocator = .{ .type = std.mem.Allocator, .required = true },
-                        },
-                    );
-                },
-            };
+        // pub fn initBuffer
 
-            var mat: Dense(T, uplo, diag, layout) = try .init(allocator, rows, cols);
-            errdefer mat.deinit(allocator);
-
-            var i: u32 = 0;
-            var j: u32 = 0;
-
-            errdefer mat._cleanup(i, j, layout, ctx);
+        /// Initializes a new `matrix.triangular.Dense(N, uplo, diag, layout)`
+        /// with the specified rows and columns, with all elements in the
+        /// triangular part set to the specified value.
+        ///
+        /// ## Arguments
+        /// * `allocator` (`std.mem.Allocator`): The allocator to use for memory
+        ///   allocations.
+        /// * `rows` (`usize`): The rows of the matrix.
+        /// * `cols` (`usize`): The columns of the matrix.
+        /// * `value` (`N`): The value to fill the matrix with.
+        ///
+        /// ## Returns
+        /// `matrix.triangular.Dense(N, uplo, diag, layout)`: The newly
+        /// initialized matrix.
+        ///
+        /// ## Errors
+        /// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
+        /// * `matrix.Error.ZeroDimension`: If either `rows` or `cols` is zero.
+        pub fn initValue(allocator: std.mem.Allocator, rows: usize, cols: usize, value: N) !matrix.triangular.Dense(N, uplo, diag, layout) {
+            const mat: matrix.triangular.Dense(N, uplo, diag, layout) = try .init(allocator, rows, cols);
 
             if (comptime layout == .col_major) {
                 if (comptime uplo == .upper) {
                     if (comptime diag == .unit) { // cuu
+                        var j: usize = 0;
                         while (j < cols) : (j += 1) {
-                            i = 0;
+                            var i: usize = 0;
                             while (i < int.min(j, rows)) : (i += 1) {
-                                mat.data[mat._index(i, j)] = try numeric.init(
-                                    T,
-                                    types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                                );
-
-                                try numeric.set(
-                                    &mat.data[mat._index(i, j)],
-                                    value,
-                                    types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                                );
+                                mat.data[i + j * mat.ld] = value;
                             }
                         }
                     } else { // cun
+                        var j: usize = 0;
                         while (j < cols) : (j += 1) {
-                            i = 0;
+                            var i: usize = 0;
                             while (i < int.min(j + 1, rows)) : (i += 1) {
-                                mat.data[mat._index(i, j)] = try numeric.init(
-                                    T,
-                                    types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                                );
-
-                                try numeric.set(
-                                    &mat.data[mat._index(i, j)],
-                                    value,
-                                    types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                                );
+                                mat.data[i + j * mat.ld] = value;
                             }
                         }
                     }
                 } else {
                     if (comptime diag == .unit) { // clu
+                        var j: usize = 0;
                         while (j < int.min(rows, cols)) : (j += 1) {
-                            i = j + 1;
+                            var i: usize = j + 1;
                             while (i < rows) : (i += 1) {
-                                mat.data[mat._index(i, j)] = try numeric.init(
-                                    T,
-                                    types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                                );
-
-                                try numeric.set(
-                                    &mat.data[mat._index(i, j)],
-                                    value,
-                                    types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                                );
+                                mat.data[i + j * mat.ld] = value;
                             }
                         }
                     } else { // cln
+                        var j: usize = 0;
                         while (j < int.min(rows, cols)) : (j += 1) {
-                            i = j;
+                            var i: usize = j;
                             while (i < rows) : (i += 1) {
-                                mat.data[mat._index(i, j)] = try numeric.init(
-                                    T,
-                                    types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                                );
-
-                                try numeric.set(
-                                    &mat.data[mat._index(i, j)],
-                                    value,
-                                    types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                                );
+                                mat.data[i + j * mat.ld] = value;
                             }
                         }
                     }
@@ -248,69 +142,37 @@ pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
             } else {
                 if (comptime uplo == .upper) {
                     if (comptime diag == .unit) { // ruu
+                        var i: usize = 0;
                         while (i < int.min(rows, cols)) : (i += 1) {
-                            j = i + 1;
+                            var j: usize = i + 1;
                             while (j < cols) : (j += 1) {
-                                mat.data[mat._index(i, j)] = try numeric.init(
-                                    T,
-                                    types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                                );
-
-                                try numeric.set(
-                                    &mat.data[mat._index(i, j)],
-                                    value,
-                                    types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                                );
+                                mat.data[i * mat.ld + j] = value;
                             }
                         }
                     } else { // run
+                        var i: usize = 0;
                         while (i < int.min(rows, cols)) : (i += 1) {
-                            j = i;
+                            var j: usize = i;
                             while (j < cols) : (j += 1) {
-                                mat.data[mat._index(i, j)] = try numeric.init(
-                                    T,
-                                    types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                                );
-
-                                try numeric.set(
-                                    &mat.data[mat._index(i, j)],
-                                    value,
-                                    types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                                );
+                                mat.data[i * mat.ld + j] = value;
                             }
                         }
                     }
                 } else {
                     if (comptime diag == .unit) { // rlu
+                        var i: usize = 0;
                         while (i < rows) : (i += 1) {
-                            j = 0;
+                            var j: usize = 0;
                             while (j < int.min(i, cols)) : (j += 1) {
-                                mat.data[mat._index(i, j)] = try numeric.init(
-                                    T,
-                                    types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                                );
-
-                                try numeric.set(
-                                    &mat.data[mat._index(i, j)],
-                                    value,
-                                    types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                                );
+                                mat.data[i * mat.ld + j] = value;
                             }
                         }
                     } else { // rln
+                        var i: usize = 0;
                         while (i < rows) : (i += 1) {
-                            j = 0;
+                            var j: usize = 0;
                             while (j < int.min(i + 1, cols)) : (j += 1) {
-                                mat.data[mat._index(i, j)] = try numeric.init(
-                                    T,
-                                    types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                                );
-
-                                try numeric.set(
-                                    &mat.data[mat._index(i, j)],
-                                    value,
-                                    types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                                );
+                                mat.data[i * mat.ld + j] = value;
                             }
                         }
                     }
@@ -320,136 +182,216 @@ pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
             return mat;
         }
 
-        /// Initializes a new identity matrix of the specified size.
+        /// Initializes a new `matrix.triangular.Dense(N, uplo, diag, layout)`
+        /// with the specified rows and columns, with all elements in the
+        /// triangular part set by calling the specified function with the given
+        /// arguments.
         ///
-        /// Parameters
-        /// ----------
-        /// `allocator` (`std.mem.Allocator`):
-        /// The allocator to use for memory allocations.
+        /// ## Arguments
+        /// * `allocator` (`std.mem.Allocator`): The allocator to use for memory
+        ///   allocations.
+        /// * `rows` (`usize`): The rows of the matrix.
+        /// * `cols` (`usize`): The columns of the matrix.
+        /// * `@"fn"` (`anytype`): The function to call to fill the matrix.
+        /// * `args` (`anytype`): A tuple of the arguments to call the function
+        ///   with.
         ///
-        /// `size` (`u32`):
-        /// The size of the (square) matrix.
+        /// ## Returns
+        /// `matrix.triangular.Dense(N, uplo, diag, layout)`: The newly
+        /// initialized matrix.
         ///
-        /// `ctx` (`anytype`):
-        /// A context struct providing necessary resources and configuration for
-        /// the operation. The required fields depend on the type `T`. If the
-        /// context is missing required fields or contains unnecessary or
-        /// wrongly typed fields, the compiler will emit a detailed error
-        /// message describing the expected structure.
-        ///
-        /// Returns
-        /// -------
-        /// `matrix.triangular.Dense(T, uplo, diag, order)`:
-        /// The newly initialized identity matrix.
-        ///
-        /// Errors
-        /// ------
-        /// `std.mem.Allocator.Error.OutOfMemory`:
-        /// If memory allocation fails.
-        ///
-        /// `matrix.Error.ZeroDimension`:
-        /// If `size` is zero.
-        pub fn eye(
-            allocator: std.mem.Allocator,
-            size: u32,
-            ctx: anytype,
-        ) !Dense(T, uplo, diag, layout) {
-            comptime switch (types.numericType(T)) {
-                .bool, .int, .float, .cfloat => {
-                    types.validateContext(@TypeOf(ctx), .{});
-                },
-                .integer, .rational, .real, .complex => {
-                    types.validateContext(
-                        @TypeOf(ctx),
-                        .{
-                            .element_allocator = .{ .type = std.mem.Allocator, .required = true },
-                        },
-                    );
-                },
-            };
+        /// ## Errors
+        /// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
+        /// * `matrix.Error.ZeroDimension`: If either `rows` or `cols` is zero.
+        pub fn initFn(allocator: std.mem.Allocator, rows: usize, cols: usize, comptime @"fn": anytype, args: anytype) !matrix.triangular.Dense(N, uplo, diag, layout) {
+            const Fn = @TypeOf(@"fn");
+            const Args = @TypeOf(args);
 
+            const fn_info = @typeInfo(Fn);
+            const args_info = @typeInfo(Args);
+
+            comptime if (fn_info != .@"fn" or args_info != .@"struct")
+                @compileError("zsl.matrix.triangular.Dense(N, uplo, diag, layout).initFn: @\"fn\" must be a function and args must be a struct, got \n\t@\"fn\": " ++ @typeName(Fn) ++ "\n\targs: " ++ @typeName(Args) ++ "\n");
+
+            var mat: matrix.triangular.Dense(N, uplo, diag, layout) = try .init(allocator, rows, cols);
+            errdefer mat.deinit(allocator);
+
+            if (comptime layout == .col_major) {
+                if (comptime uplo == .upper) {
+                    if (comptime diag == .unit) { // cuu
+                        var j: usize = 0;
+                        while (j < cols) : (j += 1) {
+                            var i: usize = 0;
+                            while (i < int.min(j, rows)) : (i += 1) {
+                                mat.data[i + j * mat.ld] = if (comptime @typeInfo(types.ReturnTypeFromInputs(@"fn", &types.structToArrayOfTypes(Args))) == .error_union)
+                                    try @call(.auto, @"fn", args)
+                                else
+                                    @call(.auto, @"fn", args);
+                            }
+                        }
+                    } else { // cun
+                        var j: usize = 0;
+                        while (j < cols) : (j += 1) {
+                            var i: usize = 0;
+                            while (i < int.min(j + 1, rows)) : (i += 1) {
+                                mat.data[i + j * mat.ld] = if (comptime @typeInfo(types.ReturnTypeFromInputs(@"fn", &types.structToArrayOfTypes(Args))) == .error_union)
+                                    try @call(.auto, @"fn", args)
+                                else
+                                    @call(.auto, @"fn", args);
+                            }
+                        }
+                    }
+                } else {
+                    if (comptime diag == .unit) { // clu
+                        var j: usize = 0;
+                        while (j < int.min(rows, cols)) : (j += 1) {
+                            var i: usize = j + 1;
+                            while (i < rows) : (i += 1) {
+                                mat.data[i + j * mat.ld] = if (comptime @typeInfo(types.ReturnTypeFromInputs(@"fn", &types.structToArrayOfTypes(Args))) == .error_union)
+                                    try @call(.auto, @"fn", args)
+                                else
+                                    @call(.auto, @"fn", args);
+                            }
+                        }
+                    } else { // cln
+                        var j: usize = 0;
+                        while (j < int.min(rows, cols)) : (j += 1) {
+                            var i: usize = j;
+                            while (i < rows) : (i += 1) {
+                                mat.data[i + j * mat.ld] = if (comptime @typeInfo(types.ReturnTypeFromInputs(@"fn", &types.structToArrayOfTypes(Args))) == .error_union)
+                                    try @call(.auto, @"fn", args)
+                                else
+                                    @call(.auto, @"fn", args);
+                            }
+                        }
+                    }
+                }
+            } else {
+                if (comptime uplo == .upper) {
+                    if (comptime diag == .unit) { // ruu
+                        var i: usize = 0;
+                        while (i < int.min(rows, cols)) : (i += 1) {
+                            var j: usize = i + 1;
+                            while (j < cols) : (j += 1) {
+                                mat.data[i * mat.ld + j] = if (comptime @typeInfo(types.ReturnTypeFromInputs(@"fn", &types.structToArrayOfTypes(Args))) == .error_union)
+                                    try @call(.auto, @"fn", args)
+                                else
+                                    @call(.auto, @"fn", args);
+                            }
+                        }
+                    } else { // run
+                        var i: usize = 0;
+                        while (i < int.min(rows, cols)) : (i += 1) {
+                            var j: usize = i;
+                            while (j < cols) : (j += 1) {
+                                mat.data[i * mat.ld + j] = if (comptime @typeInfo(types.ReturnTypeFromInputs(@"fn", &types.structToArrayOfTypes(Args))) == .error_union)
+                                    try @call(.auto, @"fn", args)
+                                else
+                                    @call(.auto, @"fn", args);
+                            }
+                        }
+                    }
+                } else {
+                    if (comptime diag == .unit) { // rlu
+                        var i: usize = 0;
+                        while (i < rows) : (i += 1) {
+                            var j: usize = 0;
+                            while (j < int.min(i, cols)) : (j += 1) {
+                                mat.data[i * mat.ld + j] = if (comptime @typeInfo(types.ReturnTypeFromInputs(@"fn", &types.structToArrayOfTypes(Args))) == .error_union)
+                                    try @call(.auto, @"fn", args)
+                                else
+                                    @call(.auto, @"fn", args);
+                            }
+                        }
+                    } else { // rln
+                        var i: usize = 0;
+                        while (i < rows) : (i += 1) {
+                            var j: usize = 0;
+                            while (j < int.min(i + 1, cols)) : (j += 1) {
+                                mat.data[i * mat.ld + j] = if (comptime @typeInfo(types.ReturnTypeFromInputs(@"fn", &types.structToArrayOfTypes(Args))) == .error_union)
+                                    try @call(.auto, @"fn", args)
+                                else
+                                    @call(.auto, @"fn", args);
+                            }
+                        }
+                    }
+                }
+            }
+
+            return mat;
+        }
+
+        /// Initializes a new identity
+        /// `matrix.triangular.Dense(N, uplo, diag, layout)` of the specified
+        /// size.
+        ///
+        /// ## Arguments
+        /// * `allocator` (`std.mem.Allocator`): The allocator to use for memory
+        ///   allocations.
+        /// * `size` (`usize`): The size of the (square) matrix.
+        ///
+        /// ## Returns
+        /// `matrix.triangular.Dense(N, uplo, diag, layout)`: The newly
+        /// initialized identity matrix.
+        ///
+        /// ## Errors
+        /// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
+        /// * `matrix.Error.ZeroDimension`: If `size` is zero.
+        pub fn initIdentity(allocator: std.mem.Allocator, size: usize) !matrix.triangular.Dense(N, uplo, diag, layout) {
             if (size == 0)
                 return matrix.Error.ZeroDimension;
 
-            var mat: Dense(T, uplo, diag, layout) = try .init(allocator, size, size);
-            errdefer mat.deinit(allocator);
-
-            var i: u32 = 0;
-            var j: u32 = 0;
-
-            errdefer mat._cleanup(i, j, layout, ctx);
+            const mat: matrix.triangular.Dense(N, uplo, diag, layout) = try .init(allocator, size, size);
 
             if (comptime layout == .col_major) {
                 if (comptime uplo == .upper) { // cu
+                    var j: usize = 0;
                     while (j < size) : (j += 1) {
-                        i = 0;
+                        var i: usize = 0;
                         while (i < j) : (i += 1) {
-                            mat.data[mat._index(i, j)] = try numeric.zero(
-                                T,
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                            mat.data[i + j * mat.ld] = numeric.zero(N);
                         }
 
                         if (comptime diag == .non_unit) {
-                            mat.data[mat._index(j, j)] = try numeric.one(
-                                T,
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                            mat.data[j + j * mat.ld] = numeric.one(N);
                         }
                     }
                 } else { // cl
+                    var j: usize = 0;
                     while (j < size) : (j += 1) {
                         if (comptime diag == .non_unit) {
-                            mat.data[mat._index(j, j)] = try numeric.one(
-                                T,
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                            mat.data[j + j * mat.ld] = numeric.one(N);
                         }
 
-                        i = j + 1;
-
+                        var i: usize = j + 1;
                         while (i < size) : (i += 1) {
-                            mat.data[mat._index(i, j)] = try numeric.zero(
-                                T,
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                            mat.data[i + j * mat.ld] = numeric.zero(N);
                         }
                     }
                 }
             } else {
                 if (comptime uplo == .upper) { // ru
+                    var i: usize = 0;
                     while (i < size) : (i += 1) {
                         if (comptime diag == .non_unit) {
-                            mat.data[mat._index(i, i)] = try numeric.one(
-                                T,
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                            mat.data[i * mat.ld + i] = numeric.one(N);
                         }
 
-                        j = i + 1;
-
+                        var j: usize = i + 1;
                         while (j < size) : (j += 1) {
-                            mat.data[mat._index(i, j)] = try numeric.zero(
-                                T,
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                            mat.data[i * mat.ld + j] = numeric.zero(N);
                         }
                     }
                 } else { // rl
+                    var i: usize = 0;
                     while (i < size) : (i += 1) {
-                        j = 0;
+                        var j: usize = 0;
                         while (j < i) : (j += 1) {
-                            mat.data[mat._index(i, j)] = try numeric.zero(
-                                T,
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                            mat.data[i * mat.ld + j] = numeric.zero(N);
                         }
 
                         if (comptime diag == .non_unit) {
-                            mat.data[mat._index(i, i)] = try numeric.one(
-                                T,
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                            mat.data[i * mat.ld + i] = numeric.one(N);
                         }
                     }
                 }
@@ -461,202 +403,237 @@ pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
         /// Deinitializes the matrix, freeing any allocated memory and
         /// invalidating it.
         ///
-        /// Parameters
-        /// ----------
-        /// `self` (`*matrix.triangular.Dense(T, uplo, diag, order)`):
-        /// A pointer to the matrix to deinitialize.
+        /// ## Arguments
+        /// * `self` (`*matrix.triangular.Dense(N, uplo, diag, layout)`): A
+        ///   pointer to the matrix to deinitialize.
+        /// * `allocator` (`std.mem.Allocator`): The allocator to use for memory
+        ///   deallocation. Must be the same allocator used to initialize `self`.
         ///
-        /// `allocator` (`std.mem.Allocator`):
-        /// The allocator to use for memory deallocation. Must be the same
-        /// allocator used to initialize `self`.
-        ///
-        /// Returns
-        /// -------
+        /// ## Returns
         /// `void`
-        ///
-        /// Notes
-        /// -----
-        /// If the elements are of arbitrary precision type, `cleanup` must be
-        /// called before `deinit` to properly deinitialize the elements.
-        pub fn deinit(self: *Dense(T, uplo, diag, layout), allocator: std.mem.Allocator) void {
+        pub fn deinit(self: *matrix.triangular.Dense(N, uplo, diag, layout), allocator: std.mem.Allocator) void {
             if (self.flags.owns_data) {
-                allocator.free(self.data[0..if (comptime uplo == .upper)
-                    int.min(self.rows, self.cols) * self.cols
-                else
-                    self.rows * int.min(self.rows, self.cols)]);
+                allocator.free(self.data[0 .. self.rows * self.cols]);
             }
 
             self.* = undefined;
         }
 
-        /// Gets the element at the specified position.
+        /// Gets the element at the specified index.
         ///
-        /// Parameters
-        /// ----------
-        /// `self` (`*const matrix.triangular.Dense(T, uplo, diag, order)`):
-        /// A pointer to the matrix to get the element from.
+        /// ## Arguments
+        /// * `self` (`matrix.triangular.Dense(T, uplo, diag, order)`): The
+        ///   matrix to get the element from.
+        /// * `r` (`usize`): The row index of the element to get.
+        /// * `c` (`usize`): The column index of the element to get.
         ///
-        /// `r` (`u32`):
-        /// The row index of the element to get.
+        /// ## Returns
+        /// `N`: The element at the specified index.
         ///
-        /// `c` (`u32`):
-        /// The column index of the element to get.
-        ///
-        /// Returns
-        /// -------
-        /// `T`:
-        /// The element at the specified position.
-        ///
-        /// Errors
-        /// ------
-        /// `matrix.Error.PositionOutOfBounds`:
-        /// If `r` or `c` is out of bounds.
-        pub fn get(self: *const Dense(T, uplo, diag, layout), r: u32, c: u32) !T {
+        /// ## Errors
+        /// * `matrix.Error.PositionOutOfBounds`: If `r` or `c` is out of
+        ///   bounds.
+        pub fn get(self: matrix.triangular.Dense(N, uplo, diag, layout), r: usize, c: usize) !N {
             if (r >= self.rows or c >= self.cols)
                 return matrix.Error.PositionOutOfBounds;
 
             if (comptime uplo == .upper) {
                 if (r > c)
-                    return numeric.zero(T, .{}) catch unreachable;
+                    return numeric.zero(N);
             } else {
                 if (r < c)
-                    return numeric.zero(T, .{}) catch unreachable;
+                    return numeric.zero(N);
             }
 
             if (comptime diag == .unit) {
                 if (r == c)
-                    return numeric.one(T, .{}) catch unreachable;
+                    return numeric.one(N);
             }
 
             return self.data[self._index(r, c)];
         }
 
-        /// Gets the element at the specified position without bounds checking.
+        /// Gets the element at the specified index without bounds checking.
         ///
-        /// Parameters
-        /// ----------
-        /// `self` (`*const matrix.triangular.Dense(T, uplo, diag, order)`):
-        /// A pointer to the matrix to get the element from.
+        /// ## Arguments
+        /// * `self` (`matrix.triangular.Dense(N, uplo, diag, layout)`): The
+        ///   matrix to get the element from.
+        /// * `r` (`usize`): The row index of the element to get. Assumed to be
+        ///   within bounds, on the correct triangular part, and outside the
+        ///   diagonal if `diag` is unit.
+        /// * `c` (`usize`): The column index of the element to get. Assumed to
+        ///   be within bounds, on the correct triangular part, and outside the
+        ///   diagonal if `diag` is unit.
         ///
-        /// `r` (`u32`):
-        /// The row index of the element to get. Assumed to be within bounds, on
-        /// the correct triangular part, and outside the diagonal if `diag` is
-        /// unit.
-        ///
-        /// `c` (`u32`):
-        /// The column index of the element to get. Assumed to be within bounds,
-        /// on the correct triangular part, and outside the diagonal if `diag`
-        /// is unit.
-        ///
-        /// Returns
-        /// -------
-        /// `T`:
-        /// The element at the specified position.
-        pub inline fn at(self: *const Dense(T, uplo, diag, layout), r: u32, c: u32) T {
+        /// ## Returns
+        /// `N`: The element at the specified position.
+        pub inline fn at(self: matrix.triangular.Dense(N, uplo, diag, layout), r: usize, c: usize) N {
             return self.data[self._index(r, c)];
         }
 
-        /// Sets the element at the specified position.
+        /// Sets the element at the specified index.
         ///
-        /// Parameters
-        /// ----------
-        /// `self` (`*matrix.triangular.Dense(T, uplo, diag, order)`):
-        /// A pointer to the matrix to set the element in.
+        /// ## Arguments
+        /// * `self` (`*matrix.triangular.Dense(N, uplo, diag, layout)`): A
+        ///   pointer to the matrix to set the element in.
+        /// * `r` (`usize`): The row index of the element to set.
+        /// * `c` (`usize`): The column index of the element to set.
+        /// * `value` (`N`): The value to set the element to.
         ///
-        /// `r` (`u32`):
-        /// The row index of the element to set.
-        ///
-        /// `c` (`u32`):
-        /// The column index of the element to set.
-        ///
-        /// `value` (`T`):
-        /// The value to set the element to.
-        ///
-        /// Returns
-        /// -------
+        /// ## Returns
         /// `void`
         ///
-        /// Errors
-        /// ------
-        /// `matrix.Error.PositionOutOfBounds`:
-        /// If `r` or `c` is out of bounds.
-        ///
-        /// `matrix.Error.BreaksStructure`:
-        /// If `r == c` and `diag` is unit, or if the position `(r, c)` is
-        /// outside the correct triangular part of the matrix.
-        ///
-        /// Notes
-        /// -----
-        /// If the elements are of arbitrary precision type, the existing
-        /// element at the position is not deinitialized. The user must ensure
-        /// that no memory leaks occur. Additionally, the matrix takes ownership
-        /// of `value`.
-        pub fn set(self: *Dense(T, uplo, diag, layout), row: u32, col: u32, value: T) !void {
-            if (row >= self.rows or col >= self.cols)
+        /// ## Errors
+        /// * `matrix.Error.PositionOutOfBounds`: If `r` or `c` is out of
+        ///   bounds.
+        /// * `matrix.Error.BreaksStructure`: If `r == c` and `diag` is unit, or
+        ///   if the index is outside the correct triangular part of the matrix.
+        pub fn set(self: *matrix.triangular.Dense(N, uplo, diag, layout), r: usize, c: usize, value: N) !void {
+            if (r >= self.rows or c >= self.cols)
                 return matrix.Error.PositionOutOfBounds;
 
             if (comptime uplo == .upper) {
-                if (row > col)
+                if (r > c)
                     return matrix.Error.BreaksStructure;
             } else {
-                if (row < col)
+                if (r < c)
                     return matrix.Error.BreaksStructure;
             }
 
             if (comptime diag == .unit) {
-                if (row == col)
+                if (r == c)
                     return matrix.Error.BreaksStructure;
             }
 
-            self.data[self._index(row, col)] = value;
+            self.data[self._index(r, c)] = value;
         }
 
         /// Sets the element at the specified position without bounds checking.
         ///
-        /// Parameters
-        /// ----------
-        /// `self` (`*matrix.triangular.Dense(T, uplo, diag, order)`):
-        /// A pointer to the matrix to set the element in.
+        /// ## Arguments
+        /// * `self` (`*matrix.triangular.Dense(N, uplo, diag, layout)`): A
+        ///   pointer to the matrix to set the element in.
+        /// * `r` (`usize`): The row index of the element to set. Assumed to be
+        ///   within bounds, on the correct triangular part, and outside the
+        ///   diagonal if `diag` is unit.
+        /// * `c` (`usize`): The column index of the element to set. Assumed to
+        ///   be within bounds, on the correct triangular part, and outside the
+        ///   diagonal if `diag` is unit.
+        /// * `value` (`N`): The value to set the element to.
         ///
-        /// `r` (`u32`):
-        /// The row index of the element to set. Assumed to be within bounds, on
-        /// the correct triangular part, and outside the diagonal if `diag` is
-        /// unit.
-        ///
-        /// `c` (`u32`):
-        /// The column index of the element to set. Assumed to be within bounds,
-        /// on the correct triangular part, and outside the diagonal if `diag`
-        /// is unit.
-        ///
-        /// `value` (`T`):
-        /// The value to set the element to.
-        ///
-        /// Returns
-        /// -------
+        /// ## Returns
         /// `void`
+        pub inline fn put(self: *matrix.triangular.Dense(N, uplo, diag, layout), r: usize, c: usize, value: N) void {
+            self.data[self._index(r, c)] = value;
+        }
+
+        /// Creates a copy of the matrix.
         ///
-        /// Notes
-        /// -----
-        /// If the elements are of arbitrary precision type, the existing
-        /// element at the position is not deinitialized. The user must ensure
-        /// that no memory leaks occur. Additionally, the matrix takes ownership
-        /// of `value`.
-        pub inline fn put(self: *Dense(T, uplo, diag, layout), row: u32, col: u32, value: T) void {
-            self.data[self._index(row, col)] = value;
+        /// ## Arguments
+        /// * `self` (`matrix.triangular.Dense(N, uplo, diag, layout)`): The
+        ///   matrix to copy.
+        /// * `allocator` (`std.mem.Allocator`): The allocator to use for memory
+        ///   allocations.
+        ///
+        /// ## Returns
+        /// `matrix.triangular.Dense(N, uplo, diag, layout)`: The copied matrix.
+        ///
+        /// ## Errors
+        /// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
+        pub fn copy(self: matrix.triangular.Dense(N, uplo, diag, layout), allocator: std.mem.Allocator) !matrix.triangular.Dense(N, uplo, diag, layout) {
+            const mat: matrix.triangular.Dense(N, uplo, diag, layout) = try .init(allocator, self.rows, self.cols);
+
+            if (comptime layout == .col_major) {
+                if (comptime uplo == .upper) {
+                    if (comptime diag == .unit) { // cuu
+                        var j: usize = 0;
+                        while (j < mat.cols) : (j += 1) {
+                            var i: usize = 0;
+                            while (i < int.min(j, mat.rows)) : (i += 1) {
+                                mat.data[i + j * mat.ld] = self.data[i + j * self.ld];
+                            }
+                        }
+                    } else { // cun
+                        var j: usize = 0;
+                        while (j < mat.cols) : (j += 1) {
+                            var i: usize = 0;
+                            while (i < int.min(j + 1, mat.rows)) : (i += 1) {
+                                mat.data[i + j * mat.ld] = self.data[i + j * self.ld];
+                            }
+                        }
+                    }
+                } else {
+                    if (comptime diag == .unit) { // clu
+                        var j: usize = 0;
+                        while (j < int.min(mat.rows, mat.cols)) : (j += 1) {
+                            var i: usize = j + 1;
+                            while (i < mat.rows) : (i += 1) {
+                                mat.data[i + j * mat.ld] = self.data[i + j * self.ld];
+                            }
+                        }
+                    } else { // cln
+                        var j: usize = 0;
+                        while (j < int.min(mat.rows, mat.cols)) : (j += 1) {
+                            var i: usize = j;
+                            while (i < mat.rows) : (i += 1) {
+                                mat.data[i + j * mat.ld] = self.data[i + j * self.ld];
+                            }
+                        }
+                    }
+                }
+            } else {
+                if (comptime uplo == .upper) {
+                    if (comptime diag == .unit) { // ruu
+                        var i: usize = 0;
+                        while (i < int.min(mat.rows, mat.cols)) : (i += 1) {
+                            var j: usize = i + 1;
+                            while (j < mat.cols) : (j += 1) {
+                                mat.data[i * mat.ld + j] = self.data[i * self.ld + j];
+                            }
+                        }
+                    } else { // run
+                        var i: usize = 0;
+                        while (i < int.min(mat.rows, mat.cols)) : (i += 1) {
+                            var j: usize = i;
+                            while (j < mat.cols) : (j += 1) {
+                                mat.data[i * mat.ld + j] = self.data[i * self.ld + j];
+                            }
+                        }
+                    }
+                } else {
+                    if (comptime diag == .unit) { // rlu
+                        var i: usize = 0;
+                        while (i < mat.rows) : (i += 1) {
+                            var j: usize = 0;
+                            while (j < int.min(i, mat.cols)) : (j += 1) {
+                                mat.data[i * mat.ld + j] = self.data[i * self.ld + j];
+                            }
+                        }
+                    } else { // rln
+                        var i: usize = 0;
+                        while (i < mat.rows) : (i += 1) {
+                            var j: usize = 0;
+                            while (j < int.min(i + 1, mat.cols)) : (j += 1) {
+                                mat.data[i * mat.ld + j] = self.data[i * self.ld + j];
+                            }
+                        }
+                    }
+                }
+            }
+
+            return mat;
         }
 
         /// Returns a transposed view of the matrix.
         ///
-        /// Parameters
-        /// ----------
-        /// `self` (`*const matrix.triangular.Dense(T, uplo, diag, order)`):
-        /// The matrix to transpose.
+        /// ## Arguments
+        /// * `self` (`matrix.triangular.Dense(N, uplo, diag, layout)`): The
+        ///   matrix to transpose.
         ///
-        /// Returns
-        /// -------
-        /// `matrix.triangular.Dense(T, uplo.invert(), diag, order.invert())`:
+        /// ## Returns
+        /// `matrix.triangular.Dense(N, uplo.invert(), diag, layout.invert())`:
         /// The transposed matrix.
-        pub fn transpose(self: Dense(T, uplo, diag, layout)) Dense(T, uplo.invert(), diag, layout.invert()) {
+        pub fn transpose(self: matrix.triangular.Dense(N, uplo, diag, layout)) matrix.triangular.Dense(N, uplo.invert(), diag, layout.invert()) {
             return .{
                 .data = self.data,
                 .rows = self.cols,
@@ -668,49 +645,31 @@ pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
 
         /// Returns a submatrix view of the matrix.
         ///
-        /// Parameters
-        /// ----------
-        /// `self` (`*const matrix.triangular.Dense(T, uplo, diag, order)`):
-        /// The matrix to get the submatrix from.
+        /// ## Arguments
+        /// * `self` (`matrix.triangular.Dense(N, uplo, diag, layout)`): The
+        ///   matrix to get the submatrix from.
+        /// * `start` (`usize`): The starting diagonal index of the submatrix
+        ///   (inclusive).
+        /// * `row_end` (`usize`): The ending row index of the submatrix
+        ///   (exclusive). Must be greater than `start`.
+        /// * `col_end` (`usize`): The ending column index of the submatrix
+        ///   (exclusive). Must be greater than `start`.
         ///
-        /// `start` (`u32`):
-        /// The starting diagonal index of the submatrix (inclusive).
+        /// ## Returns
+        /// `matrix.triangular.Dense(N, uplo, diag, layout)`: The submatrix.
         ///
-        /// `row_end` (`u32`):
-        /// The ending row index of the submatrix (exclusive). Must be greater
-        /// than `start`.
-        ///
-        /// `col_end` (`u32`):
-        /// The ending column index of the submatrix (exclusive). Must be
-        /// greater than `start`.
-        ///
-        /// Returns
-        /// -------
-        /// `matrix.triangular.Dense(T, uplo, diag, order)`:
-        /// The submatrix.
-        ///
-        /// Errors
-        /// ------
-        /// `matrix.Error.InvalidRange`:
-        /// If the specified range is invalid.
-        pub fn submatrix(
-            self: *const Dense(T, uplo, diag, layout),
-            start: u32,
-            row_end: u32,
-            col_end: u32,
-        ) !Dense(T, uplo, diag, layout) {
+        /// ## Errors
+        /// * `matrix.Error.InvalidRange`: If the specified range is invalid.
+        pub fn submatrix(self: matrix.triangular.Dense(N, uplo, diag, layout), start: usize, row_end: usize, col_end: usize) !matrix.triangular.Dense(N, uplo, diag, layout) {
             if (start >= int.min(self.rows, self.cols) or
                 row_end > self.rows or col_end > self.cols or
                 row_end < start or col_end < start)
                 return matrix.Error.InvalidRange;
 
-            const sub_rows = row_end - start;
-            const sub_cols = col_end - start;
-
             return .{
-                .data = self.data + (start + start * self.ld),
-                .rows = sub_rows,
-                .cols = sub_cols,
+                .data = self.data + self._index(start, start),
+                .rows = row_end - start,
+                .cols = col_end - start,
                 .ld = self.ld,
                 .flags = .{ .owns_data = false },
             };
@@ -718,183 +677,97 @@ pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
 
         /// Copies the triangular matrix to a general dense matrix.
         ///
-        /// Parameters
-        /// ----------
-        /// `self` (`*const matrix.triangular.Dense(T, uplo, diag, order)`):
-        /// A pointer to the matrix to copy.
+        /// ## Arguments
+        /// * `self` (`matrix.triangular.Dense(N, uplo, diag, layout)`): The
+        ///   matrix to copy.
+        /// * `allocator` (`std.mem.Allocator`): The allocator to use for memory
+        ///   allocations.
         ///
-        /// `allocator` (`std.mem.Allocator`):
-        /// The allocator to use for memory allocations.
+        /// ## Returns
+        /// `matrix.general.Dense(N, layour)`: The copied matrix.
         ///
-        /// `ctx` (`anytype`):
-        /// A context struct providing necessary resources and configuration for
-        /// the operation. The required fields depend on the type `T`. If the
-        /// context is missing required fields or contains unnecessary or
-        /// wrongly typed fields, the compiler will emit a detailed error
-        /// message describing the expected structure.
-        ///
-        /// Returns
-        /// -------
-        /// `matrix.general.Dense(T, order)`:
-        /// The copied matrix.
-        ///
-        /// Errors
-        /// ------
-        /// `std.mem.Allocator.Error.OutOfMemory`:
-        /// If memory allocation fails.
-        ///
-        /// Notes
-        /// -----
-        /// If the elements are of arbitrary precision type, they are deep
-        /// copied.
-        pub fn copyToGeneralDenseMatrix(
-            self: Dense(T, uplo, diag, layout),
-            allocator: std.mem.Allocator,
-            ctx: anytype,
-        ) !matrix.general.Dense(T, layout) {
-            comptime switch (types.numericType(T)) {
-                .bool, .int, .float, .cfloat => {
-                    types.validateContext(@TypeOf(ctx), .{});
-                },
-                .integer, .rational, .real, .complex => {
-                    types.validateContext(
-                        @TypeOf(ctx),
-                        .{
-                            .element_allocator = .{ .type = std.mem.Allocator, .required = true },
-                        },
-                    );
-                },
-            };
-
-            var mat: matrix.general.Dense(T, layout) = try .init(allocator, self.size, self.size);
-            errdefer mat.deinit(allocator);
-
-            var i: u32 = 0;
-            var j: u32 = 0;
-
-            errdefer mat._cleanup(i, j, layout, ctx);
+        /// ## Errors
+        /// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
+        pub fn copyToGeneralDenseMatrix(self: matrix.triangular.Dense(N, uplo, diag, layout), allocator: std.mem.Allocator) !matrix.general.Dense(N, layout) {
+            const mat: matrix.general.Dense(N, layout) = try .init(allocator, self.size, self.size);
 
             if (comptime layout == .col_major) {
                 if (comptime uplo == .upper) { // cu
+                    var j: usize = 0;
                     while (j < mat.cols) : (j += 1) {
-                        i = 0;
+                        var i: usize = 0;
                         while (i < j) : (i += 1) {
-                            mat.data[mat._index(i, j)] = try numeric.copy(
-                                self.data[self._index(i, j)],
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                            mat.data[i + j * mat.ld] = self.data[i + j * self.ld];
                         }
 
                         if (comptime diag == .unit) {
-                            mat.data[mat._index(j, j)] = try numeric.one(
-                                T,
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                            mat.data[j + j * mat.ld] = numeric.one(N);
                         } else {
-                            mat.data[mat._index(j, j)] = try numeric.copy(
-                                self.data[self._index(j, j)],
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                            mat.data[j + j * mat.ld] = self.data[j + j * self.ld];
                         }
 
                         i = j + 1;
                         while (i < mat.rows) : (i += 1) {
-                            mat.data[mat._index(i, j)] = try numeric.zero(
-                                T,
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                            mat.data[i + j * mat.ld] = numeric.zero(N);
                         }
                     }
                 } else { // cl
+                    var j: usize = 0;
                     while (j < mat.cols) : (j += 1) {
-                        i = 0;
+                        var i: usize = 0;
                         while (i < j) : (i += 1) {
-                            mat.data[mat._index(i, j)] = try numeric.zero(
-                                T,
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                            mat.data[i + j * mat.ld] = numeric.zero(N);
                         }
 
                         if (comptime diag == .unit) {
-                            mat.data[mat._index(j, j)] = try numeric.one(
-                                T,
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                            mat.data[j + j * mat.ld] = numeric.one(N);
                         } else {
-                            mat.data[mat._index(j, j)] = try numeric.copy(
-                                self.data[self._index(j, j)],
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                            mat.data[j + j * mat.ld] = self.data[j + j * self.ld];
                         }
 
                         i = j + 1;
                         while (i < mat.rows) : (i += 1) {
-                            mat.data[mat._index(i, j)] = try numeric.copy(
-                                self.data[self._index(i, j)],
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                            mat.data[i + j * mat.ld] = self.data[i + j * self.ld];
                         }
                     }
                 }
             } else {
                 if (comptime uplo == .upper) { // ru
+                    var i: usize = 0;
                     while (i < mat.rows) : (i += 1) {
-                        j = 0;
+                        var j: usize = 0;
                         while (j < i) : (j += 1) {
-                            mat.data[mat._index(i, j)] = try numeric.zero(
-                                T,
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                            mat.data[i * mat.ld + j] = numeric.zero(N);
                         }
 
                         if (comptime diag == .unit) {
-                            mat.data[mat._index(i, i)] = try numeric.one(
-                                T,
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                            mat.data[i * mat.ld + i] = numeric.one(N);
                         } else {
-                            mat.data[mat._index(i, i)] = try numeric.copy(
-                                self.data[self._index(i, i)],
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                            mat.data[i * mat.ld + i] = self.data[i * self.ld + j];
                         }
 
                         j = i + 1;
                         while (j < mat.cols) : (j += 1) {
-                            mat.data[mat._index(i, j)] = try numeric.copy(
-                                self.data[self._index(i, j)],
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                            mat.data[i * mat.ld + j] = self.data[i * self.ld + j];
                         }
                     }
                 } else { // rl
+                    var i: usize = 0;
                     while (i < mat.rows) : (i += 1) {
-                        j = 0;
+                        var j: usize = 0;
                         while (j < i) : (j += 1) {
-                            mat.data[mat._index(i, j)] = try numeric.copy(
-                                self.data[self._index(i, j)],
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                            mat.data[i * mat.ld + j] = self.data[i * self.ld + j];
                         }
 
                         if (comptime diag == .unit) {
-                            mat.data[mat._index(i, i)] = try numeric.one(
-                                T,
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                            mat.data[i * mat.ld + i] = numeric.one(N);
                         } else {
-                            mat.data[mat._index(i, i)] = try numeric.copy(
-                                self.data[self._index(i, i)],
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                            mat.data[i * mat.ld + i] = self.data[i * self.ld + i];
                         }
 
                         j = i + 1;
                         while (j < mat.cols) : (j += 1) {
-                            mat.data[mat._index(i, j)] = try numeric.zero(
-                                T,
-                                types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                            );
+                            mat.data[i * mat.ld + j] = numeric.zero(N);
                         }
                     }
                 }
@@ -903,258 +776,118 @@ pub fn Dense(T: type, uplo: Uplo, diag: Diag, layout: Layout) type {
             return mat;
         }
 
-        pub fn copyToDenseArray(
-            self: *const Dense(T, uplo, diag, layout),
-            allocator: std.mem.Allocator,
-            ctx: anytype,
-        ) !array.Dense(T, layout) {
-            var result: array.Dense(T, layout) = try .init(allocator, &.{ self.rows, self.cols });
-            errdefer result.deinit(allocator);
+        // pub fn copyToDenseArray(
+        //     self: *const Dense(N, uplo, diag, layout),
+        //     allocator: std.mem.Allocator,
+        //     ctx: anytype,
+        // ) !array.Dense(N, layout) {
+        //     var result: array.Dense(N, layout) = try .init(allocator, &.{ self.rows, self.cols });
+        //     errdefer result.deinit(allocator);
 
-            if (comptime !types.isArbitraryPrecision(T)) {
-                comptime types.validateContext(@TypeOf(ctx), .{});
+        //     if (comptime !types.isArbitraryPrecision(N)) {
+        //         comptime types.validateContext(@TypeOf(ctx), .{});
 
-                if (comptime layout == .col_major) {
-                    if (comptime uplo == .upper) { // cu
-                        var j: u32 = 0;
-                        while (j < self.cols) : (j += 1) {
-                            var i: u32 = 0;
-                            while (i < int.min(j, self.rows)) : (i += 1) {
-                                result.data[i + j * result.strides[1]] = self.data[i + j * self.ld];
-                            }
+        //         if (comptime layout == .col_major) {
+        //             if (comptime uplo == .upper) { // cu
+        //                 var j: usize = 0;
+        //                 while (j < self.cols) : (j += 1) {
+        //                     var i: usize = 0;
+        //                     while (i < int.min(j, self.rows)) : (i += 1) {
+        //                         result.data[i + j * result.strides[1]] = self.data[i + j * self.ld];
+        //                     }
 
-                            if (j < int.min(self.rows, self.cols)) {
-                                if (comptime diag == .unit) {
-                                    result.data[j + j * result.strides[1]] = numeric.one(T, ctx) catch unreachable;
-                                } else {
-                                    result.data[j + j * result.strides[1]] = self.data[j + j * self.ld];
-                                }
-                            }
+        //                     if (j < int.min(self.rows, self.cols)) {
+        //                         if (comptime diag == .unit) {
+        //                             result.data[j + j * result.strides[1]] = numeric.one(N, ctx) catch unreachable;
+        //                         } else {
+        //                             result.data[j + j * result.strides[1]] = self.data[j + j * self.ld];
+        //                         }
+        //                     }
 
-                            i = j + 1;
-                            while (i < self.rows) : (i += 1) {
-                                result.data[i + j * result.strides[1]] = numeric.zero(T, ctx) catch unreachable;
-                            }
-                        }
-                    } else { // cl
-                        var j: u32 = 0;
-                        while (j < self.cols) : (j += 1) {
-                            var i: u32 = 0;
-                            while (i < int.min(j, self.rows)) : (i += 1) {
-                                result.data[i + j * result.strides[1]] = numeric.zero(T, ctx) catch unreachable;
-                            }
+        //                     i = j + 1;
+        //                     while (i < self.rows) : (i += 1) {
+        //                         result.data[i + j * result.strides[1]] = numeric.zero(N, ctx) catch unreachable;
+        //                     }
+        //                 }
+        //             } else { // cl
+        //                 var j: usize = 0;
+        //                 while (j < self.cols) : (j += 1) {
+        //                     var i: usize = 0;
+        //                     while (i < int.min(j, self.rows)) : (i += 1) {
+        //                         result.data[i + j * result.strides[1]] = numeric.zero(N, ctx) catch unreachable;
+        //                     }
 
-                            if (j < int.min(self.rows, self.cols)) {
-                                if (comptime diag == .unit) {
-                                    result.data[j + j * result.strides[1]] = numeric.one(T, ctx) catch unreachable;
-                                } else {
-                                    result.data[j + j * result.strides[1]] = self.data[j + j * self.ld];
-                                }
-                            }
+        //                     if (j < int.min(self.rows, self.cols)) {
+        //                         if (comptime diag == .unit) {
+        //                             result.data[j + j * result.strides[1]] = numeric.one(N, ctx) catch unreachable;
+        //                         } else {
+        //                             result.data[j + j * result.strides[1]] = self.data[j + j * self.ld];
+        //                         }
+        //                     }
 
-                            i = j + 1;
-                            while (i < self.rows) : (i += 1) {
-                                result.data[i + j * result.strides[1]] = self.data[i + j * self.ld];
-                            }
-                        }
-                    }
-                } else {
-                    if (comptime uplo == .upper) { // ru
-                        var i: u32 = 0;
-                        while (i < self.rows) : (i += 1) {
-                            var j: u32 = 0;
-                            while (j < int.min(i, self.cols)) : (j += 1) {
-                                result.data[i * result.strides[0] + j] = numeric.zero(T, ctx) catch unreachable;
-                            }
+        //                     i = j + 1;
+        //                     while (i < self.rows) : (i += 1) {
+        //                         result.data[i + j * result.strides[1]] = self.data[i + j * self.ld];
+        //                     }
+        //                 }
+        //             }
+        //         } else {
+        //             if (comptime uplo == .upper) { // ru
+        //                 var i: usize = 0;
+        //                 while (i < self.rows) : (i += 1) {
+        //                     var j: usize = 0;
+        //                     while (j < int.min(i, self.cols)) : (j += 1) {
+        //                         result.data[i * result.strides[0] + j] = numeric.zero(N, ctx) catch unreachable;
+        //                     }
 
-                            if (i < int.min(self.rows, self.cols)) {
-                                if (comptime diag == .unit) {
-                                    result.data[i * result.strides[0] + i] = numeric.one(T, ctx) catch unreachable;
-                                } else {
-                                    result.data[i * result.strides[0] + i] = self.data[i * self.ld + i];
-                                }
-                            }
+        //                     if (i < int.min(self.rows, self.cols)) {
+        //                         if (comptime diag == .unit) {
+        //                             result.data[i * result.strides[0] + i] = numeric.one(N, ctx) catch unreachable;
+        //                         } else {
+        //                             result.data[i * result.strides[0] + i] = self.data[i * self.ld + i];
+        //                         }
+        //                     }
 
-                            j = i + 1;
-                            while (j < self.cols) : (j += 1) {
-                                result.data[i * result.strides[0] + j] = self.data[i * self.ld + j];
-                            }
-                        }
-                    } else { // rl
-                        var i: u32 = 0;
-                        while (i < self.rows) : (i += 1) {
-                            var j: u32 = 0;
-                            while (j < int.min(i, self.cols)) : (j += 1) {
-                                result.data[i * result.strides[0] + j] = self.data[i * self.ld + j];
-                            }
+        //                     j = i + 1;
+        //                     while (j < self.cols) : (j += 1) {
+        //                         result.data[i * result.strides[0] + j] = self.data[i * self.ld + j];
+        //                     }
+        //                 }
+        //             } else { // rl
+        //                 var i: usize = 0;
+        //                 while (i < self.rows) : (i += 1) {
+        //                     var j: usize = 0;
+        //                     while (j < int.min(i, self.cols)) : (j += 1) {
+        //                         result.data[i * result.strides[0] + j] = self.data[i * self.ld + j];
+        //                     }
 
-                            if (i < int.min(self.rows, self.cols)) {
-                                if (comptime diag == .unit) {
-                                    result.data[i * result.strides[0] + i] = numeric.one(T, ctx) catch unreachable;
-                                } else {
-                                    result.data[i * result.strides[0] + i] = self.data[i * self.ld + i];
-                                }
-                            }
+        //                     if (i < int.min(self.rows, self.cols)) {
+        //                         if (comptime diag == .unit) {
+        //                             result.data[i * result.strides[0] + i] = numeric.one(N, ctx) catch unreachable;
+        //                         } else {
+        //                             result.data[i * result.strides[0] + i] = self.data[i * self.ld + i];
+        //                         }
+        //                     }
 
-                            j = i + 1;
-                            while (j < self.cols) : (j += 1) {
-                                result.data[i * result.strides[0] + j] = numeric.zero(T, ctx) catch unreachable;
-                            }
-                        }
-                    }
-                }
-            } else {
-                @compileError("Arbitrary precision types not implemented yet");
-            }
+        //                     j = i + 1;
+        //                     while (j < self.cols) : (j += 1) {
+        //                         result.data[i * result.strides[0] + j] = numeric.zero(N, ctx) catch unreachable;
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //     } else {
+        //         @compileError("Arbitrary precision types not implemented yet");
+        //     }
 
-            return result;
-        }
+        //     return result;
+        // }
 
-        pub inline fn _index(self: *const Dense(T, uplo, diag, layout), r: u32, c: u32) u32 {
+        inline fn _index(self: *const Dense(N, uplo, diag, layout), r: usize, c: usize) usize {
             return if (comptime layout == .col_major)
                 r + c * self.ld
             else
                 r * self.ld + c;
-        }
-
-        /// Cleans up the elements of the matrix, deinitializing them if
-        /// necessary.
-        ///
-        /// Parameters
-        /// ----------
-        /// `self` (`*matrix.triangular.Dense(T, uplo, diag, order)`):
-        /// A pointer to the matrix to clean up.
-        ///
-        /// `ctx` (`anytype`):
-        /// A context struct providing necessary resources and configuration for
-        /// the operation. The required fields depend on the type `T`. If the
-        /// context is missing required fields or contains unnecessary or
-        /// wrongly typed fields, the compiler will emit a detailed error
-        /// message describing the expected structure.
-        ///
-        /// Returns
-        /// -------
-        /// `void`
-        ///
-        /// Notes
-        /// -----
-        /// This function must be called before `deinit` if the elements are of
-        /// arbitrary precision type to properly deinitialize them.
-        pub fn cleanup(self: *Dense(T, uplo, diag, layout), ctx: anytype) void {
-            return self._cleanup(self.rows, self.cols, layout, ctx);
-        }
-
-        /// Cleans up the elements of the matrix, deinitializing them if
-        /// necessary, in the specified order up to position (i, j), exclusive.
-        /// In other words, if iter_order is column-major, all elements from
-        /// (0, 0) to (i - 1, j) are cleaned up, and if iter_order is row-major,
-        /// all elements from (0, 0) to (i, j - 1) are cleaned up.
-        pub fn _cleanup(self: *Dense(T, uplo, diag, layout), i: u32, j: u32, iter_order: IterationOrder, ctx: anytype) void {
-            switch (comptime types.numericType(T)) {
-                .bool, .int, .float, .cfloat => {
-                    comptime types.validateContext(@TypeOf(ctx), .{});
-
-                    // No cleanup needed for fixed precision types.
-                },
-                .integer, .rational, .real, .complex => {
-                    comptime types.validateContext(
-                        @TypeOf(ctx),
-                        .{
-                            .element_allocator = .{ .type = std.mem.Allocator, .required = true },
-                        },
-                    );
-
-                    if (iter_order == .left_to_right) {
-                        if (comptime uplo == .upper) {
-                            var _j: u32 = 0;
-                            while (_j <= int.min(j, self.cols - 1)) : (_j += 1) {
-                                var _i: u32 = 0;
-                                if (_j == j) {
-                                    const l: u32 = if (comptime diag == .unit) _j else _j + 1;
-                                    while (_i < int.min(i, l)) : (_i += 1) {
-                                        numeric.deinit(
-                                            &self.data[self._index(_i, _j)],
-                                            types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                                        );
-                                    }
-                                } else {
-                                    const l: u32 = if (comptime diag == .unit) _j else _j + 1;
-                                    while (_i < l) : (_i += 1) {
-                                        numeric.deinit(
-                                            &self.data[self._index(_i, _j)],
-                                            types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                                        );
-                                    }
-                                }
-                            }
-                        } else {
-                            var _j: u32 = 0;
-                            while (_j <= int.min(j, self.cols - 1)) : (_j += 1) {
-                                var _i: u32 = if (comptime diag == .unit) _j + 1 else _j;
-                                if (_j == j) {
-                                    while (_i < int.min(i, self.rows)) : (_i += 1) {
-                                        numeric.deinit(
-                                            &self.data[self._index(_i, _j)],
-                                            types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                                        );
-                                    }
-                                } else {
-                                    while (_i < self.rows) : (_i += 1) {
-                                        numeric.deinit(
-                                            &self.data[self._index(_i, _j)],
-                                            types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                                        );
-                                    }
-                                }
-                            }
-                        }
-                    } else {
-                        if (comptime uplo == .upper) {
-                            var _i: u32 = 0;
-                            while (_i <= int.min(i, self.rows - 1)) : (_i += 1) {
-                                var _j: u32 = if (comptime diag == .unit) _i + 1 else _i;
-                                if (_i == i) {
-                                    while (_j < int.min(j, self.cols)) : (_j += 1) {
-                                        numeric.deinit(
-                                            &self.data[self._index(_i, _j)],
-                                            types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                                        );
-                                    }
-                                } else {
-                                    while (_j < self.cols) : (_j += 1) {
-                                        numeric.deinit(
-                                            &self.data[self._index(_i, _j)],
-                                            types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                                        );
-                                    }
-                                }
-                            }
-                        } else {
-                            var _i: u32 = 0;
-                            while (_i <= int.min(i, self.rows - 1)) : (_i += 1) {
-                                var _j: u32 = 0;
-                                if (_i == i) {
-                                    const l: u32 = if (comptime diag == .unit) _i else _i + 1;
-                                    while (_j < int.min(j, l)) : (_j += 1) {
-                                        numeric.deinit(
-                                            &self.data[self._index(_i, _j)],
-                                            types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                                        );
-                                    }
-                                } else {
-                                    const l: u32 = if (comptime diag == .unit) _i else _i + 1;
-                                    while (_j < l) : (_j += 1) {
-                                        numeric.deinit(
-                                            &self.data[self._index(_i, _j)],
-                                            types.renameStructFields(ctx, .{ .element_allocator = "allocator" }),
-                                        );
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-            }
         }
     };
 }

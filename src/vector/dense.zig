@@ -20,11 +20,11 @@ pub fn Dense(N: type) type {
         inc: isize,
         flags: vector.Flags,
 
-        /// Type signatures
+        // Type signatures
         pub const is_vector = true;
         pub const is_dense = true;
 
-        /// Numeric type
+        // Numeric type
         pub const Numeric = N;
 
         pub const empty = vector.Dense(N){
@@ -63,21 +63,21 @@ pub fn Dense(N: type) type {
         ///
         /// ## Arguments
         /// * `buffer` (`[]N`): The buffer.
-        /// * `stride` (`isize`): The step size between elements in memory.
+        /// * `inc` (`isize`): The step size between elements in memory.
         ///
         /// ## Returns
         /// `vector.Dense(N)`: The newly initialized vector.
         ///
         /// ## Errors
         /// * `vector.Error.ZeroLength`: If if the length of the buffer is zero.
-        pub fn initBuffer(buffer: []N, stride: isize) !vector.Dense(N) {
+        pub fn initBuffer(buffer: []N, inc: isize) !vector.Dense(N) {
             if (buffer.len == 0)
                 return vector.Error.ZeroLength;
 
             return .{
                 .data = buffer.ptr,
-                .len = int.div(buffer.len, numeric.cast(usize, int.abs(stride))),
-                .inc = stride,
+                .len = int.div(buffer.len, numeric.cast(usize, int.abs(inc))),
+                .inc = inc,
                 .flags = .{ .owns_data = false },
             };
         }
@@ -172,8 +172,7 @@ pub fn Dense(N: type) type {
         /// Gets the element at the specified index.
         ///
         /// ## Arguments
-        /// * `self` (`*const vector.Dense(N)`): A pointer to the vector to get
-        ///   the element from.
+        /// * `self` (`vector.Dense(N)`): The vector to get the element from.
         /// * `index` (`usize`): The index of the element to get.
         ///
         /// ## Returns
@@ -181,7 +180,7 @@ pub fn Dense(N: type) type {
         ///
         /// ## Errors
         /// * `vector.Error.PositionOutOfBounds`: If `index` is out of bounds.
-        pub fn get(self: *const vector.Dense(N), index: usize) !N {
+        pub fn get(self: vector.Dense(N), index: usize) !N {
             if (index >= self.len)
                 return vector.Error.PositionOutOfBounds;
 
@@ -191,14 +190,13 @@ pub fn Dense(N: type) type {
         /// Gets the element at the specified index without bounds checking.
         ///
         /// ## Arguments
-        /// * `self` (`*const vector.Dense(N)`): A pointer to the vector to get
-        ///   the element from.
+        /// * `self` (`vector.Dense(N)`): The vector to get the element from.
         /// * `index` (`usize`): The index of the element to get. Assumed to be
         ///   within bounds.
         ///
         /// ## Returns
         /// `N`: The element at the specified index.
-        pub inline fn at(self: *const vector.Dense(N), index: usize) N {
+        pub inline fn at(self: vector.Dense(N), index: usize) N {
             return self.data[self._index(index)];
         }
 
@@ -240,8 +238,8 @@ pub fn Dense(N: type) type {
         /// Views the vector as a diagonal matrix.
         ///
         /// ## Arguments
-        /// * `self` (`*const vector.Dense(N)`): A pointer to the vector to view
-        ///   as a diagonal matrix.
+        /// * `self` (`vector.Dense(N)`): A pointer to the vector to view as a
+        ///   diagonal matrix.
         /// * `rows` (`usize`): The number of rows of the resulting matrix.
         /// * `cols` (`usize`): The number of columns of the resulting matrix.
         ///
@@ -254,7 +252,7 @@ pub fn Dense(N: type) type {
         ///   greater than the length of the vector.
         ///*  `vector.Error.NonContiguousData`: If the vector data is not
         ///   contiguous (`inc != 1`).
-        pub fn asDiagonal(self: *const vector.Dense(N), rows: usize, cols: usize) !matrix.Diagonal(N) {
+        pub fn asDiagonal(self: vector.Dense(N), rows: usize, cols: usize) !matrix.Diagonal(N) {
             if (rows == 0 or cols == 0)
                 return matrix.Error.ZeroDimension;
 
