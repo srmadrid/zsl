@@ -16,7 +16,7 @@ pub fn Sqrt(X: type) type {
         .int => @compileError("zsl.numeric.sqrt: not defined for " ++ @typeName(X) ++ "."),
         .float => return X,
         .dyadic => return X,
-        .cfloat => return X,
+        .complex => return X,
         .custom => {
             if (comptime !types.hasMethod(X, "Sqrt", fn (type) type, &.{X}))
                 @compileError("zsl.numeric.sqrt: " ++ @typeName(X) ++ " must implement `fn Sqrt(type) type`");
