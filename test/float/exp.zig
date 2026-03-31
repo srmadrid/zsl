@@ -1,7 +1,7 @@
 const std = @import("std");
-const zml = @import("zml");
-const exp = zml.float.exp;
-const tzml = @import("../zml.zig");
+const zsl = @import("zsl");
+const exp = zsl.float.exp;
+const tzsl = @import("../zsl.zig");
 
 const data_f32: [120]struct { f32, f32 } = .{
     .{ 0x1p+0, 0x0p+0 },
@@ -805,7 +805,7 @@ test exp {
         results_f128[i] = exp(data_f128[i][1]);
     }
 
-    tzml.float.printReport(
+    tzsl.float.printReport(
         "float.exp",
         data_f32,
         results_f32,

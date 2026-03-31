@@ -1,7 +1,7 @@
 const std = @import("std");
-const zml = @import("zml");
-const acosh = zml.float.acosh;
-const tzml = @import("../zml.zig");
+const zsl = @import("zsl");
+const acosh = zsl.float.acosh;
+const tzsl = @import("../zsl.zig");
 
 const data_f32: [69]struct { f32, f32 } = .{
     .{ 0x0p+0, 0x1p+0 },
@@ -386,7 +386,7 @@ test acosh {
         results_f128[i] = acosh(data_f128[i][1]);
     }
 
-    tzml.float.printReport(
+    tzsl.float.printReport(
         "float.acosh",
         data_f32,
         results_f32,

@@ -1,7 +1,7 @@
 const std = @import("std");
-const zml = @import("zml");
-const gamma = zml.float.gamma;
-const tzml = @import("../zml.zig");
+const zsl = @import("zsl");
+const gamma = zsl.float.gamma;
+const tzsl = @import("../zsl.zig");
 
 const data_f32: [582]struct { f32, f32 } = .{
     .{ 0x1.c5bf8ap+0, 0x8p-4 },
@@ -4249,7 +4249,7 @@ test gamma {
         results_f128[i] = gamma(data_f128[i][1]);
     }
 
-    tzml.float.printReport(
+    tzsl.float.printReport(
         "float.gamma",
         data_f32,
         results_f32,

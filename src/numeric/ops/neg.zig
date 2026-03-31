@@ -50,7 +50,7 @@ pub fn Neg(X: type) type {
 /// `numeric.Neg(X)` or `X` must implement the required `neg` method. The
 /// expected signature and behavior of `neg` are as follows:
 /// * `fn neg(X) numeric.Neg(X)`: Returns the negation of `x`.
-pub inline fn neg(x: anytype) numeric.Abs(@TypeOf(x)) {
+pub inline fn neg(x: anytype) numeric.Neg(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Neg(X);
 
@@ -59,7 +59,7 @@ pub inline fn neg(x: anytype) numeric.Abs(@TypeOf(x)) {
         .int => return -x,
         .float => return -x,
         .dyadic => return dyadic.neg(x),
-        .complex => return complex.neg(x),
+        .complex => return x.neg(),
         .custom => {
             const Impl: type = comptime types.anyHasMethod(
                 &.{ R, X },

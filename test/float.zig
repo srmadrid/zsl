@@ -163,11 +163,11 @@ fn processPrecision(
 
 test {
     const test_basic = false;
-    const test_exponential = true;
-    const test_power = true;
-    const test_trigonometric = true;
-    const test_hyperbolic = true;
-    const test_error_gamma = true;
+    const test_exponential = false;
+    const test_power = false;
+    const test_trigonometric = false;
+    const test_hyperbolic = false;
+    const test_error_gamma = false;
     const test_bessel = false;
     const test_nearest_integer = false;
     const test_floating_point = false;

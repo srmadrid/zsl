@@ -1,7 +1,7 @@
 const std = @import("std");
-const zml = @import("zml");
-const pow = zml.float.pow;
-const tzml = @import("../zml.zig");
+const zsl = @import("zsl");
+const pow = zsl.float.pow;
+const tzsl = @import("../zsl.zig");
 
 const data_f32: [737]struct { f32, f32, f32 } = blk: {
     @setEvalBranchQuota(5000);
@@ -6945,7 +6945,7 @@ test pow {
         results_f128[i] = pow(data_f128[i][1], data_f128[i][2]);
     }
 
-    tzml.float.printReport(
+    tzsl.float.printReport(
         "float.pow",
         data_f32,
         results_f32,

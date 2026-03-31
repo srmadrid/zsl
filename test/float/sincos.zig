@@ -1,7 +1,7 @@
 const std = @import("std");
-const zml = @import("zml");
-const sincos = zml.float.sincos;
-const tzml = @import("../zml.zig");
+const zsl = @import("zsl");
+const sincos = zsl.float.sincos;
+const tzsl = @import("../zsl.zig");
 
 const data_f32: [44]struct { f32, f32, f32 } = .{
     .{ 0x0p+0, 0x1p+0, 0x0p+0 },
@@ -356,13 +356,13 @@ test sincos {
     for (data_f32) |test_case| {
         const result = sincos(test_case[2]);
 
-        try tzml.expectApproxEqAbs(
+        try tzsl.expectApproxEqAbs(
             test_case[0],
             result.sinx,
             std.math.floatEpsAt(f32, test_case[0]),
         );
 
-        try tzml.expectApproxEqAbs(
+        try tzsl.expectApproxEqAbs(
             test_case[1],
             result.cosx,
             std.math.floatEpsAt(f32, test_case[1]),
@@ -372,13 +372,13 @@ test sincos {
     for (data_f64) |test_case| {
         const result = sincos(test_case[2]);
 
-        try tzml.expectApproxEqAbs(
+        try tzsl.expectApproxEqAbs(
             test_case[0],
             result.sinx,
             std.math.floatEpsAt(f64, test_case[0]),
         );
 
-        try tzml.expectApproxEqAbs(
+        try tzsl.expectApproxEqAbs(
             test_case[1],
             result.cosx,
             std.math.floatEpsAt(f64, test_case[1]),
@@ -388,13 +388,13 @@ test sincos {
     for (data_f80) |test_case| {
         const result = sincos(test_case[2]);
 
-        try tzml.expectApproxEqAbs(
+        try tzsl.expectApproxEqAbs(
             test_case[0],
             result.sinx,
             std.math.floatEpsAt(f80, test_case[0]),
         );
 
-        try tzml.expectApproxEqAbs(
+        try tzsl.expectApproxEqAbs(
             test_case[1],
             result.cosx,
             std.math.floatEpsAt(f80, test_case[1]),
@@ -404,13 +404,13 @@ test sincos {
     for (data_f128) |test_case| {
         const result = sincos(test_case[2]);
 
-        try tzml.expectApproxEqAbs(
+        try tzsl.expectApproxEqAbs(
             test_case[0],
             result.sinx,
             std.math.floatEpsAt(f128, test_case[0]),
         );
 
-        try tzml.expectApproxEqAbs(
+        try tzsl.expectApproxEqAbs(
             test_case[1],
             result.cosx,
             std.math.floatEpsAt(f128, test_case[1]),

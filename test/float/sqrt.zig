@@ -1,7 +1,7 @@
 const std = @import("std");
-const zml = @import("zml");
-const sqrt = zml.float.sqrt;
-const tzml = @import("../zml.zig");
+const zsl = @import("zsl");
+const sqrt = zsl.float.sqrt;
+const tzsl = @import("../zsl.zig");
 
 const data_f32: [115]struct { f32, f32 } = .{
     .{ 0x0p+0, 0x0p+0 },
@@ -692,7 +692,7 @@ test sqrt {
         results_f128[i] = sqrt(data_f128[i][1]);
     }
 
-    tzml.float.printReport(
+    tzsl.float.printReport(
         "float.sqrt",
         data_f32,
         results_f32,

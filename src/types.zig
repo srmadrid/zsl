@@ -208,6 +208,7 @@ pub const MatrixType = enum {
     hermitian_sparse,
     triangular_dense,
     triangular_sparse,
+    builder_sparse,
     diagonal,
     permutation,
     custom,
@@ -442,6 +443,49 @@ pub inline fn matrixType(comptime M: type) MatrixType {
     if (comptime isTriangularSparseMatrix(M))
         return .triangular_sparse;
 
+    if (comptime isBuilderSparseMatrix(M))
+        return .builder_sparse;
+
+    if (comptime isDiagonalMatrix(M))
+        return .diagonal;
+
+    if (comptime isPermutationMatrix(M))
+        return .permutation;
+
+    return .numeric; // Fallback for numeric types that are not matrices
+}
+
+pub inline fn matrixStorage(comptime M: type) MatrixStorage {
+    if (comptime isCustomMatrix(M))
+        return .custom;
+
+    if (comptime isGeneralDenseMatrix(M))
+        return .general_dense;
+
+    if (comptime isSymmetricDenseMatrix(M))
+        return .symmetric_dense;
+
+    if (comptime isHermitianDenseMatrix(M))
+        return .hermitian_dense;
+
+    if (comptime isTriangularDenseMatrix(M))
+        return .triangular_dense;
+
+    if (comptime isGeneralSparseMatrix(M))
+        return .general_sparse;
+
+    if (comptime isSymmetricSparseMatrix(M))
+        return .symmetric_sparse;
+
+    if (comptime isHermitianSparseMatrix(M))
+        return .hermitian_sparse;
+
+    if (comptime isTriangularSparseMatrix(M))
+        return .triangular_sparse;
+
+    if (comptime isBuilderSparseMatrix(M))
+        return .builder_sparse;
+
     if (comptime isDiagonalMatrix(M))
         return .diagonal;
 
@@ -524,12 +568,14 @@ pub const isGeneralSparseMatrix = type_checks.isGeneralSparseMatrix;
 pub const isSymmetricSparseMatrix = type_checks.isSymmetricSparseMatrix;
 pub const isHermitianSparseMatrix = type_checks.isHermitianSparseMatrix;
 pub const isTriangularSparseMatrix = type_checks.isTriangularSparseMatrix;
+pub const isBuilderSparseMatrix = type_checks.isBuilderSparseMatrix;
 pub const isDiagonalMatrix = type_checks.isDiagonalMatrix;
 pub const isPermutationMatrix = type_checks.isPermutationMatrix;
 pub const isGeneralMatrix = type_checks.isGeneralMatrix;
 pub const isSymmetricMatrix = type_checks.isSymmetricMatrix;
 pub const isHermitianMatrix = type_checks.isHermitianMatrix;
 pub const isTriangularMatrix = type_checks.isTriangularMatrix;
+pub const isBuilderMatrix = type_checks.isBuilderMatrix;
 pub const isDenseMatrix = type_checks.isDenseMatrix;
 pub const isSparseMatrix = type_checks.isSparseMatrix;
 pub const isCustomMatrix = type_checks.isCustomMatrix;
@@ -644,6 +690,7 @@ pub fn Numeric(comptime T: type) type {
             .hermitian_sparse => return T.Numeric,
             .triangular_dense => return T.Numeric,
             .triangular_sparse => return T.Numeric,
+            .builder_sparse => return T.Numeric,
             .diagonal => return T.Numeric,
             .permutation => return T.Numeric,
             .custom => {
@@ -684,6 +731,7 @@ pub fn layoutOf(comptime T: type) Layout {
             .hermitian_sparse => return T.storage_layout,
             .triangular_dense => return T.storage_layout,
             .triangular_sparse => return T.storage_layout,
+            .builder_sparse => return T.storage_layout,
             .diagonal => return T.storage_layout,
             .permutation => return T.storage_layout,
             .custom => {
@@ -724,6 +772,7 @@ pub fn uploOf(comptime T: type) Uplo {
             .hermitian_sparse => return T.storage_uplo,
             .triangular_dense => return T.storage_uplo,
             .triangular_sparse => return T.storage_uplo,
+            .builder_sparse => return T.storage_uplo,
             .diagonal => return default_uplo,
             .permutation => return default_uplo,
             .custom => {
@@ -752,6 +801,7 @@ pub fn diagOf(comptime T: type) Diag {
             .hermitian_sparse => return T.storage_diag,
             .triangular_dense => return T.storage_diag,
             .triangular_sparse => return T.storage_diag,
+            .builder_sparse => return T.storage_diag,
             .diagonal => return default_diag,
             .permutation => return default_diag,
             .custom => {

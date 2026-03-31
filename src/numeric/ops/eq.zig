@@ -65,30 +65,66 @@ pub inline fn eq(x: anytype, y: anytype) bool {
             .int => return int.eq(x, y),
             .float => return float.eq(x, y),
             .dyadic => return dyadic.eq(x, y),
-            .complex => return complex.eq(x, y),
+            .complex => switch (comptime types.numericType(types.Scalar(Y))) {
+                .bool, .int => unreachable,
+                .float => return float.eq(x, y.re) and float.eq(numeric.zero(X), y.im),
+                .dyadic => return dyadic.eq(x, y.re) and dyadic.eq(numeric.zero(X), y.im),
+                .complex, .custom => unreachable,
+            },
             .custom => unreachable,
         },
         .int => switch (comptime types.numericType(Y)) {
             .bool, .int => return int.eq(x, y),
             .float => return float.eq(x, y),
             .dyadic => return dyadic.eq(x, y),
-            .complex => return complex.eq(x, y),
+            .complex => switch (comptime types.numericType(types.Scalar(Y))) {
+                .bool, .int => unreachable,
+                .float => return float.eq(x, y.re) and float.eq(numeric.zero(X), y.im),
+                .dyadic => return dyadic.eq(x, y.re) and dyadic.eq(numeric.zero(X), y.im),
+                .complex, .custom => unreachable,
+            },
             .custom => unreachable,
         },
         .float => switch (comptime types.numericType(Y)) {
             .bool, .int, .float => return float.eq(x, y),
             .dyadic => return dyadic.eq(x, y),
-            .complex => return complex.eq(x, y),
+            .complex => switch (comptime types.numericType(types.Scalar(Y))) {
+                .bool, .int => unreachable,
+                .float => return float.eq(x, y.re) and float.eq(numeric.zero(X), y.im),
+                .dyadic => return dyadic.eq(x, y.re) and dyadic.eq(numeric.zero(X), y.im),
+                .complex, .custom => unreachable,
+            },
             .custom => unreachable,
         },
         .dyadic => switch (comptime types.numericType(Y)) {
             .bool, .int, .float, .dyadic => return dyadic.eq(x, y),
-            .complex => return complex.eq(x, y),
+            .complex => switch (comptime types.numericType(types.Scalar(Y))) {
+                .bool, .int => unreachable,
+                .float => return float.eq(x, y.re) and float.eq(numeric.zero(X), y.im),
+                .dyadic => return dyadic.eq(x, y.re) and dyadic.eq(numeric.zero(X), y.im),
+                .complex, .custom => unreachable,
+            },
             .custom => unreachable,
         },
-        .complex => switch (comptime types.numericType(Y)) {
-            .bool, .int, .float, .dyadic, .complex => return complex.eq(x, y),
-            .custom => unreachable,
+        .complex => switch (comptime types.numericType(types.Scalar(X))) {
+            .bool, .int => unreachable,
+            .float => switch (comptime types.numericType(Y)) {
+                .bool, .int, .float => return float.eq(x.re, y) and float.eq(x.im, numeric.zero(Y)),
+                .dyadic => return dyadic.eq(x.re, y) and dyadic.eq(x.im, numeric.zero(Y)),
+                .complex => switch (comptime types.numericType(types.Scalar(Y))) {
+                    .bool, .int => unreachable,
+                    .float => return float.eq(x.re, y.re) and float.eq(x.im, y.im),
+                    .dyadic => return dyadic.eq(x.re, y.re) and dyadic.eq(x.im, y.im),
+                    .complex, .custom => unreachable,
+                },
+                .custom => unreachable,
+            },
+            .dyadic => switch (comptime types.numericType(Y)) {
+                .bool, .int, .float, .dyadic => return dyadic.eq(x.re, y) and dyadic.eq(x.im, numeric.zero(Y)),
+                .complex => return dyadic.eq(x.re, y.re) and dyadic.eq(x.im, y.im),
+                .custom => unreachable,
+            },
+            .complex, .custom => unreachable,
         },
         .custom => unreachable,
     }

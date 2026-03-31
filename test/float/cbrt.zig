@@ -1,7 +1,7 @@
 const std = @import("std");
-const zml = @import("zml");
-const cbrt = zml.float.cbrt;
-const tzml = @import("../zml.zig");
+const zsl = @import("zsl");
+const cbrt = zsl.float.cbrt;
+const tzsl = @import("../zsl.zig");
 
 const data_f32: [37]struct { f32, f32 } = .{
     .{ 0x0p+0, 0x0p+0 },
@@ -270,7 +270,7 @@ test cbrt {
         results_f128[i] = cbrt(data_f128[i][1]);
     }
 
-    tzml.float.printReport(
+    tzsl.float.printReport(
         "float.cbrt",
         data_f32,
         results_f32,

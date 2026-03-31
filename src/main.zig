@@ -13,13 +13,29 @@ pub fn main() !void {
     var prng = std.Random.DefaultPrng.init(@bitCast(std.time.timestamp()));
     const rand = prng.random();
 
-    var n: usize = 10000000;
+    var m: usize = 7;
+    _ = &m;
+    var n: usize = 7;
     _ = &n;
 
-    var A = try randomMatrix(zsl.matrix.triangular.Sparse(f64, .lower, .unit, .row_major), allocator, rand, 20, 10);
+    var A = try randomMatrix(zsl.matrix.general.Dense(zsl.cf64, .col_major), allocator, rand, m, n);
     defer A.deinit(allocator);
     printMatrix("A", A);
-    // printMatrix("A^T", A.transpose());
+
+    var B = try randomMatrix(zsl.matrix.general.Dense(zsl.cf64, .col_major), allocator, rand, m, n);
+    defer B.deinit(allocator);
+    printMatrix("B", B);
+
+    var C: zsl.matrix.general.Dense(zsl.cf64, .col_major) = try .init(allocator, m, n);
+    defer C.deinit(allocator);
+
+    const start_time = std.time.nanoTimestamp();
+    try zsl.matrix.apply2_(&C, A, B, zsl.numeric.mul_);
+    const end_time = std.time.nanoTimestamp();
+
+    printMatrix("C", C);
+
+    std.debug.print("zsl.matrix.add_ took {d} seconds on matrices of size {} x {}\n", .{ (zsl.numeric.cast(f128, end_time) - zsl.numeric.cast(f128, start_time)) / 1e9, m, n });
 }
 
 fn avg(values: []const f64) f64 {

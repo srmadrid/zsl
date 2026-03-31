@@ -1,7 +1,7 @@
 const std = @import("std");
-const zml = @import("zml");
-const log10 = zml.float.log10;
-const tzml = @import("../zml.zig");
+const zsl = @import("zsl");
+const log10 = zsl.float.log10;
+const tzsl = @import("../zsl.zig");
 
 const data_f32: [41]struct { f32, f32 } = .{
     .{ 0x0p+0, 0x1p+0 },
@@ -311,7 +311,7 @@ test log10 {
         results_f128[i] = log10(data_f128[i][1]);
     }
 
-    tzml.float.printReport(
+    tzsl.float.printReport(
         "float.log10",
         data_f32,
         results_f32,

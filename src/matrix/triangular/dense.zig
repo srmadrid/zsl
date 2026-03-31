@@ -883,7 +883,7 @@ pub fn Dense(N: type, uplo: Uplo, diag: Diag, layout: Layout) type {
         //     return result;
         // }
 
-        inline fn _index(self: *const Dense(N, uplo, diag, layout), r: usize, c: usize) usize {
+        pub inline fn _index(self: *const Dense(N, uplo, diag, layout), r: usize, c: usize) usize {
             return if (comptime layout == .col_major)
                 r + c * self.ld
             else

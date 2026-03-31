@@ -59,37 +59,5 @@ pub inline fn ne(x: anytype, y: anytype) bool {
         return Y.ne(x, y);
     }
 
-    switch (comptime types.numericType(X)) {
-        .bool => switch (comptime types.numericType(Y)) {
-            .bool => return x != y,
-            .int => return int.ne(x, y),
-            .float => return float.ne(x, y),
-            .dyadic => return dyadic.ne(x, y),
-            .complex => return complex.ne(x, y),
-            .custom => unreachable,
-        },
-        .int => switch (comptime types.numericType(Y)) {
-            .bool, .int => return int.ne(x, y),
-            .float => return float.ne(x, y),
-            .dyadic => return dyadic.ne(x, y),
-            .complex => return complex.ne(x, y),
-            .custom => unreachable,
-        },
-        .float => switch (comptime types.numericType(Y)) {
-            .bool, .int, .float => return float.ne(x, y),
-            .dyadic => return dyadic.ne(x, y),
-            .complex => return complex.ne(x, y),
-            .custom => unreachable,
-        },
-        .dyadic => switch (comptime types.numericType(Y)) {
-            .bool, .int, .float, .dyadic => return dyadic.ne(x, y),
-            .complex => return complex.ne(x, y),
-            .custom => unreachable,
-        },
-        .complex => switch (comptime types.numericType(Y)) {
-            .bool, .int, .float, .dyadic, .complex => return complex.ne(x, y),
-            .custom => unreachable,
-        },
-        .custom => unreachable,
-    }
+    return !numeric.eq(x, y);
 }

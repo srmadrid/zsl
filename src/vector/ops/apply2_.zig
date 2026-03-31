@@ -1,20 +1,6 @@
-const std = @import("std");
-
 const types = @import("../../types.zig");
 
 const vector = @import("../../vector.zig");
-
-const dedede = @import("apply2_/dedede.zig");
-const dedesp = @import("apply2_/dedesp.zig");
-const dedenu = @import("apply2_/dedenu.zig");
-const despde = @import("apply2_/despde.zig");
-const despsp = @import("apply2_/despsp.zig");
-const despnu = @import("apply2_/despnu.zig");
-const denude = @import("apply2_/denude.zig");
-const denusp = @import("apply2_/denusp.zig");
-const spspsp = @import("apply2_/spspsp.zig");
-const spspnu = @import("apply2_/spspnu.zig");
-const spnusp = @import("apply2_/spnusp.zig");
 
 /// Applies a binary in-place operation elementwise between an output and two
 /// input vectors, or between an output vector, an input vector and an input
@@ -136,21 +122,21 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void 
     switch (comptime types.vectorType(O)) {
         .dense => switch (comptime types.vectorType(X)) {
             .dense => switch (comptime types.vectorType(Y)) {
-                .dense => return dedede.apply2_(o, x, y, op_),
-                .sparse => return dedesp.apply2_(o, x, y, op_),
+                .dense => return @import("apply2_/dedede.zig").apply2_(o, x, y, op_),
+                .sparse => return @import("apply2_/dedesp,zig").apply2_(o, x, y, op_),
                 .custom => unreachable,
-                .numeric => return dedenu.apply2_(o, x, y, op_),
+                .numeric => return @import("apply2_/dedenu.zig").apply2_(o, x, y, op_),
             },
             .sparse => switch (comptime types.vectorType(Y)) {
-                .dense => return despde.apply2_(o, x, y, op_),
-                .sparse => return despsp.apply2_(o, x, y, op_),
+                .dense => return @import("apply2_/despde.zig").apply2_(o, x, y, op_),
+                .sparse => return @import("apply2_/despsp.zig").apply2_(o, x, y, op_),
                 .custom => unreachable,
-                .numeric => return despnu.apply2_(o, x, y, op_),
+                .numeric => return @import("apply2_/despnu.zig").apply2_(o, x, y, op_),
             },
             .custom => unreachable,
             .numeric => switch (comptime types.vectorType(Y)) {
-                .dense => return denude.apply2_(o, x, y, op_),
-                .sparse => return denusp.apply2_(o, x, y, op_),
+                .dense => return @import("apply2_/denude.zig").apply2_(o, x, y, op_),
+                .sparse => return @import("apply2_/denusp.zig").apply2_(o, x, y, op_),
                 .custom => unreachable,
                 .numeric => unreachable,
             },
@@ -161,15 +147,15 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void 
             .sparse => switch (comptime types.vectorType(Y)) {
                 .dense => @compileError("zsl.vector.apply2_: o cannot point to a sparse vector if the result is dense, got\n\to: *" ++
                     @typeName(O) ++ "x: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n"),
-                .sparse => return spspsp.apply2_(o, x, y, op_),
+                .sparse => return @import("apply2_/spspsp.zig").apply2_(o, x, y, op_),
                 .custom => unreachable,
-                .numeric => return spspnu.apply2_(o, x, y, op_),
+                .numeric => return @import("apply2_/spspnu.zig").apply2_(o, x, y, op_),
             },
             .custom => unreachable,
             .numeric => switch (comptime types.vectorType(Y)) {
                 .dense => @compileError("zsl.vector.apply2_: o cannot point to a sparse vector if the result is dense, got\n\to: *" ++
                     @typeName(O) ++ "x: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n"),
-                .sparse => return spnusp.apply2_(o, x, y, op_),
+                .sparse => return @import("apply2_/spnusp.zig").apply2_(o, x, y, op_),
                 .custom => unreachable,
                 .numeric => unreachable,
             },

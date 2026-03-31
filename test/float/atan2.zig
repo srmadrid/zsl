@@ -1,7 +1,7 @@
 const std = @import("std");
-const zml = @import("zml");
-const atan2 = zml.float.atan2;
-const tzml = @import("../zml.zig");
+const zsl = @import("zsl");
+const atan2 = zsl.float.atan2;
+const tzsl = @import("../zsl.zig");
 
 const data_f32: [152]struct { f32, f32, f32 } = .{
     .{ 0x0p+0, 0x1p+0, std.math.inf(f32) },
@@ -2715,7 +2715,7 @@ test atan2 {
         results_f128[i] = atan2(data_f128[i][1], data_f128[i][2]);
     }
 
-    tzml.float.printReport(
+    tzsl.float.printReport(
         "float.atan2",
         data_f32,
         results_f32,

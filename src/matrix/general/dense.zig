@@ -599,7 +599,7 @@ pub fn Dense(N: type, layout: Layout) type {
         //     return result;
         // }
 
-        inline fn _index(self: *const Dense(N, layout), r: usize, c: usize) usize {
+        pub inline fn _index(self: matrix.general.Dense(N, layout), r: usize, c: usize) usize {
             return if (comptime layout == .col_major)
                 r + c * self.ld
             else

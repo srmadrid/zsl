@@ -1,7 +1,7 @@
 const std = @import("std");
-const zml = @import("zml");
-const cos = zml.float.cos;
-const tzml = @import("../zml.zig");
+const zsl = @import("zsl");
+const cos = zsl.float.cos;
+const tzsl = @import("../zsl.zig");
 
 const data_f32: [85]struct { f32, f32 } = .{
     .{ 0x1p+0, 0x0p+0 },
@@ -569,7 +569,7 @@ test cos {
         results_f128[i] = cos(data_f128[i][1]);
     }
 
-    tzml.float.printReport(
+    tzsl.float.printReport(
         "float.cos",
         data_f32,
         results_f32,

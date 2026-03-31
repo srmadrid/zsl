@@ -1,7 +1,7 @@
 const std = @import("std");
-const zml = @import("zml");
-const sinh = zml.float.sinh;
-const tzml = @import("../zml.zig");
+const zsl = @import("zsl");
+const sinh = zsl.float.sinh;
+const tzsl = @import("../zsl.zig");
 
 const data_f32: [96]struct { f32, f32 } = .{
     .{ 0x0p+0, 0x0p+0 },
@@ -614,7 +614,7 @@ test sinh {
         results_f128[i] = sinh(data_f128[i][1]);
     }
 
-    tzml.float.printReport(
+    tzsl.float.printReport(
         "float.sinh",
         data_f32,
         results_f32,

@@ -1,7 +1,7 @@
 const std = @import("std");
-const zml = @import("zml");
-const cosh = zml.float.cosh;
-const tzml = @import("../zml.zig");
+const zsl = @import("zsl");
+const cosh = zsl.float.cosh;
+const tzsl = @import("../zsl.zig");
 
 const data_f32: [87]struct { f32, f32 } = .{
     .{ 0x1p+0, 0x0p+0 },
@@ -614,7 +614,7 @@ test cosh {
         results_f128[i] = cosh(data_f128[i][1]);
     }
 
-    tzml.float.printReport(
+    tzsl.float.printReport(
         "float.cosh",
         data_f32,
         results_f32,

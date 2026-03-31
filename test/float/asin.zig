@@ -1,7 +1,7 @@
 const std = @import("std");
-const zml = @import("zml");
-const asin = zml.float.asin;
-const tzml = @import("../zml.zig");
+const zsl = @import("zsl");
+const asin = zsl.float.asin;
+const tzsl = @import("../zsl.zig");
 
 const data_f32: [68]struct { f32, f32 } = .{
     .{ 0x0p+0, 0x0p+0 },
@@ -422,7 +422,7 @@ test asin {
         results_f128[i] = asin(data_f128[i][1]);
     }
 
-    tzml.float.printReport(
+    tzsl.float.printReport(
         "float.asin",
         data_f32,
         results_f32,

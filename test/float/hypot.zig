@@ -1,7 +1,7 @@
 const std = @import("std");
-const zml = @import("zml");
-const hypot = zml.float.hypot;
-const tzml = @import("../zml.zig");
+const zsl = @import("zsl");
+const hypot = zsl.float.hypot;
+const tzsl = @import("../zsl.zig");
 
 const data_f32: [121]struct { f32, f32, f32 } = .{
     .{ 0x0p+0, 0x0p+0, 0x0p+0 },
@@ -2318,7 +2318,7 @@ test hypot {
         results_f128[i] = hypot(data_f128[i][1], data_f128[i][2]);
     }
 
-    tzml.float.printReport(
+    tzsl.float.printReport(
         "float.hypot",
         data_f32,
         results_f32,

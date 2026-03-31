@@ -407,6 +407,34 @@ pub fn isTriangularSparseMatrix(comptime T: type) bool {
     }
 }
 
+/// Checks if the input type is an instance of a builder matrix.
+///
+/// ## Arguments
+/// * `T` (`comptime type`): The type to check.
+///
+/// ## Returns
+/// `bool`: `true` if the type is a builder matrix, `false` otherwise.
+pub fn isBuilderMatrix(comptime T: type) bool {
+    switch (comptime @typeInfo(T)) {
+        .@"struct" => return @hasDecl(T, "is_matrix") and T.is_matrix and @hasDecl(T, "is_builder") and T.is_builder,
+        else => return false,
+    }
+}
+
+/// Checks if the input type is an instance of a builder sparse matrix.
+///
+/// ## Arguments
+/// * `T` (`comptime type`): The type to check.
+///
+/// ## Returns
+/// `bool`: `true` if the type is a builder sparse matrix, `false` otherwise.
+pub fn isBuilderSparseMatrix(comptime T: type) bool {
+    switch (comptime @typeInfo(T)) {
+        .@"struct" => return @hasDecl(T, "is_matrix") and T.is_matrix and @hasDecl(T, "is_builder") and T.is_builder and @hasDecl(T, "is_sparse") and T.is_sparse,
+        else => return false,
+    }
+}
+
 /// Checks if the input type is an instance of a diagonal matrix.
 ///
 /// ## Arguments

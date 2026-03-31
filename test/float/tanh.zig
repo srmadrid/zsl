@@ -1,7 +1,7 @@
 const std = @import("std");
-const zml = @import("zml");
-const tanh = zml.float.tanh;
-const tzml = @import("../zml.zig");
+const zsl = @import("zsl");
+const tanh = zsl.float.tanh;
+const tzsl = @import("../zsl.zig");
 
 const data_f32: [90]struct { f32, f32 } = .{
     .{ 0x0p+0, 0x0p+0 },
@@ -489,7 +489,7 @@ test tanh {
         results_f128[i] = tanh(data_f128[i][1]);
     }
 
-    tzml.float.printReport(
+    tzsl.float.printReport(
         "float.tanh",
         data_f32,
         results_f32,

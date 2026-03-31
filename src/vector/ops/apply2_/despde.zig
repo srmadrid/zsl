@@ -4,13 +4,7 @@ const numeric = @import("../../../numeric.zig");
 const vector = @import("../../../vector.zig");
 
 pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void {
-    const O: type = types.Child(@TypeOf(o));
     const X: type = @TypeOf(x);
-    const Y: type = @TypeOf(y);
-    comptime var R = types.ReturnTypeFromInputs(op_, &.{ *types.Numeric(O), types.Numeric(X), types.Numeric(Y) });
-    const rinfo = @typeInfo(R);
-    if (rinfo == .error_union)
-        R = rinfo.error_union.payload;
 
     if (o.len != x.len or o.len != y.len)
         return vector.Error.DimensionMismatch;
@@ -20,25 +14,16 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void 
         var ix: usize = 0;
         while (ix < x.nnz) : (ix += 1) {
             while (i < x.idx[ix]) : (i += 1) {
-                if (comptime rinfo != .error_union)
-                    op_(&o.data[i], numeric.zero(types.Numeric(X)), y.data[i])
-                else
-                    try op_(&o.data[i], numeric.zero(types.Numeric(X)), y.data[i]);
+                op_(&o.data[i], numeric.zero(types.Numeric(X)), y.data[i]);
             }
 
-            if (comptime rinfo != .error_union)
-                op_(&o.data[i], x.data[ix], y.data[i])
-            else
-                try op_(&o.data[i], x.data[ix], y.data[i]);
+            op_(&o.data[i], x.data[ix], y.data[i]);
 
             i += 1;
         }
 
         while (i < o.len) : (i += 1) {
-            if (comptime rinfo != .error_union)
-                op_(&o.data[i], numeric.zero(types.Numeric(X)), y.data[i])
-            else
-                try op_(&o.data[i], numeric.zero(types.Numeric(X)), y.data[i]);
+            op_(&o.data[i], numeric.zero(types.Numeric(X)), y.data[i]);
         }
     } else {
         var io: isize = if (o.inc < 0) (-numeric.cast(isize, o.len) + 1) * o.inc else 0;
@@ -47,19 +32,13 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void 
 
         while (ix < x.nnz) : (ix += 1) {
             while (i < x.idx[ix]) : (i += 1) {
-                if (comptime rinfo != .error_union)
-                    op_(&o.data[numeric.cast(usize, io)], numeric.zero(types.Numeric(X)), y.data[numeric.cast(usize, iy)])
-                else
-                    try op_(&o.data[numeric.cast(usize, io)], numeric.zero(types.Numeric(X)), y.data[numeric.cast(usize, iy)]);
+                op_(&o.data[numeric.cast(usize, io)], numeric.zero(types.Numeric(X)), y.data[numeric.cast(usize, iy)]);
 
                 io += o.inc;
                 iy += y.inc;
             }
 
-            if (comptime rinfo != .error_union)
-                op_(&o.data[numeric.cast(usize, io)], x.data[ix], y.data[numeric.cast(usize, iy)])
-            else
-                try op_(&o.data[numeric.cast(usize, io)], x.data[ix], y.data[numeric.cast(usize, iy)]);
+            op_(&o.data[numeric.cast(usize, io)], x.data[ix], y.data[numeric.cast(usize, iy)]);
 
             i += 1;
             io += o.inc;
@@ -67,10 +46,7 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void 
         }
 
         while (i < o.len) : (i += 1) {
-            if (comptime rinfo != .error_union)
-                op_(&o.data[numeric.cast(usize, io)], numeric.zero(types.Numeric(X)), y.data[numeric.cast(usize, iy)])
-            else
-                try op_(&o.data[numeric.cast(usize, io)], numeric.zero(types.Numeric(X)), y.data[numeric.cast(usize, iy)]);
+            op_(&o.data[numeric.cast(usize, io)], numeric.zero(types.Numeric(X)), y.data[numeric.cast(usize, iy)]);
 
             io += o.inc;
             iy += y.inc;

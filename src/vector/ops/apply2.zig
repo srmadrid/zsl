@@ -164,6 +164,8 @@ pub fn apply2(allocator: std.mem.Allocator, x: anytype, y: anytype, comptime op:
         return Impl.apply2(allocator, x, y, op);
     }
 
+    // Edit to call apply2_ (switch on op for numeric.add -> numeric.add_, etc.): initialize the result vector and pass it as o
+
     switch (comptime types.vectorType(X)) {
         .dense => switch (comptime types.vectorType(Y)) {
             .dense => return dede.apply2(allocator, x, y, op),
