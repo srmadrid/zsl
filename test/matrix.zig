@@ -256,9 +256,12 @@ pub fn correctApply2(allocator: std.mem.Allocator, m: usize, n: usize, A: anytyp
     while (j < result.cols) : (j += 1) {
         var i: usize = 0;
         while (i < result.rows) : (i += 1) {
-            result.data[result._index(i, j)] = op(
-                if (comptime zsl.types.isMatrix(@TypeOf(A))) A.get(i, j) catch unreachable else A,
-                if (comptime zsl.types.isMatrix(@TypeOf(B))) B.get(i, j) catch unreachable else B,
+            result.data[result._index(i, j)] = zsl.numeric.cast(
+                zsl.cf64,
+                op(
+                    if (comptime zsl.types.isMatrix(@TypeOf(A))) A.get(i, j) catch unreachable else A,
+                    if (comptime zsl.types.isMatrix(@TypeOf(B))) B.get(i, j) catch unreachable else B,
+                ),
             );
         }
     }

@@ -37,10 +37,14 @@ inline fn loopColMajor(o: anytype, x: anytype, y: anytype, comptime op_: anytype
         }
 
         if (j < o.rows) {
-            if (comptime types.diagOf(X) == .unit)
-                numeric.set(&o.data[o._index(j, j)], y)
-            else
+            if (comptime types.diagOf(X) == .unit) {
+                if (comptime op_ == numeric.mul_)
+                    numeric.set(&o.data[o._index(j, j)], y)
+                else
+                    op_(&o.data[o._index(j, j)], numeric.one(types.Numeric(X)), y);
+            } else {
                 op_(&o.data[o._index(j, j)], x.data[x._index(j, j)], y);
+            }
         }
 
         i = int.min(j + 1, o.rows);
@@ -74,10 +78,14 @@ inline fn loopRowMajor(o: anytype, x: anytype, y: anytype, comptime op_: anytype
         }
 
         if (i < o.cols) {
-            if (comptime types.diagOf(X) == .unit)
-                numeric.set(&o.data[o._index(i, i)], y)
-            else
+            if (comptime types.diagOf(X) == .unit) {
+                if (comptime op_ == numeric.mul_)
+                    numeric.set(&o.data[o._index(i, i)], y)
+                else
+                    op_(&o.data[o._index(i, i)], numeric.one(types.Numeric(X)), y);
+            } else {
                 op_(&o.data[o._index(i, i)], x.data[x._index(i, i)], y);
+            }
         }
 
         j = int.min(i + 1, o.cols);
