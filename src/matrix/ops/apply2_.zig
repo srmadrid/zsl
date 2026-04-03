@@ -309,19 +309,18 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void 
         .symmetric_dense => switch (comptime types.matrixType(X)) {
             .symmetric_dense => switch (comptime types.matrixType(Y)) {
                 .symmetric_dense => return @import("apply2_/sdsdsd.zig").apply2_(o, x, y, op_),
-                // .symmetric_sparse => return sdsdss.apply2_(o, x, y, op_),
+                .symmetric_sparse => return @import("apply2_/sdsdss.zig").apply2_(o, x, y, op_),
                 .builder_sparse => unreachable,
                 .diagonal => return @import("apply2_/sdsddi.zig").apply2_(o, x, y, op_),
                 .custom => unreachable,
                 .numeric => return @import("apply2_/sdsdnu.zig").apply2_(o, x, y, op_),
-                // else => @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n"),
-                else => @compileError("Not implemented yet"),
+                else => @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n"),
             },
             .symmetric_sparse => switch (comptime types.matrixType(Y)) {
-                // .symmetric_dense => return sdsssd.apply2_(o, x, y, op_),
+                .symmetric_dense => return @import("apply2_/sdsssd.zig").apply2_(o, x, y, op_),
                 // .symmetric_sparse => return sdssss.apply2_(o, x, y, op_),
                 .builder_sparse => unreachable,
-                // .diagonal => return sdssdi.apply2_(o, x, y, op_),
+                .diagonal => return @import("apply2_/sdssdi.zig").apply2_(o, x, y, op_),
                 .custom => unreachable,
                 // .numeric => return sdssnu.apply2_(o, x, y, op_),
                 // else => @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n"),
@@ -329,13 +328,12 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void 
             },
             .diagonal => switch (comptime types.matrixType(Y)) {
                 .symmetric_dense => return @import("apply2_/sddisd.zig").apply2_(o, x, y, op_),
-                // .symmetric_sparse => return sddiss.apply2_(o, x, y, op_),
+                .symmetric_sparse => return @import("apply2_/sddiss.zig").apply2_(o, x, y, op_),
                 .diagonal => return @import("apply2_/sddidi.zig").apply2_(o, x, y, op_),
                 .builder_sparse => unreachable,
                 .custom => unreachable,
                 .numeric => return @import("apply2_/sddinu.zig").apply2_(o, x, y, op_),
-                // else => @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n"),
-                else => @compileError("Not implemented yet"),
+                else => @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n"),
             },
             .custom => unreachable,
             .numeric => switch (comptime types.matrixType(Y)) {
@@ -359,24 +357,24 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void 
 
                     return @import("apply2_/hdsdsd.zig").apply2_(o, x, y, op_);
                 },
-                // .symmetric_sparse => {
-                //     comptime if (types.isComplex(types.Numeric(X)) or types.isComplex(types.Numeric(Y)))
-                //         @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n");
+                .symmetric_sparse => {
+                    comptime if (types.isComplex(types.Numeric(X)) or types.isComplex(types.Numeric(Y)))
+                        @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n");
 
-                //     return hdsdss.apply2_(o, x, y, op_);
-                // },
+                    return @import("apply2_/hdsdss.zig").apply2_(o, x, y, op_);
+                },
                 .hermitian_dense => {
                     comptime if (types.isComplex(types.Numeric(X)))
                         @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n");
 
                     return @import("apply2_/hdsdhd.zig").apply2_(o, x, y, op_);
                 },
-                // .hermitian_sparse => {
-                //     comptime if (types.isComplex(types.Numeric(X)))
-                //         @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n");
+                .hermitian_sparse => {
+                    comptime if (types.isComplex(types.Numeric(X)))
+                        @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n");
 
-                //     return hdsdhs.apply2_(o, x, y, op_);
-                // },
+                    return @import("apply2_/hdsdhs.zig").apply2_(o, x, y, op_);
+                },
                 .builder_sparse => unreachable,
                 .diagonal => {
                     comptime if (types.isComplex(types.Numeric(X)) or types.isComplex(types.Numeric(Y)))
@@ -391,28 +389,27 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void 
 
                     return @import("apply2_/hdsdnu.zig").apply2_(o, x, y, op_);
                 },
-                // else => @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n"),
-                else => @compileError("Not implemented yet"),
+                else => @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n"),
             },
             .symmetric_sparse => switch (comptime types.matrixType(Y)) {
-                // .symmetric_dense => {
-                //     comptime if (types.isComplex(types.Numeric(X)) or types.isComplex(types.Numeric(Y)))
-                //         @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n");
+                .symmetric_dense => {
+                    comptime if (types.isComplex(types.Numeric(X)) or types.isComplex(types.Numeric(Y)))
+                        @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n");
 
-                //     return hdsssd.apply2_(o, x, y, op_);
-                // },
+                    return @import("apply2_/hdsssd.zig").apply2_(o, x, y, op_);
+                },
                 // .symmetric_sparse => {
                 //     comptime if (types.isComplex(types.Numeric(X)) or types.isComplex(types.Numeric(Y)))
                 //         @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n");
 
                 //     return hdssss.apply2_(o, x, y, op_);
                 // },
-                // .hermitian_dense => {
-                //     comptime if (types.isComplex(types.Numeric(X)))
-                //         @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n");
+                .hermitian_dense => {
+                    comptime if (types.isComplex(types.Numeric(X)))
+                        @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n");
 
-                //     return hdsshd.apply2_(o, x, y, op_);
-                // },
+                    return @import("apply2_/hdsshd.zig").apply2_(o, x, y, op_);
+                },
                 // .hermitian_sparse => {
                 //     comptime if (types.isComplex(types.Numeric(X)))
                 //         @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n");
@@ -420,12 +417,12 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void 
                 //     return hdsshs.apply2_(o, x, y, op_);
                 // },
                 .builder_sparse => unreachable,
-                // .diagonal => {
-                //     comptime if (types.isComplex(types.Numeric(X)) or types.isComplex(types.Numeric(Y)))
-                //         @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n");
+                .diagonal => {
+                    comptime if (types.isComplex(types.Numeric(X)) or types.isComplex(types.Numeric(Y)))
+                        @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n");
 
-                //     return hdssdi.apply2_(o, x, y, op_);
-                // },
+                    return @import("apply2_/hdssdi.zig").apply2_(o, x, y, op_);
+                },
                 .custom => unreachable,
                 // .numeric => {
                 //     comptime if (types.isComplex(types.Numeric(X)) or types.isComplex(types.Numeric(Y)))
@@ -443,14 +440,14 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void 
 
                     return @import("apply2_/hdhdsd.zig").apply2_(o, x, y, op_);
                 },
-                // .symmetric_sparse => {
-                //     comptime if (types.isComplex(types.Numeric(Y)))
-                //         @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n");
+                .symmetric_sparse => {
+                    comptime if (types.isComplex(types.Numeric(Y)))
+                        @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n");
 
-                //     return hdhdss.apply2_(o, x, y, op_);
-                // },
+                    return @import("apply2_/hdhdss.zig").apply2_(o, x, y, op_);
+                },
                 .hermitian_dense => return @import("apply2_/hdhdhd.zig").apply2_(o, x, y, op_),
-                // .hermitian_sparse => return hdhdhs.apply2_(o, x, y, op_),
+                .hermitian_sparse => return @import("apply2_/hdhdhs.zig").apply2_(o, x, y, op_),
                 .builder_sparse => unreachable,
                 .diagonal => {
                     comptime if (types.isComplex(types.Numeric(Y)))
@@ -465,31 +462,30 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void 
 
                     return @import("apply2_/hdhdnu.zig").apply2_(o, x, y, op_);
                 },
-                // else => @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n"),
-                else => @compileError("Not implemented yet"),
+                else => @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n"),
             },
             .hermitian_sparse => switch (comptime types.matrixType(Y)) {
-                // .symmetric_dense => {
-                //     comptime if (types.isComplex(types.Numeric(Y)))
-                //         @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n");
+                .symmetric_dense => {
+                    comptime if (types.isComplex(types.Numeric(Y)))
+                        @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n");
 
-                //     return hdhssd.apply2_(o, x, y, op_);
-                // },
+                    return @import("apply2_/hdhssd.zig").apply2_(o, x, y, op_);
+                },
                 // .symmetric_sparse => {
                 //     comptime if (types.isComplex(types.Numeric(Y)))
                 //         @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n");
 
                 //     return hdhsss.apply2_(o, x, y, op_);
                 // },
-                // .hermitian_dense => return hdhshd.apply2_(o, x, y, op_),
+                .hermitian_dense => return @import("apply2_/hdhshd.zig").apply2_(o, x, y, op_),
                 // .hermitian_sparse => return hdhshs.apply2_(o, x, y, op_),
                 .builder_sparse => unreachable,
-                // .diagonal => {
-                //     comptime if (types.isComplex(types.Numeric(Y)))
-                //         @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n");
+                .diagonal => {
+                    comptime if (types.isComplex(types.Numeric(Y)))
+                        @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n");
 
-                //     return hdhsdi.apply2_(o, x, y, op_);
-                // },
+                    return @import("apply2_/hdhsdi.zig").apply2_(o, x, y, op_);
+                },
                 .custom => unreachable,
                 // .numeric => {
                 //     comptime if (types.isComplex(Y))
@@ -508,24 +504,24 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void 
 
                     return @import("apply2_/hddisd.zig").apply2_(o, x, y, op_);
                 },
-                // .symmetric_sparse => {
-                //     comptime if (types.isComplex(types.Numeric(X)) or types.isComplex(types.Numeric(Y)))
-                //         @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n");
+                .symmetric_sparse => {
+                    comptime if (types.isComplex(types.Numeric(X)) or types.isComplex(types.Numeric(Y)))
+                        @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n");
 
-                //     return hddiss.apply2_(o, x, y, op_);
-                // },
+                    return @import("apply2_/hddiss.zig").apply2_(o, x, y, op_);
+                },
                 .hermitian_dense => {
                     comptime if (types.isComplex(types.Numeric(X)))
                         @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n");
 
                     return @import("apply2_/hddihd.zig").apply2_(o, x, y, op_);
                 },
-                // .hermitian_sparse => {
-                //     comptime if (types.isComplex(types.Numeric(X)))
-                //         @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n");
+                .hermitian_sparse => {
+                    comptime if (types.isComplex(types.Numeric(X)))
+                        @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n");
 
-                //     return hddihs.apply2_(o, x, y, op_);
-                // },
+                    return @import("apply2_/hddihs.zig").apply2_(o, x, y, op_);
+                },
                 .builder_sparse => unreachable,
                 .diagonal => {
                     comptime if (types.isComplex(types.Numeric(X)) or types.isComplex(types.Numeric(Y)))
@@ -540,8 +536,7 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void 
 
                     return @import("apply2_/hddinu.zig").apply2_(o, x, y, op_);
                 },
-                // else => @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n"),
-                else => @compileError("Not implemented yet"),
+                else => @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n"),
             },
             .custom => unreachable,
             .numeric => switch (comptime types.matrixType(Y)) {
@@ -592,12 +587,12 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void 
 
                     return @import("apply2_/tdtdtd.zig").apply2_(o, x, y, op_);
                 },
-                // .triangular_sparse => {
-                //     comptime if (types.uploOf(X) != types.uploOf(Y) or types.uploOf(O) != types.uploOf(X) or types.diagOf(O) == .unit)
-                //         @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n");
+                .triangular_sparse => {
+                    comptime if (types.uploOf(O) != types.uploOf(X) or types.uploOf(O) != types.uploOf(Y) or types.diagOf(O) == .unit)
+                        @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n");
 
-                //     return tdtdts.apply2_(o, x, y, op_);
-                // },
+                    return @import("apply2_/tdtdts.zig").apply2_(o, x, y, op_);
+                },
                 .builder_sparse => unreachable,
                 .diagonal => {
                     comptime if (types.uploOf(O) != types.uploOf(X) or types.diagOf(O) == .unit)
@@ -612,16 +607,15 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void 
 
                     return @import("apply2_/tdtdnu.zig").apply2_(o, x, y, op_);
                 },
-                // else => @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n"),
-                else => @compileError("Not implemented yet"),
+                else => @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n"),
             },
             .triangular_sparse => switch (comptime types.matrixType(Y)) {
-                // .triangular_dense => {
-                //     comptime if (types.uploOf(X) != types.uploOf(Y) or types.uploOf(O) != types.uploOf(X) or types.diagOf(O) == .unit)
-                //         @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n");
+                .triangular_dense => {
+                    comptime if (types.uploOf(X) != types.uploOf(Y) or types.uploOf(O) != types.uploOf(X) or types.diagOf(O) == .unit)
+                        @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n");
 
-                //     return tdtstd.apply2_(o, x, y, op_);
-                // },
+                    return @import("apply2_/tdtstd.zig").apply2_(o, x, y, op_);
+                },
                 // .triangular_sparse => {
                 //     comptime if (types.uploOf(X) != types.uploOf(Y) or types.uploOf(O) != types.uploOf(X) or types.diagOf(O) == .unit)
                 //         @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n");
@@ -629,12 +623,12 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void 
                 //     return tdtsts.apply2_(o, x, y, op_);
                 // },
                 .builder_sparse => unreachable,
-                // .diagonal => {
-                //     comptime if (types.uploOf(O) != types.uploOf(X) or types.diagOf(O) == .unit)
-                //         @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n");
+                .diagonal => {
+                    comptime if (types.uploOf(O) != types.uploOf(X) or types.diagOf(O) == .unit)
+                        @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n");
 
-                //     return tdtsdi.apply2_(o, x, y, op_);
-                // },
+                    return @import("apply2_/tdtsdi.zig").apply2_(o, x, y, op_);
+                },
                 .custom => unreachable,
                 // .numeric => {
                 //     comptime if (types.uploOf(O) != types.uploOf(X) or types.diagOf(O) == .unit)
@@ -653,12 +647,12 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void 
 
                     return @import("apply2_/tdditd.zig").apply2_(o, x, y, op_);
                 },
-                // .triangular_sparse => {
-                //     comptime if (types.uploOf(O) != types.uploOf(Y) or types.diagOf(O) == .unit)
-                //         @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n");
+                .triangular_sparse => {
+                    comptime if (types.uploOf(O) != types.uploOf(Y) or types.diagOf(O) == .unit)
+                        @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n");
 
-                //     return tddits.apply2_(o, x, y, op_);
-                // },
+                    return @import("apply2_/tddits.zig").apply2_(o, x, y, op_);
+                },
                 .builder_sparse => unreachable,
                 .diagonal => {
                     comptime if (types.diagOf(O) == .unit)
@@ -673,8 +667,7 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void 
 
                     return @import("apply2_/tddinu.zig").apply2_(o, x, y, op_);
                 },
-                // else => @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n"),
-                else => @compileError("Not implemented yet"),
+                else => @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n"),
             },
             .custom => unreachable,
             .numeric => switch (comptime types.matrixType(Y)) {
@@ -705,7 +698,7 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void 
             else => @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n"),
         },
         .triangular_sparse => unreachable,
-        //     .builder_sparse => {},
+        .builder_sparse => @compileError("Not implemented yet"),
         .diagonal => switch (comptime types.matrixType(X)) {
             .builder_sparse => unreachable,
             .diagonal => switch (comptime types.matrixType(Y)) {
@@ -728,6 +721,5 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void 
         .permutation => @compileError("zsl.matrix.apply2_: the result of the operation is incompatible with o's type, got\n\to: *" ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top_: " ++ @typeName(Op) ++ "\n"),
         .custom => unreachable,
         .numeric => unreachable,
-        else => @compileError("Not implemented yet"),
     }
 }
