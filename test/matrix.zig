@@ -139,9 +139,9 @@ pub fn randomMatrix(comptime M: type, allocator: std.mem.Allocator, rand: std.Ra
             return result;
         },
         .general_sparse => {
-            const nnz: usize = zsl.int.max(rows, cols);
+            const nnz: usize = 2 * zsl.int.max(rows, cols);
 
-            var builder: zsl.matrix.builder.Sparse(zsl.types.Numeric(M), zsl.types.layoutOf(M)) = try .init(allocator, rows, cols, nnz);
+            var builder: zsl.matrix.builder.Sparse(zsl.types.Numeric(M)) = try .init(allocator, rows, cols, nnz);
             errdefer builder.deinit(allocator);
 
             var count: usize = 0;
@@ -159,12 +159,12 @@ pub fn randomMatrix(comptime M: type, allocator: std.mem.Allocator, rand: std.Ra
                 );
             }
 
-            return try builder.compile(allocator);
+            return try builder.compile(allocator, zsl.types.layoutOf(M));
         },
         .symmetric_sparse, .hermitian_sparse => {
-            const nnz: usize = rows;
+            const nnz: usize = 2 * rows;
 
-            var builder: zsl.matrix.builder.Sparse(zsl.types.Numeric(M), zsl.types.layoutOf(M)) = try .init(allocator, rows, rows, nnz);
+            var builder: zsl.matrix.builder.Sparse(zsl.types.Numeric(M)) = try .init(allocator, rows, rows, nnz);
             errdefer builder.deinit(allocator);
 
             var count: usize = 0;
@@ -186,14 +186,14 @@ pub fn randomMatrix(comptime M: type, allocator: std.mem.Allocator, rand: std.Ra
             }
 
             return if (comptime zsl.types.isSymmetricSparseMatrix(M))
-                builder.compileSymmetric(allocator, zsl.types.uploOf(M))
+                builder.compileSymmetric(allocator, zsl.types.uploOf(M), zsl.types.layoutOf(M))
             else
-                builder.compileHermitian(allocator, zsl.types.uploOf(M));
+                builder.compileHermitian(allocator, zsl.types.uploOf(M), zsl.types.layoutOf(M));
         },
         .triangular_sparse => {
-            const nnz: usize = zsl.int.max(rows, cols);
+            const nnz: usize = 2 * zsl.int.max(rows, cols);
 
-            var builder: zsl.matrix.builder.Sparse(zsl.types.Numeric(M), zsl.types.layoutOf(M)) = try .init(allocator, rows, cols, nnz);
+            var builder: zsl.matrix.builder.Sparse(zsl.types.Numeric(M)) = try .init(allocator, rows, cols, nnz);
             errdefer builder.deinit(allocator);
 
             var count: usize = 0;
@@ -214,7 +214,7 @@ pub fn randomMatrix(comptime M: type, allocator: std.mem.Allocator, rand: std.Ra
                 );
             }
 
-            return builder.compileTriangular(allocator, zsl.types.uploOf(M), zsl.types.diagOf(M));
+            return builder.compileTriangular(allocator, zsl.types.uploOf(M), zsl.types.diagOf(M), zsl.types.layoutOf(M));
         },
         .diagonal => {
             var result: M = try .init(allocator, rows, cols);
