@@ -13,27 +13,27 @@ pub fn main() !void {
     var prng = std.Random.DefaultPrng.init(@bitCast(std.time.timestamp()));
     const rand = prng.random();
 
-    var m: usize = 7;
+    var m: usize = 7000;
     _ = &m;
-    var n: usize = 7;
+    var n: usize = 7000;
     _ = &n;
 
-    var A = try randomMatrix(zsl.matrix.general.Dense(zsl.cf64, .col_major), allocator, rand, m, n);
+    var A = try randomMatrix(zsl.matrix.general.Dense(f64, .col_major), allocator, rand, m, n);
     defer A.deinit(allocator);
-    printMatrix("A", A);
+    //printMatrix("A", A);
 
-    var B = try randomMatrix(zsl.matrix.triangular.Sparse(zsl.cf64, .lower, .unit, .col_major), allocator, rand, m, n);
+    var B = try randomMatrix(zsl.matrix.general.Dense(f64, .col_major), allocator, rand, m, n);
     defer B.deinit(allocator);
-    printMatrix("B", B);
+    //printMatrix("B", B);
 
-    var C: zsl.matrix.general.Dense(zsl.cf64, .col_major) = try .init(allocator, m, n);
+    var C: zsl.matrix.general.Dense(f64, .col_major) = try .init(allocator, m, n);
     defer C.deinit(allocator);
 
     const start_time = std.time.nanoTimestamp();
-    try zsl.matrix.apply2_(&C, A, B, zsl.numeric.sub_);
+    try zsl.matrix.apply2_(&C, A, B, zsl.numeric.add_);
     const end_time = std.time.nanoTimestamp();
 
-    printMatrix("C", C);
+    //printMatrix("C", C);
 
     std.debug.print("zsl.matrix.add_ took {d} seconds on matrices of size {} x {}\n", .{ (zsl.numeric.cast(f128, end_time) - zsl.numeric.cast(f128, start_time)) / 1e9, m, n });
 }

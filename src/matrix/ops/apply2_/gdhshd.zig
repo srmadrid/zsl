@@ -6,141 +6,104 @@ const matrix = @import("../../../matrix.zig");
 
 pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void {
     const O: type = types.Child(@TypeOf(o));
+    const X: type = @TypeOf(x);
+    const Y: type = @TypeOf(y);
 
     if (o.rows != o.cols or o.rows != x.size or o.rows != y.size)
         return matrix.Error.DimensionMismatch;
 
-    switch (comptime types.layoutOf(O)) {
-        .col_major => return loopColMajor(o, x, y, op_),
-        .row_major => return loopRowMajor(o, x, y, op_),
-    }
-}
+    if (comptime types.layoutOf(O) == .col_major) {
+        var j: usize = 0;
+        while (j < o.cols) : (j += 1) {
+            if (comptime types.uploOf(Y) == .upper) {
+                var i: usize = 0;
+                while (i < j) : (i += 1) {
+                    if (comptime op_ == numeric.add_)
+                        numeric.set(&o.data[o._index(i, j)], y.data[y._index(i, j)])
+                    else
+                        numeric.set(&o.data[o._index(i, j)], numeric.neg(y.data[y._index(i, j)]));
+                }
 
-inline fn loopColMajor(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
-    const X: type = @TypeOf(x);
-    const Y: type = @TypeOf(y);
-
-    var j: usize = 0;
-    while (j < o.cols) : (j += 1) {
-        if (comptime types.uploOf(Y) == .upper) {
-            var i: usize = 0;
-            while (i < j) : (i += 1) {
                 if (comptime op_ == numeric.add_)
-                    numeric.set(&o.data[o._index(i, j)], y.data[y._index(i, j)])
+                    numeric.set(&o.data[o._index(j, j)], y.data[y._index(j, j)])
                 else
-                    numeric.set(&o.data[o._index(i, j)], numeric.neg(y.data[y._index(i, j)]));
-            }
+                    numeric.set(&o.data[o._index(j, j)], numeric.neg(y.data[y._index(j, j)]));
 
-            if (comptime op_ == numeric.add_)
-                numeric.set(&o.data[o._index(j, j)], y.data[y._index(j, j)])
-            else
-                numeric.set(&o.data[o._index(j, j)], numeric.neg(y.data[y._index(j, j)]));
+                i = j + 1;
+                while (i < o.rows) : (i += 1) {
+                    if (comptime op_ == numeric.add_)
+                        numeric.set(&o.data[o._index(i, j)], numeric.conj(y.data[y._index(j, i)]))
+                    else
+                        numeric.set(&o.data[o._index(i, j)], numeric.neg(numeric.conj(y.data[y._index(j, i)])));
+                }
+            } else {
+                var i: usize = 0;
+                while (i < j) : (i += 1) {
+                    if (comptime op_ == numeric.add_)
+                        numeric.set(&o.data[o._index(i, j)], numeric.conj(y.data[y._index(j, i)]))
+                    else
+                        numeric.set(&o.data[o._index(i, j)], numeric.neg(numeric.conj(y.data[y._index(j, i)])));
+                }
 
-            i = j + 1;
-            while (i < o.rows) : (i += 1) {
                 if (comptime op_ == numeric.add_)
-                    numeric.set(&o.data[o._index(i, j)], numeric.conj(y.data[y._index(j, i)]))
+                    numeric.set(&o.data[o._index(j, j)], y.data[y._index(j, j)])
                 else
-                    numeric.set(&o.data[o._index(i, j)], numeric.neg(numeric.conj(y.data[y._index(j, i)])));
-            }
-        } else {
-            var i: usize = 0;
-            while (i < j) : (i += 1) {
-                if (comptime op_ == numeric.add_)
-                    numeric.set(&o.data[o._index(i, j)], numeric.conj(y.data[y._index(j, i)]))
-                else
-                    numeric.set(&o.data[o._index(i, j)], numeric.neg(numeric.conj(y.data[y._index(j, i)])));
-            }
+                    numeric.set(&o.data[o._index(j, j)], numeric.neg(y.data[y._index(j, j)]));
 
-            if (comptime op_ == numeric.add_)
-                numeric.set(&o.data[o._index(j, j)], y.data[y._index(j, j)])
-            else
-                numeric.set(&o.data[o._index(j, j)], numeric.neg(y.data[y._index(j, j)]));
-
-            i = j + 1;
-            while (i < o.rows) : (i += 1) {
-                if (comptime op_ == numeric.add_)
-                    numeric.set(&o.data[o._index(i, j)], y.data[y._index(i, j)])
-                else
-                    numeric.set(&o.data[o._index(i, j)], numeric.neg(y.data[y._index(i, j)]));
-            }
-        }
-    }
-
-    if (comptime types.layoutOf(X) == .col_major) {
-        j = 0;
-        while (j < x.size) : (j += 1) {
-            var p: usize = x.ptr[j];
-            while (p < x.ptr[j + 1]) : (p += 1) {
-                numeric.add_(&o.data[o._index(x.idx[p], j)], x.data[p], o.data[o._index(x.idx[p], j)]);
-
-                if (x.idx[p] != j) {
-                    numeric.add_(&o.data[o._index(j, x.idx[p])], numeric.conj(x.data[p]), o.data[o._index(j, x.idx[p])]);
+                i = j + 1;
+                while (i < o.rows) : (i += 1) {
+                    if (comptime op_ == numeric.add_)
+                        numeric.set(&o.data[o._index(i, j)], y.data[y._index(i, j)])
+                    else
+                        numeric.set(&o.data[o._index(i, j)], numeric.neg(y.data[y._index(i, j)]));
                 }
             }
         }
     } else {
         var i: usize = 0;
-        while (i < x.size) : (i += 1) {
-            var p: usize = x.ptr[i];
-            while (p < x.ptr[i + 1]) : (p += 1) {
-                numeric.add_(&o.data[o._index(i, x.idx[p])], x.data[p], o.data[o._index(i, x.idx[p])]);
-
-                if (i != x.idx[p]) {
-                    numeric.add_(&o.data[o._index(x.idx[p], i)], numeric.conj(x.data[p]), o.data[o._index(x.idx[p], i)]);
+        while (i < o.rows) : (i += 1) {
+            if (comptime types.uploOf(Y) == .lower) {
+                var j: usize = 0;
+                while (j < i) : (j += 1) {
+                    if (comptime op_ == numeric.add_)
+                        numeric.set(&o.data[o._index(i, j)], y.data[y._index(i, j)])
+                    else
+                        numeric.set(&o.data[o._index(i, j)], numeric.neg(y.data[y._index(i, j)]));
                 }
-            }
-        }
-    }
-}
 
-inline fn loopRowMajor(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
-    const X: type = @TypeOf(x);
-    const Y: type = @TypeOf(y);
-
-    var i: usize = 0;
-    while (i < o.rows) : (i += 1) {
-        if (comptime types.uploOf(Y) == .lower) {
-            var j: usize = 0;
-            while (j < i) : (j += 1) {
                 if (comptime op_ == numeric.add_)
-                    numeric.set(&o.data[o._index(i, j)], y.data[y._index(i, j)])
+                    numeric.set(&o.data[o._index(i, i)], y.data[y._index(i, i)])
                 else
-                    numeric.set(&o.data[o._index(i, j)], numeric.neg(y.data[y._index(i, j)]));
-            }
+                    numeric.set(&o.data[o._index(i, i)], numeric.neg(y.data[y._index(i, i)]));
 
-            if (comptime op_ == numeric.add_)
-                numeric.set(&o.data[o._index(i, i)], y.data[y._index(i, i)])
-            else
-                numeric.set(&o.data[o._index(i, i)], numeric.neg(y.data[y._index(i, i)]));
+                j = i + 1;
+                while (j < o.cols) : (j += 1) {
+                    if (comptime op_ == numeric.add_)
+                        numeric.set(&o.data[o._index(i, j)], numeric.conj(y.data[y._index(j, i)]))
+                    else
+                        numeric.set(&o.data[o._index(i, j)], numeric.neg(numeric.conj(y.data[y._index(j, i)])));
+                }
+            } else {
+                var j: usize = 0;
+                while (j < i) : (j += 1) {
+                    if (comptime op_ == numeric.add_)
+                        numeric.set(&o.data[o._index(i, j)], numeric.conj(y.data[y._index(j, i)]))
+                    else
+                        numeric.set(&o.data[o._index(i, j)], numeric.neg(numeric.conj(y.data[y._index(j, i)])));
+                }
 
-            j = i + 1;
-            while (j < o.cols) : (j += 1) {
                 if (comptime op_ == numeric.add_)
-                    numeric.set(&o.data[o._index(i, j)], numeric.conj(y.data[y._index(j, i)]))
+                    numeric.set(&o.data[o._index(i, i)], y.data[y._index(i, i)])
                 else
-                    numeric.set(&o.data[o._index(i, j)], numeric.neg(numeric.conj(y.data[y._index(j, i)])));
-            }
-        } else {
-            var j: usize = 0;
-            while (j < i) : (j += 1) {
-                if (comptime op_ == numeric.add_)
-                    numeric.set(&o.data[o._index(i, j)], numeric.conj(y.data[y._index(j, i)]))
-                else
-                    numeric.set(&o.data[o._index(i, j)], numeric.neg(numeric.conj(y.data[y._index(j, i)])));
-            }
+                    numeric.set(&o.data[o._index(i, i)], numeric.neg(y.data[y._index(i, i)]));
 
-            if (comptime op_ == numeric.add_)
-                numeric.set(&o.data[o._index(i, i)], y.data[y._index(i, i)])
-            else
-                numeric.set(&o.data[o._index(i, i)], numeric.neg(y.data[y._index(i, i)]));
-
-            j = i + 1;
-            while (j < o.cols) : (j += 1) {
-                if (comptime op_ == numeric.add_)
-                    numeric.set(&o.data[o._index(i, j)], y.data[y._index(i, j)])
-                else
-                    numeric.set(&o.data[o._index(i, j)], numeric.neg(y.data[y._index(i, j)]));
+                j = i + 1;
+                while (j < o.cols) : (j += 1) {
+                    if (comptime op_ == numeric.add_)
+                        numeric.set(&o.data[o._index(i, j)], y.data[y._index(i, j)])
+                    else
+                        numeric.set(&o.data[o._index(i, j)], numeric.neg(y.data[y._index(i, j)]));
+                }
             }
         }
     }
@@ -150,22 +113,36 @@ inline fn loopRowMajor(o: anytype, x: anytype, y: anytype, comptime op_: anytype
         while (j < x.size) : (j += 1) {
             var p: usize = x.ptr[j];
             while (p < x.ptr[j + 1]) : (p += 1) {
-                numeric.add_(&o.data[o._index(x.idx[p], j)], x.data[p], o.data[o._index(x.idx[p], j)]);
+                const ty = if (x.idx[p] == j)
+                    y.data[y._index(j, j)]
+                else if (x.idx[p] < j)
+                    (if (comptime types.uploOf(Y) == .upper) y.data[y._index(x.idx[p], j)] else numeric.conj(y.data[y._index(j, x.idx[p])]))
+                else
+                    (if (comptime types.uploOf(Y) == .lower) y.data[y._index(x.idx[p], j)] else numeric.conj(y.data[y._index(j, x.idx[p])]));
+
+                op_(&o.data[o._index(x.idx[p], j)], x.data[p], ty);
 
                 if (x.idx[p] != j) {
-                    numeric.add_(&o.data[o._index(j, x.idx[p])], numeric.conj(x.data[p]), o.data[o._index(j, x.idx[p])]);
+                    op_(&o.data[o._index(j, x.idx[p])], numeric.conj(x.data[p]), numeric.conj(ty));
                 }
             }
         }
     } else {
-        i = 0;
+        var i: usize = 0;
         while (i < x.size) : (i += 1) {
             var p: usize = x.ptr[i];
             while (p < x.ptr[i + 1]) : (p += 1) {
-                numeric.add_(&o.data[o._index(i, x.idx[p])], x.data[p], o.data[o._index(i, x.idx[p])]);
+                const ty = if (i == x.idx[p])
+                    y.data[y._index(i, i)]
+                else if (i < x.idx[p])
+                    (if (comptime types.uploOf(Y) == .upper) y.data[y._index(i, x.idx[p])] else numeric.conj(y.data[y._index(x.idx[p], i)]))
+                else
+                    (if (comptime types.uploOf(Y) == .lower) y.data[y._index(i, x.idx[p])] else numeric.conj(y.data[y._index(x.idx[p], i)]));
+
+                op_(&o.data[o._index(i, x.idx[p])], x.data[p], ty);
 
                 if (i != x.idx[p]) {
-                    numeric.add_(&o.data[o._index(x.idx[p], i)], numeric.conj(x.data[p]), o.data[o._index(x.idx[p], i)]);
+                    op_(&o.data[o._index(x.idx[p], i)], numeric.conj(x.data[p]), numeric.conj(ty));
                 }
             }
         }

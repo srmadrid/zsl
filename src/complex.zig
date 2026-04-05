@@ -67,6 +67,10 @@ pub fn Complex(comptime N: type) type {
             }
         }
 
+        pub fn toInt(self: Complex(N), comptime Int: type) Int {
+            return numeric.cast(Int, self.re);
+        }
+
         pub fn toFloat(self: Complex(N), comptime Float: type) Float {
             return numeric.cast(Float, self.re);
         }
