@@ -12,23 +12,7 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void 
     if (o.rows != y.rows or o.cols != y.cols)
         return matrix.Error.DimensionMismatch;
 
-    if (comptime types.layoutOf(O) == .col_major) {
-        var j: usize = 0;
-        while (j < o.cols) : (j += 1) {
-            var i: usize = 0;
-            while (i < o.rows) : (i += 1) {
-                o.data[o._index(i, j)] = numeric.zero(types.Numeric(O));
-            }
-        }
-    } else {
-        var i: usize = 0;
-        while (i < o.rows) : (i += 1) {
-            var j: usize = 0;
-            while (j < o.cols) : (j += 1) {
-                o.data[o._index(i, j)] = numeric.zero(types.Numeric(O));
-            }
-        }
-    }
+    o.setAll(numeric.zero(types.Numeric(O)));
 
     if (comptime types.diagOf(Y) == .unit) {
         var idx: usize = 0;

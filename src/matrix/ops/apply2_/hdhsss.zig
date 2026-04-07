@@ -4,6 +4,8 @@ const types = @import("../../../types.zig");
 const numeric = @import("../../../numeric.zig");
 const matrix = @import("../../../matrix.zig");
 
+const utils = @import("utils.zig");
+
 pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void {
     const O: type = types.Child(@TypeOf(o));
     const X: type = @TypeOf(x);
@@ -12,82 +14,114 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void 
     if (o.size != x.size or o.size != y.size)
         return matrix.Error.DimensionMismatch;
 
-    if (comptime types.layoutOf(O) == .col_major) {
-        var j: usize = 0;
-        while (j < o.size) : (j += 1) {
-            if (comptime types.uploOf(O) == .upper) {
-                var i: usize = 0;
-                while (i <= j) : (i += 1) {
-                    o.data[o._index(i, j)] = numeric.zero(types.Numeric(O));
-                }
-            } else {
-                var i: usize = j;
-                while (i < o.size) : (i += 1) {
-                    o.data[o._index(i, j)] = numeric.zero(types.Numeric(O));
-                }
-            }
-        }
-    } else {
-        var i: usize = 0;
-        while (i < o.size) : (i += 1) {
-            if (comptime types.uploOf(O) == .lower) {
-                var j: usize = 0;
-                while (j <= i) : (j += 1) {
-                    o.data[o._index(i, j)] = numeric.zero(types.Numeric(O));
-                }
-            } else {
-                var j: usize = i;
-                while (j < o.size) : (j += 1) {
-                    o.data[o._index(i, j)] = numeric.zero(types.Numeric(O));
-                }
-            }
-        }
-    }
+    o.setAll(numeric.zero(types.Numeric(O)));
 
-    if (comptime types.layoutOf(X) == .col_major) {
-        var j: usize = 0;
-        while (j < x.size) : (j += 1) {
-            var p: usize = x.ptr[j];
-            while (p < x.ptr[j + 1]) : (p += 1) {
-                if (comptime types.uploOf(O) == types.uploOf(X))
-                    numeric.set(&o.data[o._index(x.idx[p], j)], x.data[p])
-                else
-                    numeric.set(&o.data[o._index(j, x.idx[p])], numeric.conj(x.data[p]));
-            }
-        }
-    } else {
-        var i: usize = 0;
-        while (i < x.size) : (i += 1) {
-            var p: usize = x.ptr[i];
-            while (p < x.ptr[i + 1]) : (p += 1) {
-                if (comptime types.uploOf(O) == types.uploOf(X))
-                    numeric.set(&o.data[o._index(i, x.idx[p])], x.data[p])
-                else
-                    numeric.set(&o.data[o._index(x.idx[p], i)], numeric.conj(x.data[p]));
-            }
-        }
-    }
+    if (comptime types.layoutOf(X) == types.layoutOf(Y) and types.uploOf(X) == types.uploOf(Y)) {
+        var outer: usize = 0;
+        while (outer < x.size) : (outer += 1) {
+            var px = x.ptr[outer];
+            var py = y.ptr[outer];
+            while (px < x.ptr[outer + 1] and py < y.ptr[outer + 1]) {
+                if (x.idx[px] == y.idx[py]) {
+                    const i_stored = if (comptime types.layoutOf(X) == .col_major) x.idx[px] else outer;
+                    const j_stored = if (comptime types.layoutOf(X) == .col_major) outer else x.idx[px];
+                    const i_o = if (comptime types.uploOf(O) == types.uploOf(X)) i_stored else j_stored;
+                    const j_o = if (comptime types.uploOf(O) == types.uploOf(X)) j_stored else i_stored;
 
-    if (comptime types.layoutOf(Y) == .col_major) {
-        var j: usize = 0;
-        while (j < y.size) : (j += 1) {
-            var p: usize = y.ptr[j];
-            while (p < y.ptr[j + 1]) : (p += 1) {
-                if (comptime types.uploOf(O) == types.uploOf(Y))
-                    op_(&o.data[o._index(y.idx[p], j)], o.data[o._index(y.idx[p], j)], y.data[p])
+                    const tx = if (comptime types.uploOf(O) == types.uploOf(X)) x.data[px] else numeric.conj(x.data[px]);
+                    op_(&o.data[o._index(i_o, j_o)], tx, y.data[py]);
+
+                    px += 1;
+                    py += 1;
+                } else if (x.idx[px] < y.idx[py]) {
+                    const i_stored = if (comptime types.layoutOf(X) == .col_major) x.idx[px] else outer;
+                    const j_stored = if (comptime types.layoutOf(X) == .col_major) outer else x.idx[px];
+                    const i_o = if (comptime types.uploOf(O) == types.uploOf(X)) i_stored else j_stored;
+                    const j_o = if (comptime types.uploOf(O) == types.uploOf(X)) j_stored else i_stored;
+
+                    const tx = if (comptime types.uploOf(O) == types.uploOf(X)) x.data[px] else numeric.conj(x.data[px]);
+                    numeric.set(&o.data[o._index(i_o, j_o)], tx);
+
+                    px += 1;
+                } else {
+                    const i_stored = if (comptime types.layoutOf(Y) == .col_major) y.idx[py] else outer;
+                    const j_stored = if (comptime types.layoutOf(Y) == .col_major) outer else y.idx[py];
+                    const i_o = if (comptime types.uploOf(O) == types.uploOf(Y)) i_stored else j_stored;
+                    const j_o = if (comptime types.uploOf(O) == types.uploOf(Y)) j_stored else i_stored;
+
+                    if (comptime op_ == numeric.add_)
+                        numeric.set(&o.data[o._index(i_o, j_o)], y.data[py])
+                    else
+                        numeric.set(&o.data[o._index(i_o, j_o)], numeric.neg(y.data[py]));
+
+                    py += 1;
+                }
+            }
+
+            while (px < x.ptr[outer + 1]) : (px += 1) {
+                const i_stored = if (comptime types.layoutOf(X) == .col_major) x.idx[px] else outer;
+                const j_stored = if (comptime types.layoutOf(X) == .col_major) outer else x.idx[px];
+                const i_o = if (comptime types.uploOf(O) == types.uploOf(X)) i_stored else j_stored;
+                const j_o = if (comptime types.uploOf(O) == types.uploOf(X)) j_stored else i_stored;
+
+                const tx = if (comptime types.uploOf(O) == types.uploOf(X)) x.data[px] else numeric.conj(x.data[px]);
+                numeric.set(&o.data[o._index(i_o, j_o)], tx);
+            }
+
+            while (py < y.ptr[outer + 1]) : (py += 1) {
+                const i_stored = if (comptime types.layoutOf(Y) == .col_major) y.idx[py] else outer;
+                const j_stored = if (comptime types.layoutOf(Y) == .col_major) outer else y.idx[py];
+                const i_o = if (comptime types.uploOf(O) == types.uploOf(Y)) i_stored else j_stored;
+                const j_o = if (comptime types.uploOf(O) == types.uploOf(Y)) j_stored else i_stored;
+
+                if (comptime op_ == numeric.add_)
+                    numeric.set(&o.data[o._index(i_o, j_o)], y.data[py])
                 else
-                    op_(&o.data[o._index(j, y.idx[p])], o.data[o._index(j, y.idx[p])], y.data[p]);
+                    numeric.set(&o.data[o._index(i_o, j_o)], numeric.neg(y.data[py]));
             }
         }
     } else {
-        var i: usize = 0;
-        while (i < y.size) : (i += 1) {
-            var p: usize = y.ptr[i];
-            while (p < y.ptr[i + 1]) : (p += 1) {
-                if (comptime types.uploOf(O) == types.uploOf(Y))
-                    op_(&o.data[o._index(i, y.idx[p])], o.data[o._index(i, y.idx[p])], y.data[p])
-                else
-                    op_(&o.data[o._index(y.idx[p], i)], o.data[o._index(y.idx[p], i)], y.data[p]);
+        var idx_x_outer: usize = 0;
+        while (idx_x_outer < x.size) : (idx_x_outer += 1) {
+            var px = x.ptr[idx_x_outer];
+            while (px < x.ptr[idx_x_outer + 1]) : (px += 1) {
+                const i_stored = if (comptime types.layoutOf(X) == .col_major) x.idx[px] else idx_x_outer;
+                const j_stored = if (comptime types.layoutOf(X) == .col_major) idx_x_outer else x.idx[px];
+
+                const r_y = if (comptime types.uploOf(Y) == .upper) (if (i_stored < j_stored) i_stored else j_stored) else (if (i_stored > j_stored) i_stored else j_stored);
+                const c_y = if (comptime types.uploOf(Y) == .upper) (if (i_stored > j_stored) i_stored else j_stored) else (if (i_stored < j_stored) i_stored else j_stored);
+
+                const i_o = if (comptime types.uploOf(O) == types.uploOf(X)) i_stored else j_stored;
+                const j_o = if (comptime types.uploOf(O) == types.uploOf(X)) j_stored else i_stored;
+
+                const tx = if (comptime types.uploOf(O) == types.uploOf(X)) x.data[px] else numeric.conj(x.data[px]);
+                if (utils.searchSparse(y, r_y, c_y)) |ty| {
+                    op_(&o.data[o._index(i_o, j_o)], tx, ty);
+                } else {
+                    numeric.set(&o.data[o._index(i_o, j_o)], tx);
+                }
+            }
+        }
+
+        var idx_y_outer: usize = 0;
+        while (idx_y_outer < y.size) : (idx_y_outer += 1) {
+            var py = y.ptr[idx_y_outer];
+            while (py < y.ptr[idx_y_outer + 1]) : (py += 1) {
+                const i_stored = if (comptime types.layoutOf(Y) == .col_major) y.idx[py] else idx_y_outer;
+                const j_stored = if (comptime types.layoutOf(Y) == .col_major) idx_y_outer else y.idx[py];
+
+                const r_x = if (comptime types.uploOf(X) == .upper) (if (i_stored < j_stored) i_stored else j_stored) else (if (i_stored > j_stored) i_stored else j_stored);
+                const c_x = if (comptime types.uploOf(X) == .upper) (if (i_stored > j_stored) i_stored else j_stored) else (if (i_stored < j_stored) i_stored else j_stored);
+
+                const i_o = if (comptime types.uploOf(O) == types.uploOf(Y)) i_stored else j_stored;
+                const j_o = if (comptime types.uploOf(O) == types.uploOf(Y)) j_stored else i_stored;
+
+                if (utils.searchSparse(x, r_x, c_x) == null) {
+                    if (comptime op_ == numeric.add_)
+                        numeric.set(&o.data[o._index(i_o, j_o)], y.data[py])
+                    else
+                        numeric.set(&o.data[o._index(i_o, j_o)], numeric.neg(y.data[py]));
+                }
             }
         }
     }

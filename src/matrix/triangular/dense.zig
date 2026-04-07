@@ -467,7 +467,7 @@ pub fn Dense(N: type, uplo: Uplo, diag: Diag, layout: Layout) type {
         ///
         /// ## Returns
         /// `N`: The element at the specified position.
-        pub inline fn at(self: matrix.triangular.Dense(N, uplo, diag, layout), r: usize, c: usize) N {
+        pub inline fn getAssumeInBounds(self: matrix.triangular.Dense(N, uplo, diag, layout), r: usize, c: usize) N {
             return self.data[self._index(r, c)];
         }
 
@@ -523,8 +523,97 @@ pub fn Dense(N: type, uplo: Uplo, diag: Diag, layout: Layout) type {
         ///
         /// ## Returns
         /// `void`
-        pub inline fn put(self: *matrix.triangular.Dense(N, uplo, diag, layout), r: usize, c: usize, value: N) void {
+        pub inline fn setAssumeInBounds(self: *matrix.triangular.Dense(N, uplo, diag, layout), r: usize, c: usize, value: N) void {
             self.data[self._index(r, c)] = value;
+        }
+
+        /// Sets all elements of the stored triangle of the matrix.
+        ///
+        /// ## Arguments
+        /// * `self` (`*matrix.general.Dense(N, layout)`): A pointer to the
+        ///   matrix to set the elements in.
+        /// * `value` (`N`): The value to set the elements to.
+        ///
+        /// ## Returns
+        /// `void`
+        pub fn setAll(self: *matrix.triangular.Dense(N, uplo, diag, layout), value: N) void {
+            if (comptime layout == .col_major) {
+                if (comptime uplo == .upper) {
+                    if (comptime diag == .unit) { // cuu
+                        var j: usize = 0;
+                        while (j < self.cols) : (j += 1) {
+                            var i: usize = 0;
+                            while (i < int.min(j, self.rows)) : (i += 1) {
+                                self.data[i + j * self.ld] = value;
+                            }
+                        }
+                    } else { // cun
+                        var j: usize = 0;
+                        while (j < self.cols) : (j += 1) {
+                            var i: usize = 0;
+                            while (i < int.min(j + 1, self.rows)) : (i += 1) {
+                                self.data[i + j * self.ld] = value;
+                            }
+                        }
+                    }
+                } else {
+                    if (comptime diag == .unit) { // clu
+                        var j: usize = 0;
+                        while (j < int.min(self.rows, self.cols)) : (j += 1) {
+                            var i: usize = j + 1;
+                            while (i < self.rows) : (i += 1) {
+                                self.data[i + j * self.ld] = value;
+                            }
+                        }
+                    } else { // cln
+                        var j: usize = 0;
+                        while (j < int.min(self.rows, self.cols)) : (j += 1) {
+                            var i: usize = j;
+                            while (i < self.rows) : (i += 1) {
+                                self.data[i + j * self.ld] = value;
+                            }
+                        }
+                    }
+                }
+            } else {
+                if (comptime uplo == .upper) {
+                    if (comptime diag == .unit) { // ruu
+                        var i: usize = 0;
+                        while (i < int.min(self.rows, self.cols)) : (i += 1) {
+                            var j: usize = i + 1;
+                            while (j < self.cols) : (j += 1) {
+                                self.data[i * self.ld + j] = value;
+                            }
+                        }
+                    } else { // run
+                        var i: usize = 0;
+                        while (i < int.min(self.rows, self.cols)) : (i += 1) {
+                            var j: usize = i;
+                            while (j < self.cols) : (j += 1) {
+                                self.data[i * self.ld + j] = value;
+                            }
+                        }
+                    }
+                } else {
+                    if (comptime diag == .unit) { // rlu
+                        var i: usize = 0;
+                        while (i < self.rows) : (i += 1) {
+                            var j: usize = 0;
+                            while (j < int.min(i, self.cols)) : (j += 1) {
+                                self.data[i * self.ld + j] = value;
+                            }
+                        }
+                    } else { // rln
+                        var i: usize = 0;
+                        while (i < self.rows) : (i += 1) {
+                            var j: usize = 0;
+                            while (j < int.min(i + 1, self.cols)) : (j += 1) {
+                                self.data[i * self.ld + j] = value;
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         /// Creates a copy of the matrix.

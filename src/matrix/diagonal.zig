@@ -216,7 +216,7 @@ pub fn Diagonal(N: type) type {
         ///
         /// ## Returns
         /// `N`: The element at the specified index.
-        pub inline fn at(self: matrix.Diagonal(N), r: usize, c: usize) N {
+        pub inline fn getAssumeInBounds(self: matrix.Diagonal(N), r: usize, c: usize) N {
             _ = c;
             return self.data[r];
         }
@@ -260,7 +260,7 @@ pub fn Diagonal(N: type) type {
         ///
         /// ## Returns
         /// `void`
-        pub inline fn put(self: *matrix.Diagonal(N), r: usize, c: usize, value: N) void {
+        pub inline fn setAssumeInBounds(self: *matrix.Diagonal(N), r: usize, c: usize, value: N) void {
             _ = c;
             self.data[r] = value;
         }

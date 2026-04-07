@@ -287,7 +287,7 @@ pub fn Dense(N: type, layout: Layout) type {
         ///
         /// ## Returns
         /// `N`: The element at the specified index.
-        pub inline fn at(self: matrix.general.Dense(N, layout), r: usize, c: usize) N {
+        pub inline fn getAssumeInBounds(self: matrix.general.Dense(N, layout), r: usize, c: usize) N {
             return self.data[self._index(r, c)];
         }
 
@@ -326,8 +326,37 @@ pub fn Dense(N: type, layout: Layout) type {
         ///
         /// ## Returns
         /// `void`
-        pub inline fn put(self: *matrix.general.Dense(N, layout), r: usize, c: usize, value: N) void {
+        pub inline fn setAssumeInBounds(self: *matrix.general.Dense(N, layout), r: usize, c: usize, value: N) void {
             self.data[self._index(r, c)] = value;
+        }
+
+        /// Sets all elements of the matrix.
+        ///
+        /// ## Arguments
+        /// * `self` (`*matrix.general.Dense(N, layout)`): A pointer to the
+        ///   matrix to set the elements in.
+        /// * `value` (`N`): The value to set the elements to.
+        ///
+        /// ## Returns
+        /// `void`
+        pub fn setAll(self: *matrix.general.Dense(N, layout), value: N) void {
+            if (comptime layout == .col_major) {
+                var j: usize = 0;
+                while (j < self.cols) : (j += 1) {
+                    var i: usize = 0;
+                    while (i < self.rows) : (i += 1) {
+                        self.data[i + j * self.ld] = value;
+                    }
+                }
+            } else {
+                var i: usize = 0;
+                while (i < self.rows) : (i += 1) {
+                    var j: usize = 0;
+                    while (j < self.cols) : (j += 1) {
+                        self.data[i * self.ld + j] = value;
+                    }
+                }
+            }
         }
 
         /// Creates a copy of the matrix.

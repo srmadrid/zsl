@@ -167,7 +167,7 @@ pub fn Permutation(N: type) type {
         ///
         /// ## Returns
         /// `N`: The element at the specified position.
-        pub inline fn at(self: matrix.Permutation(N), r: usize, c: usize) N {
+        pub inline fn getAssumeInBounds(self: matrix.Permutation(N), r: usize, c: usize) N {
             if (self.direction == .forward) {
                 if (self.data[r] == c) {
                     return numeric.one(N);

@@ -74,7 +74,8 @@ pub fn Dense(N: type, uplo: Uplo, layout: Layout) type {
         // pub fn initBuffer
 
         /// Initializes a new `matrix.symmetric.Dense(N, uplo, layout)` with the
-        /// specified size, with all elements set to the specified value.
+        /// specified size, with all elements in the stored triangular part set
+        /// to the specified value.
         ///
         /// ## Arguments
         /// * `allocator` (`std.mem.Allocator`): The allocator to use for memory
@@ -134,8 +135,8 @@ pub fn Dense(N: type, uplo: Uplo, layout: Layout) type {
         }
 
         /// Initializes a new `matrix.symmetric.Dense(N, uplo, layout)` with the
-        /// specified size, with all elements set by calling the specified
-        /// function with the given arguments.
+        /// specified size, with all elements in the stored triangular part set
+        /// by calling the specified function with the given arguments.
         ///
         /// ## Arguments
         /// * `allocator` (`std.mem.Allocator`): The allocator to use for memory
@@ -359,7 +360,7 @@ pub fn Dense(N: type, uplo: Uplo, layout: Layout) type {
         ///
         /// ## Returns
         /// `N`: The element at the specified index.
-        pub inline fn at(self: matrix.symmetric.Dense(N, uplo, layout), r: usize, c: usize) N {
+        pub inline fn getAssumeInBounds(self: matrix.symmetric.Dense(N, uplo, layout), r: usize, c: usize) N {
             return self.data[self._index(r, c)];
         }
 
@@ -414,8 +415,57 @@ pub fn Dense(N: type, uplo: Uplo, layout: Layout) type {
         ///
         /// ## Returns
         /// `void`
-        pub inline fn put(self: *matrix.symmetric.Dense(N, uplo, layout), r: usize, c: usize, value: N) void {
+        pub inline fn setAssumeInBounds(self: *matrix.symmetric.Dense(N, uplo, layout), r: usize, c: usize, value: N) void {
             self.data[self._index(r, c)] = value;
+        }
+
+        /// Sets all elements of the stored triangle of the matrix.
+        ///
+        /// ## Arguments
+        /// * `self` (`*matrix.general.Dense(N, layout)`): A pointer to the
+        ///   matrix to set the elements in.
+        /// * `value` (`N`): The value to set the elements to.
+        ///
+        /// ## Returns
+        /// `void`
+        pub fn setAll(self: *matrix.symmetric.Dense(N, uplo, layout), value: N) void {
+            if (comptime layout == .col_major) {
+                if (comptime uplo == .upper) { // cu
+                    var j: usize = 0;
+                    while (j < self.size) : (j += 1) {
+                        var i: usize = 0;
+                        while (i <= j) : (i += 1) {
+                            self.data[i + j * self.ld] = value;
+                        }
+                    }
+                } else { // cl
+                    var j: usize = 0;
+                    while (j < self.size) : (j += 1) {
+                        var i: usize = j;
+                        while (i < self.size) : (i += 1) {
+                            self.data[i + j * self.ld] = value;
+                        }
+                    }
+                }
+            } else {
+                if (comptime uplo == .upper) { // ru
+                    var i: usize = 0;
+                    while (i < self.size) : (i += 1) {
+                        var j: usize = i;
+                        while (j < self.size) : (j += 1) {
+                            self.data[i * self.ld + j] = value;
+                        }
+                    }
+                } else { // rl
+                    var i: usize = 0;
+                    while (i < self.size) : (i += 1) {
+                        var j: usize = 0;
+                        while (j <= i) : (j += 1) {
+                            self.data[i * self.ld + j] = value;
+                        }
+                    }
+                }
+            }
         }
 
         /// Creates a copy of the matrix.
