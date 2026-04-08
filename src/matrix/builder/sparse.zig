@@ -375,12 +375,8 @@ pub fn Sparse(N: type) type {
             result.nnz = unique_nnz;
             result.flags = .{ .owns_data = true };
 
-            if (@hasField(M, "size")) {
-                result.size = self.rows;
-            } else {
-                result.rows = self.rows;
-                result.cols = self.cols;
-            }
+            result.rows = self.rows;
+            result.cols = self.cols;
 
             self.* = undefined;
 

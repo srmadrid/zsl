@@ -5,13 +5,9 @@ const int = @import("../../../int.zig");
 const numeric = @import("../../../numeric.zig");
 const matrix = @import("../../../matrix.zig");
 
-pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void {
+pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
     const O: type = types.Child(@TypeOf(o));
     const X: type = @TypeOf(x);
-
-    if (o.rows != x.rows or o.cols != x.cols or
-        o.rows != y.rows or o.cols != y.cols)
-        return matrix.Error.DimensionMismatch;
 
     if (comptime types.layoutOf(O) == .col_major) {
         var j: usize = 0;

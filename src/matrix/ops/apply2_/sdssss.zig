@@ -6,19 +6,16 @@ const matrix = @import("../../../matrix.zig");
 
 const utils = @import("utils.zig");
 
-pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void {
+pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
     const O: type = types.Child(@TypeOf(o));
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
-
-    if (o.size != x.size or o.size != y.size)
-        return matrix.Error.DimensionMismatch;
 
     o.setAll(numeric.zero(types.Numeric(O)));
 
     if (comptime types.layoutOf(X) == types.layoutOf(Y) and types.uploOf(X) == types.uploOf(Y)) {
         var outer: usize = 0;
-        while (outer < x.size) : (outer += 1) {
+        while (outer < x.rows) : (outer += 1) {
             var px = x.ptr[outer];
             var py = y.ptr[outer];
             while (px < x.ptr[outer + 1] and py < y.ptr[outer + 1]) {
@@ -79,7 +76,7 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void 
         }
     } else {
         var idx_x_outer: usize = 0;
-        while (idx_x_outer < x.size) : (idx_x_outer += 1) {
+        while (idx_x_outer < x.rows) : (idx_x_outer += 1) {
             var px = x.ptr[idx_x_outer];
             while (px < x.ptr[idx_x_outer + 1]) : (px += 1) {
                 const i_stored = if (comptime types.layoutOf(X) == .col_major) x.idx[px] else idx_x_outer;
@@ -100,7 +97,7 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void 
         }
 
         var idx_y_outer: usize = 0;
-        while (idx_y_outer < y.size) : (idx_y_outer += 1) {
+        while (idx_y_outer < y.rows) : (idx_y_outer += 1) {
             var py = y.ptr[idx_y_outer];
             while (py < y.ptr[idx_y_outer + 1]) : (py += 1) {
                 const i_stored = if (comptime types.layoutOf(Y) == .col_major) y.idx[py] else idx_y_outer;

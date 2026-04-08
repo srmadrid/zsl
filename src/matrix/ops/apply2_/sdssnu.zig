@@ -4,18 +4,15 @@ const types = @import("../../../types.zig");
 const numeric = @import("../../../numeric.zig");
 const matrix = @import("../../../matrix.zig");
 
-pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void {
+pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
     const O: type = types.Child(@TypeOf(o));
     const X: type = @TypeOf(x);
-
-    if (o.size != x.size)
-        return matrix.Error.DimensionMismatch;
 
     o.setAll(numeric.zero(types.Numeric(O)));
 
     if (comptime types.layoutOf(X) == .col_major) {
         var j: usize = 0;
-        while (j < x.size) : (j += 1) {
+        while (j < x.cols) : (j += 1) {
             var p: usize = x.ptr[j];
             while (p < x.ptr[j + 1]) : (p += 1) {
                 if (comptime types.uploOf(O) == types.uploOf(X))
@@ -26,7 +23,7 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void 
         }
     } else {
         var i: usize = 0;
-        while (i < x.size) : (i += 1) {
+        while (i < x.rows) : (i += 1) {
             var p: usize = x.ptr[i];
             while (p < x.ptr[i + 1]) : (p += 1) {
                 if (comptime types.uploOf(O) == types.uploOf(X))

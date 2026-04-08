@@ -22,7 +22,8 @@ pub fn Dense(N: type, uplo: Uplo, layout: Layout) type {
 
     return struct {
         data: [*]N,
-        size: usize,
+        rows: usize,
+        cols: usize,
         ld: usize,
         flags: matrix.Flags = .{},
 
@@ -37,9 +38,10 @@ pub fn Dense(N: type, uplo: Uplo, layout: Layout) type {
         // Numeric type
         pub const Numeric = N;
 
-        pub const empty: Dense(N, uplo, layout) = .{
+        pub const empty: matrix.hermitian.Dense(N, uplo, layout) = .{
             .data = &.{},
-            .size = 0,
+            .rows = 0,
+            .cols = 0,
             .ld = 0,
             .flags = .{ .owns_data = false },
         };
@@ -65,7 +67,8 @@ pub fn Dense(N: type, uplo: Uplo, layout: Layout) type {
 
             return .{
                 .data = (try allocator.alloc(N, size * size)).ptr,
-                .size = size,
+                .rows = size,
+                .cols = size,
                 .ld = size,
                 .flags = .{ .owns_data = true },
             };
@@ -91,7 +94,7 @@ pub fn Dense(N: type, uplo: Uplo, layout: Layout) type {
         /// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
         /// * `matrix.Error.ZeroDimension`: If `size` is zero.
         pub fn initValue(allocator: std.mem.Allocator, size: usize, value: N) !matrix.hermitian.Dense(N, uplo, layout) {
-            const mat: Dense(N, uplo, layout) = try .init(allocator, size);
+            const mat: matrix.hermitian.Dense(N, uplo, layout) = try .init(allocator, size);
 
             if (comptime layout == .col_major) {
                 if (comptime uplo == .upper) { // cu
@@ -305,7 +308,7 @@ pub fn Dense(N: type, uplo: Uplo, layout: Layout) type {
         /// `void`
         pub fn deinit(self: *matrix.hermitian.Dense(N, uplo, layout), allocator: std.mem.Allocator) void {
             if (self.flags.owns_data) {
-                allocator.free(self.data[0 .. self.size * self.size]);
+                allocator.free(self.data[0 .. self.rows * self.cols]);
             }
 
             self.* = undefined;
@@ -326,7 +329,7 @@ pub fn Dense(N: type, uplo: Uplo, layout: Layout) type {
         /// * `matrix.Error.PositionOutOfBounds`: If `r` or `c` is out of
         ///   bounds.
         pub fn get(self: matrix.hermitian.Dense(N, uplo, layout), r: usize, c: usize) !N {
-            if (r >= self.size or c >= self.size)
+            if (r >= self.rows or c >= self.cols)
                 return matrix.Error.PositionOutOfBounds;
 
             var i: usize = r;
@@ -388,7 +391,7 @@ pub fn Dense(N: type, uplo: Uplo, layout: Layout) type {
         /// * `matrix.Error.BreaksStructure`: If `r == c` and the imaginary part
         ///   of `value` is not zero.
         pub fn set(self: *matrix.hermitian.Dense(N, uplo, layout), r: usize, c: usize, value: N) !void {
-            if (r >= self.size or c >= self.size)
+            if (r >= self.rows or c >= self.cols)
                 return matrix.Error.PositionOutOfBounds;
 
             if (r == c and numeric.ne(value.im, 0))
@@ -451,7 +454,7 @@ pub fn Dense(N: type, uplo: Uplo, layout: Layout) type {
             if (comptime layout == .col_major) {
                 if (comptime uplo == .upper) { // cu
                     var j: usize = 0;
-                    while (j < self.size) : (j += 1) {
+                    while (j < self.cols) : (j += 1) {
                         var i: usize = 0;
                         while (i <= j) : (i += 1) {
                             self.data[i + j * self.ld] = value;
@@ -459,9 +462,9 @@ pub fn Dense(N: type, uplo: Uplo, layout: Layout) type {
                     }
                 } else { // cl
                     var j: usize = 0;
-                    while (j < self.size) : (j += 1) {
+                    while (j < self.cols) : (j += 1) {
                         var i: usize = j;
-                        while (i < self.size) : (i += 1) {
+                        while (i < self.rows) : (i += 1) {
                             self.data[i + j * self.ld] = value;
                         }
                     }
@@ -469,15 +472,15 @@ pub fn Dense(N: type, uplo: Uplo, layout: Layout) type {
             } else {
                 if (comptime uplo == .upper) { // ru
                     var i: usize = 0;
-                    while (i < self.size) : (i += 1) {
+                    while (i < self.rows) : (i += 1) {
                         var j: usize = i;
-                        while (j < self.size) : (j += 1) {
+                        while (j < self.cols) : (j += 1) {
                             self.data[i * self.ld + j] = value;
                         }
                     }
                 } else { // rl
                     var i: usize = 0;
-                    while (i < self.size) : (i += 1) {
+                    while (i < self.rows) : (i += 1) {
                         var j: usize = 0;
                         while (j <= i) : (j += 1) {
                             self.data[i * self.ld + j] = value;
@@ -501,12 +504,12 @@ pub fn Dense(N: type, uplo: Uplo, layout: Layout) type {
         /// ## Errors
         /// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
         pub fn copy(self: matrix.hermitian.Dense(N, uplo, layout), allocator: std.mem.Allocator) !matrix.hermitian.Dense(N, uplo, layout) {
-            const mat: matrix.hermitian.Dense(N, uplo, layout) = try .init(allocator, self.size);
+            const mat: matrix.hermitian.Dense(N, uplo, layout) = try .init(allocator, self.rows);
 
             if (comptime layout == .col_major) {
                 if (comptime uplo == .upper) { // cu
                     var j: usize = 0;
-                    while (j < mat.size) : (j += 1) {
+                    while (j < mat.cols) : (j += 1) {
                         var i: usize = 0;
                         while (i <= j) : (i += 1) {
                             mat.data[i + j * mat.ld] = self.data[i + j * self.ld];
@@ -514,9 +517,9 @@ pub fn Dense(N: type, uplo: Uplo, layout: Layout) type {
                     }
                 } else { // cl
                     var j: usize = 0;
-                    while (j < mat.size) : (j += 1) {
+                    while (j < mat.cols) : (j += 1) {
                         var i: usize = j;
-                        while (i < mat.size) : (i += 1) {
+                        while (i < mat.rows) : (i += 1) {
                             mat.data[i + j * mat.ld] = self.data[i + j * self.ld];
                         }
                     }
@@ -524,15 +527,15 @@ pub fn Dense(N: type, uplo: Uplo, layout: Layout) type {
             } else {
                 if (comptime uplo == .upper) { // ru
                     var i: usize = 0;
-                    while (i < mat.size) : (i += 1) {
+                    while (i < mat.rows) : (i += 1) {
                         var j: usize = i;
-                        while (j < mat.size) : (j += 1) {
+                        while (j < mat.cols) : (j += 1) {
                             mat.data[i * mat.ld + j] = self.data[i * self.ld + j];
                         }
                     }
                 } else { // rl
                     var i: usize = 0;
-                    while (i < mat.size) : (i += 1) {
+                    while (i < mat.rows) : (i += 1) {
                         var j: usize = 0;
                         while (j <= i) : (j += 1) {
                             mat.data[i * mat.ld + j] = self.data[i * self.ld + j];
@@ -559,12 +562,12 @@ pub fn Dense(N: type, uplo: Uplo, layout: Layout) type {
         /// ## Errors
         /// `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
         pub fn copyInverseUplo(self: matrix.hermitian.Dense(N, uplo, layout), allocator: std.mem.Allocator) !matrix.hermitian.Dense(N, uplo.invert(), layout) {
-            const mat: Dense(N, uplo.invert(), layout) = try .init(allocator, self.size);
+            const mat: matrix.hermitian.Dense(N, uplo.invert(), layout) = try .init(allocator, self.rows);
 
             if (comptime layout == .col_major) {
                 if (comptime uplo.invert() == .upper) { // cl -> cu
                     var j: usize = 0;
-                    while (j < mat.size) : (j += 1) {
+                    while (j < mat.cols) : (j += 1) {
                         var i: usize = 0;
                         while (i <= j) : (i += 1) {
                             numeric.conj_(&mat.data[i + j * mat.ld], self.data[j + i * self.ld]);
@@ -572,9 +575,9 @@ pub fn Dense(N: type, uplo: Uplo, layout: Layout) type {
                     }
                 } else { // cu -> cl
                     var j: usize = 0;
-                    while (j < mat.size) : (j += 1) {
+                    while (j < mat.cols) : (j += 1) {
                         var i: usize = j;
-                        while (i < mat.size) : (i += 1) {
+                        while (i < mat.rows) : (i += 1) {
                             numeric.conj_(&mat.data[i + j * mat.ld], self.data[j + i * self.ld]);
                         }
                     }
@@ -582,15 +585,15 @@ pub fn Dense(N: type, uplo: Uplo, layout: Layout) type {
             } else {
                 if (comptime uplo.invert() == .upper) { // rl -> ru
                     var i: usize = 0;
-                    while (i < mat.size) : (i += 1) {
+                    while (i < mat.rows) : (i += 1) {
                         var j: usize = i;
-                        while (j < mat.size) : (j += 1) {
+                        while (j < mat.cols) : (j += 1) {
                             numeric.conj_(&mat.data[i * mat.ld + j], self.data[j * self.ld + i]);
                         }
                     }
                 } else { // ru -> rl
                     var i: usize = 0;
-                    while (i < mat.size) : (i += 1) {
+                    while (i < mat.rows) : (i += 1) {
                         var j: usize = 0;
                         while (j <= i) : (j += 1) {
                             numeric.conj_(&mat.data[i * mat.ld + j], self.data[j * self.ld + i]);
@@ -611,10 +614,11 @@ pub fn Dense(N: type, uplo: Uplo, layout: Layout) type {
         /// ## Returns
         /// `matrix.general.Dense(N, uplo.invert(), layout.invert())`: The
         /// transposed matrix.
-        pub fn transpose(self: matrix.hermitian.Dense(N, uplo, layout)) Dense(N, uplo.invert(), layout.invert()) {
+        pub fn transpose(self: matrix.hermitian.Dense(N, uplo, layout)) matrix.hermitian.Dense(N, uplo.invert(), layout.invert()) {
             return .{
                 .data = self.data,
-                .size = self.size,
+                .rows = self.cols,
+                .cols = self.rows,
                 .ld = self.ld,
                 .flags = .{ .owns_data = false },
             };
@@ -636,12 +640,13 @@ pub fn Dense(N: type, uplo: Uplo, layout: Layout) type {
         /// Errors
         /// * `matrix.Error.InvalidRange`: If the specified range is invalid.
         pub fn submatrix(self: matrix.hermitian.Dense(N, uplo, layout), start: usize, end: usize) !matrix.hermitian.Dense(N, uplo, layout) {
-            if (start >= self.size or end > self.size or start >= end)
+            if (start >= self.rows or end > self.rows or start >= end)
                 return matrix.Error.InvalidRange;
 
             return .{
                 .data = self.data + self._index(start, start),
-                .size = end - start,
+                .rows = end - start,
+                .cols = end - start,
                 .ld = self.ld,
                 .flags = .{ .owns_data = false },
             };
@@ -661,7 +666,7 @@ pub fn Dense(N: type, uplo: Uplo, layout: Layout) type {
         /// ## Errors
         /// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
         pub fn copyToGeneralDenseMatrix(self: matrix.hermitian.Dense(N, uplo, layout), allocator: std.mem.Allocator) !matrix.general.Dense(N, layout) {
-            const mat: matrix.general.Dense(N, layout) = try .init(allocator, self.size, self.size);
+            const mat: matrix.general.Dense(N, layout) = try .init(allocator, self.rows, self.cols);
 
             if (comptime layout == .col_major) {
                 if (comptime uplo == .upper) { // cu
@@ -721,7 +726,7 @@ pub fn Dense(N: type, uplo: Uplo, layout: Layout) type {
         //     allocator: std.mem.Allocator,
         //     ctx: anytype,
         // ) !array.Dense(N, layout) {
-        //     var result: array.Dense(N, layout) = try .init(allocator, &.{ self.size, self.size });
+        //     var result: array.Dense(N, layout) = try .init(allocator, &.{ self.rows, self.cols });
         //     errdefer result.deinit(allocator);
 
         //     if (comptime !types.isArbitraryPrecision(N)) {
@@ -730,7 +735,7 @@ pub fn Dense(N: type, uplo: Uplo, layout: Layout) type {
         //         if (comptime layout == .col_major) {
         //             if (comptime uplo == .upper) { // cu
         //                 var j: usize = 0;
-        //                 while (j < self.size) : (j += 1) {
+        //                 while (j < self.cols) : (j += 1) {
         //                     var i: usize = 0;
         //                     while (i < j) : (i += 1) {
         //                         result.data[i + j * result.strides[1]] = self.data[i + j * self.ld];
@@ -741,11 +746,11 @@ pub fn Dense(N: type, uplo: Uplo, layout: Layout) type {
         //                 }
         //             } else {
         //                 var j: usize = 0;
-        //                 while (j < self.size) : (j += 1) {
+        //                 while (j < self.cols) : (j += 1) {
         //                     result.data[j + j * result.strides[1]] = self.data[j + j * self.ld];
 
         //                     var i: usize = j + 1;
-        //                     while (i < self.size) : (i += 1) {
+        //                     while (i < self.rows) : (i += 1) {
         //                         result.data[i + j * result.strides[1]] = self.data[i + j * self.ld];
         //                         result.data[j + i * result.strides[1]] = numeric.conj(self.data[i + j * self.ld], ctx) catch unreachable;
         //                     }
@@ -754,18 +759,18 @@ pub fn Dense(N: type, uplo: Uplo, layout: Layout) type {
         //         } else {
         //             if (comptime uplo == .upper) { // ru
         //                 var i: usize = 0;
-        //                 while (i < self.size) : (i += 1) {
+        //                 while (i < self.rows) : (i += 1) {
         //                     result.data[i * result.strides[0] + i] = self.data[i * self.ld + i];
 
         //                     var j: usize = i + 1;
-        //                     while (j < self.size) : (j += 1) {
+        //                     while (j < self.cols) : (j += 1) {
         //                         result.data[i * result.strides[0] + j] = self.data[i * self.ld + j];
         //                         result.data[j * result.strides[0] + i] = numeric.conj(self.data[i * self.ld + j], ctx) catch unreachable;
         //                     }
         //                 }
         //             } else { // rl
         //                 var i: usize = 0;
-        //                 while (i < self.size) : (i += 1) {
+        //                 while (i < self.rows) : (i += 1) {
         //                     var j: usize = 0;
         //                     while (j < i) : (j += 1) {
         //                         result.data[i * result.strides[0] + j] = self.data[i * self.ld + j];

@@ -31,7 +31,8 @@ pub fn Permutation(N: type) type {
 
     return struct {
         data: [*]usize,
-        size: usize,
+        rows: usize,
+        cols: usize,
         direction: Direction,
         flags: matrix.Flags,
 
@@ -45,9 +46,10 @@ pub fn Permutation(N: type) type {
         // Numeric type
         pub const Numeric = N;
 
-        pub const empty: Permutation(N) = .{
+        pub const empty: matrix.Permutation(N) = .{
             .data = &.{},
-            .size = 0,
+            .rows = 0,
+            .cols = 0,
             .direction = .forward,
             .flags = .{ .owns_data = false },
         };
@@ -71,7 +73,8 @@ pub fn Permutation(N: type) type {
 
             return .{
                 .data = (try allocator.alloc(usize, size)).ptr,
-                .size = size,
+                .rows = size,
+                .cols = size,
                 .direction = .forward,
                 .flags = .{ .owns_data = true },
             };
@@ -116,7 +119,7 @@ pub fn Permutation(N: type) type {
         /// `void`
         pub fn deinit(self: *Permutation(N), allocator: std.mem.Allocator) void {
             if (self.flags.owns_data) {
-                allocator.free(self.data[0..self.size]);
+                allocator.free(self.data[0..self.rows]);
             }
 
             self.* = undefined;
@@ -137,7 +140,7 @@ pub fn Permutation(N: type) type {
         /// * `matrix.Error.PositionOutOfBounds`: If `r` or `c` is out of
         ///   bounds.
         pub fn get(self: matrix.Permutation(N), r: usize, c: usize) !N {
-            if (r >= self.size or c >= self.size)
+            if (r >= self.rows or c >= self.cols)
                 return matrix.Error.PositionOutOfBounds;
 
             if (self.direction == .forward) {
@@ -184,7 +187,7 @@ pub fn Permutation(N: type) type {
         }
 
         // pub fn set(self: *Permutation(T), row: usize, col: usize, value: usize) !void {
-        //     if (row >= self.size or col >= self.size)
+        //     if (row >= self.rows or col >= self.cols)
         //         return matrix.Error.PositionOutOfBounds;
 
         //     if (value != 0 and value != 1)
@@ -209,7 +212,8 @@ pub fn Permutation(N: type) type {
         pub fn transpose(self: matrix.Permutation(N)) matrix.Permutation(N) {
             return .{
                 .data = self.data,
-                .size = self.size,
+                .rows = self.cols,
+                .cols = self.rows,
                 .direction = if (self.direction == .forward) .backward else .forward,
                 .flags = self.flags,
             };
@@ -229,14 +233,14 @@ pub fn Permutation(N: type) type {
         /// ## Errors
         /// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
         pub fn copyToGeneralDenseMatrix(self: matrix.Permutation(N), allocator: std.mem.Allocator, comptime layout: Layout) !matrix.general.Dense(N, layout) {
-            const mat: matrix.general.Dense(N, layout) = try .init(allocator, self.size, self.size);
+            const mat: matrix.general.Dense(N, layout) = try .init(allocator, self.rows, self.cols);
 
             if (comptime layout == .col_major) {
                 if (self.direction == .forward) {
                     var j: usize = 0;
-                    while (j < self.size) : (j += 1) {
+                    while (j < self.cols) : (j += 1) {
                         var i: usize = 0;
-                        while (i < self.size) : (i += 1) {
+                        while (i < self.rows) : (i += 1) {
                             mat.data[i + j * mat.ld] = if (self.data[i] == j)
                                 numeric.one(N)
                             else
@@ -245,9 +249,9 @@ pub fn Permutation(N: type) type {
                     }
                 } else {
                     var i: usize = 0;
-                    while (i < self.size) : (i += 1) {
+                    while (i < self.rows) : (i += 1) {
                         var j: usize = 0;
-                        while (j < self.size) : (j += 1) {
+                        while (j < self.cols) : (j += 1) {
                             mat.data[i + j * mat.ld] = if (self.data[j] == i)
                                 numeric.one(N)
                             else
@@ -258,9 +262,9 @@ pub fn Permutation(N: type) type {
             } else {
                 if (self.direction == .forward) {
                     var i: usize = 0;
-                    while (i < self.size) : (i += 1) {
+                    while (i < self.rows) : (i += 1) {
                         var j: usize = 0;
-                        while (j < self.size) : (j += 1) {
+                        while (j < self.cols) : (j += 1) {
                             mat.data[i * mat.ld + j] = if (self.data[i] == j)
                                 numeric.one(N)
                             else
@@ -269,9 +273,9 @@ pub fn Permutation(N: type) type {
                     }
                 } else {
                     var j: usize = 0;
-                    while (j < self.size) : (j += 1) {
+                    while (j < self.cols) : (j += 1) {
                         var i: usize = 0;
-                        while (i < self.size) : (i += 1) {
+                        while (i < self.rows) : (i += 1) {
                             mat.data[i * mat.ld + j] = if (self.data[j] == i)
                                 numeric.one(N)
                             else
@@ -290,15 +294,15 @@ pub fn Permutation(N: type) type {
         //     comptime order: Order,
         //     ctx: anytype,
         // ) !array.Dense(N, order) {
-        //     var result: array.Dense(N, order) = try .init(allocator, &.{ self.size, self.size });
+        //     var result: array.Dense(N, order) = try .init(allocator, &.{ self.rows, self.cols });
         //     errdefer result.deinit(allocator);
 
         //     if (comptime order == .col_major) {
         //         if (self.direction == .forward) {
         //             var j: usize = 0;
-        //             while (j < self.size) : (j += 1) {
+        //             while (j < self.cols) : (j += 1) {
         //                 var i: usize = 0;
-        //                 while (i < self.size) : (i += 1) {
+        //                 while (i < self.rows) : (i += 1) {
         //                     result.data[i + j * result.strides[0]] = if (self.data[i] == j)
         //                         numeric.one(N, ctx) catch unreachable
         //                     else
@@ -307,9 +311,9 @@ pub fn Permutation(N: type) type {
         //             }
         //         } else {
         //             var i: usize = 0;
-        //             while (i < self.size) : (i += 1) {
+        //             while (i < self.rows) : (i += 1) {
         //                 var j: usize = 0;
-        //                 while (j < self.size) : (j += 1) {
+        //                 while (j < self.cols) : (j += 1) {
         //                     result.data[i + j * result.strides[0]] = if (self.data[j] == i)
         //                         numeric.one(N, ctx) catch unreachable
         //                     else
@@ -320,9 +324,9 @@ pub fn Permutation(N: type) type {
         //     } else {
         //         if (self.direction == .forward) {
         //             var i: usize = 0;
-        //             while (i < self.size) : (i += 1) {
+        //             while (i < self.rows) : (i += 1) {
         //                 var j: usize = 0;
-        //                 while (j < self.size) : (j += 1) {
+        //                 while (j < self.cols) : (j += 1) {
         //                     result.data[i * result.strides[0] + j] = if (self.data[i] == j)
         //                         numeric.one(N, ctx) catch unreachable
         //                     else
@@ -331,9 +335,9 @@ pub fn Permutation(N: type) type {
         //             }
         //         } else {
         //             var j: usize = 0;
-        //             while (j < self.size) : (j += 1) {
+        //             while (j < self.cols) : (j += 1) {
         //                 var i: usize = 0;
-        //                 while (i < self.size) : (i += 1) {
+        //                 while (i < self.rows) : (i += 1) {
         //                     result.data[i * result.strides[0] + j] = if (self.data[j] == i)
         //                         numeric.one(N, ctx) catch unreachable
         //                     else
@@ -351,14 +355,15 @@ pub fn Permutation(N: type) type {
         //     start: usize,
         //     end: usize,
         // ) !? {
-        //     if (start >= self.size or end > self.size or start >= end)
+        //     if (start >= self.rows or end > self.rows or start >= end)
         //         return matrix.Error.InvalidRange;
 
         //     const sub_size = end - start;
 
         //     return .{
         //         .data = self.data,
-        //         .size = sub_size,
+        //         .rows = sub_size,
+        //         .cols = sub_size,
         //         .osize = self.osize,
         //         .offset = self.offset + start,
         //         .sdoffset = self.sdoffset,

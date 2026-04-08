@@ -174,6 +174,10 @@ const combinations = blk: {
         .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.general.Dense(zsl.cf64, .row_major), zsl.matrix.Diagonal(zsl.cf64) },
 
         // gdgdpe
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.general.Dense(zsl.cf64, .col_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.general.Dense(zsl.cf64, .row_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.general.Dense(zsl.cf64, .col_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.general.Dense(zsl.cf64, .row_major), zsl.matrix.Permutation(zsl.cf64) },
 
         // gdgdnu
         .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.general.Dense(zsl.cf64, .col_major), zsl.cf64 },
@@ -348,6 +352,10 @@ const combinations = blk: {
         .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.general.Sparse(zsl.cf64, .row_major), zsl.matrix.Diagonal(zsl.cf64) },
 
         // gdgspe
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.general.Sparse(zsl.cf64, .col_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.general.Sparse(zsl.cf64, .row_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.general.Sparse(zsl.cf64, .col_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.general.Sparse(zsl.cf64, .row_major), zsl.matrix.Permutation(zsl.cf64) },
 
         // gdgsnu
         .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.general.Sparse(zsl.cf64, .col_major), zsl.cf64 },
@@ -670,6 +678,14 @@ const combinations = blk: {
         .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.symmetric.Dense(zsl.cf64, .lower, .row_major), zsl.matrix.Diagonal(zsl.cf64) },
 
         // gdsdpe
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.symmetric.Dense(zsl.cf64, .upper, .col_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.symmetric.Dense(zsl.cf64, .upper, .row_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.symmetric.Dense(zsl.cf64, .lower, .col_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.symmetric.Dense(zsl.cf64, .lower, .row_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.symmetric.Dense(zsl.cf64, .upper, .col_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.symmetric.Dense(zsl.cf64, .upper, .row_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.symmetric.Dense(zsl.cf64, .lower, .col_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.symmetric.Dense(zsl.cf64, .lower, .row_major), zsl.matrix.Permutation(zsl.cf64) },
 
         // gdsdnu
         .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.symmetric.Dense(zsl.cf64, .upper, .col_major), zsl.cf64 },
@@ -996,6 +1012,14 @@ const combinations = blk: {
         .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.symmetric.Sparse(zsl.cf64, .lower, .row_major), zsl.matrix.Diagonal(zsl.cf64) },
 
         // gdsspe
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.symmetric.Sparse(zsl.cf64, .upper, .col_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.symmetric.Sparse(zsl.cf64, .upper, .row_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.symmetric.Sparse(zsl.cf64, .lower, .col_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.symmetric.Sparse(zsl.cf64, .lower, .row_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.symmetric.Sparse(zsl.cf64, .upper, .col_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.symmetric.Sparse(zsl.cf64, .upper, .row_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.symmetric.Sparse(zsl.cf64, .lower, .col_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.symmetric.Sparse(zsl.cf64, .lower, .row_major), zsl.matrix.Permutation(zsl.cf64) },
 
         // gdssnu
         .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.symmetric.Sparse(zsl.cf64, .upper, .col_major), zsl.cf64 },
@@ -1322,6 +1346,14 @@ const combinations = blk: {
         .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.hermitian.Dense(zsl.cf64, .lower, .row_major), zsl.matrix.Diagonal(zsl.cf64) },
 
         // gdhdpe
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.hermitian.Dense(zsl.cf64, .upper, .col_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.hermitian.Dense(zsl.cf64, .upper, .row_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.hermitian.Dense(zsl.cf64, .lower, .col_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.hermitian.Dense(zsl.cf64, .lower, .row_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.hermitian.Dense(zsl.cf64, .upper, .col_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.hermitian.Dense(zsl.cf64, .upper, .row_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.hermitian.Dense(zsl.cf64, .lower, .col_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.hermitian.Dense(zsl.cf64, .lower, .row_major), zsl.matrix.Permutation(zsl.cf64) },
 
         // gdhdnu
         .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.hermitian.Dense(zsl.cf64, .upper, .col_major), zsl.cf64 },
@@ -1648,6 +1680,14 @@ const combinations = blk: {
         .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.hermitian.Sparse(zsl.cf64, .lower, .row_major), zsl.matrix.Diagonal(zsl.cf64) },
 
         // gdhspe
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.hermitian.Sparse(zsl.cf64, .upper, .col_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.hermitian.Sparse(zsl.cf64, .upper, .row_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.hermitian.Sparse(zsl.cf64, .lower, .col_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.hermitian.Sparse(zsl.cf64, .lower, .row_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.hermitian.Sparse(zsl.cf64, .upper, .col_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.hermitian.Sparse(zsl.cf64, .upper, .row_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.hermitian.Sparse(zsl.cf64, .lower, .col_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.hermitian.Sparse(zsl.cf64, .lower, .row_major), zsl.matrix.Permutation(zsl.cf64) },
 
         // gdhsnu
         .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.hermitian.Sparse(zsl.cf64, .upper, .col_major), zsl.cf64 },
@@ -2270,6 +2310,22 @@ const combinations = blk: {
         .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.triangular.Dense(zsl.cf64, .lower, .non_unit, .row_major), zsl.matrix.Diagonal(zsl.cf64) },
 
         // gdtdpe
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.triangular.Dense(zsl.cf64, .upper, .unit, .col_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.triangular.Dense(zsl.cf64, .upper, .unit, .row_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.triangular.Dense(zsl.cf64, .upper, .non_unit, .col_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.triangular.Dense(zsl.cf64, .upper, .non_unit, .row_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.triangular.Dense(zsl.cf64, .lower, .unit, .col_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.triangular.Dense(zsl.cf64, .lower, .unit, .row_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.triangular.Dense(zsl.cf64, .lower, .non_unit, .col_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.triangular.Dense(zsl.cf64, .lower, .non_unit, .row_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.triangular.Dense(zsl.cf64, .upper, .unit, .col_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.triangular.Dense(zsl.cf64, .upper, .unit, .row_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.triangular.Dense(zsl.cf64, .upper, .non_unit, .col_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.triangular.Dense(zsl.cf64, .upper, .non_unit, .row_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.triangular.Dense(zsl.cf64, .lower, .unit, .col_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.triangular.Dense(zsl.cf64, .lower, .unit, .row_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.triangular.Dense(zsl.cf64, .lower, .non_unit, .col_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.triangular.Dense(zsl.cf64, .lower, .non_unit, .row_major), zsl.matrix.Permutation(zsl.cf64) },
 
         // gdtdnu
         .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.triangular.Dense(zsl.cf64, .upper, .unit, .col_major), zsl.cf64 },
@@ -2900,6 +2956,22 @@ const combinations = blk: {
         .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.triangular.Sparse(zsl.cf64, .lower, .non_unit, .row_major), zsl.matrix.Diagonal(zsl.cf64) },
 
         // gdtspe
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.triangular.Sparse(zsl.cf64, .upper, .unit, .col_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.triangular.Sparse(zsl.cf64, .upper, .unit, .row_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.triangular.Sparse(zsl.cf64, .upper, .non_unit, .col_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.triangular.Sparse(zsl.cf64, .upper, .non_unit, .row_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.triangular.Sparse(zsl.cf64, .lower, .unit, .col_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.triangular.Sparse(zsl.cf64, .lower, .unit, .row_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.triangular.Sparse(zsl.cf64, .lower, .non_unit, .col_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.triangular.Sparse(zsl.cf64, .lower, .non_unit, .row_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.triangular.Sparse(zsl.cf64, .upper, .unit, .col_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.triangular.Sparse(zsl.cf64, .upper, .unit, .row_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.triangular.Sparse(zsl.cf64, .upper, .non_unit, .col_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.triangular.Sparse(zsl.cf64, .upper, .non_unit, .row_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.triangular.Sparse(zsl.cf64, .lower, .unit, .col_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.triangular.Sparse(zsl.cf64, .lower, .unit, .row_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.triangular.Sparse(zsl.cf64, .lower, .non_unit, .col_major), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.triangular.Sparse(zsl.cf64, .lower, .non_unit, .row_major), zsl.matrix.Permutation(zsl.cf64) },
 
         // gdtsnu
         .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.triangular.Sparse(zsl.cf64, .upper, .unit, .col_major), zsl.cf64 },
@@ -3012,32 +3084,112 @@ const combinations = blk: {
         .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.Diagonal(zsl.cf64), zsl.matrix.Diagonal(zsl.cf64) },
 
         // gddipe
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.Diagonal(zsl.cf64), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.Diagonal(zsl.cf64), zsl.matrix.Permutation(zsl.cf64) },
 
         // gddinu
         .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.Diagonal(zsl.cf64), zsl.cf64 },
         .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.Diagonal(zsl.cf64), zsl.cf64 },
 
         // gdpegd
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.general.Dense(zsl.cf64, .col_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.general.Dense(zsl.cf64, .row_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.general.Dense(zsl.cf64, .col_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.general.Dense(zsl.cf64, .row_major) },
 
         // gdpegs
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.general.Sparse(zsl.cf64, .col_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.general.Sparse(zsl.cf64, .row_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.general.Sparse(zsl.cf64, .col_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.general.Sparse(zsl.cf64, .row_major) },
 
         // gdpesd
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.symmetric.Dense(zsl.cf64, .upper, .col_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.symmetric.Dense(zsl.cf64, .upper, .row_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.symmetric.Dense(zsl.cf64, .lower, .col_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.symmetric.Dense(zsl.cf64, .lower, .row_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.symmetric.Dense(zsl.cf64, .upper, .col_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.symmetric.Dense(zsl.cf64, .upper, .row_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.symmetric.Dense(zsl.cf64, .lower, .col_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.symmetric.Dense(zsl.cf64, .lower, .row_major) },
 
         // gdpess
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.symmetric.Sparse(zsl.cf64, .upper, .col_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.symmetric.Sparse(zsl.cf64, .upper, .row_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.symmetric.Sparse(zsl.cf64, .lower, .col_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.symmetric.Sparse(zsl.cf64, .lower, .row_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.symmetric.Sparse(zsl.cf64, .upper, .col_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.symmetric.Sparse(zsl.cf64, .upper, .row_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.symmetric.Sparse(zsl.cf64, .lower, .col_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.symmetric.Sparse(zsl.cf64, .lower, .row_major) },
 
         // gdpehd
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.hermitian.Dense(zsl.cf64, .upper, .col_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.hermitian.Dense(zsl.cf64, .upper, .row_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.hermitian.Dense(zsl.cf64, .lower, .col_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.hermitian.Dense(zsl.cf64, .lower, .row_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.hermitian.Dense(zsl.cf64, .upper, .col_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.hermitian.Dense(zsl.cf64, .upper, .row_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.hermitian.Dense(zsl.cf64, .lower, .col_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.hermitian.Dense(zsl.cf64, .lower, .row_major) },
 
         // gdpehs
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.hermitian.Sparse(zsl.cf64, .upper, .col_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.hermitian.Sparse(zsl.cf64, .upper, .row_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.hermitian.Sparse(zsl.cf64, .lower, .col_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.hermitian.Sparse(zsl.cf64, .lower, .row_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.hermitian.Sparse(zsl.cf64, .upper, .col_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.hermitian.Sparse(zsl.cf64, .upper, .row_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.hermitian.Sparse(zsl.cf64, .lower, .col_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.hermitian.Sparse(zsl.cf64, .lower, .row_major) },
 
         // gdpetd
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.triangular.Dense(zsl.cf64, .upper, .unit, .col_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.triangular.Dense(zsl.cf64, .upper, .unit, .row_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.triangular.Dense(zsl.cf64, .upper, .non_unit, .col_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.triangular.Dense(zsl.cf64, .upper, .non_unit, .row_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.triangular.Dense(zsl.cf64, .lower, .unit, .col_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.triangular.Dense(zsl.cf64, .lower, .unit, .row_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.triangular.Dense(zsl.cf64, .lower, .non_unit, .col_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.triangular.Dense(zsl.cf64, .lower, .non_unit, .row_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.triangular.Dense(zsl.cf64, .upper, .unit, .col_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.triangular.Dense(zsl.cf64, .upper, .unit, .row_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.triangular.Dense(zsl.cf64, .upper, .non_unit, .col_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.triangular.Dense(zsl.cf64, .upper, .non_unit, .row_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.triangular.Dense(zsl.cf64, .lower, .unit, .col_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.triangular.Dense(zsl.cf64, .lower, .unit, .row_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.triangular.Dense(zsl.cf64, .lower, .non_unit, .col_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.triangular.Dense(zsl.cf64, .lower, .non_unit, .row_major) },
 
         // gdpets
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.triangular.Sparse(zsl.cf64, .upper, .unit, .col_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.triangular.Sparse(zsl.cf64, .upper, .unit, .row_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.triangular.Sparse(zsl.cf64, .upper, .non_unit, .col_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.triangular.Sparse(zsl.cf64, .upper, .non_unit, .row_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.triangular.Sparse(zsl.cf64, .lower, .unit, .col_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.triangular.Sparse(zsl.cf64, .lower, .unit, .row_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.triangular.Sparse(zsl.cf64, .lower, .non_unit, .col_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.triangular.Sparse(zsl.cf64, .lower, .non_unit, .row_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.triangular.Sparse(zsl.cf64, .upper, .unit, .col_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.triangular.Sparse(zsl.cf64, .upper, .unit, .row_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.triangular.Sparse(zsl.cf64, .upper, .non_unit, .col_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.triangular.Sparse(zsl.cf64, .upper, .non_unit, .row_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.triangular.Sparse(zsl.cf64, .lower, .unit, .col_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.triangular.Sparse(zsl.cf64, .lower, .unit, .row_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.triangular.Sparse(zsl.cf64, .lower, .non_unit, .col_major) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.triangular.Sparse(zsl.cf64, .lower, .non_unit, .row_major) },
 
         // gdpedi
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.Diagonal(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.Diagonal(zsl.cf64) },
 
         // gdpepe
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.Permutation(zsl.cf64), zsl.matrix.Permutation(zsl.cf64) },
 
         // gdpenu
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.matrix.Permutation(zsl.cf64), zsl.cf64 },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.matrix.Permutation(zsl.cf64), zsl.cf64 },
 
         // gdnugd
         .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.cf64, zsl.matrix.general.Dense(zsl.cf64, .col_major) },
@@ -3132,6 +3284,8 @@ const combinations = blk: {
         .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.cf64, zsl.matrix.Diagonal(zsl.cf64) },
 
         // gdnupe
+        .{ zsl.matrix.general.Dense(zsl.cf32, .col_major), zsl.cf64, zsl.matrix.Permutation(zsl.cf64) },
+        .{ zsl.matrix.general.Dense(zsl.cf32, .row_major), zsl.cf64, zsl.matrix.Permutation(zsl.cf64) },
 
         // gsgsnu: o must alias x, o == x
 

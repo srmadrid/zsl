@@ -36,6 +36,7 @@ pub const Error = error{
     InvalidBandwidth,
     NotSquare,
     DataNotOwned,
+    InsuficientSpace,
 };
 
 pub const Flags = packed struct {

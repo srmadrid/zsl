@@ -220,8 +220,10 @@ pub const MatrixKind = enum {
     symmetric,
     hermitian,
     triangular,
+    builder,
     diagonal,
     permutation,
+    numeric,
 };
 
 pub const MatrixStorage = enum {
@@ -455,36 +457,18 @@ pub inline fn matrixType(comptime M: type) MatrixType {
     return .numeric; // Fallback for numeric types that are not matrices
 }
 
-pub inline fn matrixStorage(comptime M: type) MatrixStorage {
-    if (comptime isCustomMatrix(M))
-        return .custom;
+pub inline fn matrixKind(comptime M: type) MatrixKind {
+    if (comptime isGeneralMatrix(M))
+        return .general;
 
-    if (comptime isGeneralDenseMatrix(M))
-        return .general_dense;
+    if (comptime isSymmetricMatrix(M))
+        return .symmetric;
 
-    if (comptime isSymmetricDenseMatrix(M))
-        return .symmetric_dense;
+    if (comptime isHermitianMatrix(M))
+        return .hermitian;
 
-    if (comptime isHermitianDenseMatrix(M))
-        return .hermitian_dense;
-
-    if (comptime isTriangularDenseMatrix(M))
-        return .triangular_dense;
-
-    if (comptime isGeneralSparseMatrix(M))
-        return .general_sparse;
-
-    if (comptime isSymmetricSparseMatrix(M))
-        return .symmetric_sparse;
-
-    if (comptime isHermitianSparseMatrix(M))
-        return .hermitian_sparse;
-
-    if (comptime isTriangularSparseMatrix(M))
-        return .triangular_sparse;
-
-    if (comptime isBuilderSparseMatrix(M))
-        return .builder_sparse;
+    if (comptime isTriangularMatrix(M))
+        return .triangular;
 
     if (comptime isDiagonalMatrix(M))
         return .diagonal;

@@ -7,11 +7,8 @@ const int = @import("../../../int.zig");
 const numeric = @import("../../../numeric.zig");
 const matrix = @import("../../../matrix.zig");
 
-pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void {
+pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
     const O: type = types.Child(@TypeOf(o));
-
-    if (o.rows != o.cols or o.rows != x.size or o.rows != y.size)
-        return matrix.Error.DimensionMismatch;
 
     switch (comptime types.layoutOf(O)) {
         .col_major => return loopColMajor(o, x, y, op_),

@@ -21,7 +21,8 @@ pub fn Sparse(N: type, uplo: Uplo, layout: Layout) type {
         idx: [*]usize,
         ptr: [*]usize,
         nnz: usize,
-        size: usize,
+        rows: usize,
+        cols: usize,
         flags: matrix.Flags,
 
         // Type signatures
@@ -40,7 +41,8 @@ pub fn Sparse(N: type, uplo: Uplo, layout: Layout) type {
             .idx = &.{},
             .ptr = &.{},
             .nnz = 0,
-            .size = 0,
+            .rows = 0,
+            .cols = 0,
             .flags = .{ .owns_data = false },
         };
 
@@ -59,7 +61,7 @@ pub fn Sparse(N: type, uplo: Uplo, layout: Layout) type {
             if (self.flags.owns_data) {
                 allocator.free(self.data[0..self.nnz]);
                 allocator.free(self.idx[0..self.nnz]);
-                allocator.free(self.ptr[0 .. self.size + 1]);
+                allocator.free(self.ptr[0 .. self.rows + 1]);
             }
 
             self.* = undefined;
@@ -79,7 +81,7 @@ pub fn Sparse(N: type, uplo: Uplo, layout: Layout) type {
         /// ## Errors
         /// * `matrix.Error.PositionOutOfBounds`: If `r` or `c` is out of bounds.
         pub fn get(self: matrix.hermitian.Sparse(N, uplo, layout), r: usize, c: usize) !N {
-            if (r >= self.size or c >= self.size)
+            if (r >= self.rows or c >= self.cols)
                 return matrix.Error.PositionOutOfBounds;
 
             var i: usize = r;
@@ -142,7 +144,7 @@ pub fn Sparse(N: type, uplo: Uplo, layout: Layout) type {
         /// * `matrix.Error.BreaksStructure`: If no existing element is present
         ///   at the specified position.
         pub fn set(self: *matrix.hermitian.Sparse(N, uplo, layout), r: usize, c: usize, value: N) !void {
-            if (r >= self.size or c >= self.size)
+            if (r >= self.rows or c >= self.cols)
                 return matrix.Error.PositionOutOfBounds;
 
             var i: usize = r;

@@ -778,7 +778,7 @@ pub fn Dense(N: type, uplo: Uplo, diag: Diag, layout: Layout) type {
         /// ## Errors
         /// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
         pub fn copyToGeneralDenseMatrix(self: matrix.triangular.Dense(N, uplo, diag, layout), allocator: std.mem.Allocator) !matrix.general.Dense(N, layout) {
-            const mat: matrix.general.Dense(N, layout) = try .init(allocator, self.size, self.size);
+            const mat: matrix.general.Dense(N, layout) = try .init(allocator, self.rows, self.cols);
 
             if (comptime layout == .col_major) {
                 if (comptime uplo == .upper) { // cu

@@ -521,7 +521,8 @@ pub fn Dense(N: type, layout: Layout) type {
 
             return .{
                 .data = self.data,
-                .size = self.rows,
+                .rows = self.rows,
+                .cols = self.cols,
                 .ld = self.ld,
                 .flags = .{ .owns_data = false },
             };
@@ -547,7 +548,8 @@ pub fn Dense(N: type, layout: Layout) type {
 
             return .{
                 .data = self.data,
-                .size = self.rows,
+                .rows = self.rows,
+                .cols = self.cols,
                 .ld = self.ld,
                 .flags = .{ .owns_data = false },
             };

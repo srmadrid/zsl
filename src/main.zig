@@ -5,7 +5,6 @@ const ci = @cImport({
 });
 
 pub fn main() !void {
-    // const a: std.mem.Allocator = std.heap.page_allocator;
     var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
@@ -752,7 +751,7 @@ fn randomMatrix(comptime M: type, allocator: std.mem.Allocator, rand: std.Random
             return try builder.compile(allocator, zsl.types.layoutOf(M));
         },
         .symmetric_sparse, .hermitian_sparse => {
-            const nnz: usize = rows;
+            const nnz: usize = (rows * cols) / 100;
 
             var builder: zsl.matrix.builder.Sparse(zsl.types.Numeric(M)) = try .init(allocator, rows, rows, nnz);
             errdefer builder.deinit(allocator);
@@ -781,7 +780,7 @@ fn randomMatrix(comptime M: type, allocator: std.mem.Allocator, rand: std.Random
                 builder.compileHermitian(allocator, zsl.types.uploOf(M), zsl.types.layoutOf(M));
         },
         .triangular_sparse => {
-            const nnz: usize = zsl.int.max(rows, cols);
+            const nnz: usize = (rows * cols) / 100;
 
             var builder: zsl.matrix.builder.Sparse(zsl.types.Numeric(M)) = try .init(allocator, rows, cols, nnz);
             errdefer builder.deinit(allocator);
