@@ -126,7 +126,7 @@ pub const lgamma = @import("ops/lgamma.zig").lgamma;
 pub const lgamma_ = @import("ops/lgamma_.zig").lgamma_;
 
 // Nearest integer operations
-pub inline fn ceil(
+pub fn ceil(
     allocator: std.mem.Allocator,
     x: anytype,
     ctx: anytype,
@@ -150,7 +150,7 @@ pub inline fn ceil(
     );
 }
 
-pub inline fn ceil_(
+pub fn ceil_(
     o: anytype,
     x: anytype,
     ctx: anytype,

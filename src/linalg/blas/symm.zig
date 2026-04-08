@@ -12,7 +12,7 @@ const Order = types.Order;
 const Side = linalg.Side;
 const Uplo = types.Uplo;
 
-pub inline fn symm(
+pub fn symm(
     order: Order,
     side: Side,
     uplo: Uplo,

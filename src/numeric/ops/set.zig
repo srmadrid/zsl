@@ -22,7 +22,7 @@ const numeric = @import("../../numeric.zig");
 /// `O` or `X` must implement the required `set` method. The expected signature
 /// and behavior of `set` are as follows:
 /// * `fn set(*O, X) void`: Sets the value of `o` to `x`.
-pub inline fn set(o: anytype, x: anytype) void {
+pub fn set(o: anytype, x: anytype) void {
     comptime var O: type = @TypeOf(o);
     const X: type = @TypeOf(x);
 

@@ -15,6 +15,6 @@ pub fn Scalbn(comptime X: type) type {
     return types.EnsureFloat(X);
 }
 
-pub inline fn scalbn(x: anytype, n: i32) Scalbn(@TypeOf(x)) {
+pub fn scalbn(x: anytype, n: i32) Scalbn(@TypeOf(x)) {
     return std.math.scalbn(numeric.cast(Scalbn(@TypeOf(x)), x), n);
 }

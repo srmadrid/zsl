@@ -50,7 +50,7 @@ pub fn Re(X: type) type {
 /// `numeric.Re(X)` or `X` must implement the required `re` method. The
 /// expected signature and behavior of `re` are as follows:
 /// * `fn re(X) numeric.Re(X)`: Returns the real part of `x`.
-pub inline fn re(x: anytype) numeric.Re(@TypeOf(x)) {
+pub fn re(x: anytype) numeric.Re(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Re(X);
 

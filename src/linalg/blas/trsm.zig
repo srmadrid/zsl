@@ -15,7 +15,7 @@ const Side = linalg.Side;
 const Uplo = types.Uplo;
 const Diag = types.Diag;
 
-pub inline fn trsm(
+pub fn trsm(
     order: Order,
     side: Side,
     uplo: Uplo,

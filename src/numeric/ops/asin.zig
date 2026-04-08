@@ -50,7 +50,7 @@ pub fn Asin(X: type) type {
 /// `numeric.Asin(X)` or `X` must implement the required `asin` method. The
 /// expected signature and behavior of `asin` are as follows:
 /// * `fn asin(X) numeric.Asin(X)`: Returns the arcsine of `x`.
-pub inline fn asin(x: anytype) numeric.Asin(@TypeOf(x)) {
+pub fn asin(x: anytype) numeric.Asin(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Asin(X);
 

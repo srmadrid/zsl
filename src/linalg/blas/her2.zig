@@ -11,7 +11,7 @@ const blas = @import("../blas.zig");
 const Order = types.Order;
 const Uplo = types.Uplo;
 
-pub inline fn her2(
+pub fn her2(
     order: Order,
     uplo: Uplo,
     n: i32,

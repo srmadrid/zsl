@@ -50,7 +50,7 @@ pub fn Sqrt(X: type) type {
 /// `numeric.Sqrt(X)` or `X` must implement the required `sqrt` method. The
 /// expected signature and behavior of `sqrt` are as follows:
 /// * `fn sqrt(X) numeric.Sqrt(X)`: Returns the square root of `x`.
-pub inline fn sqrt(x: anytype) numeric.Sqrt(@TypeOf(x)) {
+pub fn sqrt(x: anytype) numeric.Sqrt(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Sqrt(X);
 

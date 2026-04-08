@@ -6,7 +6,7 @@ const ops = @import("../../ops.zig");
 const arrops = @import("../ops.zig");
 
 ///
-pub inline fn erf_(
+pub fn erf_(
     o: anytype,
     x: anytype,
     ctx: anytype,

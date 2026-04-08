@@ -96,7 +96,7 @@ pub fn Pow(X: type, Y: type) type {
 /// The expected signatures and behavior of `pow` are as follows:
 /// * `fn pow(X, Y) numeric.Pow(X, Y)`: Returns the exponentiation of `x` to
 ///   the power `y`.
-pub inline fn pow(x: anytype, y: anytype) numeric.Pow(@TypeOf(x), @TypeOf(y)) {
+pub fn pow(x: anytype, y: anytype) numeric.Pow(@TypeOf(x), @TypeOf(y)) {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
     const R: type = numeric.Pow(X, Y);

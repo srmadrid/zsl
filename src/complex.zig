@@ -218,7 +218,7 @@ pub fn Add(comptime X: type, comptime Y: type) type {
 ///
 /// ## Returns
 /// `complex.Add(@TypeOf(x), @TypeOf(y))`: The result of the addition.
-pub inline fn add(x: anytype, y: anytype) complex.Add(@TypeOf(x), @TypeOf(y)) {
+pub fn add(x: anytype, y: anytype) complex.Add(@TypeOf(x), @TypeOf(y)) {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
     const R: type = Add(X, Y);
@@ -264,7 +264,7 @@ pub fn Sub(comptime X: type, comptime Y: type) type {
 ///
 /// ## Returns
 /// `complex.Sub(@TypeOf(x), @TypeOf(y))`: The result of the subtraction.
-pub inline fn sub(x: anytype, y: anytype) Sub(@TypeOf(x), @TypeOf(y)) {
+pub fn sub(x: anytype, y: anytype) Sub(@TypeOf(x), @TypeOf(y)) {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
     const R: type = Sub(X, Y);
@@ -310,7 +310,7 @@ pub fn Mul(comptime X: type, comptime Y: type) type {
 ///
 /// ## Returns
 /// `complex.Mul(@TypeOf(x), @TypeOf(y))`: The result of the multiplication.
-pub inline fn mul(x: anytype, y: anytype) Mul(@TypeOf(x), @TypeOf(y)) {
+pub fn mul(x: anytype, y: anytype) Mul(@TypeOf(x), @TypeOf(y)) {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
     const R: type = Mul(X, Y);
@@ -355,7 +355,7 @@ pub fn Div(comptime X: type, comptime Y: type) type {
 ///
 /// ## Returns
 /// `complex.Div(@TypeOf(x), @TypeOf(y))`: The result of the division.
-pub inline fn div(x: anytype, y: anytype) Div(@TypeOf(x), @TypeOf(y)) {
+pub fn div(x: anytype, y: anytype) Div(@TypeOf(x), @TypeOf(y)) {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
     const R: type = Div(X, Y);
@@ -389,7 +389,7 @@ pub inline fn div(x: anytype, y: anytype) Div(@TypeOf(x), @TypeOf(y)) {
 ///
 /// ## Returns
 /// `bool`: `true` if the operands are equal, `false` otherwise.
-pub inline fn eq(x: anytype, y: anytype) bool {
+pub fn eq(x: anytype, y: anytype) bool {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 
@@ -428,7 +428,7 @@ pub inline fn eq(x: anytype, y: anytype) bool {
 ///
 /// ## Returns
 /// `bool`: `true` if the operands are not equal, `false` otherwise.
-pub inline fn ne(x: anytype, y: anytype) bool {
+pub fn ne(x: anytype, y: anytype) bool {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 

@@ -56,7 +56,7 @@ pub fn Lgamma(X: type) type {
 /// `numeric.Lgamma(X)` or `X` must implement the required `lgamma` method.
 /// The expected signature and behavior of `lgamma` are as follows:
 /// * `fn lgamma(X) numeric.Lgamma(X)`: Returns the log-gamma function of `x`.
-pub inline fn lgamma(x: anytype) numeric.Lgamma(@TypeOf(x)) {
+pub fn lgamma(x: anytype) numeric.Lgamma(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Lgamma(X);
 

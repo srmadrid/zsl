@@ -32,7 +32,7 @@ const numeric = @import("../../numeric.zig");
 /// `numeric.atan2`, potentially resulting in a less efficient implementation. In
 /// this case, `O`, `Y` and `X` must adhere to the requirements of these
 /// functions.
-pub inline fn atan2_(o: anytype, y: anytype, x: anytype) void {
+pub fn atan2_(o: anytype, y: anytype, x: anytype) void {
     comptime var O: type = @TypeOf(o);
     const Y: type = @TypeOf(y);
     const X: type = @TypeOf(x);

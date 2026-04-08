@@ -50,7 +50,7 @@ pub fn Im(X: type) type {
 /// `numeric.Im(X)` or `X` must implement the required `im` method. The
 /// expected signature and behavior of `im` are as follows:
 /// * `fn im(X) numeric.Im(X)`: Returns the imaginary part of `x`.
-pub inline fn im(x: anytype) numeric.Im(@TypeOf(x)) {
+pub fn im(x: anytype) numeric.Im(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Im(X);
 

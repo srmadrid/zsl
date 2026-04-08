@@ -5,7 +5,7 @@ const ops = @import("../../ops.zig");
 
 const arrops = @import("../ops.zig");
 
-pub inline fn ne_(
+pub fn ne_(
     o: anytype,
     x: anytype,
     y: anytype,

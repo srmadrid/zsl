@@ -70,7 +70,7 @@ pub fn Sub(comptime X: type, comptime Y: type) type {
 /// `numeric.sub`, potentially resulting in a less efficient implementation. In
 /// this case, `vector.Sub(X, Y)`, `X` and `Y` must adhere to the requirements
 /// of these functions.
-pub inline fn sub(allocator: std.mem.Allocator, x: anytype, y: anytype) !vector.Sub(@TypeOf(x), @TypeOf(y)) {
+pub fn sub(allocator: std.mem.Allocator, x: anytype, y: anytype) !vector.Sub(@TypeOf(x), @TypeOf(y)) {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
     const R: type = vector.Sub(@TypeOf(x), @TypeOf(y));

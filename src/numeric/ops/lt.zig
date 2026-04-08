@@ -28,7 +28,7 @@ const numeric = @import("../../numeric.zig");
 /// `X` or `Y` must implement the required `lt` method. The expected
 /// signature and behavior of `lt` are as follows:
 /// * `fn lt(X, Y) bool`: Compares `x` and `y` for less-than ordering.
-pub inline fn lt(x: anytype, y: anytype) bool {
+pub fn lt(x: anytype, y: anytype) bool {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 

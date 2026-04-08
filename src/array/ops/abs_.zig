@@ -5,7 +5,7 @@ const ops = @import("../../ops.zig");
 
 const arrops = @import("../ops.zig");
 
-pub inline fn abs_(
+pub fn abs_(
     o: anytype,
     x: anytype,
     ctx: anytype,

@@ -50,7 +50,7 @@ pub fn Atan(X: type) type {
 /// `numeric.Atan(X)` or `X` must implement the required `atan` method. The
 /// expected signature and behavior of `atan` are as follows:
 /// * `fn atan(X) numeric.Atan(X)`: Returns the arctangent of `x`.
-pub inline fn atan(x: anytype) numeric.Atan(@TypeOf(x)) {
+pub fn atan(x: anytype) numeric.Atan(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Atan(X);
 

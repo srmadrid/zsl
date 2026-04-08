@@ -12,7 +12,7 @@ const Order = types.Order;
 const Transpose = linalg.Transpose;
 const Uplo = types.Uplo;
 
-pub inline fn her2k(
+pub fn her2k(
     order: Order,
     uplo: Uplo,
     trans: Transpose,

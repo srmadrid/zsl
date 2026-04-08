@@ -12,7 +12,7 @@ const types = @import("../types.zig");
 ///
 /// ## Returns
 /// `@TypeOf(x)`: The absolute value of `x`.
-pub inline fn abs(x: anytype) @TypeOf(x) {
+pub fn abs(x: anytype) @TypeOf(x) {
     const X: type = @TypeOf(x);
 
     comptime if (!types.isNumeric(X) or types.numericType(X) != .float)

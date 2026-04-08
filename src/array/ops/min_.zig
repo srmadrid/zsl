@@ -6,7 +6,7 @@ const ops = @import("../../ops.zig");
 
 const arrops = @import("../ops.zig");
 
-pub inline fn min_(
+pub fn min_(
     o: anytype,
     x: anytype,
     y: anytype,

@@ -50,7 +50,7 @@ pub fn Exp(X: type) type {
 /// `numeric.Exp(X)` or `X` must implement the required `exp` method. The
 /// expected signature and behavior of `exp` are as follows:
 /// * `fn exp(X) numeric.Exp(X)`: Returns the exponential of `x`.
-pub inline fn exp(x: anytype) numeric.Exp(@TypeOf(x)) {
+pub fn exp(x: anytype) numeric.Exp(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Exp(X);
 

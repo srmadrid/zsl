@@ -50,7 +50,7 @@ pub fn Tanh(X: type) type {
 /// `numeric.Tanh(X)` or `X` must implement the required `tanh` method. The
 /// expected signature and behavior of `tanh` are as follows:
 /// * `fn tanh(X) numeric.Tanh(X)`: Returns the hyperbolic tangent of `x`.
-pub inline fn tanh(x: anytype) numeric.Tanh(@TypeOf(x)) {
+pub fn tanh(x: anytype) numeric.Tanh(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Tanh(X);
 

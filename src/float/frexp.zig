@@ -6,7 +6,7 @@ const float = @import("../float.zig");
 const dbl64 = @import("dbl64.zig");
 const ldbl128 = @import("ldbl128.zig");
 
-pub inline fn frexp(x: anytype, e: *i32) @TypeOf(x) {
+pub fn frexp(x: anytype, e: *i32) @TypeOf(x) {
     const X: type = @TypeOf(x);
 
     comptime if (!types.isNumeric(X) or types.numericType(X) != .float)

@@ -68,7 +68,7 @@ pub fn Div(comptime X: type, comptime Y: type) type {
 /// `numeric.div`, potentially resulting in a less efficient implementation. In
 /// this case, `vector.Div(X, Y)`, `X` and `Y` must adhere to the requirements
 /// of these functions.
-pub inline fn div(allocator: std.mem.Allocator, x: anytype, y: anytype) !vector.Div(@TypeOf(x), @TypeOf(y)) {
+pub fn div(allocator: std.mem.Allocator, x: anytype, y: anytype) !vector.Div(@TypeOf(x), @TypeOf(y)) {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
     const R: type = vector.Div(@TypeOf(x), @TypeOf(y));

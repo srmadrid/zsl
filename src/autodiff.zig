@@ -1,3 +1,4 @@
 //! Namespace for automatic differentiation types and operations.
 
-pub const Dual = @import("autodiff/dual.zig").Dual;
+pub const dual = @import("autodiff/dual.zig");
+pub const Dual = dual.Dual;

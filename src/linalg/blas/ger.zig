@@ -10,7 +10,7 @@ const linalg = @import("../../linalg.zig");
 const blas = @import("../blas.zig");
 const Order = types.Order;
 
-pub inline fn ger(
+pub fn ger(
     order: Order,
     m: i32,
     n: i32,

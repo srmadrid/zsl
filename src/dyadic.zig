@@ -693,7 +693,7 @@ pub fn Fma(comptime X: type, comptime Y: type, comptime Z: type) type {
 /// ## Returns
 /// `dyadic.Fma(@TypeOf(x), @TypeOf(y), @TypeOf(z))`: The result of the fused
 /// multiplication and addition.
-pub inline fn fma(x: anytype, y: anytype, z: anytype) dyadic.Fma(@TypeOf(x), @TypeOf(y), @TypeOf(z)) {
+pub fn fma(x: anytype, y: anytype, z: anytype) dyadic.Fma(@TypeOf(x), @TypeOf(y), @TypeOf(z)) {
     const R: type = dyadic.Fma(@TypeOf(x), @TypeOf(y), @TypeOf(z));
 
     return R.fma(numeric.cast(R, x), numeric.cast(R, y), numeric.cast(R, z));

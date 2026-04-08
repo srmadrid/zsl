@@ -32,7 +32,7 @@ const numeric = @import("../../numeric.zig");
 /// signature and behavior of `Coerce` are as follows:
 /// * `fn Coerce(type, type) type`: Returns the smallest type that can represent
 ///   all values of types `X` and `Y`.
-pub inline fn Coerce(comptime X: type, comptime Y: type) type {
+pub fn Coerce(comptime X: type, comptime Y: type) type {
     comptime if (!types.isNumeric(X) or !types.isNumeric(Y))
         @compileError("zsl.numeric.Coerce: X and Y must be numeric types, got \n\tX = " ++ @typeName(X) ++ "\n\tY = " ++ @typeName(Y) ++ "\n");
 

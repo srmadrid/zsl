@@ -21,7 +21,7 @@ pub fn Sincos(comptime X: type) type {
     };
 }
 
-pub inline fn sincos(x: anytype) Sincos(@TypeOf(x)) {
+pub fn sincos(x: anytype) Sincos(@TypeOf(x)) {
     switch (@TypeOf(x)) {
         f16 => {
             var s: f32 = undefined;

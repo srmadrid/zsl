@@ -10,7 +10,7 @@ const blas = @import("../blas.zig");
 const Order = types.Order;
 const Uplo = types.Uplo;
 
-pub inline fn hpmv(
+pub fn hpmv(
     order: Order,
     uplo: Uplo,
     n: i32,

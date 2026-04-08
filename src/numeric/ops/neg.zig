@@ -50,7 +50,7 @@ pub fn Neg(X: type) type {
 /// `numeric.Neg(X)` or `X` must implement the required `neg` method. The
 /// expected signature and behavior of `neg` are as follows:
 /// * `fn neg(X) numeric.Neg(X)`: Returns the negation of `x`.
-pub inline fn neg(x: anytype) numeric.Neg(@TypeOf(x)) {
+pub fn neg(x: anytype) numeric.Neg(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Neg(X);
 

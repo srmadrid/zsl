@@ -8,7 +8,7 @@ const float = @import("../float.zig");
 const dbl64 = @import("dbl64.zig");
 const ldbl128 = @import("ldbl128.zig");
 
-pub inline fn rint(x: anytype) @TypeOf(x) {
+pub fn rint(x: anytype) @TypeOf(x) {
     const X: type = @TypeOf(x);
 
     comptime if (!types.isNumeric(X) or types.numericType(X) != .float)

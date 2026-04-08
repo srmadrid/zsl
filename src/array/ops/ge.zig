@@ -8,7 +8,7 @@ const ops = @import("../../ops.zig");
 const arrops = @import("../ops.zig");
 
 ///
-pub inline fn ge(
+pub fn ge(
     allocator: std.mem.Allocator,
     x: anytype,
     y: anytype,

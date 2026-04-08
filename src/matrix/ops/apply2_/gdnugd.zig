@@ -12,7 +12,7 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
     }
 }
 
-inline fn loopColMajor(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
+fn loopColMajor(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
     var j: usize = 0;
     while (j < o.cols) : (j += 1) {
         var i: usize = 0;
@@ -22,7 +22,7 @@ inline fn loopColMajor(o: anytype, x: anytype, y: anytype, comptime op_: anytype
     }
 }
 
-inline fn loopRowMajor(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
+fn loopRowMajor(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
     var i: usize = 0;
     while (i < o.rows) : (i += 1) {
         var j: usize = 0;

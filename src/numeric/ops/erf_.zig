@@ -34,7 +34,7 @@ const numeric = @import("../../numeric.zig");
 /// will fall back to using `numeric.set` with the result of `numeric.erf`,
 /// potentially resulting in a less efficient implementation. In this case, `O`
 /// and `X` must adhere to the requirements of these functions.
-pub inline fn erf_(o: anytype, x: anytype) void {
+pub fn erf_(o: anytype, x: anytype) void {
     comptime var O: type = @TypeOf(o);
     const X: type = @TypeOf(x);
 

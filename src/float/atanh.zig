@@ -18,7 +18,7 @@ const ldbl128 = @import("ldbl128.zig");
 ///
 /// ## Returns
 /// `@TypeOf(x)`: The hyperbolic arctangent of `x`.
-pub inline fn atanh(x: anytype) @TypeOf(x) {
+pub fn atanh(x: anytype) @TypeOf(x) {
     const X: type = @TypeOf(x);
 
     comptime if (!types.isNumeric(X) or types.numericType(X) != .float)

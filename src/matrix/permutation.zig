@@ -170,7 +170,7 @@ pub fn Permutation(N: type) type {
         ///
         /// ## Returns
         /// `N`: The element at the specified position.
-        pub inline fn getAssumeInBounds(self: matrix.Permutation(N), r: usize, c: usize) N {
+        pub fn getAssumeInBounds(self: matrix.Permutation(N), r: usize, c: usize) N {
             if (self.direction == .forward) {
                 if (self.data[r] == c) {
                     return numeric.one(N);
@@ -194,7 +194,7 @@ pub fn Permutation(N: type) type {
         //         return matrix.Error.BreaksStructure;
         // }
 
-        // pub inline fn put(self: *Permutation(T), row: usize, col: usize, value: usize) void {
+        // pub  fn put(self: *Permutation(T), row: usize, col: usize, value: usize) void {
         //     // Unchecked version of set. Assumes row and col are valid and
         //     // in banded range.
         //     if (value == 1) {

@@ -31,7 +31,7 @@ const numeric = @import("../../numeric.zig");
 /// `numeric.div`, potentially resulting in a less efficient implementation. In
 /// this case, `O`, `X` and `Y` must adhere to the requirements of these
 /// functions.
-pub inline fn div_(o: anytype, x: anytype, y: anytype) void {
+pub fn div_(o: anytype, x: anytype, y: anytype) void {
     comptime var O: type = @TypeOf(o);
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);

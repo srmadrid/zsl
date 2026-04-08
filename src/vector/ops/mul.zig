@@ -69,7 +69,7 @@ pub fn Mul(comptime X: type, comptime Y: type) type {
 /// `numeric.mul`, potentially resulting in a less efficient implementation. In
 /// this case, `vector.Mul(X, Y)`, `X` and `Y` must adhere to the requirements
 /// of these functions.
-pub inline fn mul(allocator: std.mem.Allocator, x: anytype, y: anytype) !vector.Mul(@TypeOf(x), @TypeOf(y)) {
+pub fn mul(allocator: std.mem.Allocator, x: anytype, y: anytype) !vector.Mul(@TypeOf(x), @TypeOf(y)) {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
     const R: type = vector.Mul(@TypeOf(x), @TypeOf(y));

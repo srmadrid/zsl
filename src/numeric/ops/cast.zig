@@ -69,7 +69,7 @@ const numeric = @import("../../numeric.zig");
 /// ```
 /// In either case, `N` or `V` must adhere to the requirements of these
 /// functions.
-pub inline fn cast(comptime N: type, value: anytype) N {
+pub fn cast(comptime N: type, value: anytype) N {
     const V: type = @TypeOf(value);
 
     comptime if (!types.isNumeric(N) or !types.isNumeric(V))

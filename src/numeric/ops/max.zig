@@ -93,7 +93,7 @@ pub fn Max(X: type, Y: type) type {
 /// The expected signatures and behavior of `max` are as follows:
 /// * `fn max(X, Y) numeric.Max(X, Y)`: Returns the maximum between `x` and
 ///   `y`.
-pub inline fn max(x: anytype, y: anytype) numeric.Max(@TypeOf(x), @TypeOf(y)) {
+pub fn max(x: anytype, y: anytype) numeric.Max(@TypeOf(x), @TypeOf(y)) {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
     const R: type = numeric.Max(X, Y);

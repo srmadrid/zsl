@@ -25,7 +25,7 @@ const ldbl128 = @import("ldbl128.zig");
 ///
 /// ## Returns
 /// `@TypeOf(x)`: The tangent of `x`.
-pub inline fn tan(x: anytype) @TypeOf(x) {
+pub fn tan(x: anytype) @TypeOf(x) {
     const X: type = @TypeOf(x);
 
     comptime if (!types.isNumeric(X) or types.numericType(X) != .float)

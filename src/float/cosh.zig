@@ -20,7 +20,7 @@ const ldbl128 = @import("ldbl128.zig");
 ///
 /// ## Returns
 /// `@TypeOf(x)`: The hyperbolic cosine of `x`.
-pub inline fn cosh(x: anytype) @TypeOf(x) {
+pub fn cosh(x: anytype) @TypeOf(x) {
     const X: type = @TypeOf(x);
 
     comptime if (!types.isNumeric(X) or types.numericType(X) != .float)

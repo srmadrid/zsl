@@ -12,7 +12,7 @@ const Order = types.Order;
 const Transpose = linalg.Transpose;
 const Uplo = types.Uplo;
 
-pub inline fn syr2k(
+pub fn syr2k(
     order: Order,
     uplo: Uplo,
     trans: Transpose,

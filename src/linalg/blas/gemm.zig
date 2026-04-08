@@ -11,7 +11,7 @@ const blas = @import("../blas.zig");
 const Order = types.Order;
 const Transpose = linalg.Transpose;
 
-pub inline fn gemm(
+pub fn gemm(
     order: Order,
     transa: Transpose,
     transb: Transpose,

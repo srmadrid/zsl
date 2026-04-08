@@ -6,7 +6,7 @@ const ops = @import("../../ops.zig");
 const arrops = @import("../ops.zig");
 
 ///
-pub inline fn cosh_(
+pub fn cosh_(
     o: anytype,
     x: anytype,
     ctx: anytype,

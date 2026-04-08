@@ -5,7 +5,7 @@ const ops = @import("../../ops.zig");
 
 const arrops = @import("../ops.zig");
 
-pub inline fn atan2_(
+pub fn atan2_(
     o: anytype,
     x: anytype,
     y: anytype,

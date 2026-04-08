@@ -6,7 +6,7 @@ const ops = @import("../../ops.zig");
 const arrops = @import("../ops.zig");
 
 ///
-pub inline fn gamma_(
+pub fn gamma_(
     o: anytype,
     x: anytype,
     ctx: anytype,

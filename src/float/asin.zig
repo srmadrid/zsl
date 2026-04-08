@@ -18,7 +18,7 @@ const ldbl128 = @import("ldbl128.zig");
 ///
 /// ## Returns
 /// `@TypeOf(x)`: The arcsine of `x`.
-pub inline fn asin(x: anytype) @TypeOf(x) {
+pub fn asin(x: anytype) @TypeOf(x) {
     const X: type = @TypeOf(x);
 
     comptime if (!types.isNumeric(X) or types.numericType(X) != .float)

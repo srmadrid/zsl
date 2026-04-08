@@ -20,7 +20,7 @@ const ldbl128 = @import("ldbl128.zig");
 ///
 /// ## Returns
 /// `@TypeOf(x)`: The logarithm of `x + 1`.
-pub inline fn log1p(x: anytype) @TypeOf(x) {
+pub fn log1p(x: anytype) @TypeOf(x) {
     const X: type = @TypeOf(x);
 
     comptime if (!types.isNumeric(X) or types.numericType(X) != .float)

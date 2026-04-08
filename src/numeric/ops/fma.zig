@@ -205,7 +205,7 @@ pub fn Fma(X: type, Y: type, Z: type) type {
 /// method. The expected signatures and behavior of `fma` are as follows:
 /// * `fn fma(X, Y, Z) numeric.Fma(X, Y, Z)`: Returns the fused multiplication
 /// and addition of `x`, `y` and `z`.
-pub inline fn fma(x: anytype, y: anytype, z: anytype) numeric.Fma(@TypeOf(x), @TypeOf(y), @TypeOf(z)) {
+pub fn fma(x: anytype, y: anytype, z: anytype) numeric.Fma(@TypeOf(x), @TypeOf(y), @TypeOf(z)) {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
     const Z: type = @TypeOf(z);

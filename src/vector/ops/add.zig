@@ -70,7 +70,7 @@ pub fn Add(comptime X: type, comptime Y: type) type {
 /// `numeric.add`, potentially resulting in a less efficient implementation. In
 /// this case, `vector.Add(X, Y)`, `X` and `Y` must adhere to the requirements
 /// of these functions.
-pub inline fn add(allocator: std.mem.Allocator, x: anytype, y: anytype) !vector.Add(@TypeOf(x), @TypeOf(y)) {
+pub fn add(allocator: std.mem.Allocator, x: anytype, y: anytype) !vector.Add(@TypeOf(x), @TypeOf(y)) {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
     const R: type = vector.Add(@TypeOf(x), @TypeOf(y));

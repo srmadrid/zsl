@@ -50,7 +50,7 @@ pub fn Abs1(X: type) type {
 /// `numeric.Abs1(X)` or `X` must implement the required `abs1` method. The
 /// expected signature and behavior of `abs1` are as follows:
 /// * `fn abs1(X) numeric.Abs1(X)`: Returns the 1-norm of `x`.
-pub inline fn abs1(x: anytype) numeric.Abs1(@TypeOf(x)) {
+pub fn abs1(x: anytype) numeric.Abs1(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Abs1(X);
 

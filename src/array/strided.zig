@@ -55,7 +55,7 @@ pub fn Strided(T: type, base_order: Order) type {
             return self.data[self._index(position)];
         }
 
-        pub inline fn at(self: *const Strided(T, base_order), position: []const u32) T {
+        pub fn at(self: *const Strided(T, base_order), position: []const u32) T {
             // Unchecked version of get. Assumes position is valid.
             return self.data[self._index(position)];
         }
@@ -66,7 +66,7 @@ pub fn Strided(T: type, base_order: Order) type {
             self.data[self._index(position)] = value;
         }
 
-        pub inline fn put(self: *const Strided(T, base_order), position: []const u32, value: T) void {
+        pub fn put(self: *const Strided(T, base_order), position: []const u32, value: T) void {
             // Unchecked version of set. Assumes position is valid.
             self.data[self._index(position)] = value;
         }
@@ -238,7 +238,7 @@ pub fn Strided(T: type, base_order: Order) type {
             };
         }
 
-        inline fn _index(
+        fn _index(
             self: *const Strided(T, base_order),
             position: []const u32,
         ) u32 {
@@ -256,7 +256,7 @@ pub fn Strided(T: type, base_order: Order) type {
             return idx;
         }
 
-        inline fn _checkPosition(self: *const Strided(T, base_order), position: []const u32) !void {
+        fn _checkPosition(self: *const Strided(T, base_order), position: []const u32) !void {
             if (position.len > self.ndim)
                 return array.Error.DimensionMismatch;
 
@@ -270,7 +270,7 @@ pub fn Strided(T: type, base_order: Order) type {
     };
 }
 
-// pub inline fn cleanup(
+// pub fn cleanup(
 //     comptime T: type,
 //     arr: *const Strided(T, base_order),
 //     num_elements: u32,

@@ -50,7 +50,7 @@ pub fn Cbrt(X: type) type {
 /// `numeric.Cbrt(X)` or `X` must implement the required `cbrt` method. The
 /// expected signature and behavior of `cbrt` are as follows:
 /// * `fn cbrt(X) numeric.Cbrt(X)`: Returns the cube root of `x`.
-pub inline fn cbrt(x: anytype) numeric.Cbrt(@TypeOf(x)) {
+pub fn cbrt(x: anytype) numeric.Cbrt(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Cbrt(X);
 

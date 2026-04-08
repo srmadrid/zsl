@@ -32,7 +32,7 @@ const numeric = @import("../../numeric.zig");
 /// `numeric.fma`, potentially resulting in a less efficient implementation. In
 /// this case, `O`, `X`, `Y` and `Z` must adhere to the requirements of these
 /// functions.
-pub inline fn fma_(o: anytype, x: anytype, y: anytype, z: anytype) void {
+pub fn fma_(o: anytype, x: anytype, y: anytype, z: anytype) void {
     comptime var O: type = @TypeOf(o);
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);

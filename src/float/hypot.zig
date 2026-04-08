@@ -33,7 +33,7 @@ pub fn Hypot(comptime X: type, comptime Y: type) type {
 ///
 /// ## Returns
 /// `float.Hypot(@TypeOf(x), @TypeOf(y))`: The hypotenuse of `x` and `y`.
-pub inline fn hypot(x: anytype, y: anytype) float.Hypot(@TypeOf(y), @TypeOf(x)) {
+pub fn hypot(x: anytype, y: anytype) float.Hypot(@TypeOf(y), @TypeOf(x)) {
     switch (float.Hypot(@TypeOf(x), @TypeOf(y))) {
         f16 => return numeric.cast(f16, hypot32(numeric.cast(f32, x), numeric.cast(f32, y))),
         f32 => {

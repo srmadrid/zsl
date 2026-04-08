@@ -50,7 +50,7 @@ pub fn Sign(X: type) type {
 /// `numeric.Sign(X)` or `X` must implement the required `sign` method. The
 /// expected signature and behavior of `sign` are as follows:
 /// * `fn sign(X) numeric.Sign(X)`: Returns the sign of `x`.
-pub inline fn sign(x: anytype) numeric.Sign(@TypeOf(x)) {
+pub fn sign(x: anytype) numeric.Sign(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Sign(X);
 

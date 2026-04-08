@@ -11,7 +11,7 @@ const blas = @import("../blas.zig");
 const Order = types.Order;
 const Transpose = linalg.Transpose;
 
-pub inline fn gbmv(
+pub fn gbmv(
     order: Order,
     transa: Transpose,
     m: i32,

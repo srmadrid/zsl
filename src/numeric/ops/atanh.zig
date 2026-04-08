@@ -51,7 +51,7 @@ pub fn Atanh(X: type) type {
 /// `numeric.Atanh(X)` or `X` must implement the required `atanh` method. The
 /// expected signature and behavior of `atanh` are as follows:
 /// * `fn atanh(X) numeric.Atanh(X)`: Returns the hyperbolic arctangent of `x`.
-pub inline fn atanh(x: anytype) numeric.Atanh(@TypeOf(x)) {
+pub fn atanh(x: anytype) numeric.Atanh(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Atanh(X);
 

@@ -36,7 +36,7 @@ const matops = @import("../ops.zig");
 /// function will fall back to using `matrix.apply2_` with `numeric.add_`,
 /// potentially resulting in a less efficient implementation. In this case, `O`,
 /// `X` and `Y` must adhere to the requirements of these functions.
-pub inline fn add_(o: anytype, x: anytype, y: anytype) !void {
+pub fn add_(o: anytype, x: anytype, y: anytype) !void {
     comptime var O: type = @TypeOf(o);
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);

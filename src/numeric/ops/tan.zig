@@ -50,7 +50,7 @@ pub fn Tan(X: type) type {
 /// `numeric.Tan(X)` or `X` must implement the required `tan` method. The
 /// expected signature and behavior of `tan` are as follows:
 /// * `fn tan(X) numeric.Tan(X)`: Returns the tangent of `x`.
-pub inline fn tan(x: anytype) numeric.Tan(@TypeOf(x)) {
+pub fn tan(x: anytype) numeric.Tan(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Tan(X);
 

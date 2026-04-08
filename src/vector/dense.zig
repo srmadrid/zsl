@@ -196,7 +196,7 @@ pub fn Dense(N: type) type {
         ///
         /// ## Returns
         /// `N`: The element at the specified index.
-        pub inline fn getAssumeInBounds(self: vector.Dense(N), index: usize) N {
+        pub fn getAssumeInBounds(self: vector.Dense(N), index: usize) N {
             return self.data[self._index(index)];
         }
 
@@ -231,7 +231,7 @@ pub fn Dense(N: type) type {
         ///
         /// ## Returns
         /// `void`
-        pub inline fn setAssumeInBounds(self: *vector.Dense(N), index: usize, value: N) void {
+        pub fn setAssumeInBounds(self: *vector.Dense(N), index: usize, value: N) void {
             self.data[self._index(index)] = value;
         }
 
@@ -293,7 +293,7 @@ pub fn Dense(N: type) type {
             };
         }
 
-        pub inline fn _index(self: *const Dense(N), index: usize) usize {
+        pub fn _index(self: *const Dense(N), index: usize) usize {
             return if (self.inc > 0)
                 index * numeric.cast(usize, self.inc)
             else

@@ -7,7 +7,7 @@ const ops = @import("../../ops.zig");
 const arrops = @import("../ops.zig");
 
 ///
-pub inline fn div_(
+pub fn div_(
     o: anytype,
     x: anytype,
     y: anytype,

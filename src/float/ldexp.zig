@@ -10,7 +10,7 @@ pub fn Ldexp(comptime X: type) type {
     return types.EnsureFloat(X);
 }
 
-pub inline fn ldexp(x: anytype, n: i32) Ldexp(@TypeOf(x)) {
+pub fn ldexp(x: anytype, n: i32) Ldexp(@TypeOf(x)) {
     const xx: Ldexp(@TypeOf(x)) = numeric.cast(Ldexp(@TypeOf(x)), x);
 
     if (!std.math.isFinite(xx) or xx == 0)

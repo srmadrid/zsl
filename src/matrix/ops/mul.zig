@@ -10,7 +10,7 @@ const matops = @import("../ops.zig");
 
 const linalg = @import("../../linalg.zig");
 
-pub inline fn mul(
+pub fn mul(
     allocator: std.mem.Allocator,
     x: anytype,
     y: anytype,

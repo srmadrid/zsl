@@ -28,7 +28,7 @@ const numeric = @import("../../numeric.zig");
 /// `X` or `Y` must implement the required `eq` method. The expected
 /// signature and behavior of `eq` are as follows:
 /// * `fn eq(X, Y) bool`: Compares `x` and `y` for equality.
-pub inline fn eq(x: anytype, y: anytype) bool {
+pub fn eq(x: anytype, y: anytype) bool {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 

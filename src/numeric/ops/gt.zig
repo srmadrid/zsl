@@ -28,7 +28,7 @@ const numeric = @import("../../numeric.zig");
 /// `X` or `Y` must implement the required `gt` method. The expected
 /// signature and behavior of `gt` are as follows:
 /// * `fn gt(X, Y) bool`: Compares `x` and `y` for greater-than ordering.
-pub inline fn gt(x: anytype, y: anytype) bool {
+pub fn gt(x: anytype, y: anytype) bool {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 

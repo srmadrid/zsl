@@ -36,7 +36,7 @@ pub fn Pow(comptime X: type, comptime Y: type) type {
 /// ## Returns
 /// `float.Pow(@TypeOf(x), @TypeOf(y))`: The result of raising `x` to the power
 /// of `y`.
-pub inline fn pow(x: anytype, y: anytype) float.Pow(@TypeOf(x), @TypeOf(y)) {
+pub fn pow(x: anytype, y: anytype) float.Pow(@TypeOf(x), @TypeOf(y)) {
     switch (float.Pow(@TypeOf(x), @TypeOf(y))) {
         f16 => return numeric.cast(f16, pow32(numeric.cast(f32, x), numeric.cast(f32, y))),
         f32 => {

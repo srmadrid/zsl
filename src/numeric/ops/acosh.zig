@@ -51,7 +51,7 @@ pub fn Acosh(X: type) type {
 /// `numeric.Acosh(X)` or `X` must implement the required `acosh` method. The
 /// expected signature and behavior of `acosh` are as follows:
 /// * `fn acosh(X) numeric.Acosh(X)`: Returns the hyperbolic arccosine of `x`.
-pub inline fn acosh(x: anytype) numeric.Acosh(@TypeOf(x)) {
+pub fn acosh(x: anytype) numeric.Acosh(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Acosh(X);
 

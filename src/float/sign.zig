@@ -12,7 +12,7 @@ const types = @import("../types.zig");
 ///
 /// ## Returns
 /// `@TypeOf(x)`: The sign of `x`.
-pub inline fn sign(x: anytype) @TypeOf(x) {
+pub fn sign(x: anytype) @TypeOf(x) {
     const X: type = @TypeOf(x);
 
     comptime if (!types.isNumeric(X) or types.numericType(X) != .float)

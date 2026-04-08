@@ -18,7 +18,7 @@ const ldbl128 = @import("ldbl128.zig");
 ///
 /// ## Returns
 /// `@TypeOf(x)`: The arctangent of `x`.
-pub inline fn atan(x: anytype) @TypeOf(x) {
+pub fn atan(x: anytype) @TypeOf(x) {
     const X: type = @TypeOf(x);
 
     comptime if (!types.isNumeric(X) or types.numericType(X) != .float)

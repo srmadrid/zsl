@@ -9,7 +9,7 @@ const ops = @import("../../ops.zig");
 const arrops = @import("../ops.zig");
 
 ///
-pub inline fn acos(
+pub fn acos(
     allocator: std.mem.Allocator,
     x: anytype,
     ctx: anytype,

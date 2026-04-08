@@ -16,7 +16,7 @@ const linalg = @import("../linalg.zig");
 const blas = @import("blas.zig");
 const lapack = @import("lapack.zig");
 
-pub inline fn matmul(allocator: std.mem.Allocator, a: anytype, b: anytype, ctx: anytype) !MulCoerce(@TypeOf(a), @TypeOf(b)) {
+pub fn matmul(allocator: std.mem.Allocator, a: anytype, b: anytype, ctx: anytype) !MulCoerce(@TypeOf(a), @TypeOf(b)) {
     const A: type = @TypeOf(a);
     const B: type = @TypeOf(b);
     const C: type = Coerce(Numeric(A), Numeric(B));

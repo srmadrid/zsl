@@ -33,7 +33,7 @@ pub fn Atan2(comptime X: type, comptime Y: type) type {
 ///
 /// ## Returns
 /// `float.Atan2(@TypeOf(x), @TypeOf(y))`: The arctangent at `(x, y)`.
-pub inline fn atan2(y: anytype, x: anytype) float.Atan2(@TypeOf(x), @TypeOf(y)) {
+pub fn atan2(y: anytype, x: anytype) float.Atan2(@TypeOf(x), @TypeOf(y)) {
     switch (float.Atan2(@TypeOf(x), @TypeOf(y))) {
         f16 => return numeric.cast(f16, atan2_32(numeric.cast(f32, x), numeric.cast(f32, y))),
         f32 => {

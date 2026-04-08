@@ -20,7 +20,7 @@ const complex = @import("../complex.zig");
 /// `N` must implement the required `zero` method. The expected signature and
 /// behavior of `zero` are as follows:
 /// * `fn zero(anytype) N`: Returns the zero value.
-pub inline fn zero(comptime N: type) N {
+pub fn zero(comptime N: type) N {
     comptime if (!types.isNumeric(N))
         @compileError("zsl.numeric.zero: " ++ @typeName(N) ++ " is not a numeric type");
 
@@ -54,7 +54,7 @@ pub inline fn zero(comptime N: type) N {
 /// `N` must implement the required `one` method. The expected signature and
 /// behavior of `one` are as follows:
 /// * `fn one() N`: Returns the one value.
-pub inline fn one(comptime N: type) N {
+pub fn one(comptime N: type) N {
     comptime if (!types.isNumeric(N))
         @compileError("zsl.numeric.one: " ++ @typeName(N) ++ " is not a numeric type");
 
@@ -88,7 +88,7 @@ pub inline fn one(comptime N: type) N {
 /// `N` must implement the required `two` method. The expected signature and
 /// behavior of `two` are as follows:
 /// * `fn two() N`: Returns the two value.
-pub inline fn two(comptime N: type) N {
+pub fn two(comptime N: type) N {
     comptime if (!types.isNumeric(N))
         @compileError("zsl.numeric.two: " ++ @typeName(N) ++ " is not a numeric type");
 

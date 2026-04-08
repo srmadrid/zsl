@@ -1,6 +1,6 @@
 const types = @import("../types.zig");
 
-pub inline fn ceil(x: anytype) @TypeOf(x) {
+pub fn ceil(x: anytype) @TypeOf(x) {
     const X: type = @TypeOf(x);
 
     comptime if (!types.isNumeric(X) or types.numericType(X) != .float)

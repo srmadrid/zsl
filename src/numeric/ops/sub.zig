@@ -96,7 +96,7 @@ pub fn Sub(X: type, Y: type) type {
 /// The expected signatures and behavior of `sub` are as follows:
 /// * `fn sub(X, Y) numeric.Sub(X, Y)`: Returns the subtraction of `x` and
 ///   `y`.
-pub inline fn sub(x: anytype, y: anytype) numeric.Sub(@TypeOf(x), @TypeOf(y)) {
+pub fn sub(x: anytype, y: anytype) numeric.Sub(@TypeOf(x), @TypeOf(y)) {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
     const R: type = numeric.Sub(X, Y);

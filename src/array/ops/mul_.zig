@@ -6,7 +6,7 @@ const ops = @import("../../ops.zig");
 
 const arrops = @import("../ops.zig");
 
-pub inline fn mul_(
+pub fn mul_(
     o: anytype,
     x: anytype,
     y: anytype,

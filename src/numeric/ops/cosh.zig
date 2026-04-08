@@ -50,7 +50,7 @@ pub fn Cosh(X: type) type {
 /// `numeric.Cosh(X)` or `X` must implement the required `cosh` method. The
 /// expected signature and behavior of `cosh` are as follows:
 /// * `fn cosh(X) numeric.Cosh(X)`: Returns the hyperbolic cosine of `x`.
-pub inline fn cosh(x: anytype) numeric.Cosh(@TypeOf(x)) {
+pub fn cosh(x: anytype) numeric.Cosh(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Cosh(X);
 

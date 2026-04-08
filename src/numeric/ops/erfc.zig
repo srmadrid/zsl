@@ -56,7 +56,7 @@ pub fn Erfc(X: type) type {
 /// `numeric.Erfc(X)` or `X` must implement the required `erfc` method. The
 /// expected signature and behavior of `erfc` are as follows:
 /// * `fn erfc(X) numeric.Erfc(X)`: Returns the error function of `x`.
-pub inline fn erfc(x: anytype) numeric.Erfc(@TypeOf(x)) {
+pub fn erfc(x: anytype) numeric.Erfc(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Erfc(X);
 

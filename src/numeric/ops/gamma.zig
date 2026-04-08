@@ -55,7 +55,7 @@ pub fn Gamma(X: type) type {
 /// `numeric.Gamma(X)` or `X` must implement the required `gamma` method. The
 /// expected signature and behavior of `gamma` are as follows:
 /// * `fn gamma(X) numeric.Gamma(X)`: Returns the gamma function of `x`.
-pub inline fn gamma(x: anytype) numeric.Gamma(@TypeOf(x)) {
+pub fn gamma(x: anytype) numeric.Gamma(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Gamma(X);
 

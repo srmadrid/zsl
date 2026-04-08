@@ -51,7 +51,7 @@ pub fn Asinh(X: type) type {
 /// `numeric.Asinh(X)` or `X` must implement the required `asinh` method. The
 /// expected signature and behavior of `asinh` are as follows:
 /// * `fn asinh(X) numeric.Asinh(X)`: Returns the hyperbolic arcsine of `x`.
-pub inline fn asinh(x: anytype) numeric.Asinh(@TypeOf(x)) {
+pub fn asinh(x: anytype) numeric.Asinh(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Asinh(X);
 

@@ -96,7 +96,7 @@ pub fn Mul(X: type, Y: type) type {
 /// The expected signatures and behavior of `mul` are as follows:
 /// * `fn mul(X, Y) numeric.Mul(X, Y)`: Returns the multiplication of `x` and
 ///   `y`.
-pub inline fn mul(x: anytype, y: anytype) numeric.Mul(@TypeOf(x), @TypeOf(y)) {
+pub fn mul(x: anytype, y: anytype) numeric.Mul(@TypeOf(x), @TypeOf(y)) {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
     const R: type = numeric.Mul(X, Y);

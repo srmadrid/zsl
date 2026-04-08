@@ -33,7 +33,7 @@ pub const Mach = enum {
     emax,
     rmax,
 
-    pub inline fn toChar(self: Mach) u8 {
+    pub fn toChar(self: Mach) u8 {
         return switch (self) {
             .eps => 'E',
             .sfmin => 'S',
@@ -53,7 +53,7 @@ pub const Direction = enum {
     forward,
     backward,
 
-    pub inline fn toChar(self: Direction) u8 {
+    pub fn toChar(self: Direction) u8 {
         return switch (self) {
             .forward => 'F',
             .backward => 'B',
@@ -65,7 +65,7 @@ pub const Storage = enum {
     columnwise,
     rowwise,
 
-    pub inline fn toChar(self: Storage) u8 {
+    pub fn toChar(self: Storage) u8 {
         return switch (self) {
             .columnwise => 'C',
             .rowwise => 'R',
@@ -76,7 +76,7 @@ pub const Storage = enum {
 //
 pub const ilaenv = @import("lapack/ilaenv.zig").ilaenv;
 
-pub inline fn lamch(
+pub fn lamch(
     comptime T: type,
     cmach: Mach,
 ) Scalar(T) {
@@ -106,7 +106,7 @@ pub inline fn lamch(
     return @import("lapack/lamch.zig").lamch(comptime T, cmach);
 }
 
-pub inline fn lapy2(
+pub fn lapy2(
     x: anytype,
     y: anytype,
     ctx: anytype,
@@ -184,7 +184,7 @@ pub fn lapy3(
     return @import("lapack/lapy3.zig").lapy3(x, y, z, ctx);
 }
 
-pub inline fn lacgv(
+pub fn lacgv(
     n: i32,
     x: anytype,
     incx: i32,
@@ -205,7 +205,7 @@ pub inline fn lacgv(
     return @import("lapack/lacgv.zig").lacgv(n, x, incx);
 }
 
-pub inline fn ilalc(
+pub fn ilalc(
     order: Order,
     m: i32,
     n: i32,
@@ -225,7 +225,7 @@ pub inline fn ilalc(
     return @import("lapack/ilalc.zig").ilalc(order, m, n, a, lda);
 }
 
-pub inline fn ilalr(
+pub fn ilalr(
     order: Order,
     m: i32,
     n: i32,
@@ -245,7 +245,7 @@ pub inline fn ilalr(
     return @import("lapack/ilalr.zig").ilalr(order, m, n, a, lda);
 }
 
-pub inline fn lacpy(
+pub fn lacpy(
     order: Order,
     uplo: union(enum) { uplo: Uplo, full: void },
     m: i32,
@@ -337,7 +337,7 @@ pub inline fn lacpy(
 /// If the `link_cblas` option is not `null`, the function will try to call the
 /// corresponding LAPACKE function, if available. In that case, no errors will
 /// be raised even if the arguments are invalid.
-pub inline fn laswp(
+pub fn laswp(
     order: Order,
     n: i32,
     a: anytype,
@@ -460,7 +460,7 @@ pub inline fn laswp(
 /// -----
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding LAPACKE function.
-pub inline fn slaswp(
+pub fn slaswp(
     order: Order,
     n: i32,
     a: [*]f32,
@@ -517,7 +517,7 @@ pub inline fn slaswp(
 /// -----
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding LAPACKE function.
-pub inline fn dlaswp(
+pub fn dlaswp(
     order: Order,
     n: i32,
     a: [*]f64,
@@ -574,7 +574,7 @@ pub inline fn dlaswp(
 /// -----
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding LAPACKE function.
-pub inline fn claswp(
+pub fn claswp(
     order: Order,
     n: i32,
     a: [*]cf32,
@@ -631,7 +631,7 @@ pub inline fn claswp(
 /// -----
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding LAPACKE function.
-pub inline fn zlaswp(
+pub fn zlaswp(
     order: Order,
     n: i32,
     a: [*]cf64,
@@ -716,7 +716,7 @@ pub inline fn zlaswp(
 /// If the `link_cblas` option is not `null`, the function will try to call the
 /// corresponding LAPACKE function, if available. In that case, no errors will
 /// be raised even if the arguments are invalid.
-pub inline fn getrf2(
+pub fn getrf2(
     order: Order,
     m: i32,
     n: i32,
@@ -851,7 +851,7 @@ pub inline fn getrf2(
 /// -----
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding LAPACKE function.
-pub inline fn sgetrf2(
+pub fn sgetrf2(
     order: Order,
     m: i32,
     n: i32,
@@ -920,7 +920,7 @@ pub inline fn sgetrf2(
 /// -----
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding LAPACKE function.
-pub inline fn dgetrf2(
+pub fn dgetrf2(
     order: Order,
     m: i32,
     n: i32,
@@ -989,7 +989,7 @@ pub inline fn dgetrf2(
 /// -----
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding LAPACKE function.
-pub inline fn cgetrf2(
+pub fn cgetrf2(
     order: Order,
     m: i32,
     n: i32,
@@ -1058,7 +1058,7 @@ pub inline fn cgetrf2(
 /// -----
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding LAPACKE function.
-pub inline fn zgetrf2(
+pub fn zgetrf2(
     order: Order,
     m: i32,
     n: i32,
@@ -1127,7 +1127,7 @@ pub inline fn zgetrf2(
 /// If the `link_cblas` option is not `null`, the function will try to call the
 /// corresponding LAPACKE function, if available. In that case, no errors will
 /// be raised even if the arguments are invalid.
-pub inline fn getrf(
+pub fn getrf(
     order: Order,
     m: i32,
     n: i32,
@@ -1248,7 +1248,7 @@ pub inline fn getrf(
 /// -----
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding LAPACKE function.
-pub inline fn sgetrf(
+pub fn sgetrf(
     order: Order,
     m: i32,
     n: i32,
@@ -1303,7 +1303,7 @@ pub inline fn sgetrf(
 /// -----
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding LAPACKE function.
-pub inline fn dgetrf(
+pub fn dgetrf(
     order: Order,
     m: i32,
     n: i32,
@@ -1358,7 +1358,7 @@ pub inline fn dgetrf(
 /// -----
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding LAPACKE function.
-pub inline fn cgetrf(
+pub fn cgetrf(
     order: Order,
     m: i32,
     n: i32,
@@ -1413,7 +1413,7 @@ pub inline fn cgetrf(
 /// -----
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding LAPACKE function.
-pub inline fn zgetrf(
+pub fn zgetrf(
     order: Order,
     m: i32,
     n: i32,
@@ -1514,7 +1514,7 @@ pub inline fn zgetrf(
 /// If the `link_cblas` option is not `null`, the function will try to call the
 /// corresponding LAPACKE function, if available. In that case, no errors will
 /// be raised even if the arguments are invalid.
-pub inline fn getrs(
+pub fn getrs(
     order: Order,
     transa: Transpose,
     n: i32,
@@ -1699,7 +1699,7 @@ pub inline fn getrs(
 /// -----
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding LAPACKE function.
-pub inline fn sgetrs(
+pub fn sgetrs(
     order: Order,
     transa: Transpose,
     n: i32,
@@ -1787,7 +1787,7 @@ pub inline fn sgetrs(
 /// -----
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding LAPACKE function.
-pub inline fn dgetrs(
+pub fn dgetrs(
     order: Order,
     transa: Transpose,
     n: i32,
@@ -1875,7 +1875,7 @@ pub inline fn dgetrs(
 /// -----
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding LAPACKE function.
-pub inline fn cgetrs(
+pub fn cgetrs(
     order: Order,
     transa: Transpose,
     n: i32,
@@ -1963,7 +1963,7 @@ pub inline fn cgetrs(
 /// -----
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding LAPACKE function.
-pub inline fn zgetrs(
+pub fn zgetrs(
     order: Order,
     transa: Transpose,
     n: i32,
@@ -2048,7 +2048,7 @@ pub inline fn zgetrs(
 /// If the `link_cblas` option is not `null`, the function will try to call the
 /// corresponding LAPACKE function, if available. In that case, no errors will
 /// be raised even if the arguments are invalid.
-pub inline fn gesv(
+pub fn gesv(
     order: Order,
     n: i32,
     nrhs: i32,
@@ -2199,7 +2199,7 @@ pub inline fn gesv(
 /// -----
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding LAPACKE function.
-pub inline fn sgesv(
+pub fn sgesv(
     order: Order,
     n: i32,
     nrhs: i32,
@@ -2267,7 +2267,7 @@ pub inline fn sgesv(
 /// -----
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding LAPACKE function.
-pub inline fn dgesv(
+pub fn dgesv(
     order: Order,
     n: i32,
     nrhs: i32,
@@ -2335,7 +2335,7 @@ pub inline fn dgesv(
 /// -----
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding LAPACKE function.
-pub inline fn cgesv(
+pub fn cgesv(
     order: Order,
     n: i32,
     nrhs: i32,
@@ -2403,7 +2403,7 @@ pub inline fn cgesv(
 /// -----
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding LAPACKE function.
-pub inline fn zgesv(
+pub fn zgesv(
     order: Order,
     n: i32,
     nrhs: i32,
@@ -2501,7 +2501,7 @@ pub inline fn zgesv(
 /// If the `link_cblas` option is not `null`, the function will try to call the
 /// corresponding LAPACKE function, if available. In that case, no errors will
 /// be raised even if the arguments are invalid.
-pub inline fn potrf2(
+pub fn potrf2(
     order: Order,
     uplo: Uplo,
     n: i32,
@@ -2644,7 +2644,7 @@ pub inline fn potrf2(
 /// -----
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding LAPACKE function.
-pub inline fn spotrf2(
+pub fn spotrf2(
     order: Order,
     uplo: Uplo,
     n: i32,
@@ -2725,7 +2725,7 @@ pub inline fn spotrf2(
 /// -----
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding LAPACKE function.
-pub inline fn dpotrf2(
+pub fn dpotrf2(
     order: Order,
     uplo: Uplo,
     n: i32,
@@ -2806,7 +2806,7 @@ pub inline fn dpotrf2(
 /// -----
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding LAPACKE function.
-pub inline fn cpotrf2(
+pub fn cpotrf2(
     order: Order,
     uplo: Uplo,
     n: i32,
@@ -2887,7 +2887,7 @@ pub inline fn cpotrf2(
 /// -----
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding LAPACKE function.
-pub inline fn zpotrf2(
+pub fn zpotrf2(
     order: Order,
     uplo: Uplo,
     n: i32,
@@ -2972,7 +2972,7 @@ pub inline fn zpotrf2(
 /// If the `link_cblas` option is not `null`, the function will try to call the
 /// corresponding LAPACKE function, if available. In that case, no errors will
 /// be raised even if the arguments are invalid.
-pub inline fn potrf(
+pub fn potrf(
     order: Order,
     uplo: Uplo,
     n: i32,
@@ -3103,7 +3103,7 @@ pub inline fn potrf(
 /// -----
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding LAPACKE function.
-pub inline fn spotrf(
+pub fn spotrf(
     order: Order,
     uplo: Uplo,
     n: i32,
@@ -3172,7 +3172,7 @@ pub inline fn spotrf(
 /// -----
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding LAPACKE function.
-pub inline fn dpotrf(
+pub fn dpotrf(
     order: Order,
     uplo: Uplo,
     n: i32,
@@ -3241,7 +3241,7 @@ pub inline fn dpotrf(
 /// -----
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding LAPACKE function.
-pub inline fn cpotrf(
+pub fn cpotrf(
     order: Order,
     uplo: Uplo,
     n: i32,
@@ -3310,7 +3310,7 @@ pub inline fn cpotrf(
 /// -----
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding LAPACKE function.
-pub inline fn zpotrf(
+pub fn zpotrf(
     order: Order,
     uplo: Uplo,
     n: i32,
@@ -3409,7 +3409,7 @@ pub inline fn zpotrf(
 /// If the `link_cblas` option is not `null`, the function will try to call the
 /// corresponding LAPACKE function, if available. In that case, no errors will
 /// be raised even if the arguments are invalid.
-pub inline fn potrs(
+pub fn potrs(
     order: Order,
     uplo: Uplo,
     n: i32,
@@ -3571,7 +3571,7 @@ pub inline fn potrs(
 /// -----
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding LAPACKE function.
-pub inline fn spotrs(
+pub fn spotrs(
     order: Order,
     uplo: Uplo,
     n: i32,
@@ -3643,7 +3643,7 @@ pub inline fn spotrs(
 /// -----
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding LAPACKE function.
-pub inline fn dpotrs(
+pub fn dpotrs(
     order: Order,
     uplo: Uplo,
     n: i32,
@@ -3715,7 +3715,7 @@ pub inline fn dpotrs(
 /// -----
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding LAPACKE function.
-pub inline fn cpotrs(
+pub fn cpotrs(
     order: Order,
     uplo: Uplo,
     n: i32,
@@ -3787,7 +3787,7 @@ pub inline fn cpotrs(
 /// -----
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding LAPACKE function.
-pub inline fn zpotrs(
+pub fn zpotrs(
     order: Order,
     uplo: Uplo,
     n: i32,
@@ -3893,7 +3893,7 @@ pub inline fn zpotrs(
 /// If the `link_cblas` option is not `null`, the function will try to call the
 /// corresponding LAPACKE function, if available. In that case, no errors will
 /// be raised even if the arguments are invalid.
-pub inline fn posv(
+pub fn posv(
     order: Order,
     uplo: Uplo,
     n: i32,
@@ -4052,7 +4052,7 @@ pub inline fn posv(
 /// -----
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding LAPACKE function.
-pub inline fn sposv(
+pub fn sposv(
     order: Order,
     uplo: Uplo,
     n: i32,
@@ -4129,7 +4129,7 @@ pub inline fn sposv(
 /// -----
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding LAPACKE function.
-pub inline fn dposv(
+pub fn dposv(
     order: Order,
     uplo: Uplo,
     n: i32,
@@ -4206,7 +4206,7 @@ pub inline fn dposv(
 /// -----
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding LAPACKE function.
-pub inline fn cposv(
+pub fn cposv(
     order: Order,
     uplo: Uplo,
     n: i32,
@@ -4283,7 +4283,7 @@ pub inline fn cposv(
 /// -----
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding LAPACKE function.
-pub inline fn zposv(
+pub fn zposv(
     order: Order,
     uplo: Uplo,
     n: i32,
@@ -4297,7 +4297,7 @@ pub inline fn zposv(
     return posv(order, uplo, n, nrhs, a, lda, b, ldb, ctx) catch {};
 }
 
-pub inline fn lasyf(
+pub fn lasyf(
     order: Order,
     uplo: Uplo,
     n: i32,
@@ -4332,7 +4332,7 @@ pub inline fn lasyf(
     return @import("lapack/lasyf.zig").lasyf(order, uplo, n, nb, kb, a, lda, ipiv, w, ldw, ctx);
 }
 
-pub inline fn sytf2(
+pub fn sytf2(
     order: Order,
     uplo: Uplo,
     n: i32,
@@ -4354,7 +4354,7 @@ pub inline fn sytf2(
     return @import("lapack/sytf2.zig").sytf2(order, uplo, n, a, lda, ipiv, ctx);
 }
 
-pub inline fn sytrf(
+pub fn sytrf(
     order: Order,
     uplo: Uplo,
     n: i32,
@@ -4444,7 +4444,7 @@ pub inline fn sytrf(
     return @import("lapack/sytrf.zig").sytrf(order, uplo, n, a, lda, ipiv, work, lwork, ctx);
 }
 
-pub inline fn lahef(
+pub fn lahef(
     order: Order,
     uplo: Uplo,
     n: i32,
@@ -4479,7 +4479,7 @@ pub inline fn lahef(
     return @import("lapack/lahef.zig").lahef(order, uplo, n, nb, kb, a, lda, ipiv, w, ldw, ctx);
 }
 
-pub inline fn hetf2(
+pub fn hetf2(
     order: Order,
     uplo: Uplo,
     n: i32,
@@ -4501,7 +4501,7 @@ pub inline fn hetf2(
     return @import("lapack/hetf2.zig").hetf2(order, uplo, n, a, lda, ipiv, ctx);
 }
 
-pub inline fn hetrf(
+pub fn hetrf(
     order: Order,
     uplo: Uplo,
     n: i32,
@@ -4570,7 +4570,7 @@ pub inline fn hetrf(
     return @import("lapack/hetrf.zig").hetrf(order, uplo, n, a, lda, ipiv, work, lwork, ctx);
 }
 
-pub inline fn larfg(
+pub fn larfg(
     n: i32,
     alpha: anytype,
     x: anytype,
@@ -4609,7 +4609,7 @@ pub inline fn larfg(
     return @import("lapack/larfg.zig").larfg(n, alpha, x, incx, tau, ctx);
 }
 
-pub inline fn larf1f(
+pub fn larf1f(
     order: Order,
     side: Side,
     m: i32,
@@ -4657,7 +4657,7 @@ pub inline fn larf1f(
     return @import("lapack/larf1f.zig").larf1f(order, side, m, n, v, incv, tau, c, ldc, work, ctx);
 }
 
-pub inline fn geqr2(
+pub fn geqr2(
     order: Order,
     m: i32,
     n: i32,
@@ -4770,7 +4770,7 @@ pub inline fn geqr2(
     return @import("lapack/geqr2.zig").geqr2(order, m, n, a, lda, tau, work, ctx);
 }
 
-pub inline fn larft(
+pub fn larft(
     order: Order,
     direct: Direction,
     storev: Storage,
@@ -4887,7 +4887,7 @@ pub inline fn larft(
     return @import("lapack/larft.zig").larft(order, direct, storev, n, k, v, ldv, tau, t, ldt, ctx);
 }
 
-pub inline fn larfb(
+pub fn larfb(
     order: Order,
     side: Side,
     trans: Transpose,
@@ -5057,7 +5057,7 @@ pub inline fn larfb(
     return @import("lapack/larfb.zig").larfb(order, side, trans, direct, storev, m, n, k, v, ldv, t, ldt, c, ldc, work, ldwork, ctx);
 }
 
-pub inline fn geqrf(
+pub fn geqrf(
     order: Order,
     m: i32,
     n: i32,
@@ -5171,7 +5171,7 @@ pub inline fn geqrf(
     return @import("lapack/geqrf.zig").geqrf(order, m, n, a, lda, tau, work, lwork, ctx);
 }
 
-pub inline fn org2r(
+pub fn org2r(
     order: Order,
     m: i32,
     n: i32,
@@ -5213,7 +5213,7 @@ pub inline fn org2r(
     return @import("lapack/org2r.zig").org2r(order, m, n, k, a, lda, tau, work, ctx);
 }
 
-pub inline fn orgqr(
+pub fn orgqr(
     order: Order,
     m: i32,
     n: i32,
@@ -5299,7 +5299,7 @@ pub inline fn orgqr(
     return @import("lapack/orgqr.zig").orgqr(order, m, n, k, a, lda, tau, work, lwork, ctx);
 }
 
-pub inline fn ung2r(
+pub fn ung2r(
     order: Order,
     m: i32,
     n: i32,
@@ -5341,7 +5341,7 @@ pub inline fn ung2r(
     return @import("lapack/ung2r.zig").ung2r(order, m, n, k, a, lda, tau, work, ctx);
 }
 
-pub inline fn ungqr(
+pub fn ungqr(
     order: Order,
     m: i32,
     n: i32,

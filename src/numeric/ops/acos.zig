@@ -50,7 +50,7 @@ pub fn Acos(X: type) type {
 /// `numeric.Acos(X)` or `X` must implement the required `acos` method. The
 /// expected signature and behavior of `acos` are as follows:
 /// * `fn acos(X) numeric.Acos(X)`: Returns the arccosine of `x`.
-pub inline fn acos(x: anytype) numeric.Acos(@TypeOf(x)) {
+pub fn acos(x: anytype) numeric.Acos(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Acos(X);
 

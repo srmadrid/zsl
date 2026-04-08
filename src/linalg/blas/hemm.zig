@@ -12,7 +12,7 @@ const Order = types.Order;
 const Side = linalg.Side;
 const Uplo = types.Uplo;
 
-pub inline fn hemm(
+pub fn hemm(
     order: Order,
     side: Side,
     uplo: Uplo,

@@ -11,7 +11,7 @@ const matrix = @import("../../matrix.zig");
 
 const blas = @import("../blas.zig");
 
-pub inline fn mv(allocator: std.mem.Allocator, a: anytype, b: anytype, ctx: anytype) !MulCoerce(@TypeOf(a), @TypeOf(b)) {
+pub fn mv(allocator: std.mem.Allocator, a: anytype, b: anytype, ctx: anytype) !MulCoerce(@TypeOf(a), @TypeOf(b)) {
     const A: type = @TypeOf(a);
     const B: type = @TypeOf(b);
     const C: type = types.Coerce(types.Numeric(A), types.Numeric(B));

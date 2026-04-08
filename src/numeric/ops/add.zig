@@ -95,7 +95,7 @@ pub fn Add(X: type, Y: type) type {
 /// `numeric.Add(X, Y)`, `X` or `Y` must implement the required `add` method.
 /// The expected signatures and behavior of `add` are as follows:
 /// * `fn add(X, Y) numeric.Add(X, Y)`: Returns the addition of `x` and `y`.
-pub inline fn add(x: anytype, y: anytype) numeric.Add(@TypeOf(x), @TypeOf(y)) {
+pub fn add(x: anytype, y: anytype) numeric.Add(@TypeOf(x), @TypeOf(y)) {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
     const R: type = numeric.Add(X, Y);

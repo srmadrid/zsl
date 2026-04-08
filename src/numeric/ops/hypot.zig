@@ -95,7 +95,7 @@ pub fn Hypot(X: type, Y: type) type {
 /// `numeric.Hypot(X, Y)`, `X` or `Y` must implement the required `hypot` method.
 /// The expected signatures and behavior of `hypot` are as follows:
 /// * `fn hypot(X, Y) numeric.Hypot(X, Y)`: Returns the hypotenuse of `x` and `y`.
-pub inline fn hypot(x: anytype, y: anytype) numeric.Hypot(@TypeOf(x), @TypeOf(y)) {
+pub fn hypot(x: anytype, y: anytype) numeric.Hypot(@TypeOf(x), @TypeOf(y)) {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
     const R: type = numeric.Hypot(X, Y);

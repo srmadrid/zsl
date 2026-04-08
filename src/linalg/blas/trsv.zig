@@ -13,7 +13,7 @@ const Diag = types.Diag;
 const Order = types.Order;
 const Transpose = linalg.Transpose;
 
-pub inline fn trsv(
+pub fn trsv(
     order: Order,
     uplo: Uplo,
     transa: Transpose,

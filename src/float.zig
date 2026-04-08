@@ -9,14 +9,14 @@ const numeric = @import("numeric.zig");
 pub const Coerce = @import("float/coerce.zig").Coerce;
 
 // Constant functions
-pub inline fn pi(comptime Float: type) Float {
+pub fn pi(comptime Float: type) Float {
     comptime if (!types.isNumeric(Float) or types.numericType(Float) != .float)
         @compileError("zsl.float.pi: Float must be a float type, got \n\nFloat: " ++ @typeName(Float) ++ "\n");
 
     return 3.1415926535897932384626433832795028841971;
 }
 
-pub inline fn e(comptime Float: type) Float {
+pub fn e(comptime Float: type) Float {
     comptime if (!types.isNumeric(Float) or types.numericType(Float) != .float)
         @compileError("zsl.float.e: Float must be a float type, got \n\tFloat: " ++ @typeName(Float) ++ "\n");
 
@@ -50,7 +50,7 @@ pub fn Add(comptime X: type, comptime Y: type) type {
 ///
 /// ## Returns
 /// `float.Add(@TypeOf(x), @TypeOf(y))`: The result of the addition.
-pub inline fn add(x: anytype, y: anytype) float.Add(@TypeOf(x), @TypeOf(y)) {
+pub fn add(x: anytype, y: anytype) float.Add(@TypeOf(x), @TypeOf(y)) {
     const R: type = float.Add(@TypeOf(x), @TypeOf(y));
 
     return numeric.cast(R, x) + numeric.cast(R, y);
@@ -82,7 +82,7 @@ pub fn Sub(comptime X: type, comptime Y: type) type {
 ///
 /// ## Returns
 /// `float.Sub(@TypeOf(x), @TypeOf(y))`: The result of the subtraction.
-pub inline fn sub(x: anytype, y: anytype) float.Sub(@TypeOf(x), @TypeOf(y)) {
+pub fn sub(x: anytype, y: anytype) float.Sub(@TypeOf(x), @TypeOf(y)) {
     const R: type = float.Sub(@TypeOf(x), @TypeOf(y));
 
     return numeric.cast(R, x) - numeric.cast(R, y);
@@ -114,7 +114,7 @@ pub fn Mul(comptime X: type, comptime Y: type) type {
 ///
 /// ## Returns
 /// `float.Mul(@TypeOf(x), @TypeOf(y))`: The result of the multiplication.
-pub inline fn mul(x: anytype, y: anytype) float.Mul(@TypeOf(x), @TypeOf(y)) {
+pub fn mul(x: anytype, y: anytype) float.Mul(@TypeOf(x), @TypeOf(y)) {
     const R: type = float.Mul(@TypeOf(x), @TypeOf(y));
 
     return numeric.cast(R, x) * numeric.cast(R, y);
@@ -149,7 +149,7 @@ pub fn Fma(comptime X: type, comptime Y: type, comptime Z: type) type {
 /// ## Returns
 /// `float.Fma(@TypeOf(x), @TypeOf(y), @TypeOf(z))`: The result of the fused
 /// multiplication and addition.
-pub inline fn fma(x: anytype, y: anytype, z: anytype) float.Fma(@TypeOf(x), @TypeOf(y), @TypeOf(z)) {
+pub fn fma(x: anytype, y: anytype, z: anytype) float.Fma(@TypeOf(x), @TypeOf(y), @TypeOf(z)) {
     const R: type = float.Fma(@TypeOf(x), @TypeOf(y), @TypeOf(z));
 
     return @mulAdd(R, numeric.cast(R, x), numeric.cast(R, y), numeric.cast(R, z));
@@ -181,7 +181,7 @@ pub fn Div(comptime X: type, comptime Y: type) type {
 ///
 /// ## Returns
 /// `float.Div(@TypeOf(x), @TypeOf(y))`: The result of the division.
-pub inline fn div(x: anytype, y: anytype) float.Div(@TypeOf(x), @TypeOf(y)) {
+pub fn div(x: anytype, y: anytype) float.Div(@TypeOf(x), @TypeOf(y)) {
     const R: type = float.Div(@TypeOf(x), @TypeOf(y));
 
     return numeric.cast(R, x) / numeric.cast(R, y);
@@ -202,7 +202,7 @@ pub inline fn div(x: anytype, y: anytype) float.Div(@TypeOf(x), @TypeOf(y)) {
 ///
 /// ## Returns
 /// `Cmp`: The result of the comparison.
-pub inline fn cmp(x: anytype, y: anytype) Cmp {
+pub fn cmp(x: anytype, y: anytype) Cmp {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 
@@ -234,7 +234,7 @@ pub inline fn cmp(x: anytype, y: anytype) Cmp {
 ///
 /// ## Returns
 /// `bool`: `true` if the operands are equal, `false` otherwise.
-pub inline fn eq(x: anytype, y: anytype) bool {
+pub fn eq(x: anytype, y: anytype) bool {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 
@@ -264,7 +264,7 @@ pub inline fn eq(x: anytype, y: anytype) bool {
 ///
 /// ## Returns
 /// `bool`: `true` if the operands are not equal, `false` otherwise.
-pub inline fn ne(x: anytype, y: anytype) bool {
+pub fn ne(x: anytype, y: anytype) bool {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 
@@ -295,7 +295,7 @@ pub inline fn ne(x: anytype, y: anytype) bool {
 ///
 /// ## Returns
 /// `bool`: `true` if `x` is less than `y`, `false` otherwise.
-pub inline fn lt(x: anytype, y: anytype) bool {
+pub fn lt(x: anytype, y: anytype) bool {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 
@@ -326,7 +326,7 @@ pub inline fn lt(x: anytype, y: anytype) bool {
 ///
 /// ## Returns
 /// `bool`: `true` if `x` is less than or equal to `y`, `false` otherwise.
-pub inline fn le(x: anytype, y: anytype) bool {
+pub fn le(x: anytype, y: anytype) bool {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 
@@ -356,7 +356,7 @@ pub inline fn le(x: anytype, y: anytype) bool {
 ///
 /// ## Returns
 /// `bool`: `true` if `x` is greater than `y`, `false` otherwise.
-pub inline fn gt(x: anytype, y: anytype) bool {
+pub fn gt(x: anytype, y: anytype) bool {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 
@@ -387,7 +387,7 @@ pub inline fn gt(x: anytype, y: anytype) bool {
 ///
 /// ## Returns
 /// `bool`: `true` if `x` is greater than or equal to `y`, `false` otherwise.
-pub inline fn ge(x: anytype, y: anytype) bool {
+pub fn ge(x: anytype, y: anytype) bool {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 
@@ -428,7 +428,7 @@ pub fn Max(comptime X: type, comptime Y: type) type {
 ///
 /// ## Returns
 /// `float.Max(@TypeOf(x), @TypeOf(y))`: The maximum of the two operands.
-pub inline fn max(x: anytype, y: anytype) float.Max(@TypeOf(x), @TypeOf(y)) {
+pub fn max(x: anytype, y: anytype) float.Max(@TypeOf(x), @TypeOf(y)) {
     const R: type = float.Max(@TypeOf(x), @TypeOf(y));
 
     return if (numeric.cast(R, x) > numeric.cast(R, y)) numeric.cast(R, x) else numeric.cast(R, y);
@@ -460,7 +460,7 @@ pub fn Min(comptime X: type, comptime Y: type) type {
 ///
 /// ## Returns
 /// `float.Min(@TypeOf(x), @TypeOf(y))`: The minimum of the two operands.
-pub inline fn min(x: anytype, y: anytype) float.Min(@TypeOf(x), @TypeOf(y)) {
+pub fn min(x: anytype, y: anytype) float.Min(@TypeOf(x), @TypeOf(y)) {
     const R: type = float.Min(@TypeOf(x), @TypeOf(y));
 
     return if (numeric.cast(R, x) < numeric.cast(R, y)) numeric.cast(R, x) else numeric.cast(R, y);

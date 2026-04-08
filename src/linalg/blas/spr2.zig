@@ -10,7 +10,7 @@ const blas = @import("../blas.zig");
 const Order = types.Order;
 const Uplo = types.Uplo;
 
-pub inline fn spr2(
+pub fn spr2(
     order: Order,
     uplo: Uplo,
     n: i32,

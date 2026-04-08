@@ -19,7 +19,7 @@ pub const Cmp = enum(u2) {
     eq,
     lt,
 
-    pub inline fn invert(self: Cmp) Cmp {
+    pub fn invert(self: Cmp) Cmp {
         return switch (self) {
             .gt => .lt,
             .eq => .eq,
@@ -32,28 +32,28 @@ pub const Layout = enum(u1) {
     row_major,
     col_major,
 
-    pub inline fn toCUInt(self: Layout) c_uint {
+    pub fn toCUInt(self: Layout) c_uint {
         return switch (self) {
             .row_major => 101,
             .col_major => 102,
         };
     }
 
-    pub inline fn toCInt(self: Layout) c_int {
+    pub fn toCInt(self: Layout) c_int {
         return switch (self) {
             .row_major => 101,
             .col_major => 102,
         };
     }
 
-    pub inline fn toIterationOrder(self: Layout) IterationOrder {
+    pub fn toIterationOrder(self: Layout) IterationOrder {
         return switch (self) {
             .row_major => .right_to_left,
             .col_major => .left_to_right,
         };
     }
 
-    pub inline fn invert(self: Layout) Layout {
+    pub fn invert(self: Layout) Layout {
         return switch (self) {
             .row_major => .col_major,
             .col_major => .row_major,
@@ -78,28 +78,28 @@ pub const Uplo = enum(u1) {
     upper,
     lower,
 
-    pub inline fn toCUInt(self: Uplo) c_uint {
+    pub fn toCUInt(self: Uplo) c_uint {
         return switch (self) {
             .upper => 121,
             .lower => 122,
         };
     }
 
-    pub inline fn toCInt(self: Uplo) c_int {
+    pub fn toCInt(self: Uplo) c_int {
         return switch (self) {
             .upper => 121,
             .lower => 122,
         };
     }
 
-    pub inline fn toChar(self: Uplo) u8 {
+    pub fn toChar(self: Uplo) u8 {
         return switch (self) {
             .upper => 'U',
             .lower => 'L',
         };
     }
 
-    pub inline fn invert(self: Uplo) Uplo {
+    pub fn invert(self: Uplo) Uplo {
         return switch (self) {
             .upper => .lower,
             .lower => .upper,
@@ -111,28 +111,28 @@ pub const Diag = enum(u1) {
     non_unit,
     unit,
 
-    pub inline fn toCUInt(self: Diag) c_uint {
+    pub fn toCUInt(self: Diag) c_uint {
         return switch (self) {
             .non_unit => 131,
             .unit => 132,
         };
     }
 
-    pub inline fn toCInt(self: Diag) c_int {
+    pub fn toCInt(self: Diag) c_int {
         return switch (self) {
             .non_unit => 131,
             .unit => 132,
         };
     }
 
-    pub inline fn toChar(self: Diag) u8 {
+    pub fn toChar(self: Diag) u8 {
         return switch (self) {
             .non_unit => 'N',
             .unit => 'U',
         };
     }
 
-    pub inline fn invert(self: Diag) Diag {
+    pub fn invert(self: Diag) Diag {
         return switch (self) {
             .non_unit => .unit,
             .unit => .non_unit,
@@ -397,7 +397,7 @@ pub inline fn numericType(comptime N: type) NumericType {
 ///
 /// ## Returns
 /// `types.VectorType`: The corresponding `types.VectorType` enum value.
-pub inline fn vectorType(comptime V: type) VectorType {
+pub fn vectorType(comptime V: type) VectorType {
     if (comptime isCustomVector(V))
         return .custom;
 
@@ -417,7 +417,7 @@ pub inline fn vectorType(comptime V: type) VectorType {
 ///
 /// ## Returns
 /// `types.MatrixType`: The corresponding `types.MatrixType` enum value.
-pub inline fn matrixType(comptime M: type) MatrixType {
+pub fn matrixType(comptime M: type) MatrixType {
     if (comptime isCustomMatrix(M))
         return .custom;
 
@@ -457,7 +457,7 @@ pub inline fn matrixType(comptime M: type) MatrixType {
     return .numeric; // Fallback for numeric types that are not matrices
 }
 
-pub inline fn matrixKind(comptime M: type) MatrixKind {
+pub fn matrixKind(comptime M: type) MatrixKind {
     if (comptime isGeneralMatrix(M))
         return .general;
 
@@ -486,7 +486,7 @@ pub inline fn matrixKind(comptime M: type) MatrixKind {
 ///
 /// ## Returns
 /// `types.ArrayType`: The corresponding `types.ArrayType` enum value.
-pub inline fn arrayType(comptime A: type) ArrayType {
+pub fn arrayType(comptime A: type) ArrayType {
     if (comptime isCustomArray(A))
         return .custom;
 
@@ -509,7 +509,7 @@ pub inline fn arrayType(comptime A: type) ArrayType {
 ///
 /// ## Returns
 /// `types.Domain`: The corresponding `types.Domain` enum value.
-pub inline fn domain(comptime T: type) Domain {
+pub fn domain(comptime T: type) Domain {
     if (comptime isNumeric(T))
         return .numeric;
 

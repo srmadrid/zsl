@@ -9,7 +9,7 @@ const ops = @import("../../ops.zig");
 const arrops = @import("../ops.zig");
 
 ///
-pub inline fn log10(
+pub fn log10(
     allocator: std.mem.Allocator,
     x: anytype,
     ctx: anytype,

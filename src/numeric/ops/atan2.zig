@@ -96,7 +96,7 @@ pub fn Atan2(Y: type, X: type) type {
 /// `numeric.Atan2(Y, X)`, `Y` or `X` must implement the required `atan2` method.
 /// The expected signatures and behavior of `atan2` are as follows:
 /// * `fn atan2(Y, X) numeric.Atan2(Y, X)`: Returns the arctangent of `y/x`.
-pub inline fn atan2(y: anytype, x: anytype) numeric.Atan2(@TypeOf(y), @TypeOf(x)) {
+pub fn atan2(y: anytype, x: anytype) numeric.Atan2(@TypeOf(y), @TypeOf(x)) {
     const Y: type = @TypeOf(y);
     const X: type = @TypeOf(x);
     const R: type = numeric.Atan2(Y, X);

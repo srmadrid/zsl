@@ -6,7 +6,7 @@ const ops = @import("../../ops.zig");
 const arrops = @import("../ops.zig");
 
 ///
-pub inline fn sqrt_(
+pub fn sqrt_(
     o: anytype,
     x: anytype,
     ctx: anytype,

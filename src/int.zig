@@ -42,7 +42,7 @@ pub fn Add(comptime X: type, comptime Y: type) type {
 ///
 /// ## Returns
 /// `int.Add(@TypeOf(x), @TypeOf(y))`: The result of the addition.
-pub inline fn add(x: anytype, y: anytype) int.Add(@TypeOf(x), @TypeOf(y)) {
+pub fn add(x: anytype, y: anytype) int.Add(@TypeOf(x), @TypeOf(y)) {
     const R: type = int.Add(@TypeOf(x), @TypeOf(y));
 
     switch (comptime options.int_mode) {
@@ -84,7 +84,7 @@ pub fn Sub(comptime X: type, comptime Y: type) type {
 ///
 /// ## Returns
 /// `int.Sub(@TypeOf(x), @TypeOf(y))`: The result of the subtraction.
-pub inline fn sub(x: anytype, y: anytype) int.Sub(@TypeOf(x), @TypeOf(y)) {
+pub fn sub(x: anytype, y: anytype) int.Sub(@TypeOf(x), @TypeOf(y)) {
     const R: type = int.Sub(@TypeOf(x), @TypeOf(y));
 
     switch (comptime options.int_mode) {
@@ -126,7 +126,7 @@ pub fn Mul(comptime X: type, comptime Y: type) type {
 ///
 /// ## Returns
 /// `int.Mul(@TypeOf(x), @TypeOf(y))`: The result of the multiplication.
-pub inline fn mul(x: anytype, y: anytype) int.Mul(@TypeOf(x), @TypeOf(y)) {
+pub fn mul(x: anytype, y: anytype) int.Mul(@TypeOf(x), @TypeOf(y)) {
     const R: type = int.Mul(@TypeOf(x), @TypeOf(y));
 
     switch (comptime options.int_mode) {
@@ -163,7 +163,7 @@ pub fn Div(comptime X: type, comptime Y: type) type {
 ///
 /// ## Returns
 /// `int.Div(@TypeOf(x), @TypeOf(y))`: The result of the division.
-pub inline fn div(x: anytype, y: anytype) int.Div(@TypeOf(x), @TypeOf(y)) {
+pub fn div(x: anytype, y: anytype) int.Div(@TypeOf(x), @TypeOf(y)) {
     const R: type = int.Div(@TypeOf(x), @TypeOf(y));
 
     return @divTrunc(numeric.cast(R, x), numeric.cast(R, y));
@@ -184,7 +184,7 @@ pub inline fn div(x: anytype, y: anytype) int.Div(@TypeOf(x), @TypeOf(y)) {
 ///
 /// ## Returns
 /// `Cmp`: The result of the comparison.
-pub inline fn cmp(x: anytype, y: anytype) Cmp {
+pub fn cmp(x: anytype, y: anytype) Cmp {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 
@@ -216,7 +216,7 @@ pub inline fn cmp(x: anytype, y: anytype) Cmp {
 ///
 /// ## Returns
 /// `bool`: `true` if the operands are equal, `false` otherwise.
-pub inline fn eq(x: anytype, y: anytype) bool {
+pub fn eq(x: anytype, y: anytype) bool {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 
@@ -246,7 +246,7 @@ pub inline fn eq(x: anytype, y: anytype) bool {
 ///
 /// ## Returns
 /// `bool`: `true` if the operands are not equal, `false` otherwise.
-pub inline fn ne(x: anytype, y: anytype) bool {
+pub fn ne(x: anytype, y: anytype) bool {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 
@@ -276,7 +276,7 @@ pub inline fn ne(x: anytype, y: anytype) bool {
 ///
 /// ## Returns
 /// `bool`: `true` if `x` is less than `y`, `false` otherwise.
-pub inline fn lt(x: anytype, y: anytype) bool {
+pub fn lt(x: anytype, y: anytype) bool {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 
@@ -306,7 +306,7 @@ pub inline fn lt(x: anytype, y: anytype) bool {
 ///
 /// ## Returns
 /// `bool`: `true` if `x` is less than or equal to `y`, `false` otherwise.
-pub inline fn le(x: anytype, y: anytype) bool {
+pub fn le(x: anytype, y: anytype) bool {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 
@@ -336,7 +336,7 @@ pub inline fn le(x: anytype, y: anytype) bool {
 ///
 /// ## Returns
 /// `bool`: `true` if `x` is greater than `y`, `false` otherwise.
-pub inline fn gt(x: anytype, y: anytype) bool {
+pub fn gt(x: anytype, y: anytype) bool {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 
@@ -366,7 +366,7 @@ pub inline fn gt(x: anytype, y: anytype) bool {
 ///
 /// ## Returns
 /// `bool`: `true` if `x` is greater than or equal to `y`, `false` otherwise.
-pub inline fn ge(x: anytype, y: anytype) bool {
+pub fn ge(x: anytype, y: anytype) bool {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 
@@ -407,7 +407,7 @@ pub fn Max(comptime X: type, comptime Y: type) type {
 ///
 /// ## Returns
 /// `int.Max(@TypeOf(x), @TypeOf(y))`: The maximum of the two operands.
-pub inline fn max(x: anytype, y: anytype) int.Max(@TypeOf(x), @TypeOf(y)) {
+pub fn max(x: anytype, y: anytype) int.Max(@TypeOf(x), @TypeOf(y)) {
     const R: type = int.Max(@TypeOf(x), @TypeOf(y));
 
     return if (numeric.cast(R, x) > numeric.cast(R, y)) numeric.cast(R, x) else numeric.cast(R, y);
@@ -439,7 +439,7 @@ pub fn Min(comptime X: type, comptime Y: type) type {
 ///
 /// ## Returns
 /// `int.Min(@TypeOf(x), @TypeOf(y))`: The minimum of the two operands.
-pub inline fn min(x: anytype, y: anytype) int.Min(@TypeOf(x), @TypeOf(y)) {
+pub fn min(x: anytype, y: anytype) int.Min(@TypeOf(x), @TypeOf(y)) {
     const R: type = int.Min(@TypeOf(x), @TypeOf(y));
 
     return if (numeric.cast(R, x) < numeric.cast(R, y)) numeric.cast(R, x) else numeric.cast(R, y);
@@ -452,7 +452,7 @@ pub inline fn min(x: anytype, y: anytype) int.Min(@TypeOf(x), @TypeOf(y)) {
 ///
 /// ## Returns
 /// `Int`: The maximum representable value of type `Int`.
-pub inline fn maxVal(comptime Int: type) Int {
+pub fn maxVal(comptime Int: type) Int {
     comptime if (!types.isNumeric(Int) or types.numericType(Int) != .int)
         @compileError("zsl.int.maxVal: Int must be an int type, got \n\tInt = " ++ @typeName(Int) ++ "\n");
 
@@ -468,7 +468,7 @@ pub inline fn maxVal(comptime Int: type) Int {
 ///
 /// ## Returns
 /// `Int`: The minimum representable value of type `Int`.
-pub inline fn minVal(comptime Int: type) Int {
+pub fn minVal(comptime Int: type) Int {
     comptime if (!types.isNumeric(Int) or types.numericType(Int) != .int)
         @compileError("zsl.int.minVal: Int must be an int type, got \n\tInt = " ++ @typeName(Int) ++ "\n");
 

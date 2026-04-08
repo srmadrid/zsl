@@ -50,7 +50,7 @@ pub fn Cos(X: type) type {
 /// `numeric.Cos(X)` or `X` must implement the required `cos` method. The
 /// expected signature and behavior of `cos` are as follows:
 /// * `fn Cos(X) numeric.Cos(X)`: Returns the cosine of `x`.
-pub inline fn cos(x: anytype) numeric.Cos(@TypeOf(x)) {
+pub fn cos(x: anytype) numeric.Cos(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Cos(X);
 

@@ -735,7 +735,7 @@ pub fn Dense(T: type, order: Order) type {
             return self.data[self._index(position)];
         }
 
-        pub inline fn at(self: *const Dense(T, order), position: []const u32) T {
+        pub fn at(self: *const Dense(T, order), position: []const u32) T {
             // Unchecked version of get. Assumes position is valid.
             return self.data[self._index(position)];
         }
@@ -746,7 +746,7 @@ pub fn Dense(T: type, order: Order) type {
             self.data[self._index(position)] = value;
         }
 
-        pub inline fn put(self: *const Dense(T, order), position: []const u32, value: T) void {
+        pub fn put(self: *const Dense(T, order), position: []const u32, value: T) void {
             // Unchecked version of set. Assumes position is valid.
             self.data[self._index(position)] = value;
         }
@@ -1027,7 +1027,7 @@ pub fn Dense(T: type, order: Order) type {
             };
         }
 
-        inline fn _cleanup(
+        fn _cleanup(
             data: []T,
             ctx: anytype,
         ) void {
@@ -1048,7 +1048,7 @@ pub fn Dense(T: type, order: Order) type {
             }
         }
 
-        inline fn _index(
+        fn _index(
             self: *const Dense(T, order),
             position: []const u32,
         ) u32 {
@@ -1061,7 +1061,7 @@ pub fn Dense(T: type, order: Order) type {
             return idx;
         }
 
-        inline fn _checkPosition(self: *const Dense(T, order), position: []const u32) !void {
+        fn _checkPosition(self: *const Dense(T, order), position: []const u32) !void {
             if (position.len > self.ndim)
                 return array.Error.DimensionMismatch;
 

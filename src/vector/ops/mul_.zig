@@ -37,7 +37,7 @@ const vecops = @import("../ops.zig");
 /// function will fall back to using `vector.apply2_` with `numeric.mul_`,
 /// potentially resulting in a less efficient implementation. In this case, `O`,
 /// `X` and `Y` must adhere to the requirements of these functions.
-pub inline fn mul_(o: anytype, x: anytype, y: anytype) !void {
+pub fn mul_(o: anytype, x: anytype, y: anytype) !void {
     comptime var O: type = @TypeOf(o);
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);

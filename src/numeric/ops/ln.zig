@@ -50,7 +50,7 @@ pub fn Ln(X: type) type {
 /// `numeric.Ln(X)` or `X` must implement the required `ln` method. The
 /// expected signature and behavior of `ln` are as follows:
 /// * `fn ln(X) numeric.Ln(X)`: Returns the natural logarithm of `x`.
-pub inline fn ln(x: anytype) numeric.Ln(@TypeOf(x)) {
+pub fn ln(x: anytype) numeric.Ln(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Ln(X);
 

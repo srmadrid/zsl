@@ -287,7 +287,7 @@ pub fn Dense(N: type, layout: Layout) type {
         ///
         /// ## Returns
         /// `N`: The element at the specified index.
-        pub inline fn getAssumeInBounds(self: matrix.general.Dense(N, layout), r: usize, c: usize) N {
+        pub fn getAssumeInBounds(self: matrix.general.Dense(N, layout), r: usize, c: usize) N {
             return self.data[self._index(r, c)];
         }
 
@@ -326,7 +326,7 @@ pub fn Dense(N: type, layout: Layout) type {
         ///
         /// ## Returns
         /// `void`
-        pub inline fn setAssumeInBounds(self: *matrix.general.Dense(N, layout), r: usize, c: usize, value: N) void {
+        pub fn setAssumeInBounds(self: *matrix.general.Dense(N, layout), r: usize, c: usize, value: N) void {
             self.data[self._index(r, c)] = value;
         }
 
@@ -630,7 +630,7 @@ pub fn Dense(N: type, layout: Layout) type {
         //     return result;
         // }
 
-        pub inline fn _index(self: matrix.general.Dense(N, layout), r: usize, c: usize) usize {
+        pub fn _index(self: matrix.general.Dense(N, layout), r: usize, c: usize) usize {
             return if (comptime layout == .col_major)
                 r + c * self.ld
             else

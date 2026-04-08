@@ -12,7 +12,7 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
     }
 }
 
-inline fn loopColMajor(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
+fn loopColMajor(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
     const Y: type = @TypeOf(y);
 
     var j: usize = 0;
@@ -39,7 +39,7 @@ inline fn loopColMajor(o: anytype, x: anytype, y: anytype, comptime op_: anytype
     }
 }
 
-inline fn loopRowMajor(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
+fn loopRowMajor(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
     const Y: type = @TypeOf(y);
 
     var i: usize = 0;

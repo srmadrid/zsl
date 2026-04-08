@@ -29,7 +29,7 @@ const numeric = @import("../../numeric.zig");
 /// signature and behavior of `ge` are as follows:
 /// * `fn ge(X, Y) bool`: Compares `x` and `y` for greater-than or equal
 ///   ordering.
-pub inline fn ge(x: anytype, y: anytype) bool {
+pub fn ge(x: anytype, y: anytype) bool {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 

@@ -29,7 +29,7 @@ const numeric = @import("../../numeric.zig");
 /// signature and behavior of `le` are as follows:
 /// * `fn le(X, Y) bool`: Compares `x` and `y` for less-than or equal
 ///   ordering.
-pub inline fn le(x: anytype, y: anytype) bool {
+pub fn le(x: anytype, y: anytype) bool {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 

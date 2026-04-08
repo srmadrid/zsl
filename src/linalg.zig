@@ -10,7 +10,7 @@ const ops = @import("ops.zig");
 pub const blas = @import("linalg/blas.zig");
 pub const lapack = @import("linalg/lapack.zig");
 
-pub inline fn dot(x: anytype, y: anytype, ctx: anytype) !Coerce(Numeric(@TypeOf(x)), Numeric(@TypeOf(y))) {
+pub fn dot(x: anytype, y: anytype, ctx: anytype) !Coerce(Numeric(@TypeOf(x)), Numeric(@TypeOf(y))) {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
     const C: type = Coerce(Numeric(X), Numeric(Y));
@@ -82,7 +82,7 @@ pub const Transpose = enum(u2) {
     conj_trans,
     conj_no_trans,
 
-    pub inline fn toCUInt(self: Transpose) c_uint {
+    pub fn toCUInt(self: Transpose) c_uint {
         return switch (self) {
             .no_trans => 111,
             .trans => 112,
@@ -91,7 +91,7 @@ pub const Transpose = enum(u2) {
         };
     }
 
-    pub inline fn toCInt(self: Transpose) c_int {
+    pub fn toCInt(self: Transpose) c_int {
         return switch (self) {
             .no_trans => 111,
             .trans => 112,
@@ -100,7 +100,7 @@ pub const Transpose = enum(u2) {
         };
     }
 
-    pub inline fn toChar(self: Transpose) u8 {
+    pub fn toChar(self: Transpose) u8 {
         return switch (self) {
             .no_trans => 'N',
             .trans => 'T',
@@ -109,7 +109,7 @@ pub const Transpose = enum(u2) {
         };
     }
 
-    pub inline fn invert(self: Transpose) Transpose {
+    pub fn invert(self: Transpose) Transpose {
         return switch (self) {
             .no_trans => .trans,
             .trans => .no_trans,
@@ -118,7 +118,7 @@ pub const Transpose = enum(u2) {
         };
     }
 
-    pub inline fn reverse(self: Transpose) Transpose {
+    pub fn reverse(self: Transpose) Transpose {
         return switch (self) {
             .no_trans => .conj_trans,
             .trans => .conj_no_trans,
@@ -132,28 +132,28 @@ pub const Side = enum(u1) {
     left,
     right,
 
-    pub inline fn toCUInt(self: Side) c_uint {
+    pub fn toCUInt(self: Side) c_uint {
         return switch (self) {
             .left => 141,
             .right => 142,
         };
     }
 
-    pub inline fn toCInt(self: Side) c_int {
+    pub fn toCInt(self: Side) c_int {
         return switch (self) {
             .left => 141,
             .right => 142,
         };
     }
 
-    pub inline fn toChar(self: Side) u8 {
+    pub fn toChar(self: Side) u8 {
         return switch (self) {
             .left => 'L',
             .right => 'R',
         };
     }
 
-    pub inline fn invert(self: Side) Side {
+    pub fn invert(self: Side) Side {
         return switch (self) {
             .left => .right,
             .right => .left,

@@ -52,7 +52,7 @@ pub fn Abs2(X: type) type {
 /// expected signature and behavior of `abs2` are as follows:
 /// * `fn abs2(X) numeric.Abs2(X)`: Returns the squared absolute value of
 ///   `x`.
-pub inline fn abs2(x: anytype) numeric.Abs2(@TypeOf(x)) {
+pub fn abs2(x: anytype) numeric.Abs2(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Abs2(X);
 

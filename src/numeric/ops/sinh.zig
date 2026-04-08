@@ -50,7 +50,7 @@ pub fn Sinh(X: type) type {
 /// `numeric.Sinh(X)` or `X` must implement the required `sinh` method. The
 /// expected signature and behavior of `sinh` are as follows:
 /// * `fn sinh(X) numeric.Sinh(X)`: Returns the hyperbolic sine of `x`.
-pub inline fn sinh(x: anytype) numeric.Sinh(@TypeOf(x)) {
+pub fn sinh(x: anytype) numeric.Sinh(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Sinh(X);
 

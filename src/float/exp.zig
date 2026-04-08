@@ -19,7 +19,7 @@ const dbl64 = @import("dbl64.zig");
 ///
 /// ## Returns
 /// `@TypeOf(x)`: The exponential of `x`.
-pub inline fn exp(x: anytype) @TypeOf(x) {
+pub fn exp(x: anytype) @TypeOf(x) {
     const X: type = @TypeOf(x);
 
     comptime if (!types.isNumeric(X) or types.numericType(X) != .float)

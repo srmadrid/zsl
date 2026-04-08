@@ -93,7 +93,7 @@ pub fn Min(X: type, Y: type) type {
 /// The expected signatures and behavior of `min` are as follows:
 /// * `fn min(X, Y) numeric.Min(X, Y)`: Returns the minimum between `x` and
 ///   `y`.
-pub inline fn min(x: anytype, y: anytype) numeric.Min(@TypeOf(x), @TypeOf(y)) {
+pub fn min(x: anytype, y: anytype) numeric.Min(@TypeOf(x), @TypeOf(y)) {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
     const R: type = numeric.Min(X, Y);

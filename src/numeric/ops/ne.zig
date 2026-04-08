@@ -28,7 +28,7 @@ const numeric = @import("../../numeric.zig");
 /// `X` or `Y` must implement the required `ne` method. The expected
 /// signature and behavior of `ne` are as follows:
 /// * `fn ne(X, Y) bool`: Compares `x` and `y` for inequality.
-pub inline fn ne(x: anytype, y: anytype) bool {
+pub fn ne(x: anytype, y: anytype) bool {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 

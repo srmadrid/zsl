@@ -50,7 +50,7 @@ pub fn Abs(X: type) type {
 /// `numeric.Abs(X)` or `X` must implement the required `abs` method. The
 /// expected signature and behavior of `abs` are as follows:
 /// * `fn abs(X) numeric.Abs(X)`: Returns the absolute value of `x`.
-pub inline fn abs(x: anytype) numeric.Abs(@TypeOf(x)) {
+pub fn abs(x: anytype) numeric.Abs(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Abs(X);
 

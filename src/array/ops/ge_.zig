@@ -5,7 +5,7 @@ const ops = @import("../../ops.zig");
 
 const arrops = @import("../ops.zig");
 
-pub inline fn ge_(
+pub fn ge_(
     o: anytype,
     x: anytype,
     y: anytype,

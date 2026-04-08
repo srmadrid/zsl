@@ -12,7 +12,7 @@ const Order = types.Order;
 const Uplo = types.Uplo;
 const Transpose = linalg.Transpose;
 
-pub inline fn gemmtr(
+pub fn gemmtr(
     order: Order,
     uplo: Uplo,
     transa: Transpose,

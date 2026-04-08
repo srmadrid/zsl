@@ -6,7 +6,7 @@ const numeric = @import("../../../numeric.zig");
 const matrix = @import("../../../matrix.zig");
 const utils = @import("utils.zig");
 
-inline fn getLogicalValue(mat: anytype, r: usize, c: usize, comptime skip_primary_search: bool) types.Numeric(@TypeOf(mat)) {
+fn getLogicalValue(mat: anytype, r: usize, c: usize, comptime skip_primary_search: bool) types.Numeric(@TypeOf(mat)) {
     const M = @TypeOf(mat);
 
     if (!skip_primary_search) {
@@ -26,7 +26,7 @@ inline fn getLogicalValue(mat: anytype, r: usize, c: usize, comptime skip_primar
     return numeric.zero(types.Numeric(M));
 }
 
-inline fn processCoordinate(o: anytype, x: anytype, y: anytype, i_o: usize, j_o: usize, val_x: anytype, val_y: anytype, comptime op_: anytype) void {
+fn processCoordinate(o: anytype, x: anytype, y: anytype, i_o: usize, j_o: usize, val_x: anytype, val_y: anytype, comptime op_: anytype) void {
     const X = @TypeOf(x);
     const Y = @TypeOf(y);
 

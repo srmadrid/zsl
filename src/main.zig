@@ -17,11 +17,11 @@ pub fn main() !void {
     var n: usize = 8000;
     _ = &n;
 
-    var A = try randomMatrix(zsl.matrix.general.Sparse(f64, .col_major), allocator, rand, m, n);
+    var A = try randomMatrix(zsl.matrix.general.Dense(f64, .col_major), allocator, rand, m, n);
     defer A.deinit(allocator);
     //printMatrix("A", A);
 
-    var B = try randomMatrix(zsl.matrix.general.Sparse(f64, .col_major), allocator, rand, m, n);
+    var B = try randomMatrix(zsl.matrix.general.Dense(f64, .col_major), allocator, rand, m, n);
     defer B.deinit(allocator);
     //printMatrix("B", B);
 

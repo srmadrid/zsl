@@ -55,7 +55,7 @@ pub fn Erf(X: type) type {
 /// `numeric.Erf(X)` or `X` must implement the required `erf` method. The
 /// expected signature and behavior of `erf` are as follows:
 /// * `fn erf(X) numeric.Erf(X)`: Returns the error function of `x`.
-pub inline fn erf(x: anytype) numeric.Erf(@TypeOf(x)) {
+pub fn erf(x: anytype) numeric.Erf(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Erf(X);
 

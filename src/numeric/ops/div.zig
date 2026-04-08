@@ -95,7 +95,7 @@ pub fn Div(X: type, Y: type) type {
 /// `numeric.Div(X, Y)`, `X` or `Y` must implement the required `div` method.
 /// The expected signatures and behavior of `div` are as follows:
 /// * `fn div(X, Y) numeric.Div(X, Y)`: Returns the division of `x` and `y`.
-pub inline fn div(x: anytype, y: anytype) numeric.Div(@TypeOf(x), @TypeOf(y)) {
+pub fn div(x: anytype, y: anytype) numeric.Div(@TypeOf(x), @TypeOf(y)) {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
     const R: type = numeric.Div(X, Y);

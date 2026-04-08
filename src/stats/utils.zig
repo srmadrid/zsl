@@ -8,7 +8,7 @@ const int = @import("../int.zig");
 
 /// Generates a uniformly distributed integer in the closed interval
 /// `[min, max]`.
-pub inline fn discreteUniform(comptime N: type, min: N, max: N, prng: std.Random) N {
+pub fn discreteUniform(comptime N: type, min: N, max: N, prng: std.Random) N {
     comptime if (!types.isNumeric(N) or types.numericType(N) == .bool or !types.isIntegral(N))
         @compileError("zsl.stats.discreteUniform: N must be a non-bool integral numeric type, got \n\tN = " ++ @typeName(N) ++ "\n");
 
@@ -26,7 +26,7 @@ pub inline fn discreteUniform(comptime N: type, min: N, max: N, prng: std.Random
 
 /// Generates a standard uniform value in the range `[0.0, 1.0)` for
 /// non-integral types.
-pub inline fn standardUniform(comptime N: type, prng: std.Random) N {
+pub fn standardUniform(comptime N: type, prng: std.Random) N {
     comptime if (!types.isNumeric(N) or !types.isReal(N) or !types.isNonIntegral(N))
         @compileError("zsl.stats.standardUniform: N must be a real, non-integral numeric type, got \n\tN = " ++ @typeName(N) ++ "\n");
 

@@ -50,7 +50,7 @@ pub fn Conj(X: type) type {
 /// `numeric.Conj(X)` or `X` must implement the required `conj` method. The
 /// expected signature and behavior of `conj` are as follows:
 /// * `fn conj(X) numeric.Conj(X)`: Returns the complex conjugate of `x`.
-pub inline fn conj(x: anytype) numeric.Conj(@TypeOf(x)) {
+pub fn conj(x: anytype) numeric.Conj(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Conj(X);
 

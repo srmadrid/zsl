@@ -50,7 +50,7 @@ pub fn Sin(X: type) type {
 /// `numeric.Sin(X)` or `X` must implement the required `sin` method. The
 /// expected signature and behavior of `sin` are as follows:
 /// * `fn sin(X) numeric.Sin(X)`: Returns the sine of `x`.
-pub inline fn sin(x: anytype) numeric.Sin(@TypeOf(x)) {
+pub fn sin(x: anytype) numeric.Sin(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Sin(X);
 
