@@ -199,7 +199,7 @@ pub fn Sparse(N: type) type {
         ///
         /// ## Returns
         /// `N`: The element at the specified index.
-        pub fn at(self: vector.Sparse(N), index: usize) N {
+        pub fn getAssumeInBounds(self: vector.Sparse(N), index: usize) N {
             var i: usize = 0;
             while (i < self.nnz) : (i += 1) {
                 if (self.idx[i] == index)
@@ -285,7 +285,7 @@ pub fn Sparse(N: type) type {
         ///
         /// Returns
         /// `void`
-        pub fn put(self: *vector.Sparse(N), index: usize, value: N) void {
+        pub fn setAssumeInBounds(self: *vector.Sparse(N), index: usize, value: N) void {
             var i: usize = 0;
             while (i < self.nnz) : (i += 1) {
                 if (self.idx[i] == index) {

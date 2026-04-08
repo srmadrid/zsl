@@ -2,18 +2,10 @@ const std = @import("std");
 
 const types = @import("../../types.zig");
 
+const numeric = @import("../../numeric.zig");
 const vector = @import("../../vector.zig");
 
 const vecops = @import("../ops.zig");
-
-const dede = @import("apply2/dede.zig");
-const desp = @import("apply2/desp.zig");
-const denu = @import("apply2/denu.zig");
-const spde = @import("apply2/spde.zig");
-const spsp = @import("apply2/spsp.zig");
-const spnu = @import("apply2/spnu.zig");
-const nude = @import("apply2/nude.zig");
-const nusp = @import("apply2/nusp.zig");
 
 pub fn Apply2(comptime X: type, comptime Y: type, comptime op: anytype) type {
     const Op = @TypeOf(op);
@@ -84,8 +76,7 @@ pub fn Apply2(comptime X: type, comptime Y: type, comptime op: anytype) type {
 ///
 /// For two sparse vectors, or a sparse vector and a numeric, the operation is
 /// only applied to the indices where at least one of the vectors has a non-zero
-/// element. If you need all operations to be performed, use instead
-/// `vector.apply2_` with a dense vector as the output operand.
+/// element.
 ///
 /// ## Signature
 /// ```zig
@@ -164,27 +155,31 @@ pub fn apply2(allocator: std.mem.Allocator, x: anytype, y: anytype, comptime op:
         return Impl.apply2(allocator, x, y, op);
     }
 
-    // Edit to call apply2_ (switch on op for numeric.add -> numeric.add_, etc.): initialize the result vector and pass it as o
+    const x_len = if (comptime types.isVector(X)) x.len else y.len;
+    const y_len = if (comptime types.isVector(Y)) y.len else x.len;
 
-    switch (comptime types.vectorType(X)) {
-        .dense => switch (comptime types.vectorType(Y)) {
-            .dense => return dede.apply2(allocator, x, y, op),
-            .sparse => return desp.apply2(allocator, x, y, op),
-            .custom => unreachable,
-            .numeric => return denu.apply2(allocator, x, y, op),
-        },
-        .sparse => switch (comptime types.vectorType(Y)) {
-            .dense => return spde.apply2(allocator, x, y, op),
-            .sparse => return spsp.apply2(allocator, x, y, op),
-            .custom => unreachable,
-            .numeric => return spnu.apply2(allocator, x, y, op),
-        },
-        .custom => unreachable,
-        .numeric => switch (comptime types.vectorType(Y)) {
-            .dense => return nude.apply2(allocator, x, y, op),
-            .sparse => return nusp.apply2(allocator, x, y, op),
-            .custom => unreachable,
-            .numeric => unreachable,
-        },
-    }
+    if (x_len != y_len)
+        return vector.Error.DimensionMismatch;
+
+    var result = switch (comptime types.vectorType(R)) {
+        .dense => try R.init(allocator, x_len),
+        .sparse => try R.init(allocator, x_len, (if (comptime types.isSparseVector(X)) x.nnz else 0) + (if (comptime types.isSparseVector(Y)) y.nnz else 0)),
+        else => unreachable,
+    };
+
+    vecops.apply2_(
+        &result,
+        x,
+        y,
+        if (comptime op == numeric.add)
+            numeric.add_
+        else if (comptime op == numeric.sub)
+            numeric.sub_
+        else if (comptime op == numeric.mul)
+            numeric.mul_
+        else
+            numeric.div_,
+    ) catch unreachable;
+
+    return result;
 }

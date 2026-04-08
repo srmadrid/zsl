@@ -1,22 +1,16 @@
 const types = @import("../../../types.zig");
 
 const numeric = @import("../../../numeric.zig");
-const vector = @import("../../../vector.zig");
 
-const int = @import("../../../int.zig");
-
-pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void {
-    const Y: type = @TypeOf(y);
-
-    if (o.len != y.len)
-        return vector.Error.DimensionMismatch;
+pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
+    const O: type = types.Child(@TypeOf(o));
 
     var i: usize = 0;
     if (o.inc == 1) {
         var iy: usize = 0;
         while (iy < y.nnz) : (iy += 1) {
             while (i < y.idx[iy]) : (i += 1) {
-                op_(&o.data[i], x, numeric.zero(types.Numeric(Y)));
+                o.data[i] = numeric.zero(types.Numeric(O));
             }
 
             op_(&o.data[i], x, y.data[iy]);
@@ -25,7 +19,7 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void 
         }
 
         while (i < o.len) : (i += 1) {
-            op_(&o.data[i], x, numeric.zero(types.Numeric(Y)));
+            o.data[i] = numeric.zero(types.Numeric(O));
         }
     } else {
         var io: isize = if (o.inc < 0) (-numeric.cast(isize, o.len) + 1) * o.inc else 0;
@@ -33,7 +27,7 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void 
 
         while (iy < y.nnz) : (iy += 1) {
             while (i < y.idx[iy]) : (i += 1) {
-                op_(&o.data[numeric.cast(usize, io)], x, numeric.zero(types.Numeric(Y)));
+                o.data[numeric.cast(usize, io)] = numeric.zero(types.Numeric(O));
 
                 io += o.inc;
             }
@@ -45,7 +39,7 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void 
         }
 
         while (i < o.len) : (i += 1) {
-            op_(&o.data[numeric.cast(usize, io)], x, numeric.zero(types.Numeric(Y)));
+            o.data[numeric.cast(usize, io)] = numeric.zero(types.Numeric(O));
 
             io += o.inc;
         }

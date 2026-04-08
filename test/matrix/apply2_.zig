@@ -4,6 +4,8 @@ const zsl = @import("zsl");
 
 const tzsl = @import("../zsl.zig");
 
+// Add aliasing checks: any combination that can alias, add all cf64 combinations after the cf32 ones
+
 const combinations = blk: {
     @setEvalBranchQuota(50000);
     break :blk [_][3]type{
@@ -5639,8 +5641,6 @@ const square_limits: [3]usize = .{
     16,
     33,
 };
-
-const alias_ops = .{ zsl.matrix.add_, zsl.matrix.sub_ };
 
 test "zsl.matrix.apply2_" {
     @setEvalBranchQuota(3 * combinations.len);

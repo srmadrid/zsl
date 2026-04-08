@@ -249,8 +249,8 @@ pub fn randomMatrix(comptime M: type, allocator: std.mem.Allocator, rand: std.Ra
     }
 }
 
-pub fn correctApply2(comptime O: type, allocator: std.mem.Allocator, m: usize, n: usize, A: anytype, B: anytype, op_: anytype) !zsl.matrix.general.Dense(O, .col_major) {
-    const result: zsl.matrix.general.Dense(O, .col_major) = try .init(allocator, m, n);
+pub fn correctApply2(comptime O: type, allocator: std.mem.Allocator, rows: usize, cols: usize, A: anytype, B: anytype, op_: anytype) !zsl.matrix.general.Dense(O, .col_major) {
+    const result: zsl.matrix.general.Dense(O, .col_major) = try .init(allocator, rows, cols);
 
     var j: usize = 0;
     while (j < result.cols) : (j += 1) {

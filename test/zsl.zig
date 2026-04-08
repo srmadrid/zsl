@@ -5,6 +5,7 @@ const zsl = @import("zsl");
 pub const float = @import("float.zig");
 pub const complex = @import("complex.zig");
 
+pub const vector = @import("vector.zig");
 pub const matrix = @import("matrix.zig");
 
 pub inline fn expectApproxEqAbs(expected: anytype, actual: anytype, tolerance: anytype) !void {
@@ -42,8 +43,8 @@ test {
     const test_complex = false;
     const test_constants = false;
     const test_numeric = false;
-    const test_vector = false;
-    const test_matrix = true;
+    const test_vector = true;
+    const test_matrix = false;
     const test_array = false;
     const test_ops = false;
     const test_linalg = false;
@@ -53,7 +54,6 @@ test {
     _ = test_dyadic;
     _ = test_constants;
     _ = test_numeric;
-    _ = test_vector;
     _ = test_array;
     _ = test_ops;
     _ = test_autodiff;
@@ -63,6 +63,9 @@ test {
 
     if (test_all or test_complex)
         _ = @import("complex.zig");
+
+    if (test_all or test_vector)
+        _ = @import("vector.zig");
 
     if (test_all or test_matrix)
         _ = @import("matrix.zig");

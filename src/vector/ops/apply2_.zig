@@ -6,10 +6,11 @@ const vector = @import("../../vector.zig");
 /// input vectors, or between an output vector, an input vector and an input
 /// numeric.
 ///
+/// Aliasing is permitted and may be more efficient in some cases.
+///
 /// For two input sparse vectors, or an input sparse vector and an input
-/// numeric, if the output is also a sparse vector, the operation is only
-/// applied to the indices where at least one of the vectors has a non-zero
-/// element.
+/// numeric, the operation is only applied to the indices where at least one of
+/// the vectors has a non-zero element.
 ///
 /// ## Signature
 /// ```zig
@@ -119,11 +120,17 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void 
         return Y.apply2_(o, x, y, op_);
     }
 
+    const x_len = if (comptime types.isMatrix(X)) x.len else o.len;
+    const y_len = if (comptime types.isMatrix(Y)) y.len else o.len;
+
+    if (o.len != x_len or o.len != y_len)
+        return vector.Error.DimensionMismatch;
+
     switch (comptime types.vectorType(O)) {
         .dense => switch (comptime types.vectorType(X)) {
             .dense => switch (comptime types.vectorType(Y)) {
                 .dense => return @import("apply2_/dedede.zig").apply2_(o, x, y, op_),
-                .sparse => return @import("apply2_/dedesp,zig").apply2_(o, x, y, op_),
+                .sparse => return @import("apply2_/dedesp.zig").apply2_(o, x, y, op_),
                 .custom => unreachable,
                 .numeric => return @import("apply2_/dedenu.zig").apply2_(o, x, y, op_),
             },

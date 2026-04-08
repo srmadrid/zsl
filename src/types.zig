@@ -879,7 +879,6 @@ pub fn ReturnTypeFromInputs(
     // - Otherwise, pass an empty value of the corresponding input type
     comptime var inputs: std.meta.Tuple(&corrected_input_types) = undefined;
     inline for (func_params, input_types, 0..) |func_param, input_type, i| {
-        @compileLog(input_type);
         inputs[i] = if (comptime func_param.type == type)
             input_type // The type is passed directly
         else if (comptime input_type == std.mem.Allocator)
@@ -887,8 +886,6 @@ pub fn ReturnTypeFromInputs(
         else
             empty(input_type);
     }
-
-    @compileLog(inputs);
 
     switch (comptime input_types.len) {
         0 => return @TypeOf(func()),

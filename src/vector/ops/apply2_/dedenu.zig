@@ -1,14 +1,6 @@
-const types = @import("../../../types.zig");
-
-const int = @import("../../../int.zig");
-
 const numeric = @import("../../../numeric.zig");
-const vector = @import("../../../vector.zig");
 
-pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void {
-    if (o.len != x.len)
-        return vector.Error.DimensionMismatch;
-
+pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
     var i: usize = 0;
     if (o.inc == 1 and x.inc == 1) {
         while (i < o.len) : (i += 1) {

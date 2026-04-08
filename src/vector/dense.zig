@@ -196,7 +196,7 @@ pub fn Dense(N: type) type {
         ///
         /// ## Returns
         /// `N`: The element at the specified index.
-        pub inline fn at(self: vector.Dense(N), index: usize) N {
+        pub inline fn getAssumeInBounds(self: vector.Dense(N), index: usize) N {
             return self.data[self._index(index)];
         }
 
@@ -231,8 +231,31 @@ pub fn Dense(N: type) type {
         ///
         /// ## Returns
         /// `void`
-        pub inline fn put(self: *vector.Dense(N), index: usize, value: N) void {
+        pub inline fn setAssumeInBounds(self: *vector.Dense(N), index: usize, value: N) void {
             self.data[self._index(index)] = value;
+        }
+
+        /// Creates a copy of the vector.
+        ///
+        /// ## Arguments
+        /// * `self` (`vector.Dense(N)`): The vector to copy.
+        /// * `allocator` (`std.mem.Allocator`): The allocator to use for memory
+        ///   allocations.
+        ///
+        /// ## Returns
+        /// `vector.Dense(N)`: The copied vector.
+        ///
+        /// ## Errors
+        /// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
+        pub fn copy(self: vector.Dense(N), allocator: std.mem.Allocator) !vector.Dense(N) {
+            const vec: vector.Dense(N) = try .init(allocator, self.len);
+
+            var i: usize = 0;
+            while (i < vec.len) : (i += 1) {
+                vec.data[i] = self.data[self._index(i)];
+            }
+
+            return vec;
         }
 
         /// Views the vector as a diagonal matrix.
@@ -270,7 +293,7 @@ pub fn Dense(N: type) type {
             };
         }
 
-        inline fn _index(self: *const Dense(N), index: usize) usize {
+        pub inline fn _index(self: *const Dense(N), index: usize) usize {
             return if (self.inc > 0)
                 index * numeric.cast(usize, self.inc)
             else

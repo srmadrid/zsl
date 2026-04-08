@@ -1,0 +1,116 @@
+const std = @import("std");
+
+const zsl = @import("zsl");
+
+const tzsl = @import("../zsl.zig");
+
+const combinations = [_][2]type{
+    // __dede
+    .{ zsl.vector.Dense(zsl.cf64), zsl.vector.Dense(zsl.cf64) },
+
+    // __desp
+    .{ zsl.vector.Dense(zsl.cf64), zsl.vector.Sparse(zsl.cf64) },
+
+    // __denu
+    .{ zsl.vector.Dense(zsl.cf64), zsl.cf64 },
+
+    // __spde
+    .{ zsl.vector.Sparse(zsl.cf64), zsl.vector.Dense(zsl.cf64) },
+
+    // __nude
+    .{ zsl.cf64, zsl.vector.Dense(zsl.cf64) },
+
+    // __spsp
+    .{ zsl.vector.Sparse(zsl.cf64), zsl.vector.Sparse(zsl.cf64) },
+
+    // __spnu
+    .{ zsl.vector.Sparse(zsl.cf64), zsl.cf64 },
+
+    // __nusp
+    .{ zsl.cf64, zsl.vector.Sparse(zsl.cf64) },
+};
+
+const len_limits: [3]usize = .{
+    7,
+    16,
+    33,
+};
+
+test "zsl.vector.apply2" {
+    @setEvalBranchQuota(3000);
+
+    const allocator = std.testing.allocator;
+
+    var prng = std.Random.DefaultPrng.init(@bitCast(std.time.timestamp()));
+    const rand = prng.random();
+
+    inline for (combinations) |combination| {
+        const ops_to_test =
+            if (comptime zsl.types.isNumeric(combination[0]))
+                .{"mul"}
+            else if (comptime zsl.types.isNumeric(combination[1]))
+                .{ "mul", "div" }
+            else
+                .{ "add", "sub" };
+
+        for (len_limits) |len| {
+            try executeTestBlock(allocator, rand, combination, ops_to_test, len);
+        }
+    }
+}
+
+fn executeTestBlock(
+    allocator: std.mem.Allocator,
+    rand: std.Random,
+    comptime combination: [2]type,
+    comptime ops: anytype,
+    len: usize,
+) !void {
+    inline for (ops) |op| {
+        var B = if (comptime zsl.types.isNumeric(combination[0])) tzsl.randomNumber(combination[0], rand) else try tzsl.vector.randomVector(
+            combination[0],
+            allocator,
+            rand,
+            len,
+            len / 4,
+        );
+        defer tzsl.deinit(allocator, &B);
+
+        var C = if (comptime zsl.types.isNumeric(combination[1])) tzsl.randomNumber(combination[1], rand) else try tzsl.vector.randomVector(
+            combination[1],
+            allocator,
+            rand,
+            len,
+            len / 4,
+        );
+        defer tzsl.deinit(allocator, &C);
+
+        var A = if (comptime std.mem.eql(u8, op, "add"))
+            try zsl.vector.add(allocator, B, C)
+        else if (comptime std.mem.eql(u8, op, "sub"))
+            try zsl.vector.sub(allocator, B, C)
+        else if (comptime std.mem.eql(u8, op, "mul"))
+            try zsl.vector.mul(allocator, B, C)
+        else
+            try zsl.vector.div(allocator, B, C);
+        defer A.deinit(allocator);
+
+        var D = if (comptime std.mem.eql(u8, op, "add"))
+            try tzsl.vector.correctApply2(zsl.types.Numeric(@TypeOf(A)), allocator, len, B, C, zsl.numeric.add_)
+        else if (comptime std.mem.eql(u8, op, "sub"))
+            try tzsl.vector.correctApply2(zsl.types.Numeric(@TypeOf(A)), allocator, len, B, C, zsl.numeric.sub_)
+        else if (comptime std.mem.eql(u8, op, "mul"))
+            try tzsl.vector.correctApply2(zsl.types.Numeric(@TypeOf(A)), allocator, len, B, C, zsl.numeric.mul_)
+        else
+            try tzsl.vector.correctApply2(zsl.types.Numeric(@TypeOf(A)), allocator, len, B, C, zsl.numeric.div_);
+        defer D.deinit(allocator);
+
+        tzsl.vector.areEql(A, D) catch |e| {
+            std.debug.print(
+                "Failed on A: {s} = B: {s} {s} C: {s}, case len = {}\n",
+                .{ @typeName(@TypeOf(A)), @typeName(combination[0]), op, @typeName(combination[1]), len },
+            );
+            return e;
+        };
+    }
+}
