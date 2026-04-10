@@ -17,22 +17,22 @@ pub fn main() !void {
     var n: usize = 8000;
     _ = &n;
 
-    var A = try randomMatrix(zsl.matrix.general.Dense(f64, .col_major), allocator, rand, m, n);
+    var A = try randomMatrix(zsl.matrix.general.Dense(zsl.cf64, .col_major), allocator, rand, m, n);
     defer A.deinit(allocator);
-    //printMatrix("A", A);
+    // printMatrix("A", A);
 
-    var B = try randomMatrix(zsl.matrix.general.Dense(f64, .col_major), allocator, rand, m, n);
+    var B = try randomMatrix(zsl.matrix.general.Dense(zsl.cf64, .col_major), allocator, rand, m, n);
     defer B.deinit(allocator);
-    //printMatrix("B", B);
+    // printMatrix("B", B);
 
-    var C: zsl.matrix.general.Dense(f64, .col_major) = try .init(allocator, m, n);
+    var C: zsl.matrix.general.Dense(zsl.cf64, .col_major) = try .init(allocator, m, n);
     defer C.deinit(allocator);
 
     const start_time = std.time.nanoTimestamp();
     try zsl.matrix.apply2_(&C, A, B, zsl.numeric.add_);
     const end_time = std.time.nanoTimestamp();
 
-    //printMatrix("C", C);
+    // printMatrix("C", C);
 
     std.debug.print("zsl.matrix.add_ took {d} seconds on matrices of size {} x {}\n", .{ (zsl.numeric.cast(f128, end_time) - zsl.numeric.cast(f128, start_time)) / 1e9, m, n });
 }
@@ -856,11 +856,12 @@ fn printMatrix(desc: []const u8, A: anytype) void {
 
         var j: u32 = 0;
         while (j < cols) : (j += 1) {
-            if (comptime zsl.types.isComplex(zsl.types.Numeric(@TypeOf(A)))) {
-                std.debug.print("{d:7.4} + {d:7.4}i    ", .{ (A.get(i, j) catch unreachable).re, (A.get(i, j) catch unreachable).im });
-            } else {
-                std.debug.print("{d:5.4}    ", .{A.get(i, j) catch unreachable});
-            }
+            // if (comptime zsl.types.isComplex(zsl.types.Numeric(@TypeOf(A)))) {
+            //     std.debug.print("{d:7.4} + {d:7.4}i    ", .{ (A.get(i, j) catch unreachable).re, (A.get(i, j) catch unreachable).im });
+            // } else {
+            //     std.debug.print("{d:5.4}    ", .{A.get(i, j) catch unreachable});
+            // }
+            std.debug.print("{}    ", .{A.get(i, j) catch unreachable});
         }
         std.debug.print("\n", .{});
     }

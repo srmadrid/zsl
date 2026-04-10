@@ -9,10 +9,10 @@ pub fn isDual(comptime T: type) bool {
     return @hasDecl(T, "is_dual") and T.is_dual;
 }
 
-/// Represents a dual number `x + yϵ`
+/// Represents a dual number `x + yϵ`.
 pub fn Dual(comptime N: type) type {
     if (comptime !types.isNumeric(N))
-        @compileError("zsl.autodiff.Dual: T must be a numeric type, got \n\tT: " ++ @typeName(N) ++ "\n");
+        @compileError("zsl.autodiff.Dual: N must be a numeric type, got \n\tT: " ++ @typeName(N) ++ "\n");
 
     return struct {
         val: N,
@@ -59,8 +59,25 @@ pub fn Dual(comptime N: type) type {
         // Arithmetic operations
         pub const Add = autodiff.dual.Add;
         pub const add = autodiff.dual.add;
+        pub const Sub = autodiff.dual.Sub;
+        pub const sub = autodiff.dual.sub;
+        pub const Mul = autodiff.dual.Mul;
+        pub const mul = autodiff.dual.mul;
+        pub const Div = autodiff.dual.Div;
+        pub const div = autodiff.dual.div;
 
         // Comparison operations
+        // pub const cmp = ops.cmp;
+        pub const eq = autodiff.dual.eq;
+        pub const ne = autodiff.dual.ne;
+        pub const lt = autodiff.dual.lt;
+        pub const le = autodiff.dual.le;
+        pub const gt = autodiff.dual.gt;
+        pub const ge = autodiff.dual.ge;
+        pub const Max = autodiff.dual.Max;
+        pub const max = autodiff.dual.max;
+        pub const Min = autodiff.dual.Min;
+        pub const min = autodiff.dual.min;
 
         // Exponential functions
         pub const Exp = autodiff.dual.Exp;
@@ -69,14 +86,44 @@ pub fn Dual(comptime N: type) type {
         pub const ln = autodiff.dual.ln;
 
         // Power functions
-        // pub const Pow = ops.Pow;
-        // pub const pow = ops.pow;
+        pub const Pow = autodiff.dual.Pow;
+        pub const pow = autodiff.dual.pow;
         pub const Sqrt = autodiff.dual.Sqrt;
         pub const sqrt = autodiff.dual.sqrt;
         pub const Cbrt = autodiff.dual.Cbrt;
         pub const cbrt = autodiff.dual.cbrt;
-        // pub const Hypot = ops.Hypot;
-        // pub const hypot = ops.hypot;
+        pub const Hypot = autodiff.dual.Hypot;
+        pub const hypot = autodiff.dual.hypot;
+
+        // Trigonometric functions
+        pub const Sin = autodiff.dual.Sin;
+        pub const sin = autodiff.dual.sin;
+        pub const Cos = autodiff.dual.Cos;
+        pub const cos = autodiff.dual.cos;
+        pub const Tan = autodiff.dual.Tan;
+        pub const tan = autodiff.dual.tan;
+        pub const Asin = autodiff.dual.Asin;
+        pub const asin = autodiff.dual.asin;
+        pub const Acos = autodiff.dual.Acos;
+        pub const acos = autodiff.dual.acos;
+        pub const Atan = autodiff.dual.Atan;
+        pub const atan = autodiff.dual.atan;
+        pub const Atan2 = autodiff.dual.Atan2;
+        pub const atan2 = autodiff.dual.atan2;
+
+        // Hyperbolic functions
+        pub const Sinh = autodiff.dual.Sinh;
+        pub const sinh = autodiff.dual.sinh;
+        pub const Cosh = autodiff.dual.Cosh;
+        pub const cosh = autodiff.dual.cosh;
+        pub const Tanh = autodiff.dual.Tanh;
+        pub const tanh = autodiff.dual.tanh;
+        pub const Asinh = autodiff.dual.Asinh;
+        pub const asinh = autodiff.dual.asinh;
+        pub const Acosh = autodiff.dual.Acosh;
+        pub const acosh = autodiff.dual.acosh;
+        pub const Atanh = autodiff.dual.Atanh;
+        pub const atanh = autodiff.dual.atanh;
 
         pub fn fromFloat(x: anytype) autodiff.Dual(N) {
             return .{
@@ -93,7 +140,7 @@ pub fn Dual(comptime N: type) type {
 
 pub fn Abs(comptime X: type) type {
     comptime if (!types.isNumeric(X) or !isDual(X))
-        @compileError("zsl.autodiff.dual.abs: X must be a dual type, got\n\tX: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.autodiff.dual.abs: x must be a dual, got\n\tx: " ++ @typeName(X) ++ "\n");
 
     return Dual(numeric.Abs(types.Scalar(X)));
 }
@@ -130,7 +177,7 @@ pub fn abs(x: anytype) autodiff.dual.Abs(@TypeOf(x)) {
 
 pub fn Abs1(comptime X: type) type {
     comptime if (!types.isNumeric(X) or !isDual(X))
-        @compileError("zsl.autodiff.dual.abs1: X must be a dual type, got\n\tX: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.autodiff.dual.abs1: x must be a dual, got\n\tx: " ++ @typeName(X) ++ "\n");
 
     return Dual(numeric.Abs(types.Scalar(X)));
 }
@@ -159,7 +206,7 @@ pub fn abs1(x: anytype) autodiff.dual.Abs1(@TypeOf(x)) {
 
 pub fn Abs2(comptime X: type) type {
     comptime if (!types.isNumeric(X) or !isDual(X))
-        @compileError("zsl.autodiff.dual.abs2: X must be a dual type, got\n\tX: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.autodiff.dual.abs2: x must be a dual, got\n\tx: " ++ @typeName(X) ++ "\n");
 
     return Dual(numeric.Abs(types.Scalar(X)));
 }
@@ -191,7 +238,7 @@ pub fn abs2(x: anytype) autodiff.dual.Abs2(@TypeOf(x)) {
 
 pub fn Neg(comptime X: type) type {
     comptime if (!types.isNumeric(X) or !isDual(X))
-        @compileError("zsl.autodiff.dual.neg: X must be a dual type, got\n\tX: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.autodiff.dual.neg: x must be a dual, got\n\tx: " ++ @typeName(X) ++ "\n");
 
     return Dual(numeric.Neg(types.Scalar(X)));
 }
@@ -208,7 +255,7 @@ pub fn neg(x: anytype) autodiff.dual.Neg(@TypeOf(x)) {
 
 pub fn Re(comptime X: type) type {
     comptime if (!types.isNumeric(X) or !isDual(X))
-        @compileError("zsl.autodiff.dual.re: X must be a dual type, got\n\tX: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.autodiff.dual.re: x must be a dual, got\n\tx: " ++ @typeName(X) ++ "\n");
 
     return Dual(numeric.Re(types.Scalar(X)));
 }
@@ -225,7 +272,7 @@ pub fn re(x: anytype) autodiff.dual.Re(@TypeOf(x)) {
 
 pub fn Im(comptime X: type) type {
     comptime if (!types.isNumeric(X) or !isDual(X))
-        @compileError("zsl.autodiff.dual.im: X must be a dual type, got\n\tX: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.autodiff.dual.im: x must be a dual, got\n\tx: " ++ @typeName(X) ++ "\n");
 
     return Dual(numeric.Im(types.Scalar(X)));
 }
@@ -242,7 +289,7 @@ pub fn im(x: anytype) autodiff.dual.Im(@TypeOf(x)) {
 
 pub fn Conj(comptime X: type) type {
     comptime if (!types.isNumeric(X) or !isDual(X))
-        @compileError("zsl.autodiff.dual.conj: X must be a dual type, got\n\tX: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.autodiff.dual.conj: x must be a dual, got\n\tx: " ++ @typeName(X) ++ "\n");
 
     return Dual(numeric.Conj(types.Scalar(X)));
 }
@@ -259,7 +306,7 @@ pub fn conj(x: anytype) autodiff.dual.Conj(@TypeOf(x)) {
 
 pub fn Sign(comptime X: type) type {
     comptime if (!types.isNumeric(X) or !isDual(X))
-        @compileError("zsl.autodiff.dual.sign: X must be a dual type, got\n\tX: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.autodiff.dual.sign: x must be a dual, got\n\tx: " ++ @typeName(X) ++ "\n");
 
     return Dual(numeric.Abs(types.Scalar(X)));
 }
@@ -312,9 +359,324 @@ pub fn sign(x: anytype) autodiff.dual.Sign(@TypeOf(x)) {
     }
 }
 
+pub fn Add(comptime X: type, comptime Y: type) type {
+    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or (!isDual(X) and !isDual(Y)))
+        @compileError("zsl.autodiff.dual.add: at least one of x or y must be a dual, the other must be a numeric or a dual, got\n\tx: " ++
+            @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
+
+    const SX: type = if (isDual(X)) types.Scalar(X) else X;
+    const SY: type = if (isDual(Y)) types.Scalar(Y) else Y;
+
+    return Dual(numeric.Add(SX, SY));
+}
+
+pub fn add(x: anytype, y: anytype) autodiff.dual.Add(@TypeOf(x), @TypeOf(y)) {
+    if (comptime isDual(@TypeOf(x))) {
+        if (comptime isDual(@TypeOf(y))) {
+            return .{
+                .val = numeric.add(x.val, y.val),
+                .eps = numeric.add(x.eps, y.eps),
+            };
+        } else {
+            return .{
+                .val = numeric.add(x.val, y),
+                .eps = x.eps,
+            };
+        }
+    } else {
+        return .{
+            .val = numeric.add(x, y.val),
+            .eps = y.eps,
+        };
+    }
+}
+
+pub fn Sub(comptime X: type, comptime Y: type) type {
+    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or (!isDual(X) and !isDual(Y)))
+        @compileError("zsl.autodiff.dual.sub: at least one of x or y must be a dual, the other must be a numeric or a dual, got\n\tx: " ++
+            @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
+
+    const SX: type = if (isDual(X)) types.Scalar(X) else X;
+    const SY: type = if (isDual(Y)) types.Scalar(Y) else Y;
+
+    return Dual(numeric.Sub(SX, SY));
+}
+
+pub fn sub(x: anytype, y: anytype) autodiff.dual.Sub(@TypeOf(x), @TypeOf(y)) {
+    if (comptime isDual(@TypeOf(x))) {
+        if (comptime isDual(@TypeOf(y))) {
+            return .{
+                .val = numeric.sub(x.val, y.val),
+                .eps = numeric.sub(x.eps, y.eps),
+            };
+        } else {
+            return .{
+                .val = numeric.sub(x.val, y),
+                .eps = x.eps,
+            };
+        }
+    } else {
+        return .{
+            .val = numeric.sub(x, y.val),
+            .eps = numeric.neg(y.eps),
+        };
+    }
+}
+
+pub fn Mul(comptime X: type, comptime Y: type) type {
+    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or (!isDual(X) and !isDual(Y)))
+        @compileError("zsl.autodiff.dual.mul: at least one of x or y must be a dual, the other must be a numeric or a dual, got\n\tx: " ++
+            @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
+
+    const SX: type = if (isDual(X)) types.Scalar(X) else X;
+    const SY: type = if (isDual(Y)) types.Scalar(Y) else Y;
+
+    return Dual(numeric.Mul(SX, SY));
+}
+
+pub fn mul(x: anytype, y: anytype) autodiff.dual.Mul(@TypeOf(x), @TypeOf(y)) {
+    if (comptime isDual(@TypeOf(x))) {
+        if (comptime isDual(@TypeOf(y))) {
+            return .{
+                .val = numeric.mul(x.val, y.val),
+                .eps = numeric.fma(x.val, y.eps, numeric.mul(x.eps, y.val)),
+            };
+        } else {
+            return .{
+                .val = numeric.mul(x.val, y),
+                .eps = numeric.mul(x.eps, y),
+            };
+        }
+    } else {
+        return .{
+            .val = numeric.mul(x, y.val),
+            .eps = numeric.mul(x, y.eps),
+        };
+    }
+}
+
+pub fn Fma(comptime X: type, comptime Y: type, comptime Z: type) type {
+    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or !types.isNumeric(Z) or (!isDual(X) and !isDual(Y) and !isDual(Z)))
+        @compileError("zsl.autodiff.dual.fma: at least one of x, y or z must be a dual, the other must be a numeric or a dual, got\n\tx: " ++
+            @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\tz: " ++ @typeName(Z) ++ "\n");
+
+    const SX: type = if (isDual(X)) types.Scalar(X) else X;
+    const SY: type = if (isDual(Y)) types.Scalar(Y) else Y;
+    const SZ: type = if (isDual(Z)) types.Scalar(Z) else Z;
+
+    return Dual(numeric.Fma(SX, SY, SZ));
+}
+
+pub fn fma(x: anytype, y: anytype, z: anytype) autodiff.dual.Fma(@TypeOf(x), @TypeOf(y), @TypeOf(z)) {
+    if (comptime isDual(@TypeOf(x))) {
+        if (comptime isDual(@TypeOf(y))) {
+            if (comptime isDual(@TypeOf(z))) {
+                return .{
+                    .val = numeric.fma(x.val, y.val, z.val),
+                    .eps = numeric.fma(x.eps, y.val, numeric.fma(x.val, y.eps, z.eps)),
+                };
+            } else {
+                return .{
+                    .val = numeric.fma(x.val, y.val, z),
+                    .eps = numeric.fma(x.eps, y.val, numeric.mul(x.val, y.eps)),
+                };
+            }
+        } else {
+            if (comptime isDual(@TypeOf(z))) {
+                return .{
+                    .val = numeric.fma(x.val, y, z.val),
+                    .eps = numeric.fma(x.eps, y, z.eps),
+                };
+            } else {
+                return .{
+                    .val = numeric.fma(x.val, y, z),
+                    .eps = numeric.mul(x.eps, y),
+                };
+            }
+        }
+    } else {
+        if (comptime isDual(@TypeOf(y))) {
+            if (comptime isDual(@TypeOf(z))) {
+                return .{
+                    .val = numeric.fma(x, y.val, z.val),
+                    .eps = numeric.fma(x, y.eps, z.eps),
+                };
+            } else {
+                return .{
+                    .val = numeric.fma(x, y.val, z),
+                    .eps = numeric.mul(x, y.eps),
+                };
+            }
+        } else {
+            if (comptime isDual(@TypeOf(z))) {
+                return .{
+                    .val = numeric.fma(x, y, z.val),
+                    .eps = numeric.cast(types.Scalar(autodiff.dual.Fma(@TypeOf(x), @TypeOf(y), @TypeOf(z))), z.eps),
+                };
+            }
+        }
+    }
+}
+
+pub fn Div(comptime X: type, comptime Y: type) type {
+    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or (!isDual(X) and !isDual(Y)))
+        @compileError("zsl.autodiff.dual.div: at least one of x or y must be a dual, the other must be a numeric or a dual, got\n\tx: " ++
+            @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
+
+    const SX: type = if (isDual(X)) types.Scalar(X) else X;
+    const SY: type = if (isDual(Y)) types.Scalar(Y) else Y;
+
+    return Dual(numeric.Div(SX, SY));
+}
+
+pub fn div(x: anytype, y: anytype) autodiff.dual.Div(@TypeOf(x), @TypeOf(y)) {
+    if (comptime isDual(@TypeOf(x))) {
+        if (comptime isDual(@TypeOf(y))) {
+            const invy = numeric.div(numeric.one(types.Scalar(@TypeOf(y))), y.val);
+
+            return .{
+                .val = numeric.mul(x.val, invy),
+                .eps = numeric.mul(numeric.fma(x.eps, y.val, numeric.neg(numeric.mul(x.val, y.eps))), numeric.mul(invy, invy)),
+            };
+        } else {
+            const invy = numeric.div(numeric.one(@TypeOf(y)), y.val);
+
+            return .{
+                .val = numeric.mul(x.val, invy),
+                .eps = numeric.mul(x.eps, invy),
+            };
+        }
+    } else {
+        const invy = numeric.div(numeric.one(types.Scalar(@TypeOf(y))), y.val);
+
+        return .{
+            .val = numeric.mul(x, invy),
+            .eps = numeric.neg(numeric.mul(numeric.mul(x, y.eps), numeric.mul(invy, invy))),
+        };
+    }
+}
+
+pub fn eq(x: anytype, y: anytype) bool {
+    const X: type = @TypeOf(x);
+    const Y: type = @TypeOf(y);
+
+    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or (!isDual(X) and !isDual(Y)))
+        @compileError("zsl.autodiff.dual.eq: at least one of x or y must be a dual, the other must be a numeric or a dual, got\n\tx: " ++
+            @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
+
+    return numeric.eq(
+        if (comptime isDual(X)) x.val else x,
+        if (comptime isDual(Y)) y.val else y,
+    );
+}
+
+pub fn ne(x: anytype, y: anytype) bool {
+    const X: type = @TypeOf(x);
+    const Y: type = @TypeOf(y);
+
+    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or (!isDual(X) and !isDual(Y)))
+        @compileError("zsl.autodiff.dual.ne: at least one of x or y must be a dual, the other must be a numeric or a dual, got\n\tx: " ++
+            @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
+
+    return numeric.ne(
+        if (comptime isDual(X)) x.val else x,
+        if (comptime isDual(Y)) y.val else y,
+    );
+}
+
+pub fn lt(x: anytype, y: anytype) bool {
+    const X: type = @TypeOf(x);
+    const Y: type = @TypeOf(y);
+
+    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or (!isDual(X) and !isDual(Y)))
+        @compileError("zsl.autodiff.dual.lt: at least one of x or y must be a dual, the other must be a numeric or a dual, got\n\tx: " ++
+            @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
+
+    return numeric.lt(
+        if (comptime isDual(X)) x.val else x,
+        if (comptime isDual(Y)) y.val else y,
+    );
+}
+
+pub fn le(x: anytype, y: anytype) bool {
+    const X: type = @TypeOf(x);
+    const Y: type = @TypeOf(y);
+
+    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or (!isDual(X) and !isDual(Y)))
+        @compileError("zsl.autodiff.dual.le: at least one of x or y must be a dual, the other must be a numeric or a dual, got\n\tx: " ++
+            @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
+
+    return numeric.le(
+        if (comptime isDual(X)) x.val else x,
+        if (comptime isDual(Y)) y.val else y,
+    );
+}
+
+pub fn gt(x: anytype, y: anytype) bool {
+    const X: type = @TypeOf(x);
+    const Y: type = @TypeOf(y);
+
+    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or (!isDual(X) and !isDual(Y)))
+        @compileError("zsl.autodiff.dual.gt: at least one of x or y must be a dual, the other must be a numeric or a dual, got\n\tx: " ++
+            @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
+
+    return numeric.gt(
+        if (comptime isDual(X)) x.val else x,
+        if (comptime isDual(Y)) y.val else y,
+    );
+}
+
+pub fn ge(x: anytype, y: anytype) bool {
+    const X: type = @TypeOf(x);
+    const Y: type = @TypeOf(y);
+
+    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or (!isDual(X) and !isDual(Y)))
+        @compileError("zsl.autodiff.dual.ge: at least one of x or y must be a dual, the other must be a numeric or a dual, got\n\tx: " ++
+            @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
+
+    return numeric.ge(
+        if (comptime isDual(X)) x.val else x,
+        if (comptime isDual(Y)) y.val else y,
+    );
+}
+
+pub fn Max(comptime X: type, comptime Y: type) type {
+    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or (!isDual(X) and !isDual(Y)))
+        @compileError("zsl.autodiff.dual.max: at least one of x or y must be a dual, the other must be a numeric or a dual, got\n\tx: " ++
+            @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
+
+    const SX: type = if (isDual(X)) types.Scalar(X) else X;
+    const SY: type = if (isDual(Y)) types.Scalar(Y) else Y;
+
+    return Dual(numeric.Max(SX, SY));
+}
+
+pub fn max(x: anytype, y: anytype) autodiff.dual.Max(@TypeOf(x), @TypeOf(y)) {
+    const R: type = autodiff.dual.Max(@TypeOf(x), @TypeOf(y));
+
+    return if (numeric.gt(x, y)) numeric.cast(R, x) else numeric.cast(R, y);
+}
+
+pub fn Min(comptime X: type, comptime Y: type) type {
+    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or (!isDual(X) and !isDual(Y)))
+        @compileError("zsl.autodiff.dual.min: at least one of x or y must be a dual, the other must be a numeric or a dual, got\n\tx: " ++
+            @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
+
+    const SX: type = if (isDual(X)) types.Scalar(X) else X;
+    const SY: type = if (isDual(Y)) types.Scalar(Y) else Y;
+
+    return Dual(numeric.Min(SX, SY));
+}
+
+pub fn min(x: anytype, y: anytype) autodiff.dual.Min(@TypeOf(x), @TypeOf(y)) {
+    const R: type = autodiff.dual.Min(@TypeOf(x), @TypeOf(y));
+
+    return if (numeric.lt(x, y)) numeric.cast(R, x) else numeric.cast(R, y);
+}
+
 pub fn Exp(comptime X: type) type {
     comptime if (!types.isNumeric(X) or !isDual(X))
-        @compileError("zsl.autodiff.dual.exp: X must be a dual type, got\n\tX: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.autodiff.dual.exp: x must be a dual, got\n\tx: " ++ @typeName(X) ++ "\n");
 
     return Dual(numeric.Exp(types.Scalar(X)));
 }
@@ -333,7 +695,7 @@ pub fn exp(x: anytype) autodiff.dual.Exp(@TypeOf(x)) {
 
 pub fn Ln(comptime X: type) type {
     comptime if (!types.isNumeric(X) or !isDual(X))
-        @compileError("zsl.autodiff.dual.ln: X must be a dual type, got\n\tX: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.autodiff.dual.ln: x must be a dual, got\n\tx: " ++ @typeName(X) ++ "\n");
 
     return Dual(numeric.Ln(types.Scalar(X)));
 }
@@ -348,47 +710,160 @@ pub fn ln(x: anytype) autodiff.dual.Ln(@TypeOf(x)) {
     };
 }
 
+pub fn Pow(comptime X: type, comptime Y: type) type {
+    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or (!isDual(X) and !isDual(Y)))
+        @compileError("zsl.autodiff.dual.pow: at least one of x or y must be a dual, the other must be a numeric or a dual, got\n\tx: " ++
+            @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
+
+    const SX: type = if (isDual(X)) types.Scalar(X) else X;
+    const SY: type = if (isDual(Y)) types.Scalar(Y) else Y;
+
+    return Dual(numeric.Pow(SX, SY));
+}
+
+pub fn pow(x: anytype, y: anytype) autodiff.dual.Pow(@TypeOf(x), @TypeOf(y)) {
+    if (comptime isDual(@TypeOf(x))) {
+        if (comptime isDual(@TypeOf(y))) {
+            const xpowy = numeric.pow(x.val, y.val);
+
+            return .{
+                .val = xpowy,
+                .eps = numeric.fma(
+                    numeric.mul(
+                        y.val,
+                        numeric.pow(
+                            x.val,
+                            numeric.sub(
+                                y.val,
+                                numeric.one(types.Scalar(@TypeOf(y))),
+                            ),
+                        ),
+                    ),
+                    x.eps,
+                    numeric.mul(
+                        xpowy,
+                        numeric.mul(
+                            numeric.ln(x.val),
+                            y.eps,
+                        ),
+                    ),
+                ),
+            };
+        } else {
+            const xpowy = numeric.pow(x.val, y);
+
+            return .{
+                .val = xpowy,
+                .eps = numeric.mul(
+                    numeric.mul(
+                        y,
+                        numeric.pow(
+                            x.val,
+                            numeric.sub(
+                                y,
+                                numeric.one(types.Scalar(@TypeOf(y))),
+                            ),
+                        ),
+                    ),
+                    x.eps,
+                ),
+            };
+        }
+    } else {
+        const xpowy = numeric.pow(x, y.val);
+
+        return .{
+            .val = xpowy,
+            .eps = numeric.mul(
+                xpowy,
+                numeric.mul(
+                    numeric.ln(x.val),
+                    y.eps,
+                ),
+            ),
+        };
+    }
+}
+
 pub fn Sqrt(comptime X: type) type {
     comptime if (!types.isNumeric(X) or !isDual(X))
-        @compileError("zsl.autodiff.dual.sqrt: X must be a dual type, got\n\tX: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.autodiff.dual.sqrt: x must be a dual, got\n\tx: " ++ @typeName(X) ++ "\n");
 
     return Dual(numeric.Sqrt(types.Scalar(X)));
 }
 
 pub fn sqrt(x: anytype) autodiff.dual.Sqrt(@TypeOf(x)) {
-    const sqrtx = numeric.sqrt(x.value);
+    const sqrtx = numeric.sqrt(x.val);
 
     return .{
         // √x
         .val = sqrtx,
 
         // y / (2 * √x)
-        .eps = numeric.div(x.eps, numeric.mul(numeric.two(@TypeOf(x.val)), x.val)),
+        .eps = numeric.div(x.eps, numeric.mul(numeric.two(@TypeOf(x.val)), sqrtx)),
     };
 }
 
 pub fn Cbrt(comptime X: type) type {
     comptime if (!types.isNumeric(X) or !isDual(X))
-        @compileError("zsl.autodiff.dual.cbrt: X must be a dual type, got\n\tX: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.autodiff.dual.cbrt: x must be a dual, got\n\tx: " ++ @typeName(X) ++ "\n");
 
     return Dual(numeric.Cbrt(types.Scalar(X)));
 }
 
 pub fn cbrt(x: anytype) autodiff.dual.Cbrt(@TypeOf(x)) {
-    const cbrtx = numeric.cbrt(x.value);
+    const cbrtx = numeric.cbrt(x.val);
 
     return .{
         // ∛x
         .val = cbrtx,
 
         // y / (3 * ∛x²)
-        .eps = numeric.div(x.eps, numeric.mul(numeric.add(numeric.two(@TypeOf(x.val)), numeric.one(@TypeOf(x.val))), x.val)),
+        .eps = numeric.div(x.eps, numeric.mul(numeric.add(numeric.two(@TypeOf(x.val)), numeric.one(@TypeOf(x.val))), numeric.mul(cbrtx, cbrtx))),
     };
+}
+
+pub fn Hypot(comptime X: type, comptime Y: type) type {
+    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or (!isDual(X) and !isDual(Y)))
+        @compileError("zsl.autodiff.dual.hypot: at least one of x or y must be a dual, the other must be a numeric or a dual, got\n\tx: " ++
+            @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
+
+    const SX: type = if (isDual(X)) types.Scalar(X) else X;
+    const SY: type = if (isDual(Y)) types.Scalar(Y) else Y;
+
+    return Dual(numeric.Hypot(SX, SY));
+}
+
+pub fn hypot(x: anytype, y: anytype) autodiff.dual.Hypot(@TypeOf(x), @TypeOf(y)) {
+    if (comptime isDual(@TypeOf(x))) {
+        if (comptime isDual(@TypeOf(y))) {
+            const hypotxy = numeric.hypot(x.val, y.val);
+
+            return .{
+                .val = hypotxy,
+                .eps = numeric.div(numeric.fma(x.val, x.eps, numeric.mul(y.val, y.eps)), hypotxy),
+            };
+        } else {
+            const hypotxy = numeric.hypot(x.val, y);
+
+            return .{
+                .val = hypotxy,
+                .eps = numeric.div(numeric.mul(x.val, x.eps), hypotxy),
+            };
+        }
+    } else {
+        const hypotxy = numeric.hypot(x, y.val);
+
+        return .{
+            .val = hypotxy,
+            .eps = numeric.div(numeric.mul(y.val, y.eps), hypotxy),
+        };
+    }
 }
 
 pub fn Sin(comptime X: type) type {
     comptime if (!types.isNumeric(X) or !isDual(X))
-        @compileError("zsl.autodiff.dual.sin: X must be a dual type, got\n\tX: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.autodiff.dual.sin: x must be a dual, got\n\tx: " ++ @typeName(X) ++ "\n");
 
     return Dual(numeric.Sin(types.Scalar(X)));
 }
@@ -405,7 +880,7 @@ pub fn sin(x: anytype) autodiff.dual.Sin(@TypeOf(x)) {
 
 pub fn Cos(comptime X: type) type {
     comptime if (!types.isNumeric(X) or !isDual(X))
-        @compileError("zsl.autodiff.dual.cos: X must be a dual type, got\n\tX: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.autodiff.dual.cos: x must be a dual, got\n\tx: " ++ @typeName(X) ++ "\n");
 
     return Dual(numeric.Cos(types.Scalar(X)));
 }
@@ -422,7 +897,7 @@ pub fn cos(x: anytype) autodiff.dual.Cos(@TypeOf(x)) {
 
 pub fn Tan(comptime X: type) type {
     comptime if (!types.isNumeric(X) or !isDual(X))
-        @compileError("zsl.autodiff.dual.tan: X must be a dual type, got\n\tX: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.autodiff.dual.tan: x must be a dual, got\n\tx: " ++ @typeName(X) ++ "\n");
 
     return Dual(numeric.Tan(types.Scalar(X)));
 }
@@ -441,7 +916,7 @@ pub fn tan(x: anytype) autodiff.dual.Tan(@TypeOf(x)) {
 
 pub fn Asin(comptime X: type) type {
     comptime if (!types.isNumeric(X) or !isDual(X))
-        @compileError("zsl.autodiff.dual.asin: X must be a dual type, got\n\tX: " ++ @typeName(X) ++ "\n");
+        @compileError("zsl.autodiff.dual.asin: x must be a dual, got\n\tx: " ++ @typeName(X) ++ "\n");
 
     return Dual(numeric.Asin(types.Scalar(X)));
 }
@@ -456,35 +931,174 @@ pub fn asin(x: anytype) autodiff.dual.Asin(@TypeOf(x)) {
     };
 }
 
-fn _Add(comptime X: type, comptime Y: type) type {
-    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or (!isDual(X) and !isDual(Y)))
-        @compileError("zsl.Dual(T).add: at least one of x or y must be a dual, the other must be a numeric, got\n\tx: " ++
-            @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
+pub fn Acos(comptime X: type) type {
+    comptime if (!types.isNumeric(X) or !isDual(X))
+        @compileError("zsl.autodiff.dual.acos: x must be a dual, got\n\tx: " ++ @typeName(X) ++ "\n");
 
-    const SX: type = if (isDual(X)) types.Scalar(X) else X;
-    const SY: type = if (isDual(Y)) types.Scalar(Y) else Y;
-
-    return Dual(numeric.Add(SX, SY));
+    return Dual(numeric.Acos(types.Scalar(X)));
 }
 
-fn _add(x: anytype, y: anytype) _Add(@TypeOf(x), @TypeOf(y)) {
-    // if (comptime isDual(@TypeOf(x))) {
-    //     if (comptime isDual(@TypeOf(y))) {
-    //         return .{
-    //             .val = ops.add(x.val, y.val, .{}) catch unreachable,
-    //             .eps = ops.add(x.eps, y.eps, .{}) catch unreachable,
-    //         };
-    //     } else {
-    //         return .{
-    //             .val = ops.add(x.val, y, .{}) catch unreachable,
-    //             .eps = x.eps,
-    //         };
-    //     }
-    // } else {
-    //     return .{
-    //         .val = ops.add(x, y.val, .{}) catch unreachable,
-    //         .eps = y.eps,
-    //     };
-    // }
-    return .empty;
+pub fn acos(x: anytype) autodiff.dual.Acos(@TypeOf(x)) {
+    return .{
+        // acos(x)
+        .val = numeric.acos(x.val),
+
+        // -y / √(1 - x²)
+        .eps = numeric.neg(numeric.div(x.eps, numeric.sqrt(numeric.sub(numeric.one(@TypeOf(x.val)), numeric.mul(x.val, x.val))))),
+    };
+}
+
+pub fn Atan(comptime X: type) type {
+    comptime if (!types.isNumeric(X) or !isDual(X))
+        @compileError("zsl.autodiff.dual.atan: x must be a dual, got\n\tx: " ++ @typeName(X) ++ "\n");
+
+    return Dual(numeric.Atan(types.Scalar(X)));
+}
+
+pub fn atan(x: anytype) autodiff.dual.Atan(@TypeOf(x)) {
+    return .{
+        // atan(x)
+        .val = numeric.atan(x.val),
+
+        // y / (1 + x²)
+        .eps = numeric.div(x.eps, numeric.add(numeric.one(@TypeOf(x.val)), numeric.mul(x.val, x.val))),
+    };
+}
+
+pub fn Atan2(comptime Y: type, comptime X: type) type {
+    comptime if (!types.isNumeric(Y) or !types.isNumeric(X) or (!isDual(Y) and !isDual(X)))
+        @compileError("zsl.autodiff.dual.atan2: at least one of y or x must be a dual, the other must be a numeric or a dual, got\n\ty: " ++
+            @typeName(Y) ++ "\n\tx: " ++ @typeName(X) ++ "\n");
+
+    const SY: type = if (isDual(Y)) types.Scalar(Y) else Y;
+    const SX: type = if (isDual(X)) types.Scalar(X) else X;
+
+    return Dual(numeric.Atan2(SY, SX));
+}
+
+pub fn atan2(y: anytype, x: anytype) autodiff.dual.Atan2(@TypeOf(y), @TypeOf(x)) {
+    if (comptime isDual(@TypeOf(y))) {
+        if (comptime isDual(@TypeOf(x))) {
+            return .{
+                .val = numeric.atan2(y.val, x.val),
+                .eps = numeric.div(numeric.fma(x.val, y.eps, numeric.neg(numeric.mul(y.val, x.eps))), numeric.add(numeric.mul(x.val, x.val), numeric.mul(y.val, y.val))),
+            };
+        } else {
+            return .{
+                .val = numeric.atan2(y.val, x),
+                .eps = numeric.div(numeric.mul(x, y.eps), numeric.add(numeric.mul(x, x), numeric.mul(y.val, y.val))),
+            };
+        }
+    } else {
+        return .{
+            .val = numeric.atan2(y, x.val),
+            .eps = numeric.div(numeric.neg(numeric.mul(y, x.eps)), numeric.add(numeric.mul(x.val, x.val), numeric.mul(y, y))),
+        };
+    }
+}
+
+pub fn Sinh(comptime X: type) type {
+    comptime if (!types.isNumeric(X) or !isDual(X))
+        @compileError("zsl.autodiff.dual.sinh: x must be a dual, got\n\tx: " ++ @typeName(X) ++ "\n");
+
+    return Dual(numeric.Sinh(types.Scalar(X)));
+}
+
+pub fn sinh(x: anytype) autodiff.dual.Sinh(@TypeOf(x)) {
+    return .{
+        // sinh(x)
+        .val = numeric.sinh(x.val),
+
+        // y * cosh(x)
+        .eps = numeric.mul(x.eps, numeric.cosh(x.val)),
+    };
+}
+
+pub fn Cosh(comptime X: type) type {
+    comptime if (!types.isNumeric(X) or !isDual(X))
+        @compileError("zsl.autodiff.dual.cosh: x must be a dual, got\n\tx: " ++ @typeName(X) ++ "\n");
+
+    return Dual(numeric.Cosh(types.Scalar(X)));
+}
+
+pub fn cosh(x: anytype) autodiff.dual.Cosh(@TypeOf(x)) {
+    return .{
+        // cosh(x)
+        .val = numeric.cosh(x.val),
+
+        // y * sinh(x)
+        .eps = numeric.mul(x.eps, numeric.sinh(x.val)),
+    };
+}
+
+pub fn Tanh(comptime X: type) type {
+    comptime if (!types.isNumeric(X) or !isDual(X))
+        @compileError("zsl.autodiff.dual.tanh: x must be a dual, got\n\tx: " ++ @typeName(X) ++ "\n");
+
+    return Dual(numeric.Tanh(types.Scalar(X)));
+}
+
+pub fn tanh(x: anytype) autodiff.dual.Tanh(@TypeOf(x)) {
+    const tanhx = numeric.tanh(x.val);
+
+    return .{
+        // tanh(x)
+        .val = tanhx,
+
+        // y * (1 - tanh(x)²)
+        .eps = numeric.mul(x.eps, numeric.sub(numeric.one(@TypeOf(x.val)), numeric.mul(tanhx, tanhx))),
+    };
+}
+
+pub fn Asinh(comptime X: type) type {
+    comptime if (!types.isNumeric(X) or !isDual(X))
+        @compileError("zsl.autodiff.dual.asinh: x must be a dual, got\n\tx: " ++ @typeName(X) ++ "\n");
+
+    return Dual(numeric.Asinh(types.Scalar(X)));
+}
+
+pub fn asinh(x: anytype) autodiff.dual.Asinh(@TypeOf(x)) {
+    return .{
+        // asinh(x)
+        .val = numeric.asinh(x.val),
+
+        // y / √(x² + 1)
+        .eps = numeric.div(x.eps, numeric.sqrt(numeric.add(numeric.mul(x.val, x.val), numeric.one(@TypeOf(x.val))))),
+    };
+}
+
+pub fn Acosh(comptime X: type) type {
+    comptime if (!types.isNumeric(X) or !isDual(X))
+        @compileError("zsl.autodiff.dual.acosh: x must be a dual, got\n\tx: " ++ @typeName(X) ++ "\n");
+
+    return Dual(numeric.Acosh(types.Scalar(X)));
+}
+
+pub fn acosh(x: anytype) autodiff.dual.Acosh(@TypeOf(x)) {
+    const acoshx = numeric.acosh(x.val);
+
+    return .{
+        // acosh(x)
+        .val = acoshx,
+
+        // y / sinh(acosh(x))
+        .eps = numeric.div(x.eps, numeric.sinh(acoshx)),
+    };
+}
+
+pub fn Atanh(comptime X: type) type {
+    comptime if (!types.isNumeric(X) or !isDual(X))
+        @compileError("zsl.autodiff.dual.atanh: x must be a dual, got\n\tx: " ++ @typeName(X) ++ "\n");
+
+    return Dual(numeric.Atanh(types.Scalar(X)));
+}
+
+pub fn atanh(x: anytype) autodiff.dual.Atanh(@TypeOf(x)) {
+    return .{
+        // atanh(x)
+        .val = numeric.atanh(x.val),
+
+        // y / (1 - x²)
+        .eps = numeric.div(x.eps, numeric.sub(numeric.one(@TypeOf(x.val)), numeric.mul(x.val, x.val))),
+    };
 }

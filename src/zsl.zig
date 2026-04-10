@@ -26,7 +26,7 @@ pub const matrix = @import("matrix.zig");
 
 pub const stats = @import("stats.zig");
 // pub const linalg = @import("linalg.zig");
-// pub const autodiff = @import("autodiff.zig");
+pub const autodiff = @import("autodiff.zig");
 
 // Symbolic system.
 //pub const Expression = @import("expression/expression.zig").Expression;
