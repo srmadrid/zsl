@@ -16,8 +16,6 @@ pub fn build(b: *std.Build) void {
     options.addOption(IntMode, "int_mode", opt_int_mode);
     const opt_max_dimensions = b.option(u32, "max_dimensions", "Maximum number of dimensions for `Array`s") orelse 8;
     options.addOption(u32, "max_dimensions", opt_max_dimensions);
-
-    // Option to provide BLAS and LAPACK implementations
     const opt_link_cblas = b.option([]const u8, "link_cblas", "Link CBLAS implementation");
     options.addOption(?[]const u8, "link_cblas", opt_link_cblas);
     const opt_link_lapacke = b.option([]const u8, "link_lapacke", "Link LAPACKE implementation");

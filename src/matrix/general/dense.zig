@@ -9,9 +9,7 @@ const numeric = @import("../../numeric.zig");
 const int = @import("../../int.zig");
 
 const vector = @import("../../vector.zig");
-
 const matrix = @import("../../matrix.zig");
-
 const array = @import("../../array.zig");
 
 /// Dense general matrix type, represented as a contiguous array of

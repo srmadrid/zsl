@@ -6,7 +6,9 @@ const vector = @import("../../vector.zig");
 /// input vectors, or between an output vector, an input vector and an input
 /// numeric.
 ///
-/// Aliasing is permitted and may be more efficient in some cases.
+/// Exact aliasing (in-place modification) between the output and an input is
+/// permitted and often more efficient. Any other form of memory overlap might
+/// yield incorrect results.
 ///
 /// For two input sparse vectors, or an input sparse vector and an input
 /// numeric, the operation is only applied to the indices where at least one of

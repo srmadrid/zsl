@@ -43,7 +43,7 @@ test {
     const test_complex = false;
     const test_constants = false;
     const test_numeric = false;
-    const test_vector = true;
+    const test_vector = false;
     const test_matrix = true;
     const test_array = false;
     const test_ops = false;

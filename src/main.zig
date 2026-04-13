@@ -12,27 +12,31 @@ pub fn main() !void {
     var prng = std.Random.DefaultPrng.init(@bitCast(std.time.timestamp()));
     const rand = prng.random();
 
-    var m: usize = 7000;
+    const benchmark = true;
+
+    var m: usize = 7 * (if (benchmark) 1000 else 1);
     _ = &m;
-    var n: usize = 8000;
+    var n: usize = 8 * (if (benchmark) 1000 else 1);
     _ = &n;
 
-    var A = try randomMatrix(zsl.matrix.general.Dense(zsl.cf64, .col_major), allocator, rand, m, n);
+    const poiss = zsl.stats.Poisson(i64, f64).init(1.0);
+    var A = try zsl.matrix.general.Dense(i64, .col_major).initFn(allocator, m, n, zsl.stats.Poisson(i64, f64).sample, .{ poiss, rand });
+    // var A = try randomMatrix(zsl.matrix.general.Dense(f64, .col_major), allocator, rand, m, n);
     defer A.deinit(allocator);
-    // printMatrix("A", A);
+    if (!benchmark) printMatrix("A", A);
 
-    var B = try randomMatrix(zsl.matrix.general.Dense(zsl.cf64, .col_major), allocator, rand, m, n);
+    var B = try randomMatrix(zsl.matrix.general.Dense(f64, .col_major), allocator, rand, m, n);
     defer B.deinit(allocator);
-    // printMatrix("B", B);
+    if (!benchmark) printMatrix("B", B);
 
-    var C: zsl.matrix.general.Dense(zsl.cf64, .col_major) = try .init(allocator, m, n);
+    var C: zsl.matrix.general.Dense(f64, .col_major) = try .init(allocator, m, n);
     defer C.deinit(allocator);
 
     const start_time = std.time.nanoTimestamp();
     try zsl.matrix.apply2_(&C, A, B, zsl.numeric.add_);
     const end_time = std.time.nanoTimestamp();
 
-    // printMatrix("C", C);
+    if (!benchmark) printMatrix("C", C);
 
     std.debug.print("zsl.matrix.add_ took {d} seconds on matrices of size {} x {}\n", .{ (zsl.numeric.cast(f128, end_time) - zsl.numeric.cast(f128, start_time)) / 1e9, m, n });
 }
@@ -841,21 +845,12 @@ fn randomMatrix(comptime M: type, allocator: std.mem.Allocator, rand: std.Random
 fn printMatrix(desc: []const u8, A: anytype) void {
     std.debug.print("\nMatrix {s}:\n\n", .{desc});
 
-    const rows = if (comptime zsl.types.isSquareMatrix(@TypeOf(A)))
-        A.size
-    else
-        A.rows;
-    const cols = if (comptime zsl.types.isSquareMatrix(@TypeOf(A)))
-        A.size
-    else
-        A.cols;
-
     var i: u32 = 0;
-    while (i < rows) : (i += 1) {
+    while (i < A.rows) : (i += 1) {
         std.debug.print("\t", .{});
 
         var j: u32 = 0;
-        while (j < cols) : (j += 1) {
+        while (j < A.cols) : (j += 1) {
             // if (comptime zsl.types.isComplex(zsl.types.Numeric(@TypeOf(A)))) {
             //     std.debug.print("{d:7.4} + {d:7.4}i    ", .{ (A.get(i, j) catch unreachable).re, (A.get(i, j) catch unreachable).im });
             // } else {

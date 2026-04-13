@@ -20,6 +20,8 @@ pub fn Sparse(N: type, layout: Layout) type {
         nnz: usize,
         rows: usize,
         cols: usize,
+        _dlen: usize,
+        _ilen: usize,
         flags: matrix.Flags,
 
         // Type signatures
@@ -40,8 +42,58 @@ pub fn Sparse(N: type, layout: Layout) type {
             .nnz = 0,
             .rows = 0,
             .cols = 0,
+            ._dlen = 0,
+            ._ilen = 0,
             .flags = .{ .owns_data = false },
         };
+
+        /// Initializes a new `matrix.general.Sparse(N, layout)` with the
+        /// specified rows and columns, and a capacity for non-zero elements.
+        ///
+        /// Initialization with this function is only meant for pre-allocating
+        /// an empty matrix to serve as the output destination for in-place
+        /// mathematical functions.
+        ///
+        /// ## Arguments
+        /// * `allocator` (`std.mem.Allocator`): The allocator to use for memory
+        ///   allocations.
+        /// * `rows` (`usize`): The rows of the matrix.
+        /// * `cols` (`usize`): The columns of the matrix.
+        /// * `nnz` (`usize`): The capacity for non-zero elements.
+        ///
+        /// ## Returns
+        /// `matrix.general.Sparse(N, layout)`: The newly initialized matrix.
+        ///
+        /// ## Errors
+        /// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
+        /// * `matrix.Error.ZeroDimension`: If either `rows` or `cols` is zero.
+        /// * `matrix.Error.DimensionMismatch`: If `nnz` is zero or greater than
+        ///   `rows * cols`.
+        pub fn init(allocator: std.mem.Allocator, rows: usize, cols: usize, nnz: usize) !matrix.general.Sparse(N, layout) {
+            if (rows == 0 or cols == 0)
+                return matrix.Error.ZeroDimension;
+
+            if (nnz == 0 or nnz > rows * cols)
+                return matrix.Error.DimensionMismatch;
+
+            const data: []N = try allocator.alloc(N, nnz);
+            errdefer allocator.free(data);
+
+            const idx: []usize = try allocator.alloc(usize, nnz);
+            errdefer allocator.free(idx);
+
+            return .{
+                .data = data.ptr,
+                .idx = idx.ptr,
+                .ptr = (try allocator.alloc(usize, if (comptime layout == .col_major) cols + 1 else rows + 1)).ptr,
+                .nnz = 0,
+                .rows = rows,
+                .cols = cols,
+                ._dlen = nnz,
+                ._ilen = nnz,
+                .flags = .{ .owns_data = false },
+            };
+        }
 
         /// Deinitializes the matrix, freeing any allocated memory and
         /// invalidating it.
@@ -56,8 +108,8 @@ pub fn Sparse(N: type, layout: Layout) type {
         /// `void`
         pub fn deinit(self: *matrix.general.Sparse(N, layout), allocator: std.mem.Allocator) void {
             if (self.flags.owns_data) {
-                allocator.free(self.data[0..self.nnz]);
-                allocator.free(self.idx[0..self.nnz]);
+                allocator.free(self.data[0..self._dlen]);
+                allocator.free(self.idx[0..self._ilen]);
                 allocator.free(self.ptr[0..(if (comptime layout == .col_major) self.cols + 1 else self.rows + 1)]);
             }
 

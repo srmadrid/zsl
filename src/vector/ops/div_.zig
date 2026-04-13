@@ -7,6 +7,10 @@ const vecops = @import("../ops.zig");
 /// Performs in-place computation of the division of a vector `x` and a numeric
 /// `y` into a vector `o`.
 ///
+/// Exact aliasing (in-place modification) between the output and an input is
+/// permitted and often more efficient. Any other form of memory overlap might
+/// yield incorrect results.
+///
 /// ## Signature
 /// ```zig
 /// vector.div_(o: *O, x: X, y: Y) !void

@@ -27,34 +27,66 @@ fn getLogicalValue(mat: anytype, r: usize, c: usize, comptime skip_primary_searc
 }
 
 fn processCoordinate(o: anytype, x: anytype, y: anytype, i_o: usize, j_o: usize, val_x: anytype, val_y: anytype, comptime op_: anytype) void {
-    const X = @TypeOf(x);
-    const Y = @TypeOf(y);
+    const O: type = types.Child(@TypeOf(o));
+    const X: type = @TypeOf(x);
+    const Y: type = @TypeOf(y);
 
-    op_(&o.data[o._index(i_o, j_o)], val_x, val_y);
+    if (comptime types.isSparseMatrix(O)) {
+        var val_o: types.Numeric(O) = undefined;
+        op_(&val_o, val_x, val_y);
+        o.appendAssumeCapacity(i_o, j_o, val_o);
+    } else {
+        op_(&o.data[o._index(i_o, j_o)], val_x, val_y);
+    }
 
     if (comptime types.isSymmetricMatrix(X) or types.isHermitianMatrix(X) or
         types.isSymmetricMatrix(Y) or types.isHermitianMatrix(Y))
     {
         if (i_o != j_o) {
-            const x_hits_naturally = (comptime !types.isSymmetricMatrix(X) and !types.isHermitianMatrix(X)) and utils.searchSparse(x, j_o, i_o) != null;
-            const y_hits_naturally = (comptime !types.isSymmetricMatrix(Y) and !types.isHermitianMatrix(Y)) and utils.searchSparse(y, j_o, i_o) != null;
+            const x_hits_naturally = utils.searchSparse(x, j_o, i_o) != null;
+            var y_hits_naturally = utils.searchSparse(y, j_o, i_o) != null;
+
+            if ((comptime types.layoutOf(X) != types.layoutOf(Y)) and
+                (comptime types.isSymmetricMatrix(X) or types.isHermitianMatrix(X)) and
+                (comptime types.isSymmetricMatrix(Y) or types.isHermitianMatrix(Y)) and
+                utils.searchSparse(x, i_o, j_o) != null)
+            {
+                y_hits_naturally = false;
+            }
 
             if (!x_hits_naturally and !y_hits_naturally) {
                 const mirror_x = if (comptime types.isSymmetricMatrix(X)) val_x else if (comptime types.isHermitianMatrix(X)) numeric.conj(val_x) else numeric.zero(types.Numeric(X));
                 const mirror_y = if (comptime types.isSymmetricMatrix(Y)) val_y else if (comptime types.isHermitianMatrix(Y)) numeric.conj(val_y) else numeric.zero(types.Numeric(Y));
 
-                op_(&o.data[o._index(j_o, i_o)], mirror_x, mirror_y);
+                if (comptime types.isSparseMatrix(O)) {
+                    var val_o: types.Numeric(O) = undefined;
+                    op_(&val_o, mirror_x, mirror_y);
+                    o.appendAssumeCapacity(j_o, i_o, val_o);
+                } else {
+                    op_(&o.data[o._index(j_o, i_o)], mirror_x, mirror_y);
+                }
             }
         }
     }
 }
 
-pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
+pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void {
     const O: type = types.Child(@TypeOf(o));
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 
-    o.setAll(numeric.zero(types.Numeric(O)));
+    if (comptime types.isSparseMatrix(O)) {
+        const nnz =
+            x.nnz * (if (comptime types.isSymmetricMatrix(X) or types.isHermitianMatrix(X)) 2 else 1) +
+            y.nnz * (if (comptime types.isSymmetricMatrix(Y) or types.isHermitianMatrix(Y)) 2 else 1);
+
+        if (o._dlen < nnz or o._rlen < nnz or o._clen < nnz)
+            return matrix.Error.InsuficientSpace;
+
+        o.nnz = 0;
+    } else {
+        o.setAll(numeric.zero(types.Numeric(O)));
+    }
 
     if (comptime types.layoutOf(X) == types.layoutOf(Y)) {
         var outer: usize = 0;

@@ -96,26 +96,36 @@ fn executeTestBlock(
             allocator,
             rand,
             len,
-            len,
+            len, // Ensure if A is sparse it always has space (A.nnz > B.nnz + C.nnz)
         );
         defer A.deinit(allocator);
 
-        var B = if (comptime alias_B) A else if (comptime zsl.types.isNumeric(combination[1])) tzsl.randomNumber(combination[1], rand) else try tzsl.vector.randomVector(
-            combination[1],
-            allocator,
-            rand,
-            len,
-            len / 4,
-        );
+        var B = if (comptime alias_B)
+            A
+        else if (comptime zsl.types.isNumeric(combination[1]))
+            tzsl.randomNumber(combination[1], rand)
+        else
+            try tzsl.vector.randomVector(
+                combination[1],
+                allocator,
+                rand,
+                len,
+                len / 4,
+            );
         defer if (comptime !alias_B) tzsl.deinit(allocator, &B);
 
-        var C = if (comptime alias_C) A else if (comptime zsl.types.isNumeric(combination[2])) tzsl.randomNumber(combination[2], rand) else try tzsl.vector.randomVector(
-            combination[2],
-            allocator,
-            rand,
-            len,
-            len / 4,
-        );
+        var C = if (comptime alias_C)
+            A
+        else if (comptime zsl.types.isNumeric(combination[2]))
+            tzsl.randomNumber(combination[2], rand)
+        else
+            try tzsl.vector.randomVector(
+                combination[2],
+                allocator,
+                rand,
+                len,
+                len / 4,
+            );
         defer if (comptime !alias_C) tzsl.deinit(allocator, &C);
 
         var D = if (comptime std.mem.eql(u8, op, "add"))

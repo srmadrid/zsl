@@ -9,7 +9,7 @@ pub fn isDual(comptime T: type) bool {
     return @hasDecl(T, "is_dual") and T.is_dual;
 }
 
-/// Represents a dual number `x + yϵ`.
+/// Represents a dual number `x + yϵ`, where `ϵ² = 0`.
 pub fn Dual(comptime N: type) type {
     if (comptime !types.isNumeric(N))
         @compileError("zsl.autodiff.Dual: N must be a numeric type, got \n\tT: " ++ @typeName(N) ++ "\n");

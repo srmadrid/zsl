@@ -33,6 +33,7 @@ pub fn Sparse(N: type) type {
         // Type signatures
         pub const is_matrix = true;
         pub const is_builder = true;
+        pub const is_sparse = true;
         pub const storage_layout = types.default_layout;
         pub const storage_uplo = types.default_uplo;
         pub const storage_diag = types.default_diag;
@@ -370,7 +371,9 @@ pub fn Sparse(N: type) type {
 
             var result: M = undefined;
             result.data = data.ptr;
+            result._dlen = unique_nnz;
             result.idx = idx.ptr;
+            result._ilen = unique_nnz;
             result.ptr = ptr.ptr;
             result.nnz = unique_nnz;
             result.flags = .{ .owns_data = true };

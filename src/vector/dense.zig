@@ -9,7 +9,7 @@ const matrix = @import("../matrix.zig");
 const int = @import("../int.zig");
 
 /// Dense vector type, represented as a contiguous array of elements of type
-/// `N`.
+/// `N` and a stride.
 pub fn Dense(N: type) type {
     if (!types.isNumeric(N))
         @compileError("zsl.vector.Dense: N must be a numeric type, got \n\tN = " ++ @typeName(N) ++ "\n");

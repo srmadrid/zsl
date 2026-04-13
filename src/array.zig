@@ -1,32 +1,17 @@
-const std = @import("std");
-
-const opts = @import("options");
-
-const types = @import("types.zig");
-const Order = types.Layout;
+//! Namespace for array types and operations.
 
 const int = @import("int.zig");
-const float = @import("float.zig");
+
+const numeric = @import("numeric.zig");
+
+pub const max_dimensions = @import("options").max_dimensions;
 
 const dense = @import("array/dense.zig");
 pub const Dense = dense.Dense;
-pub const strided = @import("array/strided.zig");
+const strided = @import("array/strided.zig");
 pub const Strided = strided.Strided;
 const sparse = @import("array/sparse.zig");
 pub const Sparse = sparse.Sparse;
-
-pub fn AnyArray(comptime T: type) type {
-    return union(enum) {
-        dense: *const Dense(T),
-        strided: *const Strided(T),
-        sparse: *const Sparse(T),
-    };
-}
-
-pub const Iterator = @import("array/iterators.zig").Iterator;
-//pub const MultiIterator = @import("array/iterators.zig").MultiIterator;
-
-pub const max_dimensions = opts.max_dimensions;
 
 // const arrops = @import("array/ops.zig");
 // pub const apply1 = arrops.apply1;
@@ -137,18 +122,11 @@ pub const max_dimensions = opts.max_dimensions;
 // pub const ceil = arrops.ceil;
 // pub const ceil_ = arrops.ceil_;
 
-pub const Broadcast = struct {
-    ndim: u32,
-    shape: [max_dimensions]u32,
-};
-
-pub fn broadcastShapes(
-    shapes: []const []const u32,
-) !Broadcast {
+pub fn broadcastShapes(shapes: []const []const usize) !struct { ndim: usize, shape: [max_dimensions]usize } {
     if (shapes.len == 0)
         return Error.ZeroDimension;
 
-    var ndim: u32 = 0;
+    var ndim: usize = 0;
     for (shapes) |shape| {
         if (shape.len == 0)
             return Error.ZeroDimension;
@@ -156,39 +134,34 @@ pub fn broadcastShapes(
         if (shape.len > max_dimensions)
             return Error.TooManyDimensions;
 
-        if (shape.len > ndim) {
-            ndim = types.scast(u32, shape.len);
-        }
+        if (shape.len > ndim)
+            ndim = shape.len;
     }
 
-    var result: [max_dimensions]u32 = .{0} ** max_dimensions;
-    var i: i32 = types.scast(i32, ndim - 1);
+    var result: [max_dimensions]usize = .{0} ** max_dimensions;
+    var i: isize = numeric.cast(isize, ndim - 1);
     while (i >= 0) : (i -= 1) {
-        var max_dim: u32 = 1;
+        var max_dim: usize = 1;
         for (shapes) |shape| {
-            const diff: i32 = types.scast(i32, ndim - shape.len);
+            const diff: isize = numeric.cast(isize, ndim - shape.len);
             if (i - diff >= 0) {
-                if (shape[types.scast(u32, i - diff)] == 0) {
+                if (shape[numeric.cast(usize, i - diff)] == 0)
                     return Error.ZeroDimension;
-                }
 
-                if (shape[types.scast(u32, i - diff)] > max_dim) {
-                    if (max_dim != 1) {
+                if (shape[numeric.cast(usize, i - diff)] > max_dim) {
+                    if (max_dim != 1)
                         return Error.NotBroadcastable;
-                    }
 
-                    max_dim = shape[types.scast(u32, i - diff)];
+                    max_dim = shape[numeric.cast(usize, i - diff)];
                 }
 
-                if (shape[types.scast(u32, i - diff)] != 1 and
-                    shape[types.scast(u32, i - diff)] != max_dim)
-                {
+                if (shape[numeric.cast(usize, i - diff)] != 1 and
+                    shape[numeric.cast(usize, i - diff)] != max_dim)
                     return Error.NotBroadcastable;
-                }
             }
         }
 
-        result[types.scast(u32, i)] = max_dim;
+        result[numeric.cast(usize, i)] = max_dim;
     }
 
     return .{
@@ -198,27 +171,20 @@ pub fn broadcastShapes(
 }
 
 /// Checks if the given axes form a valid permutation of `[0, ..., ndim - 1]`.
-pub fn isPermutation(
-    ndim: u32,
-    axes: []const u32,
-) bool {
-    if (ndim != axes.len) {
+pub fn isPermutation(ndim: usize, axes: []const usize) bool {
+    if (ndim != axes.len)
         return false; // axes must match the shape length
-    }
 
-    if (ndim == 0 or ndim > max_dimensions) {
+    if (ndim == 0 or ndim > max_dimensions)
         return false; // empty or too many dimensions is not a valid permutation
-    }
 
     var seen: [max_dimensions]bool = .{false} ** max_dimensions;
     for (axes) |axis| {
-        if (axis >= ndim) {
+        if (axis >= ndim)
             return false; // axis out of bounds
-        }
 
-        if (seen[axis]) {
+        if (seen[axis])
             return false; // duplicate axis
-        }
 
         seen[axis] = true;
     }
@@ -226,8 +192,8 @@ pub fn isPermutation(
     return true; // is a permutation
 }
 
-pub fn trivialPermutation(ndim: u32) [max_dimensions]u32 {
-    var result: [max_dimensions]u32 = .{0} ** max_dimensions;
+pub fn trivialPermutation(ndim: usize) [max_dimensions]usize {
+    var result: [max_dimensions]usize = .{0} ** max_dimensions;
 
     if (ndim == 0 or ndim > max_dimensions)
         return result; // empty or too many dimensions, return trivial permutation
@@ -239,13 +205,13 @@ pub fn trivialPermutation(ndim: u32) [max_dimensions]u32 {
     return result;
 }
 
-pub fn trivialReversePermutation(ndim: u32) [max_dimensions]u32 {
-    var result: [max_dimensions]u32 = .{0} ** max_dimensions;
+pub fn trivialReversePermutation(ndim: usize) [max_dimensions]usize {
+    var result: [max_dimensions]usize = .{0} ** max_dimensions;
 
     if (ndim == 0 or ndim > max_dimensions)
         return result; // empty or too many dimensions, return empty permutation
 
-    var i: u32 = 0;
+    var i: usize = 0;
     for (result[0..ndim]) |*axis| {
         axis.* = ndim - i - 1;
 
@@ -256,18 +222,18 @@ pub fn trivialReversePermutation(ndim: u32) [max_dimensions]u32 {
 }
 
 pub const Range = struct {
-    start: u32,
-    stop: u32,
-    step: i32,
+    start: usize,
+    stop: usize,
+    step: isize,
 
-    pub const all: Range = .{ .start = 0, .stop = int.maxVal(u32), .step = 1 };
+    pub const all: Range = .{ .start = 0, .stop = int.maxVal(usize), .step = 1 };
 
-    pub const all_reverse: Range = .{ .start = int.maxVal(u32), .stop = int.maxVal(u32), .step = -1 };
+    pub const all_reverse: Range = .{ .start = int.maxVal(usize), .stop = int.maxVal(usize), .step = -1 };
 
-    pub fn init(start: ?u32, stop: ?u32, step: ?i32) !Range {
+    pub fn init(start: ?usize, stop: ?usize, step: ?isize) !Range {
         const range: Range = .{
-            .start = start orelse int.maxVal(u32),
-            .stop = stop orelse int.maxVal(u32),
+            .start = start orelse int.maxVal(usize),
+            .stop = stop orelse int.maxVal(usize),
             .step = step orelse 1,
         };
 
@@ -277,7 +243,7 @@ pub const Range = struct {
 
         if (((range.step > 0 and range.start >= range.stop) or
             (range.step < 0 and range.start <= range.stop)) and
-            (range.start != int.maxVal(u32) and range.stop != int.maxVal(u32)))
+            (range.start != int.maxVal(usize) and range.stop != int.maxVal(usize)))
         {
             return Error.RangeOutOfBounds;
         }
@@ -285,20 +251,20 @@ pub const Range = struct {
         return range;
     }
 
-    pub fn single(index: u32) Range {
+    pub fn single(index: usize) Range {
         return Range{ .start = index, .stop = index + 1, .step = 1 };
     }
 
-    pub fn len(self: Range) u32 {
+    pub fn len(self: Range) usize {
         if (self.start == self.stop) {
             return 0;
         }
 
         if (self.step > 0) {
-            return (self.stop - self.start + types.scast(u32, self.step) - 1) / types.scast(u32, self.step);
+            return (self.stop - self.start + numeric.cast(usize, self.step) - 1) / numeric.cast(usize, self.step);
         }
 
-        return (self.start - self.stop + types.scast(u32, int.abs(self.step)) - 1) / types.scast(u32, int.abs(self.step));
+        return (self.start - self.stop + numeric.cast(usize, int.abs(self.step)) - 1) / numeric.cast(usize, int.abs(self.step));
     }
 };
 
@@ -322,7 +288,6 @@ pub const Error = error{
     NeedDense,
 };
 
-// Flags common between Dense, Strided, and Sparse arrays.
 pub const Flags = packed struct {
     owns_data: bool = true,
 };
