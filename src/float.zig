@@ -534,12 +534,9 @@ pub const round = @import("float/round.zig").round;
 pub const rint = @import("float/rint.zig").rint;
 
 // Floating-point manipulation functions
-pub const Frexp = @import("float/frexp.zig").Frexp;
 pub const frexp = @import("float/frexp.zig").frexp;
-pub const Ldexp = @import("float/ldexp.zig").Ldexp;
 pub const ldexp = @import("float/ldexp.zig").ldexp;
 // pub const modf = @import("float/modf.zig").modf; // to implement
-pub const Scalbn = @import("float/scalbn.zig").Scalbn;
 pub const scalbn = @import("float/scalbn.zig").scalbn;
 // pub const ilogb = @import("float/ilogb.zig").ilogb; // to implement
 // pub const logb = @import("float/logb.zig").logb; // to implement

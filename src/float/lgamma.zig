@@ -31,7 +31,7 @@ const ldbl128 = @import("ldbl128.zig");
 pub fn lgamma(x: anytype) @TypeOf(x) {
     const X: type = @TypeOf(x);
 
-    comptime if (!types.isNumeric(X) or !types.numericType(X) != .float)
+    comptime if (!types.isNumeric(X) or types.numericType(X) != .float)
         @compileError("zsl.float.lgamma: x must be a float, got \n\tx: " ++ @typeName(X) ++ "\n");
 
     var local_signgam: i32 = undefined;
@@ -116,11 +116,11 @@ pub fn lgamma_r128(x: f128, signgamp: *i32) f128 {
 
         z = q * float.sin(float.pi(f128) * z);
         if (z == 0.0)
-            return -float.log(q);
+            return -float.ln(q);
 
         var s: i32 = undefined;
         const w: f128 = lgamma_r128(q, &s);
-        z = float.log(float.pi(f128) / z) - w;
+        z = float.ln(float.pi(f128) / z) - w;
         return z;
     }
 
@@ -154,7 +154,7 @@ pub fn lgamma_r128(x: f128, signgamp: *i32) f128 {
                     const z: f128 = x - 1;
                     p = z * erf_data.neval(z, &lgamma_data.RN2_128, 9) / erf_data.deval(z, &lgamma_data.RD2_128, 9);
                 }
-                p = p - float.log(x);
+                p = p - float.ln(x);
             },
             1 => {
                 if (x < 0.875) {
@@ -174,7 +174,7 @@ pub fn lgamma_r128(x: f128, signgamp: *i32) f128 {
                         const z: f128 = x - 1;
                         p = z * erf_data.neval(z, &lgamma_data.RN2_128, 9) / erf_data.deval(z, &lgamma_data.RD2_128, 9);
                     }
-                    p = p - float.log(x);
+                    p = p - float.ln(x);
                 } else if (x < 1) {
                     const z: f128 = x - 1;
                     p = z * erf_data.neval(z, &lgamma_data.RNr9_128, 8) / erf_data.deval(z, &lgamma_data.RDr9_128, 8);
@@ -305,10 +305,10 @@ pub fn lgamma_r128(x: f128, signgamp: *i32) f128 {
         return numeric.cast(f128, signgamp.*) * std.math.inf(f128);
 
     if (x > 0x1p112)
-        return x * (float.log(x) - 1);
+        return x * (float.ln(x) - 1);
 
     var q: f128 = lgamma_data.ls2pi_128 - x;
-    q = (x - 0.5) * float.log(x) + q;
+    q = (x - 0.5) * float.ln(x) + q;
     if (x > 1.0e18)
         return q;
 

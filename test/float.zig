@@ -19,7 +19,7 @@ pub fn ulpDistance(a: anytype, b: anytype) f128 {
         else => unreachable,
     };
 
-    var shift: u32 = switch (@TypeOf(a)) {
+    var shift: usize = switch (@TypeOf(a)) {
         f16 => 15,
         f32 => 31,
         f64 => 63,
@@ -96,8 +96,8 @@ fn processPrecision(
 
     var sum_ulp: f128 = 0.0;
     var max_ulp: f128 = 0;
-    var exact_count: u32 = 0;
-    var subnormal_count: u32 = 0;
+    var exact_count: usize = 0;
+    var subnormal_count: usize = 0;
 
     for (0..data.len) |i| {
         var ulp: f128 = undefined;
@@ -121,13 +121,13 @@ fn processPrecision(
 
     std.mem.sort(f128, &ulps, {}, std.sort.asc(f128));
 
-    const mean_ulp: f128 = sum_ulp / zsl.cast(f128, zsl.int.sub(data.len, subnormal_count));
-    const p99_index: u32 = zsl.int.min(
-        zsl.cast(u32, std.math.ceil(zsl.scast(f128, data.len) * 0.99)) - 1,
+    const mean_ulp: f128 = sum_ulp / zsl.numeric.cast(f128, zsl.int.sub(data.len, subnormal_count));
+    const p99_index: usize = zsl.int.min(
+        zsl.numeric.cast(usize, std.math.ceil(zsl.numeric.cast(f128, data.len) * 0.99)) - 1,
         data.len - 1,
     );
     const p99_ulp: f128 = ulps[p99_index];
-    const exact_percentage: f128 = (zsl.scast(f128, exact_count) / zsl.scast(f128, data.len)) * 100.0;
+    const exact_percentage: f128 = (zsl.numeric.cast(f128, exact_count) / zsl.numeric.cast(f128, data.len)) * 100.0;
     const status: []const u8 =
         if (max_ulp <= 2.0)
             "\x1b[32mPASS\x1b[0m"
@@ -149,7 +149,7 @@ fn processPrecision(
     std.debug.print(
         "      {d} |     {d:.2} |      {d} |",
         .{
-            zsl.scast(u128, max_ulp),
+            zsl.numeric.cast(u128, max_ulp),
             mean_ulp,
             p99_ulp,
         },
@@ -162,6 +162,10 @@ fn processPrecision(
 }
 
 test {
+    // Override test flags
+    const test_all = true;
+
+    // Individual test flags
     const test_basic = false;
     const test_exponential = false;
     const test_power = false;
@@ -172,31 +176,31 @@ test {
     const test_nearest_integer = false;
     const test_floating_point = false;
 
-    if (test_basic) {
+    if (test_all or test_basic) {
         //_ = @import("float/fmod.zig");
         //_ = @import("float/remainder.zig");
         //_ = @import("float/remquo.zig");
         //_ = @import("float/fdim.zig");
     }
 
-    if (test_exponential) {
+    if (test_all or test_exponential) {
         _ = @import("float/exp.zig");
         _ = @import("float/exp2.zig");
         _ = @import("float/expm1.zig");
-        _ = @import("float/log.zig");
+        _ = @import("float/ln.zig");
         _ = @import("float/log10.zig");
         _ = @import("float/log2.zig");
         _ = @import("float/log1p.zig");
     }
 
-    if (test_power) {
+    if (test_all or test_power) {
         _ = @import("float/pow.zig");
         _ = @import("float/sqrt.zig");
         _ = @import("float/cbrt.zig");
         _ = @import("float/hypot.zig");
     }
 
-    if (test_trigonometric) {
+    if (test_all or test_trigonometric) {
         _ = @import("float/sin.zig");
         _ = @import("float/cos.zig");
         _ = @import("float/tan.zig");
@@ -207,7 +211,7 @@ test {
         _ = @import("float/sincos.zig");
     }
 
-    if (test_hyperbolic) {
+    if (test_all or test_hyperbolic) {
         _ = @import("float/sinh.zig");
         _ = @import("float/cosh.zig");
         _ = @import("float/tanh.zig");
@@ -216,14 +220,14 @@ test {
         _ = @import("float/atanh.zig");
     }
 
-    if (test_error_gamma) {
+    if (test_all or test_error_gamma) {
         _ = @import("float/erf.zig");
         _ = @import("float/erfc.zig");
         _ = @import("float/gamma.zig");
         _ = @import("float/lgamma.zig");
     }
 
-    if (test_bessel) {
+    if (test_all or test_bessel) {
         //_ = @import("float/j0.zig");
         //_ = @import("float/j1.zig");
         //_ = @import("float/jn.zig");
@@ -232,13 +236,13 @@ test {
         //_ = @import("float/yn.zig");
     }
 
-    if (test_nearest_integer) {
+    if (test_all or test_nearest_integer) {
         //_ = @import("float/nearbyint.zig");
         //_ = @import("float/lrint.zig");
         //_ = @import("float/llrint.zig");
     }
 
-    if (test_floating_point) {
+    if (test_all or test_floating_point) {
         //_ = @import("float/ilogb.zig");
         //_ = @import("float/logb.zig");
         //_ = @import("float/nextafter.zig");

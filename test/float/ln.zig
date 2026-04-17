@@ -1,6 +1,6 @@
 const std = @import("std");
 const zsl = @import("zsl");
-const log = zsl.float.log;
+const ln = zsl.float.ln;
 const tzsl = @import("../zsl.zig");
 
 const data_f32: [39]struct { f32, f32 } = .{
@@ -271,30 +271,30 @@ const data_f128: [89]struct { f128, f128 } = .{
     .{ -0x1.6fe0d4c40097884d86068c297d0cp-4, 0xe.a0288c3cb5ecp-4 },
 };
 
-test log {
+test ln {
     var results_f32: [data_f32.len]f32 = undefined;
     var results_f64: [data_f64.len]f64 = undefined;
     var results_f80: [data_f80.len]f80 = undefined;
     var results_f128: [data_f128.len]f128 = undefined;
 
     for (0..data_f32.len) |i| {
-        results_f32[i] = log(data_f32[i][1]);
+        results_f32[i] = ln(data_f32[i][1]);
     }
 
     for (0..data_f64.len) |i| {
-        results_f64[i] = log(data_f64[i][1]);
+        results_f64[i] = ln(data_f64[i][1]);
     }
 
     for (0..data_f80.len) |i| {
-        results_f80[i] = log(data_f80[i][1]);
+        results_f80[i] = ln(data_f80[i][1]);
     }
 
     for (0..data_f128.len) |i| {
-        results_f128[i] = log(data_f128[i][1]);
+        results_f128[i] = ln(data_f128[i][1]);
     }
 
     tzsl.float.printReport(
-        "float.log",
+        "float.ln",
         data_f32,
         results_f32,
         data_f64,

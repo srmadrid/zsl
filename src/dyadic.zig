@@ -25,18 +25,18 @@ pub fn Dyadic(mantissa_bits: u16, exponent_bits: u16) type {
         exponent: Exponent,
         positive: bool,
 
-        /// Type signature
+        // Type signature
         pub const is_numeric = true;
         pub const is_dyadic = true;
         pub const is_real_type = true;
         pub const is_signed = true;
 
-        pub const Mantissa = std.meta.Int(.unsigned, mantissa_bits);
-        const WideMantissa = std.meta.Int(.unsigned, 2 * mantissa_bits);
-        pub const Exponent = std.meta.Int(.signed, exponent_bits);
-        const WideExponent = std.meta.Int(.signed, 2 * exponent_bits);
+        pub const Mantissa = @Int(.unsigned, mantissa_bits);
+        const WideMantissa = @Int(.unsigned, 2 * mantissa_bits);
+        pub const Exponent = @Int(.signed, exponent_bits);
+        const WideExponent = @Int(.signed, 2 * exponent_bits);
 
-        /// Constants
+        // Constants
         pub const inf: Dyadic(mantissa_bits, exponent_bits) = .{ .mantissa = 0, .exponent = int.maxVal(Exponent), .positive = true };
         pub const nan: Dyadic(mantissa_bits, exponent_bits) = .{ .mantissa = 1, .exponent = int.maxVal(Exponent), .positive = true };
         pub const zero: Dyadic(mantissa_bits, exponent_bits) = .{ .mantissa = 0, .exponent = int.minVal(Exponent), .positive = true };

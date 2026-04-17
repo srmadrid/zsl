@@ -32,14 +32,10 @@ pub const Layout = enum(u1) {
     row_major,
     col_major,
 
-    pub fn toCUInt(self: Layout) c_uint {
-        return switch (self) {
-            .row_major => 101,
-            .col_major => 102,
-        };
-    }
+    pub fn toInt(self: Layout, comptime Int: type) Int {
+        comptime if (!isNumeric(Int) or numericType(Int) != .int)
+            @compileError("zsl.Layout.toInt: Int must be an int type, got:\n\tInt = " ++ @typeName(Int) ++ "\n");
 
-    pub fn toCInt(self: Layout) c_int {
         return switch (self) {
             .row_major => 101,
             .col_major => 102,
@@ -59,43 +55,19 @@ pub const Layout = enum(u1) {
             .col_major => .row_major,
         };
     }
-
-    pub fn resolve3(self: Layout, other1: Layout, other2: Layout) Layout {
-        if (self == other1 and self == other2)
-            return self;
-
-        if (self == other1 or self == other2)
-            return self;
-
-        if (other1 == other2)
-            return other1;
-
-        return default_layout;
-    }
 };
 
 pub const Uplo = enum(u1) {
     upper,
     lower,
 
-    pub fn toCUInt(self: Uplo) c_uint {
-        return switch (self) {
-            .upper => 121,
-            .lower => 122,
-        };
-    }
+    pub fn toInt(self: Uplo, comptime Int: type) Int {
+        comptime if (!isNumeric(Int) or numericType(Int) != .int)
+            @compileError("zsl.Uplo.toInt: Int must be an int type, got:\n\tInt = " ++ @typeName(Int) ++ "\n");
 
-    pub fn toCInt(self: Uplo) c_int {
         return switch (self) {
-            .upper => 121,
-            .lower => 122,
-        };
-    }
-
-    pub fn toChar(self: Uplo) u8 {
-        return switch (self) {
-            .upper => 'U',
-            .lower => 'L',
+            .upper => if (comptime Int == u8) 'U' else 121,
+            .lower => if (comptime Int == u8) 'L' else 122,
         };
     }
 
@@ -111,24 +83,13 @@ pub const Diag = enum(u1) {
     non_unit,
     unit,
 
-    pub fn toCUInt(self: Diag) c_uint {
-        return switch (self) {
-            .non_unit => 131,
-            .unit => 132,
-        };
-    }
+    pub fn toInt(self: Diag, comptime Int: type) Int {
+        comptime if (!isNumeric(Int) or numericType(Int) != .int)
+            @compileError("zsl.Diag.toInt: Int must be an int type, got:\n\tInt = " ++ @typeName(Int) ++ "\n");
 
-    pub fn toCInt(self: Diag) c_int {
         return switch (self) {
-            .non_unit => 131,
-            .unit => 132,
-        };
-    }
-
-    pub fn toChar(self: Diag) u8 {
-        return switch (self) {
-            .non_unit => 'N',
-            .unit => 'U',
+            .non_unit => if (comptime Int == u8) 'N' else 131,
+            .unit => if (comptime Int == u8) 'U' else 132,
         };
     }
 
@@ -147,8 +108,8 @@ pub const IterationOrder = enum {
 
 /// `types.NumericType` is an enum that represents the different numeric types
 /// supported by the library. It is used to categorize types based on their
-/// properties and capabilities, such as whether they are integers, floats,
-/// complex numbers, etc.
+/// properties and capabilities, such as whether they are ints, floats, complex
+/// numbers, etc.
 ///
 /// ## Values
 /// * `bool`: Represents the boolean type (`bool`).
@@ -298,59 +259,6 @@ fn free(context: *anyopaque, memory: []u8, alignment: std.mem.Alignment, ra: usi
     return;
 }
 
-pub fn empty(comptime T: type) T {
-    return undefined;
-    // if (comptime isPointer(T))
-    //     return @ptrFromInt(@alignOf(Child(T)));
-
-    // if (comptime !isSupportedType(T))
-    //     @compileError("zsl.types.empty: " ++ @typeName(T) ++ " is not a supported type");
-
-    // switch (comptime domain(T)) {
-    //     .numeric => switch (comptime numericType(T)) {
-    //         .bool => return false,
-    //         .int => return 0,
-    //         .float => return 0.0,
-    //         .dyadic => return .zero,
-    //         .complex => return .zero,
-    //         .custom => {
-    //             if (comptime !@hasDecl(T, "empty"))
-    //                 @compileError("zsl.types.empty: custom numeric type " ++ @typeName(T) ++ " must have a `empty` declaration");
-
-    //             return .empty;
-    //         },
-    //     },
-    //     .vector => switch (comptime vectorType(T)) {
-    //         else => return .empty,
-    //         .custom => {
-    //             if (comptime !@hasDecl(T, "empty"))
-    //                 @compileError("zsl.types.empty: custom vector type " ++ @typeName(T) ++ " must have an `empty` declaration");
-
-    //             return .empty;
-    //         },
-    //     },
-    //     .matrix => switch (comptime matrixType(T)) {
-    //         else => return .empty,
-    //         .custom => {
-    //             if (comptime !@hasDecl(T, "empty"))
-    //                 @compileError("zsl.types.empty: custom matrix type " ++ @typeName(T) ++ " must have an `empty` declaration");
-
-    //             return .empty;
-    //         },
-    //     },
-    //     .array => switch (comptime arrayType(T)) {
-    //         else => return .empty,
-    //         .custom => {
-    //             if (comptime !@hasDecl(T, "empty"))
-    //                 @compileError("zsl.types.empty: custom array type " ++ @typeName(T) ++ " must have an `empty` declaration");
-
-    //             return .empty;
-    //         },
-    //     },
-    //     .expression => return .empty,
-    // }
-}
-
 /// Checks the the input type `N` and returns the corresponding
 /// `types.NumericType`.
 ///
@@ -364,7 +272,6 @@ pub fn empty(comptime T: type) T {
 /// ## Returns
 /// `types.NumericType`: The corresponding `types.NumericType` enum value.
 pub inline fn numericType(comptime N: type) NumericType {
-    // Without inline, functions calling this fail miserably. I have no idea why.
     switch (comptime @typeInfo(N)) {
         .bool => return .bool,
         .int, .comptime_int => return .int,
@@ -611,7 +518,7 @@ pub fn Scalar(comptime T: type) type {
             .int => return T,
             .float => return T,
             .dyadic => return T,
-            .complex => switch (T) {
+            .complex => switch (comptime T) {
                 std.math.Complex(f16) => return f16,
                 std.math.Complex(f32) => return f32,
                 std.math.Complex(f64) => return f64,
@@ -884,7 +791,7 @@ pub fn ReturnTypeFromInputs(
         else if (comptime input_type == std.mem.Allocator)
             useless_allocator
         else
-            empty(input_type);
+            undefined;
     }
 
     switch (comptime input_types.len) {

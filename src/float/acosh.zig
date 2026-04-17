@@ -71,12 +71,12 @@ fn acosh32(x: f32) f32 {
         if (hx >= 0x7f800000) // x is inf of NaN
             return x + x
         else
-            return float.log(x) + 6.9314718246e-1; // acosh(huge) = log(2 * x)
+            return float.ln(x) + 6.9314718246e-1; // acosh(huge) = ln(2 * x)
     } else if (hx == 0x3f800000) {
         return 0.0; // acosh(1) = 0
     } else if (hx > 0x40000000) { // 2**28 > x > 2
         const t: f32 = x * x;
-        return float.log(2.0 * x - 1.0 / (x + float.sqrt(t - 1.0)));
+        return float.ln(2.0 * x - 1.0 / (x + float.sqrt(t - 1.0)));
     } else { // 1 < x < 2
         const t: f32 = x - 1.0;
         return float.log1p(t + float.sqrt(2.0 * t + t * t));
@@ -105,12 +105,12 @@ fn acosh64(x: f64) f64 {
         if (hx >= 0x7ff00000) // x is inf of NaN
             return x + x
         else
-            return float.log(x) + 6.93147180559945286227e-1; // acosh(huge) = log(2 * x)
+            return float.ln(x) + 6.93147180559945286227e-1; // acosh(huge) = ln(2 * x)
     } else if (((hx - 0x3ff00000) | lx) == 0) {
         return 0.0; // acosh(1) = 0
     } else if (hx > 0x40000000) { // 2**28 > x > 2
         const t: f64 = x * x;
-        return float.log(2.0 * x - 1.0 / (x + float.sqrt(t - 1.0)));
+        return float.ln(2.0 * x - 1.0 / (x + float.sqrt(t - 1.0)));
     } else { // 1 < x < 2
         const t: f64 = x - 1.0;
         return float.log1p(t + float.sqrt(2.0 * t + t * t));
@@ -139,12 +139,12 @@ fn acosh128(x: f128) f128 {
         if (hx >= 0x7fff000000000000) // x is inf of NaN
             return x + x
         else
-            return float.log(x) + 0.6931471805599453094172321214581766; // acoshl(huge) = logl(2 * x)
+            return float.ln(x) + 0.6931471805599453094172321214581766; // acoshl(huge) = lnl(2 * x)
     } else if (((hx - 0x3fff000000000000) | lx) == 0) {
         return 0.0; // acosh(1) = 0
     } else if (hx > 0x4000000000000000) { // 2**28 > x > 2
         const t: f128 = x * x;
-        return float.log(2.0 * x - 1.0 / (x + float.sqrt(t - 1.0)));
+        return float.ln(2.0 * x - 1.0 / (x + float.sqrt(t - 1.0)));
     } else { // 1 < x < 2
         const t: f128 = x - 1.0;
         return float.log1p(t + float.sqrt(2.0 * t + t * t));

@@ -41,7 +41,7 @@ test "zsl.vector.apply2" {
 
     const allocator = std.testing.allocator;
 
-    var prng = std.Random.DefaultPrng.init(@bitCast(std.time.timestamp()));
+    var prng = std.Random.DefaultPrng.init(@bitCast(std.Io.Clock.real.now(std.Io.failing).toSeconds()));
     const rand = prng.random();
 
     inline for (combinations) |combination| {

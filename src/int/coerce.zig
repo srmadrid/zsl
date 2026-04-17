@@ -44,8 +44,8 @@ pub fn Coerce(comptime X: type, comptime Y: type) type {
                 if (Y == comptime_int)
                     return X;
 
-                comptime var xinfo = @typeInfo(X);
-                comptime var yinfo = @typeInfo(Y);
+                const xinfo = @typeInfo(X);
+                const yinfo = @typeInfo(Y);
 
                 if (xinfo.int.signedness == .unsigned) {
                     if (yinfo.int.signedness == .unsigned) { // both unsigned
@@ -62,17 +62,14 @@ pub fn Coerce(comptime X: type, comptime Y: type) type {
                                 // Both are standard integers, need to double
                                 // bits, unless already at max, then only add 1
                                 if (xinfo.int.bits == 128) {
-                                    yinfo.int.bits = xinfo.int.bits + 1; // 129
-                                    return @Type(yinfo);
+                                    return @Int(yinfo.int.signedness, xinfo.int.bits + 1);
                                 } else {
-                                    yinfo.int.bits = xinfo.int.bits * 2; // Another standard size
-                                    return @Type(yinfo);
+                                    return @Int(yinfo.int.signedness, xinfo.int.bits * 2);
                                 }
                             } else {
                                 // One of the types is not a standard integer,
                                 // only need to increase max bits by 1
-                                yinfo.int.bits = xinfo.int.bits + 1;
-                                return @Type(yinfo);
+                                return @Int(yinfo.int.signedness, xinfo.int.bits + 1);
                             }
                         } else {
                             // Signed is larger than unsigned
@@ -89,17 +86,14 @@ pub fn Coerce(comptime X: type, comptime Y: type) type {
                                 // Both are standard integers, need to double
                                 // bits, unless already at max, then only add 1
                                 if (yinfo.int.bits == 128) {
-                                    xinfo.int.bits = yinfo.int.bits + 1; // 129
-                                    return @Type(xinfo);
+                                    return @Int(xinfo.int.signedness, yinfo.int.bits + 1);
                                 } else {
-                                    xinfo.int.bits = yinfo.int.bits * 2; // Another standard size
-                                    return @Type(xinfo);
+                                    return @Int(xinfo.int.signedness, yinfo.int.bits * 2);
                                 }
                             } else {
                                 // One of the types is not a standard integer,
                                 // only need to increase max bits by 1
-                                xinfo.int.bits = yinfo.int.bits + 1;
-                                return @Type(xinfo);
+                                return @Int(xinfo.int.signedness, yinfo.int.bits + 1);
                             }
                         } else {
                             // Signed is larger than unsigned

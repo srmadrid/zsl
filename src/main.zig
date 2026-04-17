@@ -4,15 +4,17 @@ const ci = @cImport({
     @cInclude("lapacke.h");
 });
 
-pub fn main() !void {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
+pub fn main(init: std.process.Init) !void {
+    const io = init.io;
+
+    var gpa: std.heap.DebugAllocator(.{}) = .{ .backing_allocator = init.gpa };
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    var prng = std.Random.DefaultPrng.init(@bitCast(std.time.timestamp()));
+    var prng = std.Random.DefaultPrng.init(@bitCast(std.Io.Clock.real.now(io).toSeconds()));
     const rand = prng.random();
 
-    const benchmark = true;
+    const benchmark = false;
 
     var m: usize = 7 * (if (benchmark) 1000 else 1);
     _ = &m;
@@ -32,13 +34,20 @@ pub fn main() !void {
     var C: zsl.matrix.general.Dense(f64, .col_major) = try .init(allocator, m, n);
     defer C.deinit(allocator);
 
-    const start_time = std.time.nanoTimestamp();
+    const start_time = std.Io.Clock.real.now(io);
     try zsl.matrix.apply2_(&C, A, B, zsl.numeric.add_);
-    const end_time = std.time.nanoTimestamp();
+    const end_time = std.Io.Clock.real.now(io);
 
     if (!benchmark) printMatrix("C", C);
 
-    std.debug.print("zsl.matrix.add_ took {d} seconds on matrices of size {} x {}\n", .{ (zsl.numeric.cast(f128, end_time) - zsl.numeric.cast(f128, start_time)) / 1e9, m, n });
+    std.debug.print(
+        "zsl.matrix.add_ took {d} seconds on matrices of size {} x {}\n",
+        .{
+            (zsl.numeric.cast(f128, end_time.toNanoseconds()) - zsl.numeric.cast(f128, start_time.toNanoseconds())) / std.time.ns_per_s,
+            m,
+            n,
+        },
+    );
 }
 
 fn avg(values: []const f64) f64 {

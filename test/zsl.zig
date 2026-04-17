@@ -41,9 +41,8 @@ test {
     const test_float = false;
     const test_dyadic = false;
     const test_complex = false;
-    const test_constants = false;
     const test_numeric = false;
-    const test_vector = false;
+    const test_vector = true;
     const test_matrix = true;
     const test_array = false;
     const test_ops = false;
@@ -52,7 +51,6 @@ test {
 
     _ = test_int;
     _ = test_dyadic;
-    _ = test_constants;
     _ = test_numeric;
     _ = test_array;
     _ = test_ops;

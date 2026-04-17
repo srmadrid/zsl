@@ -26,16 +26,16 @@ pub fn Complex(comptime N: type) type {
         re: N,
         im: N,
 
-        /// Type signature
+        // Type signature
         pub const is_numeric = true;
         pub const is_complex = true;
         pub const is_signed = true;
         pub const is_custom = types.isCustomType(N);
 
-        /// Scalar type
+        // Scalar type
         pub const Scalar = N;
 
-        /// Constants
+        // Constants
         pub const zero: Complex(N) = .{ .re = numeric.zero(N), .im = numeric.zero(N) };
         pub const one: Complex(N) = .{ .re = numeric.one(N), .im = numeric.zero(N) };
         pub const two: Complex(N) = .{ .re = numeric.two(N), .im = numeric.zero(N) };

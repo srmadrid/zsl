@@ -41,8 +41,8 @@ fn processPrecision(
 
     var sum_ulp: f128 = 0.0;
     var max_ulp: f128 = 0;
-    var exact_count: u32 = 0;
-    var subnormal_count: u32 = 0;
+    var exact_count: usize = 0;
+    var subnormal_count: usize = 0;
 
     if (comptime zsl.types.isComplex(@TypeOf(results[0]))) {
         for (0..data.len) |i| {
@@ -108,13 +108,13 @@ fn processPrecision(
 
     std.mem.sort(f128, &ulps, {}, std.sort.asc(f128));
 
-    const mean_ulp: f128 = sum_ulp / zsl.scast(f128, zsl.int.sub(ulps.len, subnormal_count));
-    const p99_index: u32 = zsl.int.min(
-        zsl.scast(u32, std.math.ceil(zsl.scast(f128, ulps.len) * 0.99)) - 1,
+    const mean_ulp: f128 = sum_ulp / zsl.numeric.cast(f128, zsl.int.sub(ulps.len, subnormal_count));
+    const p99_index: usize = zsl.int.min(
+        zsl.numeric.cast(usize, std.math.ceil(zsl.numeric.cast(f128, ulps.len) * 0.99)) - 1,
         ulps.len - 1,
     );
     const p99_ulp: f128 = ulps[p99_index];
-    const exact_percentage: f128 = (zsl.scast(f128, exact_count) / zsl.scast(f128, ulps.len)) * 100.0;
+    const exact_percentage: f128 = (zsl.numeric.cast(f128, exact_count) / zsl.numeric.cast(f128, ulps.len)) * 100.0;
     const status: []const u8 =
         if (max_ulp <= 2.0)
             "\x1b[32mPASS\x1b[0m"
@@ -142,7 +142,7 @@ fn processPrecision(
     std.debug.print(
         "      {d} |     {d:.2} |      {d} |",
         .{
-            zsl.scast(u128, max_ulp),
+            zsl.numeric.cast(u128, max_ulp),
             mean_ulp,
             p99_ulp,
         },
@@ -163,7 +163,7 @@ test {
     _ = @import("complex/arg.zig");
     _ = @import("complex/abs.zig");
     _ = @import("complex/exp.zig");
-    _ = @import("complex/log.zig");
+    _ = @import("complex/ln.zig");
     _ = @import("complex/pow.zig");
     _ = @import("complex/sqrt.zig");
     _ = @import("complex/sin.zig");

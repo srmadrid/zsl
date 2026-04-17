@@ -3,18 +3,14 @@ const types = @import("../types.zig");
 const numeric = @import("../numeric.zig");
 const float = @import("../float.zig");
 
-pub fn Ldexp(comptime X: type) type {
-    comptime if (!types.isNumeric(X) or !types.numericType(X).le(.float))
-        @compileError("zsl.float.ldexp: x must be a bool, an int or a float, got \n\tx: " ++ @typeName(X) ++ "\n");
+pub fn ldexp(x: anytype, n: i32) @TypeOf(x) {
+    const X: type = @TypeOf(x);
 
-    return types.EnsureFloat(X);
-}
+    comptime if (!types.isNumeric(X) or types.numericType(X) != .float)
+        @compileError("zsl.float.ldexp: x must be a float, got \n\tx: " ++ @typeName(X) ++ "\n");
 
-pub fn ldexp(x: anytype, n: i32) Ldexp(@TypeOf(x)) {
-    const xx: Ldexp(@TypeOf(x)) = numeric.cast(Ldexp(@TypeOf(x)), x);
+    if (!std.math.isFinite(x) or x == 0)
+        return x + x;
 
-    if (!std.math.isFinite(xx) or xx == 0)
-        return xx + xx;
-
-    return float.scalbn(xx, n);
+    return float.scalbn(x, n);
 }
