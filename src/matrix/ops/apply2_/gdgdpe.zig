@@ -1,8 +1,8 @@
 const std = @import("std");
 
 const types = @import("../../../types.zig");
+
 const numeric = @import("../../../numeric.zig");
-const matrix = @import("../../../matrix.zig");
 
 pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
     const O: type = types.Child(@TypeOf(o));
@@ -17,7 +17,7 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
             while (j < o.cols) : (j += 1) {
                 var i: usize = 0;
                 while (i < o.rows) : (i += 1) {
-                    op_(&o.data[o._index(i, j)], x.data[x._index(i, j)], numeric.zero(types.Numeric(Y)));
+                    numeric.set(&o.data[o._index(i, j)], x.data[x._index(i, j)]);
                 }
             }
         } else {
@@ -25,7 +25,7 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
             while (i < o.rows) : (i += 1) {
                 var j: usize = 0;
                 while (j < o.cols) : (j += 1) {
-                    op_(&o.data[o._index(i, j)], x.data[x._index(i, j)], numeric.zero(types.Numeric(Y)));
+                    numeric.set(&o.data[o._index(i, j)], x.data[x._index(i, j)]);
                 }
             }
         }
@@ -33,9 +33,9 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
 
     var k: usize = 0;
     while (k < y.rows) : (k += 1) {
-        const i_o = if (y.direction == .forward) k else y.data[k];
-        const j_o = if (y.direction == .forward) y.data[k] else k;
+        const i = if (y.direction == .forward) k else y.data[k];
+        const j = if (y.direction == .forward) y.data[k] else k;
 
-        op_(&o.data[o._index(i_o, j_o)], x.data[x._index(i_o, j_o)], numeric.one(types.Numeric(Y)));
+        op_(&o.data[o._index(i, j)], x.data[x._index(i, j)], numeric.one(types.Numeric(Y)));
     }
 }

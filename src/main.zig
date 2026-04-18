@@ -14,20 +14,20 @@ pub fn main(init: std.process.Init) !void {
     var prng = std.Random.DefaultPrng.init(@bitCast(std.Io.Clock.real.now(io).toSeconds()));
     const rand = prng.random();
 
-    const benchmark = false;
+    const benchmark = true;
 
     var m: usize = 7 * (if (benchmark) 1000 else 1);
     _ = &m;
-    var n: usize = 8 * (if (benchmark) 1000 else 1);
+    var n: usize = 7 * (if (benchmark) 1000 else 1);
     _ = &n;
 
-    const poiss = zsl.stats.Poisson(i64, f64).init(1.0);
-    var A = try zsl.matrix.general.Dense(i64, .col_major).initFn(allocator, m, n, zsl.stats.Poisson(i64, f64).sample, .{ poiss, rand });
-    // var A = try randomMatrix(zsl.matrix.general.Dense(f64, .col_major), allocator, rand, m, n);
+    // const poiss = zsl.stats.Poisson(i64, f64).init(1.0);
+    // var A = try zsl.matrix.general.Dense(i64, .col_major).initFn(allocator, m, n, zsl.stats.Poisson(i64, f64).sample, .{ poiss, rand });
+    var A = try randomMatrix(zsl.matrix.general.Dense(f64, .col_major), allocator, rand, m, n);
     defer A.deinit(allocator);
     if (!benchmark) printMatrix("A", A);
 
-    var B = try randomMatrix(zsl.matrix.general.Dense(f64, .col_major), allocator, rand, m, n);
+    var B = try randomMatrix(zsl.matrix.symmetric.Dense(f64, .upper, .col_major), allocator, rand, m, n);
     defer B.deinit(allocator);
     if (!benchmark) printMatrix("B", B);
 

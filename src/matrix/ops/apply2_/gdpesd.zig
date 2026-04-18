@@ -1,8 +1,6 @@
-const std = @import("std");
-
 const types = @import("../../../types.zig");
+
 const numeric = @import("../../../numeric.zig");
-const matrix = @import("../../../matrix.zig");
 
 pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
     const O = types.Child(@TypeOf(o));
@@ -12,81 +10,75 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
     if (comptime types.layoutOf(O) == .col_major) {
         var j: usize = 0;
         while (j < o.cols) : (j += 1) {
-            if (comptime types.uploOf(Y) == .upper) {
-                var i: usize = 0;
-                while (i < j) : (i += 1) {
-                    op_(&o.data[o._index(i, j)], numeric.zero(types.Numeric(X)), y.data[y._index(i, j)]);
-                }
+            var i: usize = 0;
+            while (i < j) : (i += 1) {
+                const ty = if (comptime types.uploOf(Y) == .upper) y.data[y._index(i, j)] else y.data[y._index(j, i)];
+                if (comptime op_ == numeric.add_)
+                    numeric.set(&o.data[o._index(i, j)], ty)
+                else
+                    numeric.set(&o.data[o._index(i, j)], numeric.neg(ty));
+            }
 
-                op_(&o.data[o._index(j, j)], numeric.zero(types.Numeric(X)), y.data[y._index(j, j)]);
+            if (comptime op_ == numeric.add_)
+                numeric.set(&o.data[o._index(j, j)], y.data[y._index(j, j)])
+            else
+                numeric.set(&o.data[o._index(j, j)], numeric.neg(y.data[y._index(j, j)]));
 
-                i = j + 1;
-                while (i < o.rows) : (i += 1) {
-                    op_(&o.data[o._index(i, j)], numeric.zero(types.Numeric(X)), y.data[y._index(j, i)]);
-                }
-            } else {
-                var i: usize = 0;
-                while (i < j) : (i += 1) {
-                    op_(&o.data[o._index(i, j)], numeric.zero(types.Numeric(X)), y.data[y._index(j, i)]);
-                }
-
-                op_(&o.data[o._index(j, j)], numeric.zero(types.Numeric(X)), y.data[y._index(j, j)]);
-
-                i = j + 1;
-                while (i < o.rows) : (i += 1) {
-                    op_(&o.data[o._index(i, j)], numeric.zero(types.Numeric(X)), y.data[y._index(i, j)]);
-                }
+            i = j + 1;
+            while (i < o.rows) : (i += 1) {
+                const ty = if (comptime types.uploOf(Y) == .lower) y.data[y._index(i, j)] else y.data[y._index(j, i)];
+                if (comptime op_ == numeric.add_)
+                    numeric.set(&o.data[o._index(i, j)], ty)
+                else
+                    numeric.set(&o.data[o._index(i, j)], numeric.neg(ty));
             }
         }
     } else {
         var i: usize = 0;
         while (i < o.rows) : (i += 1) {
-            if (comptime types.uploOf(Y) == .lower) {
-                var j: usize = 0;
-                while (j < i) : (j += 1) {
-                    op_(&o.data[o._index(i, j)], numeric.zero(types.Numeric(X)), y.data[y._index(i, j)]);
-                }
+            var j: usize = 0;
+            while (j < i) : (j += 1) {
+                const ty = if (comptime types.uploOf(Y) == .lower) y.data[y._index(i, j)] else y.data[y._index(j, i)];
+                if (comptime op_ == numeric.add_)
+                    numeric.set(&o.data[o._index(i, j)], ty)
+                else
+                    numeric.set(&o.data[o._index(i, j)], numeric.neg(ty));
+            }
 
-                op_(&o.data[o._index(i, i)], numeric.zero(types.Numeric(X)), y.data[y._index(i, i)]);
+            if (comptime op_ == numeric.add_)
+                numeric.set(&o.data[o._index(i, i)], y.data[y._index(i, i)])
+            else
+                numeric.set(&o.data[o._index(i, i)], numeric.neg(y.data[y._index(i, i)]));
 
-                j = i + 1;
-                while (j < o.cols) : (j += 1) {
-                    op_(&o.data[o._index(i, j)], numeric.zero(types.Numeric(X)), y.data[y._index(j, i)]);
-                }
-            } else {
-                var j: usize = 0;
-                while (j < i) : (j += 1) {
-                    op_(&o.data[o._index(i, j)], numeric.zero(types.Numeric(X)), y.data[y._index(j, i)]);
-                }
-
-                op_(&o.data[o._index(i, i)], numeric.zero(types.Numeric(X)), y.data[y._index(i, i)]);
-
-                j = i + 1;
-                while (j < o.cols) : (j += 1) {
-                    op_(&o.data[o._index(i, j)], numeric.zero(types.Numeric(X)), y.data[y._index(i, j)]);
-                }
+            j = i + 1;
+            while (j < o.cols) : (j += 1) {
+                const ty = if (comptime types.uploOf(Y) == .upper) y.data[y._index(i, j)] else y.data[y._index(j, i)];
+                if (comptime op_ == numeric.add_)
+                    numeric.set(&o.data[o._index(i, j)], ty)
+                else
+                    numeric.set(&o.data[o._index(i, j)], numeric.neg(ty));
             }
         }
     }
 
     var k: usize = 0;
     while (k < x.rows) : (k += 1) {
-        const i_o = if (x.direction == .forward) k else x.data[k];
-        const j_o = if (x.direction == .forward) x.data[k] else k;
+        const i = if (x.direction == .forward) k else x.data[k];
+        const j = if (x.direction == .forward) x.data[k] else k;
 
-        const ty = if (i_o == j_o)
-            y.data[y._index(i_o, i_o)]
-        else if (i_o < j_o)
+        const ty = if (i == j)
+            y.data[y._index(i, i)]
+        else if (i < j)
             (if (comptime types.uploOf(Y) == .upper)
-                y.data[y._index(i_o, j_o)]
+                y.data[y._index(i, j)]
             else
-                y.data[y._index(j_o, i_o)])
+                y.data[y._index(j, i)])
         else
             (if (comptime types.uploOf(Y) == .lower)
-                y.data[y._index(i_o, j_o)]
+                y.data[y._index(i, j)]
             else
-                y.data[y._index(j_o, i_o)]);
+                y.data[y._index(j, i)]);
 
-        op_(&o.data[o._index(i_o, j_o)], numeric.one(types.Numeric(X)), ty);
+        op_(&o.data[o._index(i, j)], numeric.one(types.Numeric(X)), ty);
     }
 }

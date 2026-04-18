@@ -49,8 +49,6 @@ pub fn set(o: anytype, x: anytype) void {
         } else { // only O custom
             comptime if (types.hasMethod(O, "set", fn (*O, X) void, &.{ *O, X }))
                 return O.set(o, x);
-
-            return O.set(o, x);
         }
     } else if (comptime types.isCustomType(X)) { // only X custom
         comptime if (types.hasMethod(X, "set", fn (*O, X) void, &.{ *O, X }))

@@ -104,7 +104,7 @@ pub fn cast(comptime N: type, value: anytype) N {
         },
         .float => switch (comptime types.numericType(N)) {
             .bool => return numeric.ne(value, numeric.zero(V)),
-            .int => return @intFromFloat(value),
+            .int => return @trunc(value),
             .float => return @floatCast(value),
             .dyadic => return .initValue(value),
             .complex => return .initValue(value),
