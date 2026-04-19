@@ -1,18 +1,18 @@
 const std = @import("std");
 
-const types = @import("../../../types.zig");
+const meta = @import("../../../meta.zig");
 const numeric = @import("../../../numeric.zig");
 const matrix = @import("../../../matrix.zig");
 
 pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
-    const O: type = types.Child(@TypeOf(o));
+    const O: type = meta.Child(@TypeOf(o));
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 
     const aliased = (comptime O == Y) and std.meta.eql(o.*, y);
 
     if ((comptime op_ == numeric.sub_) or !aliased) {
-        if (comptime types.layoutOf(O) == .col_major) {
+        if (comptime meta.layoutOf(O) == .col_major) {
             var j: usize = 0;
             while (j < o.cols) : (j += 1) {
                 var i: usize = 0;
@@ -37,7 +37,7 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
         }
     }
 
-    if (comptime types.layoutOf(X) == .col_major) {
+    if (comptime meta.layoutOf(X) == .col_major) {
         var j: usize = 0;
         while (j < x.cols) : (j += 1) {
             var p: usize = x.ptr[j];

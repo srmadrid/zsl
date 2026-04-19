@@ -1,4 +1,4 @@
-const types = @import("../types.zig");
+const meta = @import("../meta.zig");
 const numeric = @import("../numeric.zig");
 
 const complex = @import("../complex.zig");
@@ -14,38 +14,38 @@ const complex = @import("../complex.zig");
 /// ## Returns
 /// `type`: The coerced type that can represent all values of both `X` and `Y`.
 pub fn Coerce(comptime X: type, comptime Y: type) type {
-    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
-        !types.numericType(X).le(.complex) or !types.numericType(Y).le(.complex) or
-        (types.numericType(X) != .complex and types.numericType(Y) != .complex))
+    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y) or
+        !meta.numericType(X).le(.complex) or !meta.numericType(Y).le(.complex) or
+        (meta.numericType(X) != .complex and meta.numericType(Y) != .complex))
         @compileError("zsl.complex.Coerce: at least one of X or Y must be a complex type, the other must be a bool, an int, a float, a dyadic or a complex type, got\n\tX = " ++
             @typeName(X) ++ "\n\tY = " ++ @typeName(Y) ++ "\n");
 
     if (comptime X == Y)
         return X;
 
-    switch (comptime types.numericType(X)) {
-        .bool => switch (comptime types.numericType(Y)) {
+    switch (comptime meta.numericType(X)) {
+        .bool => switch (comptime meta.numericType(Y)) {
             .complex => return Y,
             else => unreachable,
         },
-        .int => switch (comptime types.numericType(Y)) {
-            .complex => return complex.Complex(numeric.Coerce(X, types.Scalar(Y))),
+        .int => switch (comptime meta.numericType(Y)) {
+            .complex => return complex.Complex(numeric.Coerce(X, meta.Scalar(Y))),
             else => unreachable,
         },
-        .float => switch (comptime types.numericType(Y)) {
-            .complex => return complex.Complex(numeric.Coerce(X, types.Scalar(Y))),
+        .float => switch (comptime meta.numericType(Y)) {
+            .complex => return complex.Complex(numeric.Coerce(X, meta.Scalar(Y))),
             else => unreachable,
         },
-        .dyadic => switch (comptime types.numericType(Y)) {
-            .complex => return complex.Complex(numeric.Coerce(X, types.Scalar(Y))),
+        .dyadic => switch (comptime meta.numericType(Y)) {
+            .complex => return complex.Complex(numeric.Coerce(X, meta.Scalar(Y))),
             else => unreachable,
         },
-        .complex => switch (comptime types.numericType(Y)) {
+        .complex => switch (comptime meta.numericType(Y)) {
             .bool => X,
-            .int => return complex.Complex(numeric.Coerce(types.Scalar(X), Y)),
-            .float => return complex.Complex(numeric.Coerce(types.Scalar(X), Y)),
-            .dyadic => return complex.Complex(numeric.Coerce(types.Scalar(X), Y)),
-            .complex => return complex.Complex(numeric.Coerce(types.Scalar(X), types.Scalar(Y))),
+            .int => return complex.Complex(numeric.Coerce(meta.Scalar(X), Y)),
+            .float => return complex.Complex(numeric.Coerce(meta.Scalar(X), Y)),
+            .dyadic => return complex.Complex(numeric.Coerce(meta.Scalar(X), Y)),
+            .complex => return complex.Complex(numeric.Coerce(meta.Scalar(X), meta.Scalar(Y))),
             .custom => unreachable,
         },
         .custom => unreachable,

@@ -1,4 +1,4 @@
-const types = @import("../../types.zig");
+const meta = @import("../../meta.zig");
 
 const int = @import("../../int.zig");
 const float = @import("../../float.zig");
@@ -32,12 +32,12 @@ pub fn gt(x: anytype, y: anytype) bool {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 
-    comptime if (!types.isNumeric(X) or !types.isNumeric(Y))
+    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y))
         @compileError("zsl.numeric.gt: x and y must be numerics, got \n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    if (comptime types.isCustomType(X)) {
-        if (comptime types.isCustomType(Y)) { // X and Y both custom
-            const Impl: type = comptime types.anyHasMethod(
+    if (comptime meta.isCustomType(X)) {
+        if (comptime meta.isCustomType(Y)) { // X and Y both custom
+            const Impl: type = comptime meta.anyHasMethod(
                 &.{ X, Y },
                 "gt",
                 fn (X, Y) bool,
@@ -47,20 +47,20 @@ pub fn gt(x: anytype, y: anytype) bool {
 
             return Impl.gt(x, y);
         } else { // only X custom
-            comptime if (!types.hasMethod(X, "gt", fn (X, Y) bool, &.{ X, Y }))
+            comptime if (!meta.hasMethod(X, "gt", fn (X, Y) bool, &.{ X, Y }))
                 @compileError("zsl.numeric.gt: " ++ @typeName(X) ++ " must implement `fn gt(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
 
             return X.gt(x, y);
         }
-    } else if (comptime types.isCustomType(Y)) { // only Y custom
-        comptime if (!types.hasMethod(Y, "gt", fn (X, Y) bool, &.{ X, Y }))
+    } else if (comptime meta.isCustomType(Y)) { // only Y custom
+        comptime if (!meta.hasMethod(Y, "gt", fn (X, Y) bool, &.{ X, Y }))
             @compileError("zsl.numeric.gt: " ++ @typeName(Y) ++ " must implement `fn gt(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
 
         return Y.gt(x, y);
     }
 
-    switch (comptime types.numericType(X)) {
-        .bool => switch (comptime types.numericType(Y)) {
+    switch (comptime meta.numericType(X)) {
+        .bool => switch (comptime meta.numericType(Y)) {
             .bool => return x and !y,
             .int => return int.gt(x, y),
             .float => return float.gt(x, y),
@@ -68,20 +68,20 @@ pub fn gt(x: anytype, y: anytype) bool {
             .complex => @compileError("zsl.numeric.gt: not defigtd for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
-        .int => switch (comptime types.numericType(Y)) {
+        .int => switch (comptime meta.numericType(Y)) {
             .bool, .int => return int.gt(x, y),
             .float => return float.gt(x, y),
             .dyadic => return dyadic.gt(x, y),
             .complex => @compileError("zsl.numeric.gt: not defigtd for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
-        .float => switch (comptime types.numericType(Y)) {
+        .float => switch (comptime meta.numericType(Y)) {
             .bool, .int, .float => return float.gt(x, y),
             .dyadic => return dyadic.gt(x, y),
             .complex => @compileError("zsl.numeric.gt: not defigtd for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,
         },
-        .dyadic => switch (comptime types.numericType(Y)) {
+        .dyadic => switch (comptime meta.numericType(Y)) {
             .bool, .int, .float, .dyadic => return dyadic.gt(x, y),
             .complex => @compileError("zsl.numeric.gt: not defigtd for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .custom => unreachable,

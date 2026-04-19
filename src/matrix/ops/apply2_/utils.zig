@@ -1,8 +1,8 @@
-const types = @import("../../../types.zig");
+const meta = @import("../../../meta.zig");
 
 /// Binary search for sparse matrix elements
-pub fn searchSparse(mat: anytype, row: usize, col: usize) ?types.Numeric(@TypeOf(mat)) {
-    if (comptime types.layoutOf(@TypeOf(mat)) == .col_major) {
+pub fn searchSparse(mat: anytype, row: usize, col: usize) ?meta.Numeric(@TypeOf(mat)) {
+    if (comptime meta.layoutOf(@TypeOf(mat)) == .col_major) {
         var p = mat.ptr[col];
         var p_end = mat.ptr[col + 1];
         while (p < p_end) {

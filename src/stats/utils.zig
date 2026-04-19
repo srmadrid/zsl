@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const types = @import("../types.zig");
+const meta = @import("../meta.zig");
 
 const numeric = @import("../numeric.zig");
 
@@ -9,13 +9,13 @@ const int = @import("../int.zig");
 /// Generates a uniformly distributed integer in the closed interval
 /// `[min, max]`.
 pub fn discreteUniform(comptime N: type, min: N, max: N, prng: std.Random) N {
-    comptime if (!types.isNumeric(N) or types.numericType(N) == .bool or !types.isIntegral(N))
+    comptime if (!meta.isNumeric(N) or meta.numericType(N) == .bool or !meta.isIntegral(N))
         @compileError("zsl.stats.discreteUniform: N must be a non-bool integral numeric type, got \n\tN = " ++ @typeName(N) ++ "\n");
 
-    switch (comptime types.numericType(N)) {
+    switch (comptime meta.numericType(N)) {
         .int => return prng.intRangeAtMost(N, min, max),
         .custom => {
-            if (comptime !types.hasMethod(N, "discreteUniform", fn (N, N, std.Random) N, &.{ N, N, std.Random }))
+            if (comptime !meta.hasMethod(N, "discreteUniform", fn (N, N, std.Random) N, &.{ N, N, std.Random }))
                 @compileError("zsl.stats.discreteUniform: " ++ @typeName(N) ++ " must implement `fn discreteUniform(" ++ @typeName(N) ++ ", " ++ @typeName(N) ++ ", std.Random) " ++ @typeName(N) ++ "`");
 
             return N.discreteUniform(min, max, prng);
@@ -27,10 +27,10 @@ pub fn discreteUniform(comptime N: type, min: N, max: N, prng: std.Random) N {
 /// Generates a standard uniform value in the range `[0.0, 1.0)` for
 /// non-integral types.
 pub fn standardUniform(comptime N: type, prng: std.Random) N {
-    comptime if (!types.isNumeric(N) or !types.isReal(N) or !types.isNonIntegral(N))
+    comptime if (!meta.isNumeric(N) or !meta.isReal(N) or !meta.isNonIntegral(N))
         @compileError("zsl.stats.standardUniform: N must be a real, non-integral numeric type, got \n\tN = " ++ @typeName(N) ++ "\n");
 
-    switch (comptime types.numericType(N)) {
+    switch (comptime meta.numericType(N)) {
         .float => switch (comptime N) {
             f16 => {
                 const rand = prng.int(u24);
@@ -143,7 +143,7 @@ pub fn standardUniform(comptime N: type, prng: std.Random) N {
             };
         },
         .custom => {
-            if (comptime !types.hasMethod(N, "standardUniform", fn (std.Random) N, &.{std.Random}))
+            if (comptime !meta.hasMethod(N, "standardUniform", fn (std.Random) N, &.{std.Random}))
                 @compileError("zsl.stats.standardUniform: " ++ @typeName(N) ++ " must implement `fn standardUniform(std.Random) " ++ @typeName(N) ++ "`");
 
             return N.standardUniform(prng);

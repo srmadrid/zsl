@@ -1,11 +1,11 @@
 const std = @import("std");
 
-const types = @import("../../../types.zig");
+const meta = @import("../../../meta.zig");
 
 const numeric = @import("../../../numeric.zig");
 
 pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
-    const O: type = types.Child(@TypeOf(o));
+    const O: type = meta.Child(@TypeOf(o));
     const X: type = @TypeOf(x);
 
     const aliased = (comptime O == X) and std.meta.eql(o.*, x);

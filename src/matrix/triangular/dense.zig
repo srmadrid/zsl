@@ -1,9 +1,9 @@
 const std = @import("std");
 
-const types = @import("../../types.zig");
-const Layout = types.Layout;
-const Uplo = types.Uplo;
-const Diag = types.Diag;
+const meta = @import("../../meta.zig");
+const Layout = meta.Layout;
+const Uplo = meta.Uplo;
+const Diag = meta.Diag;
 
 const numeric = @import("../../numeric.zig");
 const int = @import("../../int.zig");
@@ -20,7 +20,7 @@ const array = @import("../../array.zig");
 /// elements are assumed to be 1 and not accessed, or non-unit, meaning the
 /// diagonal elements are accessed normally.
 pub fn Dense(N: type, uplo: Uplo, diag: Diag, layout: Layout) type {
-    if (!types.isNumeric(N))
+    if (!meta.isNumeric(N))
         @compileError("zsl.matrix.triangular.Dense: N must be a numeric type, got \n\tN = " ++ @typeName(N) ++ "\n");
 
     return struct {
@@ -223,7 +223,7 @@ pub fn Dense(N: type, uplo: Uplo, diag: Diag, layout: Layout) type {
                         while (j < cols) : (j += 1) {
                             var i: usize = 0;
                             while (i < int.min(j, rows)) : (i += 1) {
-                                mat.data[i + j * mat.ld] = if (comptime @typeInfo(types.ReturnTypeFromInputs(@"fn", &types.structToArrayOfTypes(Args))) == .error_union)
+                                mat.data[i + j * mat.ld] = if (comptime @typeInfo(meta.ReturnTypeFromInputs(@"fn", &meta.structToArrayOfTypes(Args))) == .error_union)
                                     try @call(.auto, @"fn", args)
                                 else
                                     @call(.auto, @"fn", args);
@@ -234,7 +234,7 @@ pub fn Dense(N: type, uplo: Uplo, diag: Diag, layout: Layout) type {
                         while (j < cols) : (j += 1) {
                             var i: usize = 0;
                             while (i < int.min(j + 1, rows)) : (i += 1) {
-                                mat.data[i + j * mat.ld] = if (comptime @typeInfo(types.ReturnTypeFromInputs(@"fn", &types.structToArrayOfTypes(Args))) == .error_union)
+                                mat.data[i + j * mat.ld] = if (comptime @typeInfo(meta.ReturnTypeFromInputs(@"fn", &meta.structToArrayOfTypes(Args))) == .error_union)
                                     try @call(.auto, @"fn", args)
                                 else
                                     @call(.auto, @"fn", args);
@@ -247,7 +247,7 @@ pub fn Dense(N: type, uplo: Uplo, diag: Diag, layout: Layout) type {
                         while (j < int.min(rows, cols)) : (j += 1) {
                             var i: usize = j + 1;
                             while (i < rows) : (i += 1) {
-                                mat.data[i + j * mat.ld] = if (comptime @typeInfo(types.ReturnTypeFromInputs(@"fn", &types.structToArrayOfTypes(Args))) == .error_union)
+                                mat.data[i + j * mat.ld] = if (comptime @typeInfo(meta.ReturnTypeFromInputs(@"fn", &meta.structToArrayOfTypes(Args))) == .error_union)
                                     try @call(.auto, @"fn", args)
                                 else
                                     @call(.auto, @"fn", args);
@@ -258,7 +258,7 @@ pub fn Dense(N: type, uplo: Uplo, diag: Diag, layout: Layout) type {
                         while (j < int.min(rows, cols)) : (j += 1) {
                             var i: usize = j;
                             while (i < rows) : (i += 1) {
-                                mat.data[i + j * mat.ld] = if (comptime @typeInfo(types.ReturnTypeFromInputs(@"fn", &types.structToArrayOfTypes(Args))) == .error_union)
+                                mat.data[i + j * mat.ld] = if (comptime @typeInfo(meta.ReturnTypeFromInputs(@"fn", &meta.structToArrayOfTypes(Args))) == .error_union)
                                     try @call(.auto, @"fn", args)
                                 else
                                     @call(.auto, @"fn", args);
@@ -273,7 +273,7 @@ pub fn Dense(N: type, uplo: Uplo, diag: Diag, layout: Layout) type {
                         while (i < int.min(rows, cols)) : (i += 1) {
                             var j: usize = i + 1;
                             while (j < cols) : (j += 1) {
-                                mat.data[i * mat.ld + j] = if (comptime @typeInfo(types.ReturnTypeFromInputs(@"fn", &types.structToArrayOfTypes(Args))) == .error_union)
+                                mat.data[i * mat.ld + j] = if (comptime @typeInfo(meta.ReturnTypeFromInputs(@"fn", &meta.structToArrayOfTypes(Args))) == .error_union)
                                     try @call(.auto, @"fn", args)
                                 else
                                     @call(.auto, @"fn", args);
@@ -284,7 +284,7 @@ pub fn Dense(N: type, uplo: Uplo, diag: Diag, layout: Layout) type {
                         while (i < int.min(rows, cols)) : (i += 1) {
                             var j: usize = i;
                             while (j < cols) : (j += 1) {
-                                mat.data[i * mat.ld + j] = if (comptime @typeInfo(types.ReturnTypeFromInputs(@"fn", &types.structToArrayOfTypes(Args))) == .error_union)
+                                mat.data[i * mat.ld + j] = if (comptime @typeInfo(meta.ReturnTypeFromInputs(@"fn", &meta.structToArrayOfTypes(Args))) == .error_union)
                                     try @call(.auto, @"fn", args)
                                 else
                                     @call(.auto, @"fn", args);
@@ -297,7 +297,7 @@ pub fn Dense(N: type, uplo: Uplo, diag: Diag, layout: Layout) type {
                         while (i < rows) : (i += 1) {
                             var j: usize = 0;
                             while (j < int.min(i, cols)) : (j += 1) {
-                                mat.data[i * mat.ld + j] = if (comptime @typeInfo(types.ReturnTypeFromInputs(@"fn", &types.structToArrayOfTypes(Args))) == .error_union)
+                                mat.data[i * mat.ld + j] = if (comptime @typeInfo(meta.ReturnTypeFromInputs(@"fn", &meta.structToArrayOfTypes(Args))) == .error_union)
                                     try @call(.auto, @"fn", args)
                                 else
                                     @call(.auto, @"fn", args);
@@ -308,7 +308,7 @@ pub fn Dense(N: type, uplo: Uplo, diag: Diag, layout: Layout) type {
                         while (i < rows) : (i += 1) {
                             var j: usize = 0;
                             while (j < int.min(i + 1, cols)) : (j += 1) {
-                                mat.data[i * mat.ld + j] = if (comptime @typeInfo(types.ReturnTypeFromInputs(@"fn", &types.structToArrayOfTypes(Args))) == .error_union)
+                                mat.data[i * mat.ld + j] = if (comptime @typeInfo(meta.ReturnTypeFromInputs(@"fn", &meta.structToArrayOfTypes(Args))) == .error_union)
                                     try @call(.auto, @"fn", args)
                                 else
                                     @call(.auto, @"fn", args);

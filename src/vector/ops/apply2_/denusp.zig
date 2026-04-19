@@ -1,16 +1,16 @@
-const types = @import("../../../types.zig");
+const meta = @import("../../../meta.zig");
 
 const numeric = @import("../../../numeric.zig");
 
 pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
-    const O: type = types.Child(@TypeOf(o));
+    const O: type = meta.Child(@TypeOf(o));
 
     var i: usize = 0;
     if (o.inc == 1) {
         var iy: usize = 0;
         while (iy < y.nnz) : (iy += 1) {
             while (i < y.idx[iy]) : (i += 1) {
-                o.data[i] = numeric.zero(types.Numeric(O));
+                o.data[i] = numeric.zero(meta.Numeric(O));
             }
 
             op_(&o.data[i], x, y.data[iy]);
@@ -19,7 +19,7 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
         }
 
         while (i < o.len) : (i += 1) {
-            o.data[i] = numeric.zero(types.Numeric(O));
+            o.data[i] = numeric.zero(meta.Numeric(O));
         }
     } else {
         var io: isize = if (o.inc < 0) (-numeric.cast(isize, o.len) + 1) * o.inc else 0;
@@ -27,7 +27,7 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
 
         while (iy < y.nnz) : (iy += 1) {
             while (i < y.idx[iy]) : (i += 1) {
-                o.data[numeric.cast(usize, io)] = numeric.zero(types.Numeric(O));
+                o.data[numeric.cast(usize, io)] = numeric.zero(meta.Numeric(O));
 
                 io += o.inc;
             }
@@ -39,7 +39,7 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
         }
 
         while (i < o.len) : (i += 1) {
-            o.data[numeric.cast(usize, io)] = numeric.zero(types.Numeric(O));
+            o.data[numeric.cast(usize, io)] = numeric.zero(meta.Numeric(O));
 
             io += o.inc;
         }

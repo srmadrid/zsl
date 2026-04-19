@@ -1,9 +1,9 @@
-const types = @import("../../../types.zig");
+const meta = @import("../../../meta.zig");
 
 const numeric = @import("../../../numeric.zig");
 
 pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
-    const O: type = types.Child(@TypeOf(o));
+    const O: type = meta.Child(@TypeOf(o));
 
     var i: usize = 0;
     if (o.inc == 1) {
@@ -31,7 +31,7 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
 
                     iy += 1;
                 } else {
-                    o.data[i] = numeric.zero(types.Numeric(O));
+                    o.data[i] = numeric.zero(meta.Numeric(O));
                 }
             }
         }
@@ -61,7 +61,7 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
 
                     iy += 1;
                 } else {
-                    o.data[numeric.cast(usize, io)] = numeric.zero(types.Numeric(O));
+                    o.data[numeric.cast(usize, io)] = numeric.zero(meta.Numeric(O));
                 }
             }
 

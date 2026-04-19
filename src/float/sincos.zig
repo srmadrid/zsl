@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const types = @import("../types.zig");
+const meta = @import("../meta.zig");
 const numeric = @import("../numeric.zig");
 
 const float = @import("../float.zig");
@@ -12,7 +12,7 @@ const rem_pio2_64 = rem_pio2.rem_pio2_64;
 const dbl64 = @import("dbl64.zig");
 
 pub fn Sincos(comptime X: type) type {
-    comptime if (!types.isNumeric(X) or types.numericType(X) != .float)
+    comptime if (!meta.isNumeric(X) or meta.numericType(X) != .float)
         @compileError("zsl.float.sincos: x must be a float, got \n\tx: " ++ @typeName(X) ++ "\n");
 
     return struct {

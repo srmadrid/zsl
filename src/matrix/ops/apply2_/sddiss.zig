@@ -1,20 +1,20 @@
 const std = @import("std");
 
-const types = @import("../../../types.zig");
+const meta = @import("../../../meta.zig");
 const numeric = @import("../../../numeric.zig");
 const matrix = @import("../../../matrix.zig");
 
 pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
-    const O: type = types.Child(@TypeOf(o));
+    const O: type = meta.Child(@TypeOf(o));
     const Y: type = @TypeOf(y);
 
-    if (comptime types.layoutOf(O) == .col_major) {
+    if (comptime meta.layoutOf(O) == .col_major) {
         var j: usize = 0;
         while (j < o.cols) : (j += 1) {
-            if (comptime types.uploOf(O) == .upper) {
+            if (comptime meta.uploOf(O) == .upper) {
                 var i: usize = 0;
                 while (i < j) : (i += 1) {
-                    o.data[o._index(i, j)] = numeric.zero(types.Numeric(O));
+                    o.data[o._index(i, j)] = numeric.zero(meta.Numeric(O));
                 }
 
                 numeric.set(&o.data[o._index(j, j)], x.data[j]);
@@ -23,17 +23,17 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
 
                 var i: usize = j + 1;
                 while (i < o.rows) : (i += 1) {
-                    o.data[o._index(i, j)] = numeric.zero(types.Numeric(O));
+                    o.data[o._index(i, j)] = numeric.zero(meta.Numeric(O));
                 }
             }
         }
     } else {
         var i: usize = 0;
         while (i < o.rows) : (i += 1) {
-            if (comptime types.uploOf(O) == .lower) {
+            if (comptime meta.uploOf(O) == .lower) {
                 var j: usize = 0;
                 while (j < i) : (j += 1) {
-                    o.data[o._index(i, j)] = numeric.zero(types.Numeric(O));
+                    o.data[o._index(i, j)] = numeric.zero(meta.Numeric(O));
                 }
 
                 numeric.set(&o.data[o._index(i, i)], x.data[i]);
@@ -42,18 +42,18 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
 
                 var j: usize = i + 1;
                 while (j < o.cols) : (j += 1) {
-                    o.data[o._index(i, j)] = numeric.zero(types.Numeric(O));
+                    o.data[o._index(i, j)] = numeric.zero(meta.Numeric(O));
                 }
             }
         }
     }
 
-    if (comptime types.layoutOf(Y) == .col_major) {
+    if (comptime meta.layoutOf(Y) == .col_major) {
         var j: usize = 0;
         while (j < y.cols) : (j += 1) {
             var p: usize = y.ptr[j];
             while (p < y.ptr[j + 1]) : (p += 1) {
-                if (comptime types.uploOf(O) == types.uploOf(Y)) {
+                if (comptime meta.uploOf(O) == meta.uploOf(Y)) {
                     if (y.idx[p] == j) {
                         op_(&o.data[o._index(y.idx[p], j)], x.data[j], y.data[p]);
                     } else {
@@ -79,7 +79,7 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
         while (i < y.rows) : (i += 1) {
             var p: usize = y.ptr[i];
             while (p < y.ptr[i + 1]) : (p += 1) {
-                if (comptime types.uploOf(O) == types.uploOf(Y)) {
+                if (comptime meta.uploOf(O) == meta.uploOf(Y)) {
                     if (i == y.idx[p]) {
                         op_(&o.data[o._index(i, y.idx[p])], x.data[i], y.data[p]);
                     } else {

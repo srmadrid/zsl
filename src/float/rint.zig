@@ -1,7 +1,7 @@
 const std = @import("std");
 
-const types = @import("../types.zig");
-const EnsureFloat = types.EnsureFloat;
+const meta = @import("../meta.zig");
+const EnsureFloat = meta.EnsureFloat;
 const numeric = @import("../numeric.zig");
 const float = @import("../float.zig");
 
@@ -11,7 +11,7 @@ const ldbl128 = @import("ldbl128.zig");
 pub fn rint(x: anytype) @TypeOf(x) {
     const X: type = @TypeOf(x);
 
-    comptime if (!types.isNumeric(X) or types.numericType(X) != .float)
+    comptime if (!meta.isNumeric(X) or meta.numericType(X) != .float)
         @compileError("zsl.float.rint: x must be a float, got \n\tx: " ++ @typeName(@TypeOf(x)) ++ "\n");
 
     switch (@TypeOf(x)) {

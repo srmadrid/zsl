@@ -1,9 +1,9 @@
-pub const types = @import("types.zig");
-pub const Cmp = types.Cmp;
-pub const Layout = types.Layout;
-pub const Uplo = types.Uplo;
-pub const Diag = types.Diag;
-pub const IterationOrder = types.IterationOrder;
+pub const meta = @import("meta.zig");
+pub const Cmp = meta.Cmp;
+pub const Layout = meta.Layout;
+pub const Uplo = meta.Uplo;
+pub const Diag = meta.Diag;
+pub const IterationOrder = meta.IterationOrder;
 
 pub const int = @import("int.zig");
 pub const float = @import("float.zig");

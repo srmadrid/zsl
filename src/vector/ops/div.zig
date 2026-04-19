@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const types = @import("../../types.zig");
+const meta = @import("../../meta.zig");
 
 const numeric = @import("../../numeric.zig");
 const vector = @import("../../vector.zig");
@@ -8,20 +8,20 @@ const vector = @import("../../vector.zig");
 const vecops = @import("../ops.zig");
 
 pub fn Div(comptime X: type, comptime Y: type) type {
-    comptime if (!types.isVector(X) or !types.isNumeric(Y))
+    comptime if (!meta.isVector(X) or !meta.isNumeric(Y))
         @compileError("zsl.vector.div: x must be a vector and y must be a numeric, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    if (comptime types.isCustomType(X) and types.isVector(X)) {
-        if (comptime types.isCustomType(Y) and types.isVector(Y)) { // X and Y both custom vectors
-            if (comptime types.anyHasMethod(&.{ X, Y }, "Div", fn (type, type) type, &.{ X, Y })) |Impl|
+    if (comptime meta.isCustomType(X) and meta.isVector(X)) {
+        if (comptime meta.isCustomType(Y) and meta.isVector(Y)) { // X and Y both custom vectors
+            if (comptime meta.anyHasMethod(&.{ X, Y }, "Div", fn (type, type) type, &.{ X, Y })) |Impl|
                 return Impl.Div(X, Y);
         } else { // only X custom vector
-            if (comptime types.hasMethod(X, "Div", fn (type, type) type, &.{ X, Y }))
+            if (comptime meta.hasMethod(X, "Div", fn (type, type) type, &.{ X, Y }))
                 return X.Div(X, Y);
         }
-    } else if (comptime types.isCustomType(Y) and types.isVector(Y)) { // only Y custom vector
-        if (comptime types.hasMethod(Y, "Div", fn (type, type) type, &.{ X, Y }))
+    } else if (comptime meta.isCustomType(Y) and meta.isVector(Y)) { // only Y custom vector
+        if (comptime meta.hasMethod(Y, "Div", fn (type, type) type, &.{ X, Y }))
             return Y.Div(X, Y);
     }
 
@@ -73,8 +73,8 @@ pub fn div(allocator: std.mem.Allocator, x: anytype, y: anytype) !vector.Div(@Ty
     const Y: type = @TypeOf(y);
     const R: type = vector.Div(@TypeOf(x), @TypeOf(y));
 
-    if (comptime types.isCustomType(X)) { // only X custom vector
-        if (comptime types.hasMethod(X, "div", fn (std.mem.Allocator, X, Y) anyerror!R, &.{ std.mem.Allocator, X, Y }))
+    if (comptime meta.isCustomType(X)) { // only X custom vector
+        if (comptime meta.hasMethod(X, "div", fn (std.mem.Allocator, X, Y) anyerror!R, &.{ std.mem.Allocator, X, Y }))
             return X.div(allocator, x, y);
     }
 

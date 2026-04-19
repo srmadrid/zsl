@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const types = @import("../types.zig");
+const meta = @import("../meta.zig");
 
 /// Coerces two int or bool types, where at least one of them must be an int
 /// type, to the smallest type that can represent all values representable by
@@ -20,22 +20,22 @@ const types = @import("../types.zig");
 /// ## Returns
 /// `type`: The coerced type that can represent all values of both `X` and `Y`.
 pub fn Coerce(comptime X: type, comptime Y: type) type {
-    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
-        !types.numericType(X).le(.int) or !types.numericType(Y).le(.int) or
-        (types.numericType(X) != .int and types.numericType(Y) != .int))
+    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y) or
+        !meta.numericType(X).le(.int) or !meta.numericType(Y).le(.int) or
+        (meta.numericType(X) != .int and meta.numericType(Y) != .int))
         @compileError("zsl.int.Coerce: at least one of X or Y must be an int type, the other must be a bool or an int type, got\n\tX = " ++
             @typeName(X) ++ "\n\tY = " ++ @typeName(Y) ++ "\n");
 
     if (comptime X == Y)
         return X;
 
-    switch (comptime types.numericType(X)) {
-        .bool => switch (comptime types.numericType(Y)) {
+    switch (comptime meta.numericType(X)) {
+        .bool => switch (comptime meta.numericType(Y)) {
             .bool => return bool,
             .int => return Y,
             else => unreachable,
         },
-        .int => switch (comptime types.numericType(Y)) {
+        .int => switch (comptime meta.numericType(Y)) {
             .bool => return X,
             .int => {
                 if (X == comptime_int)
@@ -56,8 +56,8 @@ pub fn Coerce(comptime X: type, comptime Y: type) type {
                     } else { // X unsigned, Y signed
                         if (xinfo.int.bits >= yinfo.int.bits) {
                             // Unsigned is larger or equal to signed
-                            if (std.mem.indexOfScalar(type, &types.standard_integer_types, X) != null and
-                                std.mem.indexOfScalar(type, &types.standard_integer_types, Y) != null)
+                            if (std.mem.indexOfScalar(type, &meta.standard_integer_types, X) != null and
+                                std.mem.indexOfScalar(type, &meta.standard_integer_types, Y) != null)
                             {
                                 // Both are standard integers, need to double
                                 // bits, unless already at max, then only add 1
@@ -80,8 +80,8 @@ pub fn Coerce(comptime X: type, comptime Y: type) type {
                     if (yinfo.int.signedness == .unsigned) { // X signed, Y unsigned
                         if (yinfo.int.bits >= xinfo.int.bits) {
                             // Unsigned is larger than signed
-                            if (std.mem.indexOfScalar(type, &types.standard_integer_types, X) != null and
-                                std.mem.indexOfScalar(type, &types.standard_integer_types, Y) != null)
+                            if (std.mem.indexOfScalar(type, &meta.standard_integer_types, X) != null and
+                                std.mem.indexOfScalar(type, &meta.standard_integer_types, Y) != null)
                             {
                                 // Both are standard integers, need to double
                                 // bits, unless already at max, then only add 1

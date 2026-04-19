@@ -1,7 +1,7 @@
 const std = @import("std");
 
-const types = @import("../types.zig");
-const Layout = types.Layout;
+const meta = @import("../meta.zig");
+const Layout = meta.Layout;
 
 const int = @import("../int.zig");
 
@@ -14,7 +14,7 @@ const array = @import("../array.zig");
 /// Dense `n`-dimensional array type, represented as a contiguous array of
 /// elements of type `N` and a set of strides.
 pub fn Dense(N: type) type {
-    if (!types.isNumeric(N))
+    if (!meta.isNumeric(N))
         @compileError("zsl.array.Dense: N must be a numeric type, got \n\tN = " ++ @typeName(N) ++ "\n");
 
     return struct {
@@ -169,7 +169,7 @@ pub fn Dense(N: type) type {
             const size = arr._size();
             var i: usize = 0;
             while (i < size) : (i += 1) {
-                arr.data[i] = if (comptime @typeInfo(types.ReturnTypeFromInputs(@"fn", &types.structToArrayOfTypes(Args))) == .error_union)
+                arr.data[i] = if (comptime @typeInfo(meta.ReturnTypeFromInputs(@"fn", &meta.structToArrayOfTypes(Args))) == .error_union)
                     try @call(.auto, @"fn", args)
                 else
                     @call(.auto, @"fn", args);
@@ -196,7 +196,7 @@ pub fn Dense(N: type) type {
         /// * `array.Error.InvalidRange`: If `start`, `stop` and `step` form an
         ///   impossible interval.
         pub fn initArange(allocator: std.mem.Allocator, start: N, stop: N, step: N) !array.Dense(N) {
-            comptime if (types.isComplex(N))
+            comptime if (meta.isComplex(N))
                 @compileError("zsl.array.Dense(N).initArange: not defined for complex N, got \n\tN = " ++ @typeName(N) ++ "\n");
 
             const positive_step: bool = numeric.gt(step, 0);
@@ -257,7 +257,7 @@ pub fn Dense(N: type) type {
                 retstep: ?*N = null,
             },
         ) !array.Dense(N) {
-            comptime if (types.isComplex(N))
+            comptime if (meta.isComplex(N))
                 @compileError("zsl.array.Dense(N).initLinspace: not defined for complex N, got \n\tN = " ++ @typeName(N) ++ "\n");
 
             if (opts.num == 0)
@@ -361,7 +361,7 @@ pub fn Dense(N: type) type {
                 endpoint: bool = true,
             },
         ) !array.Dense(N) {
-            comptime if (types.isComplex(N))
+            comptime if (meta.isComplex(N))
                 @compileError("zsl.array.Dense(N).initLogspace: not defined for complex N, got \n\tN = " ++ @typeName(N) ++ "\n");
 
             var arr: array.Dense(N) = try .initLinspace(

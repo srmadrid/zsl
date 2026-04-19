@@ -1,13 +1,13 @@
-const types = @import("../types.zig");
+const meta = @import("../meta.zig");
 const numeric = @import("../numeric.zig");
 
 const complex = @import("../complex.zig");
 
 pub fn Abs2(comptime Z: type) type {
-    comptime if (!types.isNumeric(Z) or types.numericType(Z) != .complex)
+    comptime if (!meta.isNumeric(Z) or meta.numericType(Z) != .complex)
         @compileError("zsl.complex.abs2: z must be a complex, got \n\tz: " ++ @typeName(Z) ++ "\n");
 
-    return types.Scalar(Z);
+    return meta.Scalar(Z);
 }
 
 /// Returns the squared absolute value of a complex `z`.

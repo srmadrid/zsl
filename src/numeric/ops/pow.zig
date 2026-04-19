@@ -1,4 +1,4 @@
-const types = @import("../../types.zig");
+const meta = @import("../../meta.zig");
 
 const int = @import("../../int.zig");
 const float = @import("../../float.zig");
@@ -8,12 +8,12 @@ const complex = @import("../../complex.zig");
 const numeric = @import("../../numeric.zig");
 
 pub fn Pow(X: type, Y: type) type {
-    comptime if (!types.isNumeric(X) or !types.isNumeric(Y))
+    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y))
         @compileError("zsl.numeric.pow: x and y must be numerics, got \n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    if (comptime types.isCustomType(X)) {
-        if (comptime types.isCustomType(Y)) { // X and Y both custom
-            const Impl: type = comptime types.anyHasMethod(
+    if (comptime meta.isCustomType(X)) {
+        if (comptime meta.isCustomType(Y)) { // X and Y both custom
+            const Impl: type = comptime meta.anyHasMethod(
                 &.{ X, Y },
                 "Pow",
                 fn (type, type) type,
@@ -23,20 +23,20 @@ pub fn Pow(X: type, Y: type) type {
 
             return Impl.Pow(X, Y);
         } else { // only X custom
-            comptime if (!types.hasMethod(X, "Pow", fn (type, type) type, &.{ X, Y }))
+            comptime if (!meta.hasMethod(X, "Pow", fn (type, type) type, &.{ X, Y }))
                 @compileError("zsl.numeric.pow: " ++ @typeName(X) ++ " must implement `fn Pow(type, type) type`");
 
             return X.Pow(X, Y);
         }
-    } else if (comptime types.isCustomType(Y)) { // only Y custom
-        comptime if (!types.hasMethod(Y, "Pow", fn (type, type) type, &.{ X, Y }))
+    } else if (comptime meta.isCustomType(Y)) { // only Y custom
+        comptime if (!meta.hasMethod(Y, "Pow", fn (type, type) type, &.{ X, Y }))
             @compileError("zsl.numeric.pow: " ++ @typeName(Y) ++ " must implement `fn Pow(type, type) type`");
 
         return Y.Pow(X, Y);
     }
 
-    switch (comptime types.numericType(X)) {
-        .bool => switch (comptime types.numericType(Y)) {
+    switch (comptime meta.numericType(X)) {
+        .bool => switch (comptime meta.numericType(Y)) {
             .bool => @compileError("zsl.numeric.pow: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .int => return int.Pow(X, Y),
             .float => return float.Pow(X, Y),
@@ -44,25 +44,25 @@ pub fn Pow(X: type, Y: type) type {
             .complex => return complex.Pow(X, Y),
             .custom => unreachable,
         },
-        .int => switch (comptime types.numericType(Y)) {
+        .int => switch (comptime meta.numericType(Y)) {
             .bool, .int => return int.Pow(X, Y),
             .float => return float.Pow(X, Y),
             .dyadic => return dyadic.Pow(X, Y),
             .complex => return complex.Pow(X, Y),
             .custom => unreachable,
         },
-        .float => switch (comptime types.numericType(Y)) {
+        .float => switch (comptime meta.numericType(Y)) {
             .bool, .int, .float => return float.Pow(X, Y),
             .dyadic => return dyadic.Pow(X, Y),
             .complex => return complex.Pow(X, Y),
             .custom => unreachable,
         },
-        .dyadic => switch (comptime types.numericType(Y)) {
+        .dyadic => switch (comptime meta.numericType(Y)) {
             .bool, .int, .float, .dyadic => return dyadic.Pow(X, Y),
             .complex => return complex.Pow(X, Y),
             .custom => unreachable,
         },
-        .complex => switch (comptime types.numericType(Y)) {
+        .complex => switch (comptime meta.numericType(Y)) {
             .bool, .int, .float, .dyadic, .complex => return complex.Pow(X, Y),
             .custom => unreachable,
         },
@@ -101,9 +101,9 @@ pub fn pow(x: anytype, y: anytype) numeric.Pow(@TypeOf(x), @TypeOf(y)) {
     const Y: type = @TypeOf(y);
     const R: type = numeric.Pow(X, Y);
 
-    if (comptime types.isCustomType(X)) {
-        if (comptime types.isCustomType(Y)) { // X and Y both custom
-            const Impl: type = comptime types.anyHasMethod(
+    if (comptime meta.isCustomType(X)) {
+        if (comptime meta.isCustomType(Y)) { // X and Y both custom
+            const Impl: type = comptime meta.anyHasMethod(
                 &.{ R, X, Y },
                 "pow",
                 fn (X, Y) R,
@@ -113,7 +113,7 @@ pub fn pow(x: anytype, y: anytype) numeric.Pow(@TypeOf(x), @TypeOf(y)) {
 
             return Impl.pow(x, y);
         } else { // only X custom
-            const Impl: type = comptime types.anyHasMethod(
+            const Impl: type = comptime meta.anyHasMethod(
                 &.{ R, X },
                 "pow",
                 fn (X, Y) R,
@@ -123,8 +123,8 @@ pub fn pow(x: anytype, y: anytype) numeric.Pow(@TypeOf(x), @TypeOf(y)) {
 
             return Impl.pow(x, y);
         }
-    } else if (comptime types.isCustomType(Y)) { // only Y custom
-        const Impl: type = comptime types.anyHasMethod(
+    } else if (comptime meta.isCustomType(Y)) { // only Y custom
+        const Impl: type = comptime meta.anyHasMethod(
             &.{ R, Y },
             "pow",
             fn (X, Y) R,
@@ -135,8 +135,8 @@ pub fn pow(x: anytype, y: anytype) numeric.Pow(@TypeOf(x), @TypeOf(y)) {
         return Impl.pow(x, y);
     }
 
-    switch (comptime types.numericType(X)) {
-        .bool => switch (comptime types.numericType(Y)) {
+    switch (comptime meta.numericType(X)) {
+        .bool => switch (comptime meta.numericType(Y)) {
             .bool => unreachable,
             .int => return int.pow(x, y),
             .float => return float.pow(x, y),
@@ -144,25 +144,25 @@ pub fn pow(x: anytype, y: anytype) numeric.Pow(@TypeOf(x), @TypeOf(y)) {
             .complex => return complex.pow(x, y),
             .custom => unreachable,
         },
-        .int => switch (comptime types.numericType(Y)) {
+        .int => switch (comptime meta.numericType(Y)) {
             .bool, .int => return int.pow(x, y),
             .float => return float.pow(x, y),
             .dyadic => return dyadic.pow(x, y),
             .complex => return complex.pow(x, y),
             .custom => unreachable,
         },
-        .float => switch (comptime types.numericType(Y)) {
+        .float => switch (comptime meta.numericType(Y)) {
             .bool, .int, .float => return float.pow(x, y),
             .dyadic => return dyadic.pow(x, y),
             .complex => return complex.pow(x, y),
             .custom => unreachable,
         },
-        .dyadic => switch (comptime types.numericType(Y)) {
+        .dyadic => switch (comptime meta.numericType(Y)) {
             .bool, .int, .float, .dyadic => return dyadic.pow(x, y),
             .complex => return complex.pow(x, y),
             .custom => unreachable,
         },
-        .complex => switch (comptime types.numericType(Y)) {
+        .complex => switch (comptime meta.numericType(Y)) {
             .bool, .int, .float, .dyadic, .complex => return complex.pow(x, y),
             .custom => unreachable,
         },

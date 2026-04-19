@@ -7,7 +7,7 @@ pub fn printVector(desc: []const u8, v: anytype) void {
 
     var i: usize = 0;
     while (i < v.len) : (i += 1) {
-        if (comptime zsl.types.isComplex(zsl.types.Numeric(@TypeOf(v)))) {
+        if (comptime zsl.meta.isComplex(zsl.meta.Numeric(@TypeOf(v)))) {
             std.debug.print("{d} + {d}i\n", .{ (v.get(i) catch unreachable).re, (v.get(i) catch unreachable).im });
         } else {
             std.debug.print("{d}\n", .{v.get(i) catch unreachable});
@@ -17,7 +17,7 @@ pub fn printVector(desc: []const u8, v: anytype) void {
 }
 
 pub fn randomVector(comptime V: type, allocator: std.mem.Allocator, rand: std.Random, len: usize, nnz: usize) !V {
-    switch (comptime zsl.types.vectorType(V)) {
+    switch (comptime zsl.meta.vectorType(V)) {
         .dense => {
             var result: V = try .init(allocator, len);
 
@@ -26,8 +26,8 @@ pub fn randomVector(comptime V: type, allocator: std.mem.Allocator, rand: std.Ra
                 result.set(
                     i,
                     zsl.numeric.cast(
-                        zsl.types.Numeric(V),
-                        if (comptime zsl.types.isComplex(zsl.types.Numeric(V)))
+                        zsl.meta.Numeric(V),
+                        if (comptime zsl.meta.isComplex(zsl.meta.Numeric(V)))
                             zsl.cf64{ .re = rand.float(f64), .im = rand.float(f64) }
                         else
                             rand.float(f64),
@@ -49,8 +49,8 @@ pub fn randomVector(comptime V: type, allocator: std.mem.Allocator, rand: std.Ra
                     allocator,
                     i,
                     zsl.numeric.cast(
-                        zsl.types.Numeric(V),
-                        if (comptime zsl.types.isComplex(zsl.types.Numeric(V)))
+                        zsl.meta.Numeric(V),
+                        if (comptime zsl.meta.isComplex(zsl.meta.Numeric(V)))
                             zsl.cf64{ .re = rand.float(f64), .im = rand.float(f64) }
                         else
                             rand.float(f64),
@@ -71,8 +71,8 @@ pub fn correctApply2(comptime O: type, allocator: std.mem.Allocator, len: usize,
     while (i < result.len) : (i += 1) {
         op_(
             &result.data[result._index(i)],
-            if (comptime zsl.types.isVector(@TypeOf(u))) u.get(i) catch unreachable else u,
-            if (comptime zsl.types.isVector(@TypeOf(v))) v.get(i) catch unreachable else v,
+            if (comptime zsl.meta.isVector(@TypeOf(u))) u.get(i) catch unreachable else u,
+            if (comptime zsl.meta.isVector(@TypeOf(v))) v.get(i) catch unreachable else v,
         );
     }
 

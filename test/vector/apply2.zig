@@ -46,9 +46,9 @@ test "zsl.vector.apply2" {
 
     inline for (combinations) |combination| {
         const ops_to_test =
-            if (comptime zsl.types.isNumeric(combination[0]))
+            if (comptime zsl.meta.isNumeric(combination[0]))
                 .{"mul"}
-            else if (comptime zsl.types.isNumeric(combination[1]))
+            else if (comptime zsl.meta.isNumeric(combination[1]))
                 .{ "mul", "div" }
             else
                 .{ "add", "sub" };
@@ -67,7 +67,7 @@ fn executeTestBlock(
     len: usize,
 ) !void {
     inline for (ops) |op| {
-        var B = if (comptime zsl.types.isNumeric(combination[0])) tzsl.randomNumber(combination[0], rand) else try tzsl.vector.randomVector(
+        var B = if (comptime zsl.meta.isNumeric(combination[0])) tzsl.randomNumber(combination[0], rand) else try tzsl.vector.randomVector(
             combination[0],
             allocator,
             rand,
@@ -76,7 +76,7 @@ fn executeTestBlock(
         );
         defer tzsl.deinit(allocator, &B);
 
-        var C = if (comptime zsl.types.isNumeric(combination[1])) tzsl.randomNumber(combination[1], rand) else try tzsl.vector.randomVector(
+        var C = if (comptime zsl.meta.isNumeric(combination[1])) tzsl.randomNumber(combination[1], rand) else try tzsl.vector.randomVector(
             combination[1],
             allocator,
             rand,
@@ -96,13 +96,13 @@ fn executeTestBlock(
         defer A.deinit(allocator);
 
         var D = if (comptime std.mem.eql(u8, op, "add"))
-            try tzsl.vector.correctApply2(zsl.types.Numeric(@TypeOf(A)), allocator, len, B, C, zsl.numeric.add_)
+            try tzsl.vector.correctApply2(zsl.meta.Numeric(@TypeOf(A)), allocator, len, B, C, zsl.numeric.add_)
         else if (comptime std.mem.eql(u8, op, "sub"))
-            try tzsl.vector.correctApply2(zsl.types.Numeric(@TypeOf(A)), allocator, len, B, C, zsl.numeric.sub_)
+            try tzsl.vector.correctApply2(zsl.meta.Numeric(@TypeOf(A)), allocator, len, B, C, zsl.numeric.sub_)
         else if (comptime std.mem.eql(u8, op, "mul"))
-            try tzsl.vector.correctApply2(zsl.types.Numeric(@TypeOf(A)), allocator, len, B, C, zsl.numeric.mul_)
+            try tzsl.vector.correctApply2(zsl.meta.Numeric(@TypeOf(A)), allocator, len, B, C, zsl.numeric.mul_)
         else
-            try tzsl.vector.correctApply2(zsl.types.Numeric(@TypeOf(A)), allocator, len, B, C, zsl.numeric.div_);
+            try tzsl.vector.correctApply2(zsl.meta.Numeric(@TypeOf(A)), allocator, len, B, C, zsl.numeric.div_);
         defer D.deinit(allocator);
 
         tzsl.vector.areEql(A, D) catch |e| {

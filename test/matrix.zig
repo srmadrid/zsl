@@ -11,7 +11,7 @@ pub fn printMatrix(desc: []const u8, A: anytype) void {
 
         var j: u32 = 0;
         while (j < A.cols) : (j += 1) {
-            if (comptime zsl.types.isComplex(zsl.types.Numeric(@TypeOf(A)))) {
+            if (comptime zsl.meta.isComplex(zsl.meta.Numeric(@TypeOf(A)))) {
                 std.debug.print("{d} + {d}i    ", .{ (A.get(i, j) catch unreachable).re, (A.get(i, j) catch unreachable).im });
             } else {
                 std.debug.print("{d}    ", .{A.get(i, j) catch unreachable});
@@ -40,7 +40,7 @@ fn randomPermutation(rand: std.Random, data: []usize) void {
 }
 
 pub fn randomMatrix(comptime M: type, allocator: std.mem.Allocator, rand: std.Random, rows: usize, cols: usize, nnz: usize) !M {
-    switch (comptime zsl.types.matrixType(M)) {
+    switch (comptime zsl.meta.matrixType(M)) {
         .general_dense => {
             var result: M = try .init(allocator, rows, cols);
 
@@ -52,8 +52,8 @@ pub fn randomMatrix(comptime M: type, allocator: std.mem.Allocator, rand: std.Ra
                         i,
                         j,
                         zsl.numeric.cast(
-                            zsl.types.Numeric(M),
-                            if (comptime zsl.types.isComplex(zsl.types.Numeric(M)))
+                            zsl.meta.Numeric(M),
+                            if (comptime zsl.meta.isComplex(zsl.meta.Numeric(M)))
                                 zsl.cf64{ .re = rand.float(f64), .im = rand.float(f64) }
                             else
                                 rand.float(f64),
@@ -75,9 +75,9 @@ pub fn randomMatrix(comptime M: type, allocator: std.mem.Allocator, rand: std.Ra
                         i,
                         j,
                         zsl.numeric.cast(
-                            zsl.types.Numeric(M),
-                            if (comptime zsl.types.isComplex(zsl.types.Numeric(M)))
-                                zsl.cf64{ .re = rand.float(f64), .im = if ((comptime zsl.types.isHermitianMatrix(M)) and i == j) 0.0 else rand.float(f64) }
+                            zsl.meta.Numeric(M),
+                            if (comptime zsl.meta.isComplex(zsl.meta.Numeric(M)))
+                                zsl.cf64{ .re = rand.float(f64), .im = if ((comptime zsl.meta.isHermitianMatrix(M)) and i == j) 0.0 else rand.float(f64) }
                             else
                                 rand.float(f64),
                         ),
@@ -90,16 +90,16 @@ pub fn randomMatrix(comptime M: type, allocator: std.mem.Allocator, rand: std.Ra
         .triangular_dense => {
             var result: M = try M.init(allocator, rows, cols);
 
-            if (comptime zsl.types.uploOf(M) == .upper) {
+            if (comptime zsl.meta.uploOf(M) == .upper) {
                 var i: usize = 0;
                 while (i < zsl.int.min(rows, cols)) : (i += 1) {
-                    if (comptime zsl.types.diagOf(M) == .non_unit) {
+                    if (comptime zsl.meta.diagOf(M) == .non_unit) {
                         result.set(
                             i,
                             i,
                             zsl.numeric.cast(
-                                zsl.types.Numeric(M),
-                                if (comptime zsl.types.isComplex(zsl.types.Numeric(M)))
+                                zsl.meta.Numeric(M),
+                                if (comptime zsl.meta.isComplex(zsl.meta.Numeric(M)))
                                     zsl.cf64{ .re = rand.float(f64), .im = rand.float(f64) }
                                 else
                                     rand.float(f64),
@@ -113,8 +113,8 @@ pub fn randomMatrix(comptime M: type, allocator: std.mem.Allocator, rand: std.Ra
                             i,
                             j,
                             zsl.numeric.cast(
-                                zsl.types.Numeric(M),
-                                if (comptime zsl.types.isComplex(zsl.types.Numeric(M)))
+                                zsl.meta.Numeric(M),
+                                if (comptime zsl.meta.isComplex(zsl.meta.Numeric(M)))
                                     zsl.cf64{ .re = rand.float(f64), .im = rand.float(f64) }
                                 else
                                     rand.float(f64),
@@ -131,8 +131,8 @@ pub fn randomMatrix(comptime M: type, allocator: std.mem.Allocator, rand: std.Ra
                             i,
                             j,
                             zsl.numeric.cast(
-                                zsl.types.Numeric(M),
-                                if (comptime zsl.types.isComplex(zsl.types.Numeric(M)))
+                                zsl.meta.Numeric(M),
+                                if (comptime zsl.meta.isComplex(zsl.meta.Numeric(M)))
                                     zsl.cf64{ .re = rand.float(f64), .im = rand.float(f64) }
                                 else
                                     rand.float(f64),
@@ -140,13 +140,13 @@ pub fn randomMatrix(comptime M: type, allocator: std.mem.Allocator, rand: std.Ra
                         ) catch unreachable;
                     }
 
-                    if ((comptime zsl.types.diagOf(M) == .non_unit) and i < cols) {
+                    if ((comptime zsl.meta.diagOf(M) == .non_unit) and i < cols) {
                         result.set(
                             i,
                             i,
                             zsl.numeric.cast(
-                                zsl.types.Numeric(M),
-                                if (comptime zsl.types.isComplex(zsl.types.Numeric(M)))
+                                zsl.meta.Numeric(M),
+                                if (comptime zsl.meta.isComplex(zsl.meta.Numeric(M)))
                                     zsl.cf64{ .re = rand.float(f64), .im = rand.float(f64) }
                                 else
                                     rand.float(f64),
@@ -159,7 +159,7 @@ pub fn randomMatrix(comptime M: type, allocator: std.mem.Allocator, rand: std.Ra
             return result;
         },
         .general_sparse => {
-            var builder: zsl.matrix.builder.Sparse(zsl.types.Numeric(M)) = try .init(allocator, rows, cols, nnz);
+            var builder: zsl.matrix.builder.Sparse(zsl.meta.Numeric(M)) = try .init(allocator, rows, cols, nnz);
             errdefer builder.deinit(allocator);
 
             var count: usize = 0;
@@ -168,8 +168,8 @@ pub fn randomMatrix(comptime M: type, allocator: std.mem.Allocator, rand: std.Ra
                     rand.intRangeAtMost(usize, 0, rows - 1),
                     rand.intRangeAtMost(usize, 0, cols - 1),
                     zsl.numeric.cast(
-                        zsl.types.Numeric(M),
-                        if (comptime zsl.types.isComplex(zsl.types.Numeric(M)))
+                        zsl.meta.Numeric(M),
+                        if (comptime zsl.meta.isComplex(zsl.meta.Numeric(M)))
                             zsl.cf64{ .re = rand.float(f64), .im = rand.float(f64) }
                         else
                             rand.float(f64),
@@ -177,10 +177,10 @@ pub fn randomMatrix(comptime M: type, allocator: std.mem.Allocator, rand: std.Ra
                 );
             }
 
-            return try builder.compile(allocator, zsl.types.layoutOf(M));
+            return try builder.compile(allocator, zsl.meta.layoutOf(M));
         },
         .symmetric_sparse, .hermitian_sparse => {
-            var builder: zsl.matrix.builder.Sparse(zsl.types.Numeric(M)) = try .init(allocator, rows, rows, nnz);
+            var builder: zsl.matrix.builder.Sparse(zsl.meta.Numeric(M)) = try .init(allocator, rows, rows, nnz);
             errdefer builder.deinit(allocator);
 
             var count: usize = 0;
@@ -192,22 +192,22 @@ pub fn randomMatrix(comptime M: type, allocator: std.mem.Allocator, rand: std.Ra
                     r,
                     c,
                     zsl.numeric.cast(
-                        zsl.types.Numeric(M),
-                        if (comptime zsl.types.isComplex(zsl.types.Numeric(M)))
-                            zsl.cf64{ .re = rand.float(f64), .im = if ((comptime zsl.types.isHermitianMatrix(M)) and r == c) 0.0 else rand.float(f64) }
+                        zsl.meta.Numeric(M),
+                        if (comptime zsl.meta.isComplex(zsl.meta.Numeric(M)))
+                            zsl.cf64{ .re = rand.float(f64), .im = if ((comptime zsl.meta.isHermitianMatrix(M)) and r == c) 0.0 else rand.float(f64) }
                         else
                             rand.float(f64),
                     ),
                 );
             }
 
-            return if (comptime zsl.types.isSymmetricSparseMatrix(M))
-                builder.compileSymmetric(allocator, zsl.types.uploOf(M), zsl.types.layoutOf(M))
+            return if (comptime zsl.meta.isSymmetricSparseMatrix(M))
+                builder.compileSymmetric(allocator, zsl.meta.uploOf(M), zsl.meta.layoutOf(M))
             else
-                builder.compileHermitian(allocator, zsl.types.uploOf(M), zsl.types.layoutOf(M));
+                builder.compileHermitian(allocator, zsl.meta.uploOf(M), zsl.meta.layoutOf(M));
         },
         .triangular_sparse => {
-            var builder: zsl.matrix.builder.Sparse(zsl.types.Numeric(M)) = try .init(allocator, rows, cols, nnz);
+            var builder: zsl.matrix.builder.Sparse(zsl.meta.Numeric(M)) = try .init(allocator, rows, cols, nnz);
             errdefer builder.deinit(allocator);
 
             var count: usize = 0;
@@ -219,8 +219,8 @@ pub fn randomMatrix(comptime M: type, allocator: std.mem.Allocator, rand: std.Ra
                     r,
                     c,
                     zsl.numeric.cast(
-                        zsl.types.Numeric(M),
-                        if (comptime zsl.types.isComplex(zsl.types.Numeric(M)))
+                        zsl.meta.Numeric(M),
+                        if (comptime zsl.meta.isComplex(zsl.meta.Numeric(M)))
                             zsl.cf64{ .re = rand.float(f64), .im = rand.float(f64) }
                         else
                             rand.float(f64),
@@ -228,7 +228,7 @@ pub fn randomMatrix(comptime M: type, allocator: std.mem.Allocator, rand: std.Ra
                 );
             }
 
-            return builder.compileTriangular(allocator, zsl.types.uploOf(M), zsl.types.diagOf(M), zsl.types.layoutOf(M));
+            return builder.compileTriangular(allocator, zsl.meta.uploOf(M), zsl.meta.diagOf(M), zsl.meta.layoutOf(M));
         },
         .builder_sparse => return .init(allocator, rows, cols, nnz),
         .diagonal => {
@@ -241,8 +241,8 @@ pub fn randomMatrix(comptime M: type, allocator: std.mem.Allocator, rand: std.Ra
                     i,
                     i,
                     zsl.numeric.cast(
-                        zsl.types.Numeric(M),
-                        if (comptime zsl.types.isComplex(zsl.types.Numeric(M)))
+                        zsl.meta.Numeric(M),
+                        if (comptime zsl.meta.isComplex(zsl.meta.Numeric(M)))
                             zsl.cf64{ .re = rand.float(f64), .im = rand.float(f64) }
                         else
                             rand.float(f64),
@@ -273,8 +273,8 @@ pub fn correctApply2(comptime O: type, allocator: std.mem.Allocator, rows: usize
         while (i < result.rows) : (i += 1) {
             op_(
                 &result.data[result._index(i, j)],
-                if (comptime zsl.types.isMatrix(@TypeOf(A))) A.get(i, j) catch unreachable else A,
-                if (comptime zsl.types.isMatrix(@TypeOf(B))) B.get(i, j) catch unreachable else B,
+                if (comptime zsl.meta.isMatrix(@TypeOf(A))) A.get(i, j) catch unreachable else A,
+                if (comptime zsl.meta.isMatrix(@TypeOf(B))) B.get(i, j) catch unreachable else B,
             );
         }
     }

@@ -4,16 +4,16 @@ const int = @This();
 
 const options = @import("options");
 
-const types = @import("types.zig");
-const Cmp = types.Cmp;
+const meta = @import("meta.zig");
+const Cmp = meta.Cmp;
 const numeric = @import("numeric.zig");
 
 pub const Coerce = @import("int/coerce.zig").Coerce;
 
 pub fn Add(comptime X: type, comptime Y: type) type {
-    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
-        !types.numericType(X).le(.int) or !types.numericType(Y).le(.int) or
-        (types.numericType(X) != .int and types.numericType(Y) != .int))
+    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y) or
+        !meta.numericType(X).le(.int) or !meta.numericType(Y).le(.int) or
+        (meta.numericType(X) != .int and meta.numericType(Y) != .int))
         @compileError("zsl.int.add: at least one of x or y must be an int, the other must be a bool or an int, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
@@ -53,9 +53,9 @@ pub fn add(x: anytype, y: anytype) int.Add(@TypeOf(x), @TypeOf(y)) {
 }
 
 pub fn Sub(comptime X: type, comptime Y: type) type {
-    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
-        !types.numericType(X).le(.int) or !types.numericType(Y).le(.int) or
-        (types.numericType(X) != .int and types.numericType(Y) != .int))
+    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y) or
+        !meta.numericType(X).le(.int) or !meta.numericType(Y).le(.int) or
+        (meta.numericType(X) != .int and meta.numericType(Y) != .int))
         @compileError("zsl.int.sub: at least one of x or y must be an int, the other must be a bool or an int, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
@@ -95,9 +95,9 @@ pub fn sub(x: anytype, y: anytype) int.Sub(@TypeOf(x), @TypeOf(y)) {
 }
 
 pub fn Mul(comptime X: type, comptime Y: type) type {
-    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
-        !types.numericType(X).le(.int) or !types.numericType(Y).le(.int) or
-        (types.numericType(X) != .int and types.numericType(Y) != .int))
+    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y) or
+        !meta.numericType(X).le(.int) or !meta.numericType(Y).le(.int) or
+        (meta.numericType(X) != .int and meta.numericType(Y) != .int))
         @compileError("zsl.int.mul: at least one of x or y must be an int, the other must be a bool or an int, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y));
 
@@ -137,9 +137,9 @@ pub fn mul(x: anytype, y: anytype) int.Mul(@TypeOf(x), @TypeOf(y)) {
 }
 
 pub fn Div(comptime X: type, comptime Y: type) type {
-    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
-        !types.numericType(X).le(.int) or !types.numericType(Y).le(.int) or
-        (types.numericType(X) != .int and types.numericType(Y) != .int))
+    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y) or
+        !meta.numericType(X).le(.int) or !meta.numericType(Y).le(.int) or
+        (meta.numericType(X) != .int and meta.numericType(Y) != .int))
         @compileError("zsl.int.div: at least one of x or y must be an int, the other must be a bool or an int, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y));
 
@@ -188,9 +188,9 @@ pub fn cmp(x: anytype, y: anytype) Cmp {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 
-    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
-        !types.numericType(X).le(.int) or !types.numericType(Y).le(.int) or
-        (types.numericType(X) != .int and types.numericType(Y) != .int))
+    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y) or
+        !meta.numericType(X).le(.int) or !meta.numericType(Y).le(.int) or
+        (meta.numericType(X) != .int and meta.numericType(Y) != .int))
         @compileError("zsl.int.cmp: at least one of x or y must be an int, the other must be a bool or an int, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y));
 
@@ -220,9 +220,9 @@ pub fn eq(x: anytype, y: anytype) bool {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 
-    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
-        !types.numericType(X).le(.int) or !types.numericType(Y).le(.int) or
-        (types.numericType(X) != .int and types.numericType(Y) != .int))
+    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y) or
+        !meta.numericType(X).le(.int) or !meta.numericType(Y).le(.int) or
+        (meta.numericType(X) != .int and meta.numericType(Y) != .int))
         @compileError("zsl.int.eq: at least one of x or y must be an int, the other must be a bool or an int, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y));
 
@@ -250,9 +250,9 @@ pub fn ne(x: anytype, y: anytype) bool {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 
-    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
-        !types.numericType(X).le(.int) or !types.numericType(Y).le(.int) or
-        (types.numericType(X) != .int and types.numericType(Y) != .int))
+    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y) or
+        !meta.numericType(X).le(.int) or !meta.numericType(Y).le(.int) or
+        (meta.numericType(X) != .int and meta.numericType(Y) != .int))
         @compileError("zsl.int.ne: at least one of x or y must be an int, the other must be a bool or an int, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y));
 
@@ -280,9 +280,9 @@ pub fn lt(x: anytype, y: anytype) bool {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 
-    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
-        !types.numericType(X).le(.int) or !types.numericType(Y).le(.int) or
-        (types.numericType(X) != .int and types.numericType(Y) != .int))
+    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y) or
+        !meta.numericType(X).le(.int) or !meta.numericType(Y).le(.int) or
+        (meta.numericType(X) != .int and meta.numericType(Y) != .int))
         @compileError("zsl.int.lt: at least one of x or y must be an int, the other must be a bool or an int, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y));
 
@@ -310,9 +310,9 @@ pub fn le(x: anytype, y: anytype) bool {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 
-    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
-        !types.numericType(X).le(.int) or !types.numericType(Y).le(.int) or
-        (types.numericType(X) != .int and types.numericType(Y) != .int))
+    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y) or
+        !meta.numericType(X).le(.int) or !meta.numericType(Y).le(.int) or
+        (meta.numericType(X) != .int and meta.numericType(Y) != .int))
         @compileError("zsl.int.le: at least one of x or y must be an int, the other must be a bool or an int, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y));
 
@@ -340,9 +340,9 @@ pub fn gt(x: anytype, y: anytype) bool {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 
-    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
-        !types.numericType(X).le(.int) or !types.numericType(Y).le(.int) or
-        (types.numericType(X) != .int and types.numericType(Y) != .int))
+    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y) or
+        !meta.numericType(X).le(.int) or !meta.numericType(Y).le(.int) or
+        (meta.numericType(X) != .int and meta.numericType(Y) != .int))
         @compileError("zsl.int.gt: at least one of x or y must be an int, the other must be a bool or an int, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y));
 
@@ -370,9 +370,9 @@ pub fn ge(x: anytype, y: anytype) bool {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 
-    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
-        !types.numericType(X).le(.int) or !types.numericType(Y).le(.int) or
-        (types.numericType(X) != .int and types.numericType(Y) != .int))
+    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y) or
+        !meta.numericType(X).le(.int) or !meta.numericType(Y).le(.int) or
+        (meta.numericType(X) != .int and meta.numericType(Y) != .int))
         @compileError("zsl.int.ge: at least one of x or y must be an int, the other must be a bool or an int, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y));
 
@@ -382,9 +382,9 @@ pub fn ge(x: anytype, y: anytype) bool {
 }
 
 pub fn Max(comptime X: type, comptime Y: type) type {
-    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
-        !types.numericType(X).le(.int) or !types.numericType(Y).le(.int) or
-        (types.numericType(X) != .int and types.numericType(Y) != .int))
+    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y) or
+        !meta.numericType(X).le(.int) or !meta.numericType(Y).le(.int) or
+        (meta.numericType(X) != .int and meta.numericType(Y) != .int))
         @compileError("zsl.int.max: at least one of x or y must be an int, the other must be a bool or an int, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y));
 
@@ -414,9 +414,9 @@ pub fn max(x: anytype, y: anytype) int.Max(@TypeOf(x), @TypeOf(y)) {
 }
 
 pub fn Min(comptime X: type, comptime Y: type) type {
-    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
-        !types.numericType(X).le(.int) or !types.numericType(Y).le(.int) or
-        (types.numericType(X) != .int and types.numericType(Y) != .int))
+    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y) or
+        !meta.numericType(X).le(.int) or !meta.numericType(Y).le(.int) or
+        (meta.numericType(X) != .int and meta.numericType(Y) != .int))
         @compileError("zsl.int.min: at least one of x or y must be an int, the other must be a bool or an int, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y));
 
@@ -453,7 +453,7 @@ pub fn min(x: anytype, y: anytype) int.Min(@TypeOf(x), @TypeOf(y)) {
 /// ## Returns
 /// `Int`: The maximum representable value of type `Int`.
 pub fn maxVal(comptime Int: type) Int {
-    comptime if (!types.isNumeric(Int) or types.numericType(Int) != .int)
+    comptime if (!meta.isNumeric(Int) or meta.numericType(Int) != .int)
         @compileError("zsl.int.maxVal: Int must be an int type, got \n\tInt = " ++ @typeName(Int) ++ "\n");
 
     const info = @typeInfo(Int);
@@ -469,7 +469,7 @@ pub fn maxVal(comptime Int: type) Int {
 /// ## Returns
 /// `Int`: The minimum representable value of type `Int`.
 pub fn minVal(comptime Int: type) Int {
-    comptime if (!types.isNumeric(Int) or types.numericType(Int) != .int)
+    comptime if (!meta.isNumeric(Int) or meta.numericType(Int) != .int)
         @compileError("zsl.int.minVal: Int must be an int type, got \n\tInt = " ++ @typeName(Int) ++ "\n");
 
     const info = @typeInfo(Int);

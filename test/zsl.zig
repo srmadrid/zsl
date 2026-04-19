@@ -16,7 +16,7 @@ pub inline fn expectApproxEqAbs(expected: anytype, actual: anytype, tolerance: a
 pub fn randomNumber(comptime N: type, rand: std.Random) N {
     return zsl.numeric.cast(
         N,
-        if (comptime zsl.types.isComplex(N))
+        if (comptime zsl.meta.isComplex(N))
             zsl.cf64{ .re = rand.float(f64), .im = rand.float(f64) }
         else
             rand.float(f64),
@@ -24,9 +24,9 @@ pub fn randomNumber(comptime N: type, rand: std.Random) N {
 }
 
 pub fn deinit(allocator: std.mem.Allocator, value: anytype) void {
-    const V: type = zsl.types.Child(@TypeOf(value));
+    const V: type = zsl.meta.Child(@TypeOf(value));
 
-    switch (comptime zsl.types.domain(V)) {
+    switch (comptime zsl.meta.domain(V)) {
         .numeric => {},
         else => value.deinit(allocator),
     }

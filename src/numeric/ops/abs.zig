@@ -1,4 +1,4 @@
-const types = @import("../../types.zig");
+const meta = @import("../../meta.zig");
 
 const int = @import("../../int.zig");
 const float = @import("../../float.zig");
@@ -8,17 +8,17 @@ const complex = @import("../../complex.zig");
 const numeric = @import("../../numeric.zig");
 
 pub fn Abs(X: type) type {
-    comptime if (!types.isNumeric(X))
+    comptime if (!meta.isNumeric(X))
         @compileError("zsl.numeric.abs: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
 
-    switch (comptime types.numericType(X)) {
+    switch (comptime meta.numericType(X)) {
         .bool => return X,
         .int => return X,
         .float => return X,
         .dyadic => return X,
         .complex => return complex.Abs(X),
         .custom => {
-            if (comptime !types.hasMethod(X, "Abs", fn (type) type, &.{X}))
+            if (comptime !meta.hasMethod(X, "Abs", fn (type) type, &.{X}))
                 @compileError("zsl.numeric.abs: " ++ @typeName(X) ++ " must implement `fn Abs(type) type`");
 
             return X.Abs(X);
@@ -54,14 +54,14 @@ pub fn abs(x: anytype) numeric.Abs(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Abs(X);
 
-    switch (comptime types.numericType(X)) {
+    switch (comptime meta.numericType(X)) {
         .bool => return x,
         .int => return int.abs(x),
         .float => return float.abs(x),
         .dyadic => return dyadic.abs(x),
         .complex => return complex.abs(x),
         .custom => {
-            const Impl: type = comptime types.anyHasMethod(
+            const Impl: type = comptime meta.anyHasMethod(
                 &.{ R, X },
                 "abs",
                 fn (X) numeric.Abs(X),

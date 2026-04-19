@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const types = @import("../types.zig");
+const meta = @import("../meta.zig");
 
 const int = @import("../int.zig");
 const dyadic = @import("../dyadic.zig");
@@ -16,21 +16,21 @@ const dyadic = @import("../dyadic.zig");
 /// ## Returns
 /// `type`: The coerced type that can represent all values of both `X` and `Y`.
 pub fn Coerce(comptime X: type, comptime Y: type) type {
-    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
-        !types.numericType(X).le(.dyadic) or !types.numericType(Y).le(.dyadic) or
-        (types.numericType(X) != .dyadic and types.numericType(Y) != .dyadic))
+    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y) or
+        !meta.numericType(X).le(.dyadic) or !meta.numericType(Y).le(.dyadic) or
+        (meta.numericType(X) != .dyadic and meta.numericType(Y) != .dyadic))
         @compileError("zsl.dyadic.Coerce: at least one of X or Y must be a dyadic type, the other must be a bool, an int, a float or a dyadic type, got\n\tX = " ++
             @typeName(X) ++ "\n\tY = " ++ @typeName(Y) ++ "\n");
 
     if (comptime X == Y)
         return X;
 
-    switch (comptime types.numericType(X)) {
-        .bool => switch (comptime types.numericType(Y)) {
+    switch (comptime meta.numericType(X)) {
+        .bool => switch (comptime meta.numericType(Y)) {
             .dyadic => return Y,
             else => unreachable,
         },
-        .int => switch (comptime types.numericType(Y)) {
+        .int => switch (comptime meta.numericType(Y)) {
             .dyadic => {
                 if (X == comptime_int)
                     return Y;
@@ -44,7 +44,7 @@ pub fn Coerce(comptime X: type, comptime Y: type) type {
             },
             else => unreachable,
         },
-        .float => switch (comptime types.numericType(Y)) {
+        .float => switch (comptime meta.numericType(Y)) {
             .dyadic => {
                 if (X == comptime_float)
                     return Y;
@@ -59,7 +59,7 @@ pub fn Coerce(comptime X: type, comptime Y: type) type {
             },
             else => unreachable,
         },
-        .dyadic => switch (comptime types.numericType(Y)) {
+        .dyadic => switch (comptime meta.numericType(Y)) {
             .bool => return X,
             .int => return Coerce(Y, X),
             .float => return Coerce(Y, X),

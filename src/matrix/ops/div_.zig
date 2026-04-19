@@ -1,4 +1,4 @@
-const types = @import("../../types.zig");
+const meta = @import("../../meta.zig");
 
 const numeric = @import("../../numeric.zig");
 
@@ -41,23 +41,23 @@ pub fn div_(o: anytype, x: anytype, y: anytype) !void {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 
-    comptime if (!types.isPointer(O) or types.isConstPointer(O) or !types.isMatrix(types.Child(O)) or
-        !types.isMatrix(X) or !types.isNumeric(Y))
+    comptime if (!meta.isPointer(O) or meta.isConstPointer(O) or !meta.isMatrix(meta.Child(O)) or
+        !meta.isMatrix(X) or !meta.isNumeric(Y))
         @compileError("zsl.matrix.div_: o must be a mutable one-itme pointer to a matrix, x must be a matrix, and y must be a numeric, got\n\to: " ++
             @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    O = types.Child(O);
+    O = meta.Child(O);
 
-    if (comptime types.isCustomType(O)) {
-        if (comptime types.isCustomType(X)) { // only O and X custom matrices
-            if (comptime types.anyHasMethod(&.{ O, X }, "div_", fn (*O, X, Y) anyerror!void, &.{ *O, X, Y })) |Impl|
+    if (comptime meta.isCustomType(O)) {
+        if (comptime meta.isCustomType(X)) { // only O and X custom matrices
+            if (comptime meta.anyHasMethod(&.{ O, X }, "div_", fn (*O, X, Y) anyerror!void, &.{ *O, X, Y })) |Impl|
                 return Impl.div_(o, x, y);
         } else { // only O matrix
-            if (comptime types.hasMethod(O, "div_", fn (*O, X, Y) anyerror!void, &.{ *O, X, Y }))
+            if (comptime meta.hasMethod(O, "div_", fn (*O, X, Y) anyerror!void, &.{ *O, X, Y }))
                 return O.div_(o, x, y);
         }
-    } else if (comptime types.isCustomType(X)) { // only X custom matrix
-        if (comptime types.hasMethod(X, "div_", fn (*O, X, Y) anyerror!void, &.{ *O, X, Y }))
+    } else if (comptime meta.isCustomType(X)) { // only X custom matrix
+        if (comptime meta.hasMethod(X, "div_", fn (*O, X, Y) anyerror!void, &.{ *O, X, Y }))
             return X.div_(o, x, y);
     }
 

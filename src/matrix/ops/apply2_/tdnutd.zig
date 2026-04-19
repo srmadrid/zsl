@@ -1,31 +1,31 @@
-const types = @import("../../../types.zig");
+const meta = @import("../../../meta.zig");
 
 const int = @import("../../../int.zig");
 
 const numeric = @import("../../../numeric.zig");
 
 pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
-    const O: type = types.Child(@TypeOf(o));
+    const O: type = meta.Child(@TypeOf(o));
     const Y: type = @TypeOf(y);
 
-    if (comptime types.layoutOf(O) == .col_major) {
+    if (comptime meta.layoutOf(O) == .col_major) {
         var j: usize = 0;
         while (j < o.cols) : (j += 1) {
-            if (comptime types.uploOf(O) == .upper) {
+            if (comptime meta.uploOf(O) == .upper) {
                 var i: usize = 0;
                 while (i < int.min(j, o.rows)) : (i += 1) {
                     op_(&o.data[o._index(i, j)], x, y.data[y._index(i, j)]);
                 }
 
                 if (j < o.rows) {
-                    if (comptime types.diagOf(Y) == .unit)
+                    if (comptime meta.diagOf(Y) == .unit)
                         numeric.set(&o.data[o._index(j, j)], x)
                     else
                         op_(&o.data[o._index(j, j)], x, y.data[y._index(j, j)]);
                 }
             } else {
                 if (j < o.rows) {
-                    if (comptime types.diagOf(Y) == .unit)
+                    if (comptime meta.diagOf(Y) == .unit)
                         numeric.set(&o.data[o._index(j, j)], x)
                     else
                         op_(&o.data[o._index(j, j)], x, y.data[y._index(j, j)]);
@@ -40,21 +40,21 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
     } else {
         var i: usize = 0;
         while (i < o.rows) : (i += 1) {
-            if (comptime types.uploOf(O) == .lower) {
+            if (comptime meta.uploOf(O) == .lower) {
                 var j: usize = 0;
                 while (j < int.min(i, o.cols)) : (j += 1) {
                     op_(&o.data[o._index(i, j)], x, y.data[y._index(i, j)]);
                 }
 
                 if (i < o.cols) {
-                    if (comptime types.diagOf(Y) == .unit)
+                    if (comptime meta.diagOf(Y) == .unit)
                         numeric.set(&o.data[o._index(i, i)], x)
                     else
                         op_(&o.data[o._index(i, i)], x, y.data[y._index(i, i)]);
                 }
             } else {
                 if (i < o.cols) {
-                    if (comptime types.diagOf(Y) == .unit)
+                    if (comptime meta.diagOf(Y) == .unit)
                         numeric.set(&o.data[o._index(i, i)], x)
                     else
                         op_(&o.data[o._index(i, i)], x, y.data[y._index(i, i)]);

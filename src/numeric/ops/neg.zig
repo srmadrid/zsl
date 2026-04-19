@@ -1,4 +1,4 @@
-const types = @import("../../types.zig");
+const meta = @import("../../meta.zig");
 
 const int = @import("../../int.zig");
 const float = @import("../../float.zig");
@@ -8,17 +8,17 @@ const complex = @import("../../complex.zig");
 const numeric = @import("../../numeric.zig");
 
 pub fn Neg(X: type) type {
-    comptime if (!types.isNumeric(X))
+    comptime if (!meta.isNumeric(X))
         @compileError("zsl.numeric.neg: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
 
-    switch (comptime types.numericType(X)) {
+    switch (comptime meta.numericType(X)) {
         .bool => return X,
         .int => return X,
         .float => return X,
         .dyadic => return X,
         .complex => return X,
         .custom => {
-            if (comptime !types.hasMethod(X, "Neg", fn (type) type, &.{X}))
+            if (comptime !meta.hasMethod(X, "Neg", fn (type) type, &.{X}))
                 @compileError("zsl.numeric.neg: " ++ @typeName(X) ++ " must implement `fn Neg(type) type`");
 
             return X.Neg(X);
@@ -54,14 +54,14 @@ pub fn neg(x: anytype) numeric.Neg(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Neg(X);
 
-    switch (comptime types.numericType(X)) {
+    switch (comptime meta.numericType(X)) {
         .bool => return !x,
         .int => return -x,
         .float => return -x,
         .dyadic => return dyadic.neg(x),
         .complex => return x.neg(),
         .custom => {
-            const Impl: type = comptime types.anyHasMethod(
+            const Impl: type = comptime meta.anyHasMethod(
                 &.{ R, X },
                 "neg",
                 fn (X) numeric.Neg(X),

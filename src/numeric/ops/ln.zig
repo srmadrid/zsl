@@ -1,4 +1,4 @@
-const types = @import("../../types.zig");
+const meta = @import("../../meta.zig");
 
 const int = @import("../../int.zig");
 const float = @import("../../float.zig");
@@ -8,17 +8,17 @@ const complex = @import("../../complex.zig");
 const numeric = @import("../../numeric.zig");
 
 pub fn Ln(X: type) type {
-    comptime if (!types.isNumeric(X))
+    comptime if (!meta.isNumeric(X))
         @compileError("zsl.numeric.ln: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
 
-    switch (comptime types.numericType(X)) {
+    switch (comptime meta.numericType(X)) {
         .bool => @compileError("zsl.numeric.ln: not defined for " ++ @typeName(X) ++ "."),
         .int => @compileError("zsl.numeric.ln: not defined for " ++ @typeName(X) ++ "."),
         .float => return X,
         .dyadic => return X,
         .complex => return X,
         .custom => {
-            if (comptime !types.hasMethod(X, "Ln", fn (type) type, &.{X}))
+            if (comptime !meta.hasMethod(X, "Ln", fn (type) type, &.{X}))
                 @compileError("zsl.numeric.ln: " ++ @typeName(X) ++ " must implement `fn Ln(type) type`");
 
             return X.Ln(X);
@@ -54,14 +54,14 @@ pub fn ln(x: anytype) numeric.Ln(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Ln(X);
 
-    switch (comptime types.numericType(X)) {
+    switch (comptime meta.numericType(X)) {
         .bool => unreachable,
         .int => unreachable,
         .float => return float.ln(x),
         .dyadic => return dyadic.ln(x),
         .complex => return complex.ln(x),
         .custom => {
-            const Impl: type = comptime types.anyHasMethod(
+            const Impl: type = comptime meta.anyHasMethod(
                 &.{ R, X },
                 "ln",
                 fn (X) numeric.Ln(X),

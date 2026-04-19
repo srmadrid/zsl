@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const types = @import("../types.zig");
+const meta = @import("../meta.zig");
 const numeric = @import("../numeric.zig");
 
 const vector = @import("../vector.zig");
@@ -8,7 +8,7 @@ const vector = @import("../vector.zig");
 /// Sparse vector type, represented as a contiguous array of non-zero elements
 /// of type `N` along with their corresponding indices, in ascending order.
 pub fn Sparse(N: type) type {
-    if (!types.isNumeric(N))
+    if (!meta.isNumeric(N))
         @compileError("zsl.vector.Sparse: N must be a numeric type, got \n\tN = " ++ @typeName(N) ++ "\n");
 
     return struct {

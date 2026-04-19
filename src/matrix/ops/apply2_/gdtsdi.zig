@@ -1,25 +1,25 @@
 const std = @import("std");
 
-const types = @import("../../../types.zig");
+const meta = @import("../../../meta.zig");
 const int = @import("../../../int.zig");
 const numeric = @import("../../../numeric.zig");
 const matrix = @import("../../../matrix.zig");
 
 pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
-    const O: type = types.Child(@TypeOf(o));
+    const O: type = meta.Child(@TypeOf(o));
     const X: type = @TypeOf(x);
 
-    if (comptime types.layoutOf(O) == .col_major) {
+    if (comptime meta.layoutOf(O) == .col_major) {
         var j: usize = 0;
         while (j < o.cols) : (j += 1) {
             var i: usize = 0;
             while (i < int.min(j, o.rows)) : (i += 1) {
-                o.data[o._index(i, j)] = numeric.zero(types.Numeric(O));
+                o.data[o._index(i, j)] = numeric.zero(meta.Numeric(O));
             }
 
             if (j < o.rows) {
-                if (comptime types.diagOf(X) == .unit) {
-                    op_(&o.data[o._index(j, j)], numeric.one(types.Numeric(X)), y.data[j]);
+                if (comptime meta.diagOf(X) == .unit) {
+                    op_(&o.data[o._index(j, j)], numeric.one(meta.Numeric(X)), y.data[j]);
                 } else {
                     if (comptime op_ == numeric.add_)
                         numeric.set(&o.data[o._index(j, j)], y.data[j])
@@ -30,7 +30,7 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
 
             i = int.min(j + 1, o.rows);
             while (i < o.rows) : (i += 1) {
-                o.data[o._index(i, j)] = numeric.zero(types.Numeric(O));
+                o.data[o._index(i, j)] = numeric.zero(meta.Numeric(O));
             }
         }
     } else {
@@ -38,12 +38,12 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
         while (i < o.rows) : (i += 1) {
             var j: usize = 0;
             while (j < int.min(i, o.cols)) : (j += 1) {
-                o.data[o._index(i, j)] = numeric.zero(types.Numeric(O));
+                o.data[o._index(i, j)] = numeric.zero(meta.Numeric(O));
             }
 
             if (i < o.cols) {
-                if (comptime types.diagOf(X) == .unit) {
-                    op_(&o.data[o._index(i, i)], numeric.one(types.Numeric(X)), y.data[i]);
+                if (comptime meta.diagOf(X) == .unit) {
+                    op_(&o.data[o._index(i, i)], numeric.one(meta.Numeric(X)), y.data[i]);
                 } else {
                     if (comptime op_ == numeric.add_)
                         numeric.set(&o.data[o._index(i, i)], y.data[i])
@@ -54,12 +54,12 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
 
             j = int.min(i + 1, o.cols);
             while (j < o.cols) : (j += 1) {
-                o.data[o._index(i, j)] = numeric.zero(types.Numeric(O));
+                o.data[o._index(i, j)] = numeric.zero(meta.Numeric(O));
             }
         }
     }
 
-    if (comptime types.layoutOf(X) == .col_major) {
+    if (comptime meta.layoutOf(X) == .col_major) {
         var j: usize = 0;
         while (j < x.cols) : (j += 1) {
             var p: usize = x.ptr[j];

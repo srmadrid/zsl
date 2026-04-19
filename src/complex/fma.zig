@@ -1,12 +1,12 @@
-const types = @import("../types.zig");
+const meta = @import("../meta.zig");
 const numeric = @import("../numeric.zig");
 
 const complex = @import("../complex.zig");
 
 pub fn Fma(comptime X: type, comptime Y: type, comptime Z: type) type {
-    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or !types.isNumeric(Z) or
-        !types.numericType(X).le(.complex) or !types.numericType(Y).le(.complex) or !types.numericType(Z).le(.complex) or
-        (types.numericType(X) != .complex and types.numericType(Y) != .complex and types.numericType(Z) != .complex))
+    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y) or !meta.isNumeric(Z) or
+        !meta.numericType(X).le(.complex) or !meta.numericType(Y).le(.complex) or !meta.numericType(Z).le(.complex) or
+        (meta.numericType(X) != .complex and meta.numericType(Y) != .complex and meta.numericType(Z) != .complex))
         @compileError("zsl.complex.fma: at least one of x, y or z must be a complex, the others must be bool, int, float, dyadic or complex, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\tz: " ++ @typeName(Z) ++ "\n");
 
@@ -38,15 +38,15 @@ pub fn fma(x: anytype, y: anytype, z: anytype) complex.Fma(@TypeOf(x), @TypeOf(y
     const Z: type = @TypeOf(z);
     const R: type = complex.Fma(X, Y, Z);
 
-    if (comptime !types.isComplex(X)) {
-        if (comptime !types.isComplex(Y)) {
+    if (comptime !meta.isComplex(X)) {
+        if (comptime !meta.isComplex(Y)) {
             // x, y are real, z is complex
             return .{
                 .re = numeric.fma(x, y, z.re),
-                .im = numeric.cast(types.Scalar(R), z.im),
+                .im = numeric.cast(meta.Scalar(R), z.im),
             };
         } else {
-            if (comptime !types.isComplex(Z)) {
+            if (comptime !meta.isComplex(Z)) {
                 // x, z are real, y is complex
                 return .{
                     .re = numeric.fma(x, y.re, z),
@@ -61,8 +61,8 @@ pub fn fma(x: anytype, y: anytype, z: anytype) complex.Fma(@TypeOf(x), @TypeOf(y
             }
         }
     } else {
-        if (comptime !types.isComplex(Y)) {
-            if (comptime !types.isComplex(Z)) {
+        if (comptime !meta.isComplex(Y)) {
+            if (comptime !meta.isComplex(Z)) {
                 // y, z are real, x is complex
                 return .{
                     .re = numeric.fma(x.re, y, z),
@@ -76,7 +76,7 @@ pub fn fma(x: anytype, y: anytype, z: anytype) complex.Fma(@TypeOf(x), @TypeOf(y
                 };
             }
         } else {
-            if (comptime !types.isComplex(Z)) {
+            if (comptime !meta.isComplex(Z)) {
                 // z is real, x, y are complex
                 return .{
                     .re = numeric.fma(x.re, y.re, numeric.fma(numeric.neg(x.im), y.im, z)),

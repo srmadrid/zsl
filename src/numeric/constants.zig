@@ -1,4 +1,4 @@
-const types = @import("../types.zig");
+const meta = @import("../meta.zig");
 
 const int = @import("../int.zig");
 const float = @import("../float.zig");
@@ -21,17 +21,17 @@ const complex = @import("../complex.zig");
 /// behavior of `zero` are as follows:
 /// * `fn zero(anytype) N`: Returns the zero value.
 pub fn zero(comptime N: type) N {
-    comptime if (!types.isNumeric(N))
+    comptime if (!meta.isNumeric(N))
         @compileError("zsl.numeric.zero: " ++ @typeName(N) ++ " is not a numeric type");
 
-    switch (comptime types.numericType(N)) {
+    switch (comptime meta.numericType(N)) {
         .bool => return false,
         .int => return 0,
         .float => return 0.0,
         .dyadic => return .zero,
         .complex => return .zero,
         .custom => {
-            comptime if (!types.hasMethod(N, "zero", fn () N, &.{}))
+            comptime if (!meta.hasMethod(N, "zero", fn () N, &.{}))
                 @compileError("zsl.numeric.zero: " ++ @typeName(N) ++ " must implement `fn zero() " ++ @typeName(N) ++ "`");
 
             return N.zero();
@@ -55,17 +55,17 @@ pub fn zero(comptime N: type) N {
 /// behavior of `one` are as follows:
 /// * `fn one() N`: Returns the one value.
 pub fn one(comptime N: type) N {
-    comptime if (!types.isNumeric(N))
+    comptime if (!meta.isNumeric(N))
         @compileError("zsl.numeric.one: " ++ @typeName(N) ++ " is not a numeric type");
 
-    switch (comptime types.numericType(N)) {
+    switch (comptime meta.numericType(N)) {
         .bool => return true,
         .int => return 1,
         .float => return 1.0,
         .dyadic => return .one,
         .complex => return .one,
         .custom => {
-            comptime if (!types.hasMethod(N, "one", fn () N, &.{}))
+            comptime if (!meta.hasMethod(N, "one", fn () N, &.{}))
                 @compileError("zsl.numeric.one: " ++ @typeName(N) ++ " must implement `fn one() " ++ @typeName(N) ++ "`");
 
             return N.one();
@@ -89,17 +89,17 @@ pub fn one(comptime N: type) N {
 /// behavior of `two` are as follows:
 /// * `fn two() N`: Returns the two value.
 pub fn two(comptime N: type) N {
-    comptime if (!types.isNumeric(N))
+    comptime if (!meta.isNumeric(N))
         @compileError("zsl.numeric.two: " ++ @typeName(N) ++ " is not a numeric type");
 
-    switch (comptime types.numericType(N)) {
+    switch (comptime meta.numericType(N)) {
         .bool => return true,
         .int => return 2,
         .float => return 2.0,
         .dyadic => return .two,
         .complex => return .two,
         .custom => {
-            comptime if (!types.hasMethod(N, "two", fn () N, &.{}))
+            comptime if (!meta.hasMethod(N, "two", fn () N, &.{}))
                 @compileError("zsl.numeric.two: " ++ @typeName(N) ++ " must implement `fn two() " ++ @typeName(N) ++ "`");
 
             return N.two();

@@ -13,9 +13,7 @@ const cf64 = cfloat.cf64;
 const ops = @import("../ops.zig");
 const linalg = @import("../linalg.zig");
 
-const ci = @import("../c.zig").c;
-
-const Order = types.Order;
+const Layout = types.Layout;
 const Transpose = linalg.Transpose;
 const Uplo = types.Uplo;
 const Diag = types.Diag;
@@ -4987,7 +4985,7 @@ pub fn izamin(
 /// corresponding CBLAS function, if available. In that case, no errors will be
 /// raised even if the arguments are invalid.
 pub fn gbmv(
-    order: Order,
+    order: Layout,
     transa: Transpose,
     m: i32,
     n: i32,
@@ -5167,7 +5165,7 @@ pub fn gbmv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn sgbmv(
-    order: Order,
+    order: Layout,
     transa: Transpose,
     m: i32,
     n: i32,
@@ -5271,7 +5269,7 @@ pub fn sgbmv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn dgbmv(
-    order: Order,
+    order: Layout,
     transa: Transpose,
     m: i32,
     n: i32,
@@ -5375,7 +5373,7 @@ pub fn dgbmv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn cgbmv(
-    order: Order,
+    order: Layout,
     transa: Transpose,
     m: i32,
     n: i32,
@@ -5479,7 +5477,7 @@ pub fn cgbmv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn zgbmv(
-    order: Order,
+    order: Layout,
     transa: Transpose,
     m: i32,
     n: i32,
@@ -5596,7 +5594,7 @@ pub fn zgbmv(
 /// corresponding CBLAS function, if available. In that case, no errors will be
 /// raised even if the arguments are invalid.
 pub fn gemv(
-    order: Order,
+    order: Layout,
     transa: Transpose,
     m: i32,
     n: i32,
@@ -5770,7 +5768,7 @@ pub fn gemv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn sgemv(
-    order: Order,
+    order: Layout,
     transa: Transpose,
     m: i32,
     n: i32,
@@ -5868,7 +5866,7 @@ pub fn sgemv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn dgemv(
-    order: Order,
+    order: Layout,
     transa: Transpose,
     m: i32,
     n: i32,
@@ -5966,7 +5964,7 @@ pub fn dgemv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn cgemv(
-    order: Order,
+    order: Layout,
     transa: Transpose,
     m: i32,
     n: i32,
@@ -6064,7 +6062,7 @@ pub fn cgemv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn zgemv(
-    order: Order,
+    order: Layout,
     transa: Transpose,
     m: i32,
     n: i32,
@@ -6149,7 +6147,7 @@ pub fn zgemv(
 /// corresponding CBLAS function, if available. In that case, no errors will be
 /// raised even if the arguments are invalid.
 pub fn ger(
-    order: Order,
+    order: Layout,
     m: i32,
     n: i32,
     alpha: anytype,
@@ -6274,7 +6272,7 @@ pub fn ger(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn sger(
-    order: Order,
+    order: Layout,
     m: i32,
     n: i32,
     alpha: f32,
@@ -6339,7 +6337,7 @@ pub fn sger(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn dger(
-    order: Order,
+    order: Layout,
     m: i32,
     n: i32,
     alpha: f64,
@@ -6422,7 +6420,7 @@ pub fn dger(
 /// corresponding CBLAS function, if available. In that case, no errors will be
 /// raised even if the arguments are invalid.
 pub fn gerc(
-    order: Order,
+    order: Layout,
     m: i32,
     n: i32,
     alpha: anytype,
@@ -6549,7 +6547,7 @@ pub fn gerc(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn cgerc(
-    order: Order,
+    order: Layout,
     m: i32,
     n: i32,
     alpha: cf32,
@@ -6614,7 +6612,7 @@ pub fn cgerc(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn zgerc(
-    order: Order,
+    order: Layout,
     m: i32,
     n: i32,
     alpha: cf64,
@@ -6697,7 +6695,7 @@ pub fn zgerc(
 /// corresponding CBLAS function, if available. In that case, no errors will be
 /// raised even if the arguments are invalid.
 pub fn geru(
-    order: Order,
+    order: Layout,
     m: i32,
     n: i32,
     alpha: anytype,
@@ -6824,7 +6822,7 @@ pub fn geru(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn cgeru(
-    order: Order,
+    order: Layout,
     m: i32,
     n: i32,
     alpha: cf32,
@@ -6889,7 +6887,7 @@ pub fn cgeru(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn zgeru(
-    order: Order,
+    order: Layout,
     m: i32,
     n: i32,
     alpha: cf64,
@@ -6981,7 +6979,7 @@ pub fn zgeru(
 /// corresponding CBLAS function, if available. In that case, no errors will be
 /// raised even if the arguments are invalid.
 pub fn hbmv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     n: i32,
     k: i32,
@@ -7125,7 +7123,7 @@ pub fn hbmv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn chbmv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     n: i32,
     k: i32,
@@ -7200,7 +7198,7 @@ pub fn chbmv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn zhbmv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     n: i32,
     k: i32,
@@ -7291,7 +7289,7 @@ pub fn zhbmv(
 /// corresponding CBLAS function, if available. In that case, no errors will be
 /// raised even if the arguments are invalid.
 pub fn hemv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     n: i32,
     alpha: anytype,
@@ -7431,7 +7429,7 @@ pub fn hemv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn chemv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     n: i32,
     alpha: cf32,
@@ -7502,7 +7500,7 @@ pub fn chemv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn zhemv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     n: i32,
     alpha: cf64,
@@ -7581,7 +7579,7 @@ pub fn zhemv(
 /// corresponding CBLAS function, if available. In that case, no errors will be
 /// raised even if the arguments are invalid.
 pub fn her(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     n: i32,
     alpha: anytype,
@@ -7694,7 +7692,7 @@ pub fn her(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn cher(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     n: i32,
     alpha: f32,
@@ -7754,7 +7752,7 @@ pub fn cher(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn zher(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     n: i32,
     alpha: f64,
@@ -7837,7 +7835,7 @@ pub fn zher(
 /// corresponding CBLAS function, if available. In that case, no errors will be
 /// raised even if the arguments are invalid.
 pub fn her2(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     n: i32,
     alpha: anytype,
@@ -7966,7 +7964,7 @@ pub fn her2(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn cher2(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     n: i32,
     alpha: cf32,
@@ -8033,7 +8031,7 @@ pub fn cher2(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn zher2(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     n: i32,
     alpha: cf64,
@@ -8120,7 +8118,7 @@ pub fn zher2(
 /// corresponding CBLAS function, if available. In that case, no errors will be
 /// raised even if the arguments are invalid.
 pub fn hpmv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     n: i32,
     alpha: anytype,
@@ -8257,7 +8255,7 @@ pub fn hpmv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn chpmv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     n: i32,
     alpha: cf32,
@@ -8325,7 +8323,7 @@ pub fn chpmv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn zhpmv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     n: i32,
     alpha: cf64,
@@ -8400,7 +8398,7 @@ pub fn zhpmv(
 /// corresponding CBLAS function, if available. In that case, no errors will be
 /// raised even if the arguments are invalid.
 pub fn hpr(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     n: i32,
     alpha: anytype,
@@ -8508,7 +8506,7 @@ pub fn hpr(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn chpr(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     n: i32,
     alpha: f32,
@@ -8563,7 +8561,7 @@ pub fn chpr(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn zhpr(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     n: i32,
     alpha: f64,
@@ -8642,7 +8640,7 @@ pub fn zhpr(
 /// corresponding CBLAS function, if available. In that case, no errors will be
 /// raised even if the arguments are invalid.
 pub fn hpr2(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     n: i32,
     alpha: anytype,
@@ -8767,7 +8765,7 @@ pub fn hpr2(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn chpr2(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     n: i32,
     alpha: cf32,
@@ -8830,7 +8828,7 @@ pub fn chpr2(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn zhpr2(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     n: i32,
     alpha: cf64,
@@ -8921,7 +8919,7 @@ pub fn zhpr2(
 /// corresponding CBLAS function, if available. In that case, no errors will be
 /// raised even if the arguments are invalid.
 pub fn sbmv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     n: i32,
     k: i32,
@@ -9061,7 +9059,7 @@ pub fn sbmv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn ssbmv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     n: i32,
     k: i32,
@@ -9136,7 +9134,7 @@ pub fn ssbmv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn dsbmv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     n: i32,
     k: i32,
@@ -9225,7 +9223,7 @@ pub fn dsbmv(
 /// corresponding CBLAS function, if available. In that case, no errors will be
 /// raised even if the arguments are invalid.
 pub fn spmv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     n: i32,
     alpha: anytype,
@@ -9358,7 +9356,7 @@ pub fn spmv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn sspmv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     n: i32,
     alpha: f32,
@@ -9426,7 +9424,7 @@ pub fn sspmv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn dspmv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     n: i32,
     alpha: f64,
@@ -9501,7 +9499,7 @@ pub fn dspmv(
 /// corresponding CBLAS function, if available. In that case, no errors will be
 /// raised even if the arguments are invalid.
 pub fn spr(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     n: i32,
     alpha: anytype,
@@ -9606,7 +9604,7 @@ pub fn spr(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn sspr(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     n: i32,
     alpha: f32,
@@ -9661,7 +9659,7 @@ pub fn sspr(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn dspr(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     n: i32,
     alpha: f64,
@@ -9740,7 +9738,7 @@ pub fn dspr(
 /// corresponding CBLAS function, if available. In that case, no errors will be
 /// raised even if the arguments are invalid.
 pub fn spr2(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     n: i32,
     alpha: anytype,
@@ -9863,7 +9861,7 @@ pub fn spr2(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn sspr2(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     n: i32,
     alpha: f32,
@@ -9926,7 +9924,7 @@ pub fn sspr2(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn dspr2(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     n: i32,
     alpha: f64,
@@ -10014,7 +10012,7 @@ pub fn dspr2(
 /// corresponding CBLAS function, if available. In that case, no errors will be
 /// raised even if the arguments are invalid.
 pub fn symv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     n: i32,
     alpha: anytype,
@@ -10150,7 +10148,7 @@ pub fn symv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn ssymv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     n: i32,
     alpha: f32,
@@ -10221,7 +10219,7 @@ pub fn ssymv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn dsymv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     n: i32,
     alpha: f64,
@@ -10300,7 +10298,7 @@ pub fn dsymv(
 /// corresponding CBLAS function, if available. In that case, no errors will be
 /// raised even if the arguments are invalid.
 pub fn syr(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     n: i32,
     alpha: anytype,
@@ -10409,7 +10407,7 @@ pub fn syr(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn ssyr(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     n: i32,
     alpha: f32,
@@ -10468,7 +10466,7 @@ pub fn ssyr(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn dsyr(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     n: i32,
     alpha: f64,
@@ -10551,7 +10549,7 @@ pub fn dsyr(
 /// corresponding CBLAS function, if available. In that case, no errors will be
 /// raised even if the arguments are invalid.
 pub fn syr2(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     n: i32,
     alpha: anytype,
@@ -10678,7 +10676,7 @@ pub fn syr2(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn ssyr2(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     n: i32,
     alpha: f32,
@@ -10745,7 +10743,7 @@ pub fn ssyr2(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn dsyr2(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     n: i32,
     alpha: f64,
@@ -10848,7 +10846,7 @@ pub fn dsyr2(
 /// corresponding CBLAS function, if available. In that case, no errors will be
 /// raised even if the arguments are invalid.
 pub fn tbmv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     transa: Transpose,
     diag: Diag,
@@ -10988,7 +10986,7 @@ pub fn tbmv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn stbmv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     transa: Transpose,
     diag: Diag,
@@ -11076,7 +11074,7 @@ pub fn stbmv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn dtbmv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     transa: Transpose,
     diag: Diag,
@@ -11164,7 +11162,7 @@ pub fn dtbmv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn ctbmv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     transa: Transpose,
     diag: Diag,
@@ -11252,7 +11250,7 @@ pub fn ctbmv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn ztbmv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     transa: Transpose,
     diag: Diag,
@@ -11360,7 +11358,7 @@ pub fn ztbmv(
 /// corresponding CBLAS function, if available. In that case, no errors will be
 /// raised even if the arguments are invalid.
 pub fn tbsv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     transa: Transpose,
     diag: Diag,
@@ -11505,7 +11503,7 @@ pub fn tbsv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn stbsv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     transa: Transpose,
     diag: Diag,
@@ -11598,7 +11596,7 @@ pub fn stbsv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn dtbsv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     transa: Transpose,
     diag: Diag,
@@ -11691,7 +11689,7 @@ pub fn dtbsv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn ctbsv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     transa: Transpose,
     diag: Diag,
@@ -11784,7 +11782,7 @@ pub fn ctbsv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn ztbsv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     transa: Transpose,
     diag: Diag,
@@ -11882,7 +11880,7 @@ pub fn ztbsv(
 /// corresponding CBLAS function, if available. In that case, no errors will be
 /// raised even if the arguments are invalid.
 pub fn tpmv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     transa: Transpose,
     diag: Diag,
@@ -12014,7 +12012,7 @@ pub fn tpmv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn stpmv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     transa: Transpose,
     diag: Diag,
@@ -12094,7 +12092,7 @@ pub fn stpmv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn dtpmv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     transa: Transpose,
     diag: Diag,
@@ -12174,7 +12172,7 @@ pub fn dtpmv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn ctpmv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     transa: Transpose,
     diag: Diag,
@@ -12254,7 +12252,7 @@ pub fn ctpmv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn ztpmv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     transa: Transpose,
     diag: Diag,
@@ -12353,7 +12351,7 @@ pub fn ztpmv(
 /// corresponding CBLAS function, if available. In that case, no errors will be
 /// raised even if the arguments are invalid.
 pub fn tpsv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     transa: Transpose,
     diag: Diag,
@@ -12488,7 +12486,7 @@ pub fn tpsv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn stpsv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     transa: Transpose,
     diag: Diag,
@@ -12571,7 +12569,7 @@ pub fn stpsv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn dtpsv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     transa: Transpose,
     diag: Diag,
@@ -12654,7 +12652,7 @@ pub fn dtpsv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn ctpsv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     transa: Transpose,
     diag: Diag,
@@ -12737,7 +12735,7 @@ pub fn ctpsv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn ztpsv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     transa: Transpose,
     diag: Diag,
@@ -12835,7 +12833,7 @@ pub fn ztpsv(
 /// corresponding CBLAS function, if available. In that case, no errors will be
 /// raised even if the arguments are invalid.
 pub fn trmv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     transa: Transpose,
     diag: Diag,
@@ -12971,7 +12969,7 @@ pub fn trmv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn strmv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     transa: Transpose,
     diag: Diag,
@@ -13055,7 +13053,7 @@ pub fn strmv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn dtrmv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     transa: Transpose,
     diag: Diag,
@@ -13139,7 +13137,7 @@ pub fn dtrmv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn ctrmv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     transa: Transpose,
     diag: Diag,
@@ -13223,7 +13221,7 @@ pub fn ctrmv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn ztrmv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     transa: Transpose,
     diag: Diag,
@@ -13327,7 +13325,7 @@ pub fn ztrmv(
 /// corresponding CBLAS function, if available. In that case, no errors will be
 /// raised even if the arguments are invalid.
 pub fn trsv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     transa: Transpose,
     diag: Diag,
@@ -13468,7 +13466,7 @@ pub fn trsv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn strsv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     transa: Transpose,
     diag: Diag,
@@ -13557,7 +13555,7 @@ pub fn strsv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn dtrsv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     transa: Transpose,
     diag: Diag,
@@ -13646,7 +13644,7 @@ pub fn dtrsv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn ctrsv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     transa: Transpose,
     diag: Diag,
@@ -13735,7 +13733,7 @@ pub fn ctrsv(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn ztrsv(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     transa: Transpose,
     diag: Diag,
@@ -13854,7 +13852,7 @@ pub fn ztrsv(
 /// corresponding CBLAS function, if available. In that case, no errors will be
 /// raised even if the arguments are invalid.
 pub fn gemm(
-    order: Order,
+    order: Layout,
     transa: Transpose,
     transb: Transpose,
     m: i32,
@@ -14034,7 +14032,7 @@ pub fn gemm(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn sgemm(
-    order: Order,
+    order: Layout,
     transa: Transpose,
     transb: Transpose,
     m: i32,
@@ -14138,7 +14136,7 @@ pub fn sgemm(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn dgemm(
-    order: Order,
+    order: Layout,
     transa: Transpose,
     transb: Transpose,
     m: i32,
@@ -14242,7 +14240,7 @@ pub fn dgemm(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn cgemm(
-    order: Order,
+    order: Layout,
     transa: Transpose,
     transb: Transpose,
     m: i32,
@@ -14346,7 +14344,7 @@ pub fn cgemm(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn zgemm(
-    order: Order,
+    order: Layout,
     transa: Transpose,
     transb: Transpose,
     m: i32,
@@ -14365,7 +14363,7 @@ pub fn zgemm(
 }
 
 pub fn gemmtr(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     transa: Transpose,
     transb: Transpose,
@@ -14551,7 +14549,7 @@ pub fn gemmtr(
 /// corresponding CBLAS function, if available. In that case, no errors will be
 /// raised even if the arguments are invalid.
 pub fn hemm(
-    order: Order,
+    order: Layout,
     side: Side,
     uplo: Uplo,
     m: i32,
@@ -14712,7 +14710,7 @@ pub fn hemm(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn chemm(
-    order: Order,
+    order: Layout,
     side: Side,
     uplo: Uplo,
     m: i32,
@@ -14804,7 +14802,7 @@ pub fn chemm(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn zhemm(
-    order: Order,
+    order: Layout,
     side: Side,
     uplo: Uplo,
     m: i32,
@@ -14905,7 +14903,7 @@ pub fn zhemm(
 /// corresponding CBLAS function, if available. In that case, no errors will be
 /// raised even if the arguments are invalid.
 pub fn herk(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     trans: Transpose,
     n: i32,
@@ -15049,7 +15047,7 @@ pub fn herk(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn cherk(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     trans: Transpose,
     n: i32,
@@ -15132,7 +15130,7 @@ pub fn cherk(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn zherk(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     trans: Transpose,
     n: i32,
@@ -15251,7 +15249,7 @@ pub fn zherk(
 /// corresponding CBLAS function, if available. In that case, no errors will be
 /// raised even if the arguments are invalid.
 pub fn her2k(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     trans: Transpose,
     n: i32,
@@ -15423,7 +15421,7 @@ pub fn her2k(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn cher2k(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     trans: Transpose,
     n: i32,
@@ -15525,7 +15523,7 @@ pub fn cher2k(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn zher2k(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     trans: Transpose,
     n: i32,
@@ -15634,7 +15632,7 @@ pub fn zher2k(
 /// corresponding CBLAS function, if available. In that case, no errors will be
 /// raised even if the arguments are invalid.
 pub fn symm(
-    order: Order,
+    order: Layout,
     side: Side,
     uplo: Uplo,
     m: i32,
@@ -15801,7 +15799,7 @@ pub fn symm(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn ssymm(
-    order: Order,
+    order: Layout,
     side: Side,
     uplo: Uplo,
     m: i32,
@@ -15892,7 +15890,7 @@ pub fn ssymm(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn dsymm(
-    order: Order,
+    order: Layout,
     side: Side,
     uplo: Uplo,
     m: i32,
@@ -15983,7 +15981,7 @@ pub fn dsymm(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn csymm(
-    order: Order,
+    order: Layout,
     side: Side,
     uplo: Uplo,
     m: i32,
@@ -16074,7 +16072,7 @@ pub fn csymm(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn zsymm(
-    order: Order,
+    order: Layout,
     side: Side,
     uplo: Uplo,
     m: i32,
@@ -16176,7 +16174,7 @@ pub fn zsymm(
 /// corresponding CBLAS function, if available. In that case, no errors will be
 /// raised even if the arguments are invalid.
 pub fn syrk(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     trans: Transpose,
     n: i32,
@@ -16325,7 +16323,7 @@ pub fn syrk(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn ssyrk(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     trans: Transpose,
     n: i32,
@@ -16408,7 +16406,7 @@ pub fn ssyrk(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn dsyrk(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     trans: Transpose,
     n: i32,
@@ -16491,7 +16489,7 @@ pub fn dsyrk(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn csyrk(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     trans: Transpose,
     n: i32,
@@ -16574,7 +16572,7 @@ pub fn csyrk(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn zsyrk(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     trans: Transpose,
     n: i32,
@@ -16693,7 +16691,7 @@ pub fn zsyrk(
 /// corresponding CBLAS function, if available. In that case, no errors will be
 /// raised even if the arguments are invalid.
 pub fn syr2k(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     trans: Transpose,
     n: i32,
@@ -16871,7 +16869,7 @@ pub fn syr2k(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn ssyr2k(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     trans: Transpose,
     n: i32,
@@ -16973,7 +16971,7 @@ pub fn ssyr2k(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn dsyr2k(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     trans: Transpose,
     n: i32,
@@ -17075,7 +17073,7 @@ pub fn dsyr2k(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn csyr2k(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     trans: Transpose,
     n: i32,
@@ -17177,7 +17175,7 @@ pub fn csyr2k(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn zsyr2k(
-    order: Order,
+    order: Layout,
     uplo: Uplo,
     trans: Transpose,
     n: i32,
@@ -17285,7 +17283,7 @@ pub fn zsyr2k(
 /// corresponding CBLAS function, if available. In that case, no errors will be
 /// raised even if the arguments are invalid.
 pub fn trmm(
-    order: Order,
+    order: Layout,
     side: Side,
     uplo: Uplo,
     transa: Transpose,
@@ -17432,7 +17430,7 @@ pub fn trmm(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn strmm(
-    order: Order,
+    order: Layout,
     side: Side,
     uplo: Uplo,
     transa: Transpose,
@@ -17523,7 +17521,7 @@ pub fn strmm(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn dtrmm(
-    order: Order,
+    order: Layout,
     side: Side,
     uplo: Uplo,
     transa: Transpose,
@@ -17614,7 +17612,7 @@ pub fn dtrmm(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn ctrmm(
-    order: Order,
+    order: Layout,
     side: Side,
     uplo: Uplo,
     transa: Transpose,
@@ -17705,7 +17703,7 @@ pub fn ctrmm(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn ztrmm(
-    order: Order,
+    order: Layout,
     side: Side,
     uplo: Uplo,
     transa: Transpose,
@@ -17811,7 +17809,7 @@ pub fn ztrmm(
 /// corresponding CBLAS function, if available. In that case, no errors will be
 /// raised even if the arguments are invalid.
 pub fn trsm(
-    order: Order,
+    order: Layout,
     side: Side,
     uplo: Uplo,
     transa: Transpose,
@@ -17957,7 +17955,7 @@ pub fn trsm(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn strsm(
-    order: Order,
+    order: Layout,
     side: Side,
     uplo: Uplo,
     transa: Transpose,
@@ -18047,7 +18045,7 @@ pub fn strsm(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn dtrsm(
-    order: Order,
+    order: Layout,
     side: Side,
     uplo: Uplo,
     transa: Transpose,
@@ -18137,7 +18135,7 @@ pub fn dtrsm(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn ctrsm(
-    order: Order,
+    order: Layout,
     side: Side,
     uplo: Uplo,
     transa: Transpose,
@@ -18227,7 +18225,7 @@ pub fn ctrsm(
 /// If the `link_cblas` option is not `null`, the function will call the
 /// corresponding CBLAS function.
 pub fn ztrsm(
-    order: Order,
+    order: Layout,
     side: Side,
     uplo: Uplo,
     transa: Transpose,

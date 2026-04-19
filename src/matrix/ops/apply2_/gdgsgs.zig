@@ -1,4 +1,4 @@
-const types = @import("../../../types.zig");
+const meta = @import("../../../meta.zig");
 
 const numeric = @import("../../../numeric.zig");
 
@@ -7,13 +7,13 @@ const matrix = @import("../../../matrix.zig");
 const utils = @import("utils.zig");
 
 pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void {
-    const O: type = types.Child(@TypeOf(o));
+    const O: type = meta.Child(@TypeOf(o));
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 
-    if (comptime types.isGeneralDenseMatrix(O)) {
-        o.setAll(numeric.zero(types.Numeric(O)));
-    } else if (comptime types.isGeneralSparseMatrix(O)) {
+    if (comptime meta.isGeneralDenseMatrix(O)) {
+        o.setAll(numeric.zero(meta.Numeric(O)));
+    } else if (comptime meta.isGeneralSparseMatrix(O)) {
         const nnz = x.nnz + y.nnz;
         if (o._dlen < nnz or o._ilen < nnz)
             return matrix.Error.InsuficientSpace;
@@ -23,30 +23,30 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void 
             return matrix.Error.InsuficientSpace;
     }
 
-    if (comptime types.layoutOf(X) == types.layoutOf(Y)) {
+    if (comptime meta.layoutOf(X) == meta.layoutOf(Y)) {
         var outer: usize = 0;
-        while (outer < if (comptime types.layoutOf(X) == .col_major) x.cols else x.rows) : (outer += 1) {
+        while (outer < if (comptime meta.layoutOf(X) == .col_major) x.cols else x.rows) : (outer += 1) {
             var px = x.ptr[outer];
             var py = y.ptr[outer];
             while (px < x.ptr[outer + 1] and py < y.ptr[outer + 1]) {
                 if (x.idx[px] == y.idx[py]) {
-                    const i_o = if (comptime types.layoutOf(X) == .col_major) x.idx[px] else outer;
-                    const j_o = if (comptime types.layoutOf(X) == .col_major) outer else x.idx[px];
+                    const i_o = if (comptime meta.layoutOf(X) == .col_major) x.idx[px] else outer;
+                    const j_o = if (comptime meta.layoutOf(X) == .col_major) outer else x.idx[px];
 
                     op_(&o.data[o._index(i_o, j_o)], x.data[px], y.data[py]);
 
                     px += 1;
                     py += 1;
                 } else if (x.idx[px] < y.idx[py]) {
-                    const i_o = if (comptime types.layoutOf(X) == .col_major) x.idx[px] else outer;
-                    const j_o = if (comptime types.layoutOf(X) == .col_major) outer else x.idx[px];
+                    const i_o = if (comptime meta.layoutOf(X) == .col_major) x.idx[px] else outer;
+                    const j_o = if (comptime meta.layoutOf(X) == .col_major) outer else x.idx[px];
 
                     numeric.set(&o.data[o._index(i_o, j_o)], x.data[px]);
 
                     px += 1;
                 } else {
-                    const i_o = if (comptime types.layoutOf(Y) == .col_major) y.idx[py] else outer;
-                    const j_o = if (comptime types.layoutOf(Y) == .col_major) outer else y.idx[py];
+                    const i_o = if (comptime meta.layoutOf(Y) == .col_major) y.idx[py] else outer;
+                    const j_o = if (comptime meta.layoutOf(Y) == .col_major) outer else y.idx[py];
 
                     if (comptime op_ == numeric.add_)
                         numeric.set(&o.data[o._index(i_o, j_o)], y.data[py])
@@ -58,26 +58,26 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void 
             }
 
             while (px < x.ptr[outer + 1]) : (px += 1) {
-                const i_o = if (comptime types.layoutOf(X) == .col_major) x.idx[px] else outer;
-                const j_o = if (comptime types.layoutOf(X) == .col_major) outer else x.idx[px];
+                const i_o = if (comptime meta.layoutOf(X) == .col_major) x.idx[px] else outer;
+                const j_o = if (comptime meta.layoutOf(X) == .col_major) outer else x.idx[px];
 
-                op_(&o.data[o._index(i_o, j_o)], x.data[px], numeric.zero(types.Numeric(Y)));
+                op_(&o.data[o._index(i_o, j_o)], x.data[px], numeric.zero(meta.Numeric(Y)));
             }
 
             while (py < y.ptr[outer + 1]) : (py += 1) {
-                const i_o = if (comptime types.layoutOf(Y) == .col_major) y.idx[py] else outer;
-                const j_o = if (comptime types.layoutOf(Y) == .col_major) outer else y.idx[py];
+                const i_o = if (comptime meta.layoutOf(Y) == .col_major) y.idx[py] else outer;
+                const j_o = if (comptime meta.layoutOf(Y) == .col_major) outer else y.idx[py];
 
-                op_(&o.data[o._index(i_o, j_o)], numeric.zero(types.Numeric(X)), y.data[py]);
+                op_(&o.data[o._index(i_o, j_o)], numeric.zero(meta.Numeric(X)), y.data[py]);
             }
         }
     } else {
         var idx_x_outer: usize = 0;
-        while (idx_x_outer < if (comptime types.layoutOf(X) == .col_major) x.cols else x.rows) : (idx_x_outer += 1) {
+        while (idx_x_outer < if (comptime meta.layoutOf(X) == .col_major) x.cols else x.rows) : (idx_x_outer += 1) {
             var px = x.ptr[idx_x_outer];
             while (px < x.ptr[idx_x_outer + 1]) : (px += 1) {
-                const i_o = if (comptime types.layoutOf(X) == .col_major) x.idx[px] else idx_x_outer;
-                const j_o = if (comptime types.layoutOf(X) == .col_major) idx_x_outer else x.idx[px];
+                const i_o = if (comptime meta.layoutOf(X) == .col_major) x.idx[px] else idx_x_outer;
+                const j_o = if (comptime meta.layoutOf(X) == .col_major) idx_x_outer else x.idx[px];
 
                 if (utils.searchSparse(y, i_o, j_o)) |ty|
                     op_(&o.data[o._index(i_o, j_o)], x.data[px], ty)
@@ -87,11 +87,11 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) !void 
         }
 
         var idx_y_outer: usize = 0;
-        while (idx_y_outer < if (comptime types.layoutOf(Y) == .col_major) y.cols else y.rows) : (idx_y_outer += 1) {
+        while (idx_y_outer < if (comptime meta.layoutOf(Y) == .col_major) y.cols else y.rows) : (idx_y_outer += 1) {
             var py = y.ptr[idx_y_outer];
             while (py < y.ptr[idx_y_outer + 1]) : (py += 1) {
-                const i_o = if (comptime types.layoutOf(Y) == .col_major) y.idx[py] else idx_y_outer;
-                const j_o = if (comptime types.layoutOf(Y) == .col_major) idx_y_outer else y.idx[py];
+                const i_o = if (comptime meta.layoutOf(Y) == .col_major) y.idx[py] else idx_y_outer;
+                const j_o = if (comptime meta.layoutOf(Y) == .col_major) idx_y_outer else y.idx[py];
 
                 if (utils.searchSparse(x, i_o, j_o) == null) {
                     if (comptime op_ == numeric.add_)

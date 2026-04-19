@@ -1,8 +1,8 @@
 const std = @import("std");
 
-const types = @import("../../types.zig");
-const Layout = types.Layout;
-const Uplo = types.Uplo;
+const meta = @import("../../meta.zig");
+const Layout = meta.Layout;
+const Uplo = meta.Uplo;
 
 const numeric = @import("../../numeric.zig");
 const int = @import("../../int.zig");
@@ -17,7 +17,7 @@ const array = @import("../../array.zig");
 /// triangular part of the matrix is accessed, depending on the `uplo`
 /// parameter.
 pub fn Dense(N: type, uplo: Uplo, layout: Layout) type {
-    if (!types.isNumeric(N) or !types.isComplex(N))
+    if (!meta.isNumeric(N) or !meta.isComplex(N))
         @compileError("zsl.matrix.hermitian.Dense: N must be a complex numeric type, got \n\tN = " ++ @typeName(N) ++ "\n");
 
     return struct {
@@ -33,7 +33,7 @@ pub fn Dense(N: type, uplo: Uplo, layout: Layout) type {
         pub const is_hermitian = true;
         pub const storage_layout = layout;
         pub const storage_uplo = uplo;
-        pub const storage_diag = types.default_diag;
+        pub const storage_diag = meta.default_diag;
 
         // Numeric type
         pub const Numeric = N;
@@ -175,7 +175,7 @@ pub fn Dense(N: type, uplo: Uplo, layout: Layout) type {
                     while (j < size) : (j += 1) {
                         var i: usize = 0;
                         while (i <= j) : (i += 1) {
-                            mat.data[i + j * mat.ld] = if (comptime @typeInfo(types.ReturnTypeFromInputs(@"fn", &types.structToArrayOfTypes(Args))) == .error_union)
+                            mat.data[i + j * mat.ld] = if (comptime @typeInfo(meta.ReturnTypeFromInputs(@"fn", &meta.structToArrayOfTypes(Args))) == .error_union)
                                 try @call(.auto, @"fn", args)
                             else
                                 @call(.auto, @"fn", args);
@@ -186,7 +186,7 @@ pub fn Dense(N: type, uplo: Uplo, layout: Layout) type {
                     while (j < size) : (j += 1) {
                         var i: usize = j;
                         while (i < size) : (i += 1) {
-                            mat.data[i + j * mat.ld] = if (comptime @typeInfo(types.ReturnTypeFromInputs(@"fn", &types.structToArrayOfTypes(Args))) == .error_union)
+                            mat.data[i + j * mat.ld] = if (comptime @typeInfo(meta.ReturnTypeFromInputs(@"fn", &meta.structToArrayOfTypes(Args))) == .error_union)
                                 try @call(.auto, @"fn", args)
                             else
                                 @call(.auto, @"fn", args);
@@ -199,7 +199,7 @@ pub fn Dense(N: type, uplo: Uplo, layout: Layout) type {
                     while (i < size) : (i += 1) {
                         var j: usize = i;
                         while (j < size) : (j += 1) {
-                            mat.data[i * mat.ld + j] = if (comptime @typeInfo(types.ReturnTypeFromInputs(@"fn", &types.structToArrayOfTypes(Args))) == .error_union)
+                            mat.data[i * mat.ld + j] = if (comptime @typeInfo(meta.ReturnTypeFromInputs(@"fn", &meta.structToArrayOfTypes(Args))) == .error_union)
                                 try @call(.auto, @"fn", args)
                             else
                                 @call(.auto, @"fn", args);
@@ -210,7 +210,7 @@ pub fn Dense(N: type, uplo: Uplo, layout: Layout) type {
                     while (i < size) : (i += 1) {
                         var j: usize = 0;
                         while (j <= i) : (j += 1) {
-                            mat.data[i * mat.ld + j] = if (comptime @typeInfo(types.ReturnTypeFromInputs(@"fn", &types.structToArrayOfTypes(Args))) == .error_union)
+                            mat.data[i * mat.ld + j] = if (comptime @typeInfo(meta.ReturnTypeFromInputs(@"fn", &meta.structToArrayOfTypes(Args))) == .error_union)
                                 try @call(.auto, @"fn", args)
                             else
                                 @call(.auto, @"fn", args);

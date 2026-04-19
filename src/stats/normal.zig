@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const types = @import("../types.zig");
+const meta = @import("../meta.zig");
 
 const numeric = @import("../numeric.zig");
 
@@ -14,7 +14,7 @@ const utils = @import("utils.zig");
 /// respectively. If `sigma.re == sigma.im`, this results in a circularly
 /// symmetric complex normal distribution.
 pub fn Normal(comptime N: type) type {
-    comptime if (!types.isNumeric(N) or !types.isNonIntegral(N))
+    comptime if (!meta.isNumeric(N) or !meta.isNonIntegral(N))
         @compileError("zsl.stats.Normal: N must be a non-integral numeric type, got \n\tN = " ++ @typeName(N) ++ "\n");
 
     return struct {
@@ -54,7 +54,7 @@ pub fn Normal(comptime N: type) type {
         /// `N`: A random value normally distributed with mean `mu` and standard
         /// deviation `sigma`.
         pub fn sample(self: Self, prng: std.Random) N {
-            switch (comptime types.numericType(N)) {
+            switch (comptime meta.numericType(N)) {
                 .bool, .int => unreachable,
                 .float, .dyadic => {
                     var u: N = undefined;
@@ -88,20 +88,20 @@ pub fn Normal(comptime N: type) type {
                     );
                 },
                 .complex => {
-                    var u: types.Scalar(N) = undefined;
-                    var v: types.Scalar(N) = undefined;
-                    var s: types.Scalar(N) = undefined;
+                    var u: meta.Scalar(N) = undefined;
+                    var v: meta.Scalar(N) = undefined;
+                    var s: meta.Scalar(N) = undefined;
 
                     while (true) {
-                        u = numeric.sub(numeric.mul(numeric.two(types.Scalar(N)), utils.standardUniform(types.Scalar(N), prng)), numeric.one(types.Scalar(N)));
-                        v = numeric.sub(numeric.mul(numeric.two(types.Scalar(N)), utils.standardUniform(types.Scalar(N), prng)), numeric.one(types.Scalar(N)));
+                        u = numeric.sub(numeric.mul(numeric.two(meta.Scalar(N)), utils.standardUniform(meta.Scalar(N), prng)), numeric.one(meta.Scalar(N)));
+                        v = numeric.sub(numeric.mul(numeric.two(meta.Scalar(N)), utils.standardUniform(meta.Scalar(N), prng)), numeric.one(meta.Scalar(N)));
                         s = numeric.add(numeric.mul(u, u), numeric.mul(v, v));
 
-                        if (numeric.gt(s, numeric.zero(types.Scalar(N))) and numeric.lt(s, numeric.one(types.Scalar(N))))
+                        if (numeric.gt(s, numeric.zero(meta.Scalar(N))) and numeric.lt(s, numeric.one(meta.Scalar(N))))
                             break;
                     }
 
-                    const tmp = numeric.sqrt(numeric.mul(numeric.neg(numeric.two(types.Scalar(N))), numeric.div(numeric.ln(s), s)));
+                    const tmp = numeric.sqrt(numeric.mul(numeric.neg(numeric.two(meta.Scalar(N))), numeric.div(numeric.ln(s), s)));
 
                     return .{
                         .re = numeric.add(self.mu.re, numeric.mul(self.sigma.re, numeric.mul(u, tmp))),

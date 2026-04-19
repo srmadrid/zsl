@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const types = @import("../../types.zig");
+const meta = @import("../../meta.zig");
 
 const numeric = @import("../../numeric.zig");
 const vector = @import("../../vector.zig");
@@ -11,58 +11,58 @@ pub fn Apply2(comptime X: type, comptime Y: type, comptime op: anytype) type {
     const Op = @TypeOf(op);
     const opinfo = @typeInfo(Op);
 
-    comptime if ((!types.isVector(X) and !types.isNumeric(X)) or (!types.isVector(Y) and !types.isNumeric(Y)) or
-        (!types.isVector(X) and !types.isVector(Y)) or
+    comptime if ((!meta.isVector(X) and !meta.isNumeric(X)) or (!meta.isVector(Y) and !meta.isNumeric(Y)) or
+        (!meta.isVector(X) and !meta.isVector(Y)) or
         opinfo != .@"fn" or opinfo.@"fn".params.len != 2)
         @compileError("zsl.vector.apply2: at least one of x or y must be a vector, the other must be a vector or a numeric, and op must be a function of two arguments, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\top: " ++ @typeName(Op) ++ "\n");
 
-    comptime var R = types.ReturnTypeFromInputs(op, &.{ types.Numeric(X), types.Numeric(Y) });
+    comptime var R = meta.ReturnTypeFromInputs(op, &.{ meta.Numeric(X), meta.Numeric(Y) });
     const rinfo = @typeInfo(R);
     if (rinfo == .error_union)
         R = rinfo.error_union.payload;
 
-    comptime if (!types.isNumeric(R))
+    comptime if (!meta.isNumeric(R))
         @compileError("zsl.vector.apply2: calling op with arguments of types X and Y must return a numeric, got\n\tR = " ++ @typeName(R) ++ "\n");
 
-    if (comptime types.isCustomType(X) and types.isVector(X)) {
-        if (comptime types.isCustomType(Y) and types.isVector(Y)) { // X and Y both custom vectors
-            if (comptime types.anyHasMethod(&.{ X, Y }, "Apply2", fn (type, type, anytype) type, &.{ X, Y, Op })) |Impl|
+    if (comptime meta.isCustomType(X) and meta.isVector(X)) {
+        if (comptime meta.isCustomType(Y) and meta.isVector(Y)) { // X and Y both custom vectors
+            if (comptime meta.anyHasMethod(&.{ X, Y }, "Apply2", fn (type, type, anytype) type, &.{ X, Y, Op })) |Impl|
                 return Impl.Apply2(X, Y, op);
         } else { // only X custom vector
-            if (comptime types.hasMethod(X, "Apply2", fn (type, type, anytype) type, &.{ X, Y, Op }))
+            if (comptime meta.hasMethod(X, "Apply2", fn (type, type, anytype) type, &.{ X, Y, Op }))
                 return X.Apply2(X, Y, op);
         }
-    } else if (comptime types.isCustomType(Y) and types.isVector(Y)) { // only Y custom vector
-        if (comptime types.hasMethod(Y, "Apply2", fn (type, type, anytype) type, &.{ X, Y, Op }))
+    } else if (comptime meta.isCustomType(Y) and meta.isVector(Y)) { // only Y custom vector
+        if (comptime meta.hasMethod(Y, "Apply2", fn (type, type, anytype) type, &.{ X, Y, Op }))
             return Y.Apply2(X, Y, op);
     }
 
-    switch (comptime types.vectorType(X)) {
-        .dense => switch (comptime types.vectorType(Y)) {
+    switch (comptime meta.vectorType(X)) {
+        .dense => switch (comptime meta.vectorType(Y)) {
             .dense => return vector.Dense(R),
             .sparse => return vector.Dense(R),
             .custom => return vector.EnsureVector(Y, R),
             .numeric => return vector.Dense(R),
         },
-        .sparse => switch (comptime types.vectorType(Y)) {
+        .sparse => switch (comptime meta.vectorType(Y)) {
             .dense => return vector.Dense(R),
             .sparse => return vector.Sparse(R),
             .custom => return vector.EnsureVector(Y, R),
             .numeric => return vector.Sparse(R),
         },
-        .custom => switch (comptime types.vectorType(Y)) {
+        .custom => switch (comptime meta.vectorType(Y)) {
             .dense => return vector.EnsureVector(X, R),
             .sparse => return vector.EnsureVector(X, R),
             .custom => {
-                if (comptime types.hasMethod(X, "EnsureVector", fn (type, type) type, &.{ X, R }))
+                if (comptime meta.hasMethod(X, "EnsureVector", fn (type, type) type, &.{ X, R }))
                     return X.EnsureVector(X, R);
 
                 return vector.EnsureVector(Y, R);
             },
             .numeric => return vector.EnsureVector(X, R),
         },
-        .numeric => switch (comptime types.vectorType(Y)) {
+        .numeric => switch (comptime meta.vectorType(Y)) {
             .dense => return vector.Dense(R),
             .sparse => return vector.Sparse(R),
             .custom => return vector.EnsureVector(Y, R),
@@ -121,9 +121,9 @@ pub fn apply2(allocator: std.mem.Allocator, x: anytype, y: anytype, comptime op:
     const Op: type = @TypeOf(op);
     const R: type = vecops.Apply2(X, Y, op);
 
-    if (comptime types.isCustomType(X) and types.isVector(X)) {
-        if (comptime types.isCustomType(Y) and types.isVector(Y)) { // X and Y both custom vectors
-            const Impl: type = comptime types.anyHasMethod(
+    if (comptime meta.isCustomType(X) and meta.isVector(X)) {
+        if (comptime meta.isCustomType(Y) and meta.isVector(Y)) { // X and Y both custom vectors
+            const Impl: type = comptime meta.anyHasMethod(
                 &.{ R, X, Y },
                 "apply2",
                 fn (std.mem.Allocator, X, Y, anytype) anyerror!R,
@@ -133,7 +133,7 @@ pub fn apply2(allocator: std.mem.Allocator, x: anytype, y: anytype, comptime op:
 
             return Impl.apply2(allocator, x, y, op);
         } else { // only X custom vector
-            const Impl: type = comptime types.anyHasMethod(
+            const Impl: type = comptime meta.anyHasMethod(
                 &.{ R, X },
                 "apply2",
                 fn (std.mem.Allocator, X, Y, anytype) anyerror!R,
@@ -143,8 +143,8 @@ pub fn apply2(allocator: std.mem.Allocator, x: anytype, y: anytype, comptime op:
 
             return Impl.apply2(allocator, x, y, op);
         }
-    } else if (comptime types.isCustomType(Y) and types.isVector(Y)) { // only Y custom
-        const Impl: type = comptime types.anyHasMethod(
+    } else if (comptime meta.isCustomType(Y) and meta.isVector(Y)) { // only Y custom
+        const Impl: type = comptime meta.anyHasMethod(
             &.{ R, Y },
             "apply2",
             fn (std.mem.Allocator, X, Y, anytype) anyerror!R,
@@ -155,15 +155,15 @@ pub fn apply2(allocator: std.mem.Allocator, x: anytype, y: anytype, comptime op:
         return Impl.apply2(allocator, x, y, op);
     }
 
-    const x_len = if (comptime types.isVector(X)) x.len else y.len;
-    const y_len = if (comptime types.isVector(Y)) y.len else x.len;
+    const x_len = if (comptime meta.isVector(X)) x.len else y.len;
+    const y_len = if (comptime meta.isVector(Y)) y.len else x.len;
 
     if (x_len != y_len)
         return vector.Error.DimensionMismatch;
 
-    var result = switch (comptime types.vectorType(R)) {
+    var result = switch (comptime meta.vectorType(R)) {
         .dense => try R.init(allocator, x_len),
-        .sparse => try R.init(allocator, x_len, (if (comptime types.isSparseVector(X)) x.nnz else 0) + (if (comptime types.isSparseVector(Y)) y.nnz else 0)),
+        .sparse => try R.init(allocator, x_len, (if (comptime meta.isSparseVector(X)) x.nnz else 0) + (if (comptime meta.isSparseVector(Y)) y.nnz else 0)),
         else => unreachable,
     };
 

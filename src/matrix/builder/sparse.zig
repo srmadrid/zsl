@@ -1,9 +1,9 @@
 const std = @import("std");
 
-const types = @import("../../types.zig");
-const Layout = types.Layout;
-const Uplo = types.Uplo;
-const Diag = types.Diag;
+const meta = @import("../../meta.zig");
+const Layout = meta.Layout;
+const Uplo = meta.Uplo;
+const Diag = meta.Diag;
 
 const numeric = @import("../../numeric.zig");
 
@@ -15,7 +15,7 @@ const matrix = @import("../../matrix.zig");
 /// summed at compilation. This type cannot be used for matrix computations
 /// directly; it must first be compiled into a standard sparse matrix.
 pub fn Sparse(N: type) type {
-    if (!types.isNumeric(N))
+    if (!meta.isNumeric(N))
         @compileError("zsl.matrix.builder.Sparse: N must be a numeric type, got \n\tN = " ++ @typeName(N) ++ "\n");
 
     return struct {
@@ -34,9 +34,9 @@ pub fn Sparse(N: type) type {
         pub const is_matrix = true;
         pub const is_builder = true;
         pub const is_sparse = true;
-        pub const storage_layout = types.default_layout;
-        pub const storage_uplo = types.default_uplo;
-        pub const storage_diag = types.default_diag;
+        pub const storage_layout = meta.default_layout;
+        pub const storage_uplo = meta.default_uplo;
+        pub const storage_diag = meta.default_diag;
 
         // Numeric type
         pub const Numeric = N;
@@ -280,7 +280,7 @@ pub fn Sparse(N: type) type {
                 c: [*]usize,
 
                 pub fn lessThan(ctx: @This(), a: usize, b: usize) bool {
-                    if (comptime types.layoutOf(M) == .col_major) {
+                    if (comptime meta.layoutOf(M) == .col_major) {
                         if (ctx.c[a] != ctx.c[b])
                             return ctx.c[a] < ctx.c[b];
 
@@ -314,7 +314,7 @@ pub fn Sparse(N: type) type {
                 }
             }
 
-            var ptr = try allocator.alloc(usize, if (comptime types.layoutOf(M) == .col_major) self.cols + 1 else self.rows + 1);
+            var ptr = try allocator.alloc(usize, if (comptime meta.layoutOf(M) == .col_major) self.cols + 1 else self.rows + 1);
             errdefer allocator.free(ptr);
             @memset(ptr, 0);
 
@@ -341,8 +341,8 @@ pub fn Sparse(N: type) type {
                         numeric.add_(&current_val, current_val, val);
                     } else {
                         data[write_idx] = current_val;
-                        idx[write_idx] = if (comptime types.layoutOf(M) == .col_major) current_r else current_c;
-                        const major_idx = if (comptime types.layoutOf(M) == .col_major) current_c else current_r;
+                        idx[write_idx] = if (comptime meta.layoutOf(M) == .col_major) current_r else current_c;
+                        const major_idx = if (comptime meta.layoutOf(M) == .col_major) current_c else current_r;
                         ptr[major_idx + 1] += 1;
 
                         write_idx += 1;
@@ -353,8 +353,8 @@ pub fn Sparse(N: type) type {
                 }
 
                 data[write_idx] = current_val;
-                idx[write_idx] = if (comptime types.layoutOf(M) == .col_major) current_r else current_c;
-                const major_idx = if (comptime types.layoutOf(M) == .col_major) current_c else current_r;
+                idx[write_idx] = if (comptime meta.layoutOf(M) == .col_major) current_r else current_c;
+                const major_idx = if (comptime meta.layoutOf(M) == .col_major) current_c else current_r;
                 ptr[major_idx + 1] += 1;
             }
 

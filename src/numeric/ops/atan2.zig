@@ -1,4 +1,4 @@
-const types = @import("../../types.zig");
+const meta = @import("../../meta.zig");
 
 const int = @import("../../int.zig");
 const float = @import("../../float.zig");
@@ -8,12 +8,12 @@ const complex = @import("../../complex.zig");
 const numeric = @import("../../numeric.zig");
 
 pub fn Atan2(Y: type, X: type) type {
-    comptime if (!types.isNumeric(Y) or !types.isNumeric(X))
+    comptime if (!meta.isNumeric(Y) or !meta.isNumeric(X))
         @compileError("zsl.numeric.atan2: x and y must be numerics, got \n\ty: " ++ @typeName(Y) ++ "\n\tx: " ++ @typeName(X) ++ "\n");
 
-    if (comptime types.isCustomType(Y)) {
-        if (comptime types.isCustomType(X)) { // X and Y both custom
-            const Impl: type = comptime types.anyHasMethod(
+    if (comptime meta.isCustomType(Y)) {
+        if (comptime meta.isCustomType(X)) { // X and Y both custom
+            const Impl: type = comptime meta.anyHasMethod(
                 &.{ Y, X },
                 "Atan2",
                 fn (type, type) type,
@@ -23,20 +23,20 @@ pub fn Atan2(Y: type, X: type) type {
 
             return Impl.Atan2(Y, X);
         } else { // only Y custom
-            comptime if (!types.hasMethod(Y, "Atan2", fn (type, type) type, &.{ Y, X }))
+            comptime if (!meta.hasMethod(Y, "Atan2", fn (type, type) type, &.{ Y, X }))
                 @compileError("zsl.numeric.atan2: " ++ @typeName(Y) ++ " must implement `fn Atan2(type, type) type`");
 
             return Y.Atan2(Y, X);
         }
-    } else if (comptime types.isCustomType(X)) { // only Y custom
-        comptime if (!types.hasMethod(Y, "Atan2", fn (type, type) type, &.{ Y, X }))
+    } else if (comptime meta.isCustomType(X)) { // only Y custom
+        comptime if (!meta.hasMethod(Y, "Atan2", fn (type, type) type, &.{ Y, X }))
             @compileError("zsl.numeric.atan2: " ++ @typeName(X) ++ " must implement `fn Atan2(type, type) type`");
 
         return X.Atan2(Y, X);
     }
 
-    switch (comptime types.numericType(Y)) {
-        .bool => switch (comptime types.numericType(X)) {
+    switch (comptime meta.numericType(Y)) {
+        .bool => switch (comptime meta.numericType(X)) {
             .bool => @compileError("zsl.numeric.atan2: not defined for " ++ @typeName(Y) ++ " and " ++ @typeName(X) ++ "."),
             .int => @compileError("zsl.numeric.atan2: not defined for " ++ @typeName(Y) ++ " and " ++ @typeName(X) ++ "."),
             .float => return float.Atan2(Y, X),
@@ -44,25 +44,25 @@ pub fn Atan2(Y: type, X: type) type {
             .complex => return complex.Atan2(Y, X),
             .custom => unreachable,
         },
-        .int => switch (comptime types.numericType(X)) {
+        .int => switch (comptime meta.numericType(X)) {
             .bool, .int => @compileError("zsl.numeric.atan2: not defined for " ++ @typeName(Y) ++ " and " ++ @typeName(X) ++ "."),
             .float => return float.Atan2(Y, X),
             .dyadic => return dyadic.Atan2(Y, X),
             .complex => return complex.Atan2(Y, X),
             .custom => unreachable,
         },
-        .float => switch (comptime types.numericType(X)) {
+        .float => switch (comptime meta.numericType(X)) {
             .bool, .int, .float => return float.Atan2(Y, X),
             .dyadic => return dyadic.Atan2(Y, X),
             .complex => return complex.Atan2(Y, X),
             .custom => unreachable,
         },
-        .dyadic => switch (comptime types.numericType(X)) {
+        .dyadic => switch (comptime meta.numericType(X)) {
             .bool, .int, .float, .dyadic => return dyadic.Atan2(Y, X),
             .complex => return complex.Atan2(Y, X),
             .custom => unreachable,
         },
-        .complex => switch (comptime types.numericType(X)) {
+        .complex => switch (comptime meta.numericType(X)) {
             .bool, .int, .float, .dyadic, .complex => return complex.Atan2(Y, X),
             .custom => unreachable,
         },
@@ -101,9 +101,9 @@ pub fn atan2(y: anytype, x: anytype) numeric.Atan2(@TypeOf(y), @TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Atan2(Y, X);
 
-    if (comptime types.isCustomType(Y)) {
-        if (comptime types.isCustomType(X)) { // X and Y both custom
-            const Impl: type = comptime types.anyHasMethod(
+    if (comptime meta.isCustomType(Y)) {
+        if (comptime meta.isCustomType(X)) { // X and Y both custom
+            const Impl: type = comptime meta.anyHasMethod(
                 &.{ R, Y, X },
                 "atan2",
                 fn (Y, X) R,
@@ -113,7 +113,7 @@ pub fn atan2(y: anytype, x: anytype) numeric.Atan2(@TypeOf(y), @TypeOf(x)) {
 
             return Impl.atan2(y, x);
         } else { // only Y custom
-            const Impl: type = comptime types.anyHasMethod(
+            const Impl: type = comptime meta.anyHasMethod(
                 &.{ R, Y },
                 "atan2",
                 fn (Y, X) R,
@@ -123,8 +123,8 @@ pub fn atan2(y: anytype, x: anytype) numeric.Atan2(@TypeOf(y), @TypeOf(x)) {
 
             return Impl.atan2(y, x);
         }
-    } else if (comptime types.isCustomType(X)) { // only X custom
-        const Impl: type = comptime types.anyHasMethod(
+    } else if (comptime meta.isCustomType(X)) { // only X custom
+        const Impl: type = comptime meta.anyHasMethod(
             &.{ R, X },
             "atan2",
             fn (Y, X) R,
@@ -135,8 +135,8 @@ pub fn atan2(y: anytype, x: anytype) numeric.Atan2(@TypeOf(y), @TypeOf(x)) {
         return Impl.atan2(y, x);
     }
 
-    switch (comptime types.numericType(Y)) {
-        .bool => switch (comptime types.numericType(X)) {
+    switch (comptime meta.numericType(Y)) {
+        .bool => switch (comptime meta.numericType(X)) {
             .bool => unreachable,
             .int => unreachable,
             .float => return float.atan2(y, x),
@@ -144,25 +144,25 @@ pub fn atan2(y: anytype, x: anytype) numeric.Atan2(@TypeOf(y), @TypeOf(x)) {
             .complex => return complex.atan2(y, x),
             .custom => unreachable,
         },
-        .int => switch (comptime types.numericType(X)) {
+        .int => switch (comptime meta.numericType(X)) {
             .bool, .int => unreachable,
             .float => return float.atan2(y, x),
             .dyadic => return dyadic.atan2(y, x),
             .complex => return complex.atan2(y, x),
             .custom => unreachable,
         },
-        .float => switch (comptime types.numericType(X)) {
+        .float => switch (comptime meta.numericType(X)) {
             .bool, .int, .float => return float.atan2(y, x),
             .dyadic => return dyadic.atan2(y, x),
             .complex => return complex.atan2(y, x),
             .custom => unreachable,
         },
-        .dyadic => switch (comptime types.numericType(X)) {
+        .dyadic => switch (comptime meta.numericType(X)) {
             .bool, .int, .float, .dyadic => return dyadic.atan2(y, x),
             .complex => return complex.atan2(y, x),
             .custom => unreachable,
         },
-        .complex => switch (comptime types.numericType(X)) {
+        .complex => switch (comptime meta.numericType(X)) {
             .bool, .int, .float, .dyadic, .complex => return complex.atan2(y, x),
             .custom => unreachable,
         },

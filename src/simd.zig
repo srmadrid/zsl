@@ -7,7 +7,7 @@
 const std = @import("std");
 const options = @import("options");
 
-const types = @import("types.zig");
+const meta = @import("meta.zig");
 const numeric = @import("numeric.zig");
 
 const int = @import("int.zig");
@@ -15,15 +15,15 @@ const float = @import("float.zig");
 const complex = @import("complex.zig");
 
 pub fn suggestBaseLength(comptime N: type) ?comptime_int {
-    comptime if (!types.isNumeric(N))
+    comptime if (!meta.isNumeric(N))
         @compileError("zsl.simd.suggestBaseLength: N must be a numeric type, got\n\tN = " ++ @typeName(N) ++ "\n");
 
-    switch (comptime types.numericType(N)) {
+    switch (comptime meta.numericType(N)) {
         .bool, .int, .float => return std.simd.suggestVectorLength(N),
         .dyadic => return null,
         .complex => {
-            return if (comptime types.numericType(types.Scalar(N)) == .float)
-                return std.simd.suggestVectorLength(types.Scalar(N)).? / 2
+            return if (comptime meta.numericType(meta.Scalar(N)) == .float)
+                return std.simd.suggestVectorLength(meta.Scalar(N)).? / 2
             else
                 null;
         },
@@ -32,11 +32,11 @@ pub fn suggestBaseLength(comptime N: type) ?comptime_int {
 }
 
 fn baseToVectorLen(comptime N: type, comptime base_len: comptime_int) comptime_int {
-    return base_len * if (comptime types.isComplex(N)) 2 else 1;
+    return base_len * if (comptime meta.isComplex(N)) 2 else 1;
 }
 
 fn vectorToBaseLen(comptime N: type, comptime base_len: comptime_int) comptime_int {
-    return base_len / if (comptime types.isComplex(N)) 2 else 1;
+    return base_len / if (comptime meta.isComplex(N)) 2 else 1;
 }
 
 /// Makes the mask `.{ 0, -1, 1, -2, ..., base_len - 1, -base_len }`.
@@ -135,8 +135,8 @@ inline fn maskSwapComplex(comptime base_len: comptime_int) @Vector(base_len * 2,
 /// Makes the mask `.{ -1.0, 1.0, -1.0, 1.0, ... }` to negate the real parts of
 /// a complex vector before addition, effectively emulating an ADDSUB
 /// instruction for complex multiplication.
-inline fn maskAddSub(comptime N: type, comptime base_len: comptime_int) @Vector(base_len * 2, types.Scalar(N)) {
-    comptime var mask: @Vector(base_len * 2, types.Scalar(N)) = undefined;
+inline fn maskAddSub(comptime N: type, comptime base_len: comptime_int) @Vector(base_len * 2, meta.Scalar(N)) {
+    comptime var mask: @Vector(base_len * 2, meta.Scalar(N)) = undefined;
     inline for (0..base_len) |i| {
         mask[i * 2] = -1.0;
         mask[i * 2 + 1] = 1.0;
@@ -146,8 +146,8 @@ inline fn maskAddSub(comptime N: type, comptime base_len: comptime_int) @Vector(
 
 /// Makes the mask `.{ 1.0, -1.0, 1.0, -1.0, ... }` to conjugate the elements of
 /// a complex vector for division.
-inline fn maskConjugate(comptime N: type, comptime base_len: comptime_int) @Vector(base_len * 2, types.Scalar(N)) {
-    comptime var mask: @Vector(base_len * 2, types.Scalar(N)) = undefined;
+inline fn maskConjugate(comptime N: type, comptime base_len: comptime_int) @Vector(base_len * 2, meta.Scalar(N)) {
+    comptime var mask: @Vector(base_len * 2, meta.Scalar(N)) = undefined;
     inline for (0..base_len) |i| {
         mask[i * 2] = 1.0;
         mask[i * 2 + 1] = -1.0;
@@ -155,9 +155,9 @@ inline fn maskConjugate(comptime N: type, comptime base_len: comptime_int) @Vect
     return mask;
 }
 
-inline fn broadcast(comptime base_len: comptime_int, value: anytype) @Vector(baseToVectorLen(@TypeOf(value), base_len), types.Scalar(@TypeOf(value))) {
-    if (comptime types.isComplex(@TypeOf(value))) {
-        var r: @Vector(2 * base_len, types.Scalar(@TypeOf(value))) = undefined;
+inline fn broadcast(comptime base_len: comptime_int, value: anytype) @Vector(baseToVectorLen(@TypeOf(value), base_len), meta.Scalar(@TypeOf(value))) {
+    if (comptime meta.isComplex(@TypeOf(value))) {
+        var r: @Vector(2 * base_len, meta.Scalar(@TypeOf(value))) = undefined;
 
         comptime var i = 0;
         inline while (i < base_len * 2) : (i += 2) {
@@ -170,38 +170,38 @@ inline fn broadcast(comptime base_len: comptime_int, value: anytype) @Vector(bas
     }
 }
 
-inline fn castVector(comptime N: type, comptime V: type, comptime base_len: comptime_int, vector: @Vector(baseToVectorLen(V, base_len), types.Scalar(V))) @Vector(baseToVectorLen(N, base_len), types.Scalar(N)) {
-    switch (comptime types.numericType(V)) {
-        .bool => switch (comptime types.numericType(N)) {
+inline fn castVector(comptime N: type, comptime V: type, comptime base_len: comptime_int, vector: @Vector(baseToVectorLen(V, base_len), meta.Scalar(V))) @Vector(baseToVectorLen(N, base_len), meta.Scalar(N)) {
+    switch (comptime meta.numericType(V)) {
+        .bool => switch (comptime meta.numericType(N)) {
             .bool => return vector,
             .int => return @intFromBool(vector),
             .float => return @floatFromInt(@intFromBool(vector)),
             .dyadic => unreachable,
-            .complex => return @shuffle(types.Scalar(N), @as(@Vector(base_len, types.Scalar(N)), @floatFromInt(@intFromBool(vector))), @Vector(1, types.Scalar(N)){0.0}, maskScalarToComplex(base_len)),
+            .complex => return @shuffle(meta.Scalar(N), @as(@Vector(base_len, meta.Scalar(N)), @floatFromInt(@intFromBool(vector))), @Vector(1, meta.Scalar(N)){0.0}, maskScalarToComplex(base_len)),
             .custom => unreachable,
         },
-        .int => switch (comptime types.numericType(N)) {
+        .int => switch (comptime meta.numericType(N)) {
             .bool => return vector != @as(@TypeOf(vector), @splat(0)),
             .int => return @intCast(vector),
             .float => return @floatFromInt(vector),
             .dyadic => unreachable,
-            .complex => return @shuffle(types.Scalar(N), @as(@Vector(base_len, types.Scalar(N)), @floatFromInt(vector)), @Vector(1, types.Scalar(N)){0.0}, maskScalarToComplex(base_len)),
+            .complex => return @shuffle(meta.Scalar(N), @as(@Vector(base_len, meta.Scalar(N)), @floatFromInt(vector)), @Vector(1, meta.Scalar(N)){0.0}, maskScalarToComplex(base_len)),
             .custom => unreachable,
         },
-        .float => switch (comptime types.numericType(N)) {
+        .float => switch (comptime meta.numericType(N)) {
             .bool => return vector != @as(@TypeOf(vector), @splat(0.0)),
             .int => return @intFromFloat(vector),
             .float => return @floatCast(vector),
             .dyadic => unreachable,
-            .complex => return @shuffle(types.Scalar(N), @as(@Vector(base_len, types.Scalar(N)), @floatCast(vector)), @Vector(1, types.Scalar(N)){0.0}, maskScalarToComplex(base_len)),
+            .complex => return @shuffle(meta.Scalar(N), @as(@Vector(base_len, meta.Scalar(N)), @floatCast(vector)), @Vector(1, meta.Scalar(N)){0.0}, maskScalarToComplex(base_len)),
             .custom => unreachable,
         },
         .dyadic => unreachable,
-        .complex => switch (comptime types.numericType(N)) {
+        .complex => switch (comptime meta.numericType(N)) {
             .bool => return @shuffle(N, vector != @as(@TypeOf(vector), @splat(0.0)), undefined, maskReals(base_len)) |
                 @shuffle(N, vector != @as(@TypeOf(vector), @splat(0.0)), undefined, maskIms(base_len)),
-            .int => return @intFromFloat(@shuffle(types.Scalar(V), vector, undefined, maskReals(base_len))),
-            .float => return @floatCast(@shuffle(types.Scalar(V), vector, undefined, maskReals(base_len))),
+            .int => return @intFromFloat(@shuffle(meta.Scalar(V), vector, undefined, maskReals(base_len))),
+            .float => return @floatCast(@shuffle(meta.Scalar(V), vector, undefined, maskReals(base_len))),
             .dyadic => unreachable,
             .complex => return @floatCast(vector),
             .custom => unreachable,
@@ -212,11 +212,11 @@ inline fn castVector(comptime N: type, comptime V: type, comptime base_len: comp
 
 pub inline fn set(o: anytype, x: anytype, comptime base_len: comptime_int) void {
     const O: type = @TypeOf(o[0]);
-    const X: type = if (comptime types.isManyItemPointer(@TypeOf(x))) @TypeOf(x[0]) else @TypeOf(x);
+    const X: type = if (comptime meta.isManyItemPointer(@TypeOf(x))) @TypeOf(x[0]) else @TypeOf(x);
 
-    const vo: [*]types.Scalar(O) = @ptrCast(o);
-    const vx: @Vector(baseToVectorLen(X, base_len), types.Scalar(X)) = if (comptime types.isManyItemPointer(@TypeOf(x)))
-        @as([*]const types.Scalar(X), @ptrCast(x))[0..baseToVectorLen(X, base_len)].*
+    const vo: [*]meta.Scalar(O) = @ptrCast(o);
+    const vx: @Vector(baseToVectorLen(X, base_len), meta.Scalar(X)) = if (comptime meta.isManyItemPointer(@TypeOf(x)))
+        @as([*]const meta.Scalar(X), @ptrCast(x))[0..baseToVectorLen(X, base_len)].*
     else
         broadcast(base_len, x);
 
@@ -253,23 +253,23 @@ pub inline fn set(o: anytype, x: anytype, comptime base_len: comptime_int) void 
 /// `void`
 pub inline fn add_(o: anytype, x: anytype, y: anytype, comptime base_len: comptime_int) void {
     const O: type = @TypeOf(o[0]);
-    const X: type = if (comptime types.isManyItemPointer(@TypeOf(x))) @TypeOf(x[0]) else @TypeOf(x);
-    const Y: type = if (comptime types.isManyItemPointer(@TypeOf(y))) @TypeOf(y[0]) else @TypeOf(y);
+    const X: type = if (comptime meta.isManyItemPointer(@TypeOf(x))) @TypeOf(x[0]) else @TypeOf(x);
+    const Y: type = if (comptime meta.isManyItemPointer(@TypeOf(y))) @TypeOf(y[0]) else @TypeOf(y);
     const R: type = numeric.Add(X, Y);
 
-    const vo: [*]types.Scalar(O) = @ptrCast(o);
-    const vx: @Vector(baseToVectorLen(X, base_len), types.Scalar(X)) = if (comptime types.isManyItemPointer(@TypeOf(x)))
-        @as([*]const types.Scalar(X), @ptrCast(x))[0..baseToVectorLen(X, base_len)].*
+    const vo: [*]meta.Scalar(O) = @ptrCast(o);
+    const vx: @Vector(baseToVectorLen(X, base_len), meta.Scalar(X)) = if (comptime meta.isManyItemPointer(@TypeOf(x)))
+        @as([*]const meta.Scalar(X), @ptrCast(x))[0..baseToVectorLen(X, base_len)].*
     else
         broadcast(base_len, x);
-    const vy: @Vector(baseToVectorLen(Y, base_len), types.Scalar(Y)) = if (comptime types.isManyItemPointer(@TypeOf(y)))
-        @as([*]const types.Scalar(Y), @ptrCast(y))[0..baseToVectorLen(Y, base_len)].*
+    const vy: @Vector(baseToVectorLen(Y, base_len), meta.Scalar(Y)) = if (comptime meta.isManyItemPointer(@TypeOf(y)))
+        @as([*]const meta.Scalar(Y), @ptrCast(y))[0..baseToVectorLen(Y, base_len)].*
     else
         broadcast(base_len, y);
 
-    switch (comptime types.numericType(O)) {
-        .bool, .int, .float => switch (comptime types.numericType(X)) {
-            .bool => switch (comptime types.numericType(Y)) {
+    switch (comptime meta.numericType(O)) {
+        .bool, .int, .float => switch (comptime meta.numericType(X)) {
+            .bool => switch (comptime meta.numericType(Y)) {
                 .bool => @compileError("zsl.simd.add_: not defined for " ++ @typeName(O) ++ ", " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "\n"),
                 .int => switch (comptime options.int_mode) {
                     .default => o[0..base_len].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) + castVector(R, Y, base_len, vy)),
@@ -278,10 +278,10 @@ pub inline fn add_(o: anytype, x: anytype, y: anytype, comptime base_len: compti
                 },
                 .float => o[0..base_len].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) + castVector(R, Y, base_len, vy)),
                 .dyadic => unreachable,
-                .complex => o[0..base_len].* = castVector(O, types.Scalar(R), base_len, castVector(types.Scalar(R), X, base_len, vx) + castVector(types.Scalar(R), Y, base_len, vy)),
+                .complex => o[0..base_len].* = castVector(O, meta.Scalar(R), base_len, castVector(meta.Scalar(R), X, base_len, vx) + castVector(meta.Scalar(R), Y, base_len, vy)),
                 .custom => unreachable,
             },
-            .int => switch (comptime types.numericType(Y)) {
+            .int => switch (comptime meta.numericType(Y)) {
                 .bool, .int => switch (comptime options.int_mode) {
                     .default => o[0..base_len].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) + castVector(R, Y, base_len, vy)),
                     .wrap => o[0..base_len].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) +% castVector(R, Y, base_len, vy)),
@@ -289,27 +289,27 @@ pub inline fn add_(o: anytype, x: anytype, y: anytype, comptime base_len: compti
                 },
                 .float => o[0..base_len].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) + castVector(R, Y, base_len, vy)),
                 .dyadic => unreachable,
-                .complex => o[0..base_len].* = castVector(O, types.Scalar(R), base_len, castVector(types.Scalar(R), X, base_len, vx) + castVector(types.Scalar(R), Y, base_len, vy)),
+                .complex => o[0..base_len].* = castVector(O, meta.Scalar(R), base_len, castVector(meta.Scalar(R), X, base_len, vx) + castVector(meta.Scalar(R), Y, base_len, vy)),
                 .custom => unreachable,
             },
-            .float => switch (comptime types.numericType(Y)) {
+            .float => switch (comptime meta.numericType(Y)) {
                 .bool, .int, .float => o[0..base_len].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) + castVector(R, Y, base_len, vy)),
                 .dyadic => unreachable,
-                .complex => o[0..base_len].* = castVector(O, types.Scalar(R), base_len, castVector(types.Scalar(R), X, base_len, vx) + castVector(types.Scalar(R), Y, base_len, vy)),
+                .complex => o[0..base_len].* = castVector(O, meta.Scalar(R), base_len, castVector(meta.Scalar(R), X, base_len, vx) + castVector(meta.Scalar(R), Y, base_len, vy)),
                 .custom => unreachable,
             },
             .dyadic => unreachable,
-            .complex => switch (comptime types.numericType(Y)) {
-                .bool, .int, .float => o[0..base_len].* = castVector(O, types.Scalar(R), base_len, castVector(types.Scalar(R), X, base_len, vx) + castVector(types.Scalar(R), Y, base_len, vy)),
+            .complex => switch (comptime meta.numericType(Y)) {
+                .bool, .int, .float => o[0..base_len].* = castVector(O, meta.Scalar(R), base_len, castVector(meta.Scalar(R), X, base_len, vx) + castVector(meta.Scalar(R), Y, base_len, vy)),
                 .dyadic => unreachable,
-                .complex => o[0..base_len].* = castVector(O, types.Scalar(R), base_len, castVector(types.Scalar(R), X, base_len, vx) + castVector(types.Scalar(R), Y, base_len, vy)),
+                .complex => o[0..base_len].* = castVector(O, meta.Scalar(R), base_len, castVector(meta.Scalar(R), X, base_len, vx) + castVector(meta.Scalar(R), Y, base_len, vy)),
                 .custom => unreachable,
             },
             .custom => unreachable,
         },
         .dyadic => unreachable,
-        .complex => switch (comptime types.numericType(X)) {
-            .bool => switch (comptime types.numericType(Y)) {
+        .complex => switch (comptime meta.numericType(X)) {
+            .bool => switch (comptime meta.numericType(Y)) {
                 .bool => @compileError("zsl.simd.add: not defined for " ++ @typeName(O) ++ ", " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "\n"),
                 .int => switch (comptime options.int_mode) {
                     .default => vo[0 .. base_len * 2].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) + castVector(R, Y, base_len, vy)),
@@ -321,7 +321,7 @@ pub inline fn add_(o: anytype, x: anytype, y: anytype, comptime base_len: compti
                 .complex => vo[0 .. base_len * 2].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) + castVector(R, Y, base_len, vy)),
                 .custom => unreachable,
             },
-            .int => switch (comptime types.numericType(Y)) {
+            .int => switch (comptime meta.numericType(Y)) {
                 .bool, .int => switch (comptime options.int_mode) {
                     .default => vo[0 .. base_len * 2].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) + castVector(R, Y, base_len, vy)),
                     .wrap => vo[0 .. base_len * 2].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) +% castVector(R, Y, base_len, vy)),
@@ -332,14 +332,14 @@ pub inline fn add_(o: anytype, x: anytype, y: anytype, comptime base_len: compti
                 .complex => vo[0 .. base_len * 2].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) + castVector(R, Y, base_len, vy)),
                 .custom => unreachable,
             },
-            .float => switch (comptime types.numericType(Y)) {
+            .float => switch (comptime meta.numericType(Y)) {
                 .bool, .int, .float => vo[0 .. base_len * 2].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) + castVector(R, Y, base_len, vy)),
                 .dyadic => unreachable,
                 .complex => vo[0 .. base_len * 2].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) + castVector(R, Y, base_len, vy)),
                 .custom => unreachable,
             },
             .dyadic => unreachable,
-            .complex => switch (comptime types.numericType(Y)) {
+            .complex => switch (comptime meta.numericType(Y)) {
                 .bool, .int, .float => vo[0 .. base_len * 2].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) + castVector(R, Y, base_len, vy)),
                 .dyadic => unreachable,
                 .complex => vo[0 .. base_len * 2].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) + castVector(R, Y, base_len, vy)),
@@ -381,23 +381,23 @@ pub inline fn add_(o: anytype, x: anytype, y: anytype, comptime base_len: compti
 /// `void`
 pub inline fn sub_(o: anytype, x: anytype, y: anytype, comptime base_len: comptime_int) void {
     const O: type = @TypeOf(o[0]);
-    const X: type = if (comptime types.isManyItemPointer(@TypeOf(x))) @TypeOf(x[0]) else @TypeOf(x);
-    const Y: type = if (comptime types.isManyItemPointer(@TypeOf(y))) @TypeOf(y[0]) else @TypeOf(y);
+    const X: type = if (comptime meta.isManyItemPointer(@TypeOf(x))) @TypeOf(x[0]) else @TypeOf(x);
+    const Y: type = if (comptime meta.isManyItemPointer(@TypeOf(y))) @TypeOf(y[0]) else @TypeOf(y);
     const R: type = numeric.Sub(X, Y);
 
-    const vo: [*]types.Scalar(O) = @ptrCast(o);
-    const vx: @Vector(baseToVectorLen(X, base_len), types.Scalar(X)) = if (comptime types.isManyItemPointer(@TypeOf(x)))
-        @as([*]const types.Scalar(X), @ptrCast(x))[0..baseToVectorLen(X, base_len)].*
+    const vo: [*]meta.Scalar(O) = @ptrCast(o);
+    const vx: @Vector(baseToVectorLen(X, base_len), meta.Scalar(X)) = if (comptime meta.isManyItemPointer(@TypeOf(x)))
+        @as([*]const meta.Scalar(X), @ptrCast(x))[0..baseToVectorLen(X, base_len)].*
     else
         broadcast(base_len, x);
-    const vy: @Vector(baseToVectorLen(Y, base_len), types.Scalar(Y)) = if (comptime types.isManyItemPointer(@TypeOf(y)))
-        @as([*]const types.Scalar(Y), @ptrCast(y))[0..baseToVectorLen(Y, base_len)].*
+    const vy: @Vector(baseToVectorLen(Y, base_len), meta.Scalar(Y)) = if (comptime meta.isManyItemPointer(@TypeOf(y)))
+        @as([*]const meta.Scalar(Y), @ptrCast(y))[0..baseToVectorLen(Y, base_len)].*
     else
         broadcast(base_len, y);
 
-    switch (comptime types.numericType(O)) {
-        .bool, .int, .float => switch (comptime types.numericType(X)) {
-            .bool => switch (comptime types.numericType(Y)) {
+    switch (comptime meta.numericType(O)) {
+        .bool, .int, .float => switch (comptime meta.numericType(X)) {
+            .bool => switch (comptime meta.numericType(Y)) {
                 .bool => @compileError("zsl.simd.sub_: not defined for " ++ @typeName(O) ++ ", " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "\n"),
                 .int => switch (comptime options.int_mode) {
                     .default => o[0..base_len].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) - castVector(R, Y, base_len, vy)),
@@ -406,10 +406,10 @@ pub inline fn sub_(o: anytype, x: anytype, y: anytype, comptime base_len: compti
                 },
                 .float => o[0..base_len].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) - castVector(R, Y, base_len, vy)),
                 .dyadic => unreachable,
-                .complex => o[0..base_len].* = castVector(O, types.Scalar(R), base_len, castVector(types.Scalar(R), X, base_len, vx) - castVector(types.Scalar(R), Y, base_len, vy)),
+                .complex => o[0..base_len].* = castVector(O, meta.Scalar(R), base_len, castVector(meta.Scalar(R), X, base_len, vx) - castVector(meta.Scalar(R), Y, base_len, vy)),
                 .custom => unreachable,
             },
-            .int => switch (comptime types.numericType(Y)) {
+            .int => switch (comptime meta.numericType(Y)) {
                 .bool, .int => switch (comptime options.int_mode) {
                     .default => o[0..base_len].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) - castVector(R, Y, base_len, vy)),
                     .wrap => o[0..base_len].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) -% castVector(R, Y, base_len, vy)),
@@ -417,27 +417,27 @@ pub inline fn sub_(o: anytype, x: anytype, y: anytype, comptime base_len: compti
                 },
                 .float => o[0..base_len].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) - castVector(R, Y, base_len, vy)),
                 .dyadic => unreachable,
-                .complex => o[0..base_len].* = castVector(O, types.Scalar(R), base_len, castVector(types.Scalar(R), X, base_len, vx) - castVector(types.Scalar(R), Y, base_len, vy)),
+                .complex => o[0..base_len].* = castVector(O, meta.Scalar(R), base_len, castVector(meta.Scalar(R), X, base_len, vx) - castVector(meta.Scalar(R), Y, base_len, vy)),
                 .custom => unreachable,
             },
-            .float => switch (comptime types.numericType(Y)) {
+            .float => switch (comptime meta.numericType(Y)) {
                 .bool, .int, .float => o[0..base_len].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) - castVector(R, Y, base_len, vy)),
                 .dyadic => unreachable,
-                .complex => o[0..base_len].* = castVector(O, types.Scalar(R), base_len, castVector(types.Scalar(R), X, base_len, vx) - castVector(types.Scalar(R), Y, base_len, vy)),
+                .complex => o[0..base_len].* = castVector(O, meta.Scalar(R), base_len, castVector(meta.Scalar(R), X, base_len, vx) - castVector(meta.Scalar(R), Y, base_len, vy)),
                 .custom => unreachable,
             },
             .dyadic => unreachable,
-            .complex => switch (comptime types.numericType(Y)) {
-                .bool, .int, .float => o[0..base_len].* = castVector(O, types.Scalar(R), base_len, castVector(types.Scalar(R), X, base_len, vx) - castVector(types.Scalar(R), Y, base_len, vy)),
+            .complex => switch (comptime meta.numericType(Y)) {
+                .bool, .int, .float => o[0..base_len].* = castVector(O, meta.Scalar(R), base_len, castVector(meta.Scalar(R), X, base_len, vx) - castVector(meta.Scalar(R), Y, base_len, vy)),
                 .dyadic => unreachable,
-                .complex => o[0..base_len].* = castVector(O, types.Scalar(R), base_len, castVector(types.Scalar(R), X, base_len, vx) - castVector(types.Scalar(R), Y, base_len, vy)),
+                .complex => o[0..base_len].* = castVector(O, meta.Scalar(R), base_len, castVector(meta.Scalar(R), X, base_len, vx) - castVector(meta.Scalar(R), Y, base_len, vy)),
                 .custom => unreachable,
             },
             .custom => unreachable,
         },
         .dyadic => unreachable,
-        .complex => switch (comptime types.numericType(X)) {
-            .bool => switch (comptime types.numericType(Y)) {
+        .complex => switch (comptime meta.numericType(X)) {
+            .bool => switch (comptime meta.numericType(Y)) {
                 .bool => @compileError("zsl.simd.sub: not defined for " ++ @typeName(O) ++ ", " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "\n"),
                 .int => switch (comptime options.int_mode) {
                     .default => vo[0 .. base_len * 2].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) - castVector(R, Y, base_len, vy)),
@@ -449,7 +449,7 @@ pub inline fn sub_(o: anytype, x: anytype, y: anytype, comptime base_len: compti
                 .complex => vo[0 .. base_len * 2].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) - castVector(R, Y, base_len, vy)),
                 .custom => unreachable,
             },
-            .int => switch (comptime types.numericType(Y)) {
+            .int => switch (comptime meta.numericType(Y)) {
                 .bool, .int => switch (comptime options.int_mode) {
                     .default => vo[0 .. base_len * 2].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) - castVector(R, Y, base_len, vy)),
                     .wrap => vo[0 .. base_len * 2].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) -% castVector(R, Y, base_len, vy)),
@@ -460,14 +460,14 @@ pub inline fn sub_(o: anytype, x: anytype, y: anytype, comptime base_len: compti
                 .complex => vo[0 .. base_len * 2].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) - castVector(R, Y, base_len, vy)),
                 .custom => unreachable,
             },
-            .float => switch (comptime types.numericType(Y)) {
+            .float => switch (comptime meta.numericType(Y)) {
                 .bool, .int, .float => vo[0 .. base_len * 2].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) - castVector(R, Y, base_len, vy)),
                 .dyadic => unreachable,
                 .complex => vo[0 .. base_len * 2].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) - castVector(R, Y, base_len, vy)),
                 .custom => unreachable,
             },
             .dyadic => unreachable,
-            .complex => switch (comptime types.numericType(Y)) {
+            .complex => switch (comptime meta.numericType(Y)) {
                 .bool, .int, .float => vo[0 .. base_len * 2].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) - castVector(R, Y, base_len, vy)),
                 .dyadic => unreachable,
                 .complex => vo[0 .. base_len * 2].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) - castVector(R, Y, base_len, vy)),
@@ -509,23 +509,23 @@ pub inline fn sub_(o: anytype, x: anytype, y: anytype, comptime base_len: compti
 /// `void`
 pub inline fn mul_(o: anytype, x: anytype, y: anytype, comptime base_len: comptime_int) void {
     const O: type = @TypeOf(o[0]);
-    const X: type = if (comptime types.isManyItemPointer(@TypeOf(x))) @TypeOf(x[0]) else @TypeOf(x);
-    const Y: type = if (comptime types.isManyItemPointer(@TypeOf(y))) @TypeOf(y[0]) else @TypeOf(y);
+    const X: type = if (comptime meta.isManyItemPointer(@TypeOf(x))) @TypeOf(x[0]) else @TypeOf(x);
+    const Y: type = if (comptime meta.isManyItemPointer(@TypeOf(y))) @TypeOf(y[0]) else @TypeOf(y);
     const R: type = numeric.Mul(X, Y);
 
-    const vo: [*]types.Scalar(O) = @ptrCast(o);
-    const vx: @Vector(baseToVectorLen(X, base_len), types.Scalar(X)) = if (comptime types.isManyItemPointer(@TypeOf(x)))
-        @as([*]const types.Scalar(X), @ptrCast(x))[0..baseToVectorLen(X, base_len)].*
+    const vo: [*]meta.Scalar(O) = @ptrCast(o);
+    const vx: @Vector(baseToVectorLen(X, base_len), meta.Scalar(X)) = if (comptime meta.isManyItemPointer(@TypeOf(x)))
+        @as([*]const meta.Scalar(X), @ptrCast(x))[0..baseToVectorLen(X, base_len)].*
     else
         broadcast(base_len, x);
-    const vy: @Vector(baseToVectorLen(Y, base_len), types.Scalar(Y)) = if (comptime types.isManyItemPointer(@TypeOf(y)))
-        @as([*]const types.Scalar(Y), @ptrCast(y))[0..baseToVectorLen(Y, base_len)].*
+    const vy: @Vector(baseToVectorLen(Y, base_len), meta.Scalar(Y)) = if (comptime meta.isManyItemPointer(@TypeOf(y)))
+        @as([*]const meta.Scalar(Y), @ptrCast(y))[0..baseToVectorLen(Y, base_len)].*
     else
         broadcast(base_len, y);
 
-    switch (comptime types.numericType(O)) {
-        .bool, .int, .float => switch (comptime types.numericType(X)) {
-            .bool => switch (comptime types.numericType(Y)) {
+    switch (comptime meta.numericType(O)) {
+        .bool, .int, .float => switch (comptime meta.numericType(X)) {
+            .bool => switch (comptime meta.numericType(Y)) {
                 .bool => @compileError("zsl.simd.mul_: not defined for " ++ @typeName(O) ++ ", " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "\n"),
                 .int => switch (comptime options.int_mode) {
                     .default => o[0..base_len].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) * castVector(R, Y, base_len, vy)),
@@ -534,10 +534,10 @@ pub inline fn mul_(o: anytype, x: anytype, y: anytype, comptime base_len: compti
                 },
                 .float => o[0..base_len].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) * castVector(R, Y, base_len, vy)),
                 .dyadic => unreachable,
-                .complex => o[0..base_len].* = castVector(O, types.Scalar(R), base_len, castVector(types.Scalar(R), X, base_len, vx) * castVector(types.Scalar(R), Y, base_len, vy)),
+                .complex => o[0..base_len].* = castVector(O, meta.Scalar(R), base_len, castVector(meta.Scalar(R), X, base_len, vx) * castVector(meta.Scalar(R), Y, base_len, vy)),
                 .custom => unreachable,
             },
-            .int => switch (comptime types.numericType(Y)) {
+            .int => switch (comptime meta.numericType(Y)) {
                 .bool, .int => switch (comptime options.int_mode) {
                     .default => o[0..base_len].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) * castVector(R, Y, base_len, vy)),
                     .wrap => o[0..base_len].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) *% castVector(R, Y, base_len, vy)),
@@ -545,37 +545,37 @@ pub inline fn mul_(o: anytype, x: anytype, y: anytype, comptime base_len: compti
                 },
                 .float => o[0..base_len].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) * castVector(R, Y, base_len, vy)),
                 .dyadic => unreachable,
-                .complex => o[0..base_len].* = castVector(O, types.Scalar(R), base_len, castVector(types.Scalar(R), X, base_len, vx) * castVector(types.Scalar(R), Y, base_len, vy)),
+                .complex => o[0..base_len].* = castVector(O, meta.Scalar(R), base_len, castVector(meta.Scalar(R), X, base_len, vx) * castVector(meta.Scalar(R), Y, base_len, vy)),
                 .custom => unreachable,
             },
-            .float => switch (comptime types.numericType(Y)) {
+            .float => switch (comptime meta.numericType(Y)) {
                 .bool, .int, .float => o[0..base_len].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) * castVector(R, Y, base_len, vy)),
                 .dyadic => unreachable,
-                .complex => o[0..base_len].* = castVector(O, types.Scalar(R), base_len, castVector(types.Scalar(R), X, base_len, vx) * castVector(types.Scalar(R), Y, base_len, vy)),
+                .complex => o[0..base_len].* = castVector(O, meta.Scalar(R), base_len, castVector(meta.Scalar(R), X, base_len, vx) * castVector(meta.Scalar(R), Y, base_len, vy)),
                 .custom => unreachable,
             },
             .dyadic => unreachable,
-            .complex => switch (comptime types.numericType(Y)) {
-                .bool, .int, .float => o[0..base_len].* = castVector(O, types.Scalar(R), base_len, castVector(types.Scalar(R), X, base_len, vx) * castVector(types.Scalar(R), Y, base_len, vy)),
+            .complex => switch (comptime meta.numericType(Y)) {
+                .bool, .int, .float => o[0..base_len].* = castVector(O, meta.Scalar(R), base_len, castVector(meta.Scalar(R), X, base_len, vx) * castVector(meta.Scalar(R), Y, base_len, vy)),
                 .dyadic => unreachable,
                 .complex => {
                     const vx_casted = castVector(R, X, base_len, vx);
                     const vy_casted = castVector(R, Y, base_len, vy);
 
-                    const a = @shuffle(types.Scalar(R), vx_casted, undefined, maskReals(base_len));
-                    const b = @shuffle(types.Scalar(R), vx_casted, undefined, maskIms(base_len));
-                    const c = @shuffle(types.Scalar(R), vy_casted, undefined, maskReals(base_len));
-                    const d = @shuffle(types.Scalar(R), vy_casted, undefined, maskIms(base_len));
+                    const a = @shuffle(meta.Scalar(R), vx_casted, undefined, maskReals(base_len));
+                    const b = @shuffle(meta.Scalar(R), vx_casted, undefined, maskIms(base_len));
+                    const c = @shuffle(meta.Scalar(R), vy_casted, undefined, maskReals(base_len));
+                    const d = @shuffle(meta.Scalar(R), vy_casted, undefined, maskIms(base_len));
 
-                    o[0..base_len].* = castVector(O, types.Scalar(R), base_len, (a * c) - (b * d));
+                    o[0..base_len].* = castVector(O, meta.Scalar(R), base_len, (a * c) - (b * d));
                 },
                 .custom => unreachable,
             },
             .custom => unreachable,
         },
         .dyadic => unreachable,
-        .complex => switch (comptime types.numericType(X)) {
-            .bool => switch (comptime types.numericType(Y)) {
+        .complex => switch (comptime meta.numericType(X)) {
+            .bool => switch (comptime meta.numericType(Y)) {
                 .bool => @compileError("zsl.simd.mul: not defined for " ++ @typeName(O) ++ ", " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "\n"),
                 .int => switch (comptime options.int_mode) {
                     .default => vo[0 .. base_len * 2].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) * castVector(R, Y, base_len, vy)),
@@ -585,14 +585,14 @@ pub inline fn mul_(o: anytype, x: anytype, y: anytype, comptime base_len: compti
                 .float => vo[0 .. base_len * 2].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) * castVector(R, Y, base_len, vy)),
                 .dyadic => unreachable,
                 .complex => {
-                    const vx_dup = @shuffle(types.Scalar(R), castVector(types.Scalar(R), X, base_len, vx), undefined, maskDupScalar(base_len));
+                    const vx_dup = @shuffle(meta.Scalar(R), castVector(meta.Scalar(R), X, base_len, vx), undefined, maskDupScalar(base_len));
                     const vy_casted = castVector(R, Y, base_len, vy);
 
                     vo[0 .. base_len * 2].* = castVector(O, R, base_len, vx_dup * vy_casted);
                 },
                 .custom => unreachable,
             },
-            .int => switch (comptime types.numericType(Y)) {
+            .int => switch (comptime meta.numericType(Y)) {
                 .bool, .int => switch (comptime options.int_mode) {
                     .default => vo[0 .. base_len * 2].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) * castVector(R, Y, base_len, vy)),
                     .wrap => vo[0 .. base_len * 2].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) *% castVector(R, Y, base_len, vy)),
@@ -601,18 +601,18 @@ pub inline fn mul_(o: anytype, x: anytype, y: anytype, comptime base_len: compti
                 .float => vo[0 .. base_len * 2].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) * castVector(R, Y, base_len, vy)),
                 .dyadic => unreachable,
                 .complex => {
-                    const vx_dup = @shuffle(types.Scalar(R), castVector(types.Scalar(R), X, base_len, vx), undefined, maskDupScalar(base_len));
+                    const vx_dup = @shuffle(meta.Scalar(R), castVector(meta.Scalar(R), X, base_len, vx), undefined, maskDupScalar(base_len));
                     const vy_casted = castVector(R, Y, base_len, vy);
 
                     vo[0 .. base_len * 2].* = castVector(O, R, base_len, vx_dup * vy_casted);
                 },
                 .custom => unreachable,
             },
-            .float => switch (comptime types.numericType(Y)) {
+            .float => switch (comptime meta.numericType(Y)) {
                 .bool, .int, .float => vo[0 .. base_len * 2].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) * castVector(R, Y, base_len, vy)),
                 .dyadic => unreachable,
                 .complex => {
-                    const vx_dup = @shuffle(types.Scalar(R), castVector(types.Scalar(R), X, base_len, vx), undefined, maskDupScalar(base_len));
+                    const vx_dup = @shuffle(meta.Scalar(R), castVector(meta.Scalar(R), X, base_len, vx), undefined, maskDupScalar(base_len));
                     const vy_casted = castVector(R, Y, base_len, vy);
 
                     vo[0 .. base_len * 2].* = castVector(O, R, base_len, vx_dup * vy_casted);
@@ -620,10 +620,10 @@ pub inline fn mul_(o: anytype, x: anytype, y: anytype, comptime base_len: compti
                 .custom => unreachable,
             },
             .dyadic => unreachable,
-            .complex => switch (comptime types.numericType(Y)) {
+            .complex => switch (comptime meta.numericType(Y)) {
                 .bool, .int, .float => {
                     const vx_c = castVector(R, X, base_len, vx);
-                    const vy_dup = @shuffle(types.Scalar(R), castVector(types.Scalar(R), Y, base_len, vy), undefined, maskDupScalar(base_len));
+                    const vy_dup = @shuffle(meta.Scalar(R), castVector(meta.Scalar(R), Y, base_len, vy), undefined, maskDupScalar(base_len));
 
                     vo[0 .. base_len * 2].* = castVector(O, R, base_len, vx_c * vy_dup);
                 },
@@ -632,9 +632,9 @@ pub inline fn mul_(o: anytype, x: anytype, y: anytype, comptime base_len: compti
                     const vx_casted = castVector(R, X, base_len, vx);
                     const vy_casted = castVector(R, Y, base_len, vy);
 
-                    const vx_swap = @shuffle(types.Scalar(R), vx_casted, undefined, maskSwapComplex(base_len));
-                    const vy_reals = @shuffle(types.Scalar(R), vy_casted, undefined, maskDupReals(base_len));
-                    const vy_ims = @shuffle(types.Scalar(R), vy_casted, undefined, maskDupIms(base_len));
+                    const vx_swap = @shuffle(meta.Scalar(R), vx_casted, undefined, maskSwapComplex(base_len));
+                    const vy_reals = @shuffle(meta.Scalar(R), vy_casted, undefined, maskDupReals(base_len));
+                    const vy_ims = @shuffle(meta.Scalar(R), vy_casted, undefined, maskDupIms(base_len));
 
                     vo[0 .. base_len * 2].* = castVector(O, R, base_len, (vx_casted * vy_reals) + (vx_swap * (vy_ims * maskAddSub(R, base_len))));
                 },
@@ -680,29 +680,29 @@ pub inline fn mul_(o: anytype, x: anytype, y: anytype, comptime base_len: compti
 /// `void`
 pub inline fn fma_(o: anytype, x: anytype, y: anytype, z: anytype, comptime base_len: comptime_int) void {
     const O: type = @TypeOf(o[0]);
-    const X: type = if (comptime types.isManyItemPointer(@TypeOf(x))) @TypeOf(x[0]) else @TypeOf(x);
-    const Y: type = if (comptime types.isManyItemPointer(@TypeOf(y))) @TypeOf(y[0]) else @TypeOf(y);
-    const Z: type = if (comptime types.isManyItemPointer(@TypeOf(z))) @TypeOf(z[0]) else @TypeOf(z);
+    const X: type = if (comptime meta.isManyItemPointer(@TypeOf(x))) @TypeOf(x[0]) else @TypeOf(x);
+    const Y: type = if (comptime meta.isManyItemPointer(@TypeOf(y))) @TypeOf(y[0]) else @TypeOf(y);
+    const Z: type = if (comptime meta.isManyItemPointer(@TypeOf(z))) @TypeOf(z[0]) else @TypeOf(z);
     const R: type = numeric.Fma(X, Y, Z);
 
-    const vo: [*]types.Scalar(O) = @ptrCast(o);
-    const vx: @Vector(baseToVectorLen(X, base_len), types.Scalar(X)) = if (comptime types.isManyItemPointer(@TypeOf(x)))
-        @as([*]const types.Scalar(X), @ptrCast(x))[0..baseToVectorLen(X, base_len)].*
+    const vo: [*]meta.Scalar(O) = @ptrCast(o);
+    const vx: @Vector(baseToVectorLen(X, base_len), meta.Scalar(X)) = if (comptime meta.isManyItemPointer(@TypeOf(x)))
+        @as([*]const meta.Scalar(X), @ptrCast(x))[0..baseToVectorLen(X, base_len)].*
     else
         broadcast(base_len, x);
-    const vy: @Vector(baseToVectorLen(Y, base_len), types.Scalar(Y)) = if (comptime types.isManyItemPointer(@TypeOf(y)))
-        @as([*]const types.Scalar(Y), @ptrCast(y))[0..baseToVectorLen(Y, base_len)].*
+    const vy: @Vector(baseToVectorLen(Y, base_len), meta.Scalar(Y)) = if (comptime meta.isManyItemPointer(@TypeOf(y)))
+        @as([*]const meta.Scalar(Y), @ptrCast(y))[0..baseToVectorLen(Y, base_len)].*
     else
         broadcast(base_len, y);
-    const vz: @Vector(baseToVectorLen(Z, base_len), types.Scalar(Z)) = if (comptime types.isManyItemPointer(@TypeOf(z)))
-        @as([*]const types.Scalar(Z), @ptrCast(z))[0..baseToVectorLen(Z, base_len)].*
+    const vz: @Vector(baseToVectorLen(Z, base_len), meta.Scalar(Z)) = if (comptime meta.isManyItemPointer(@TypeOf(z)))
+        @as([*]const meta.Scalar(Z), @ptrCast(z))[0..baseToVectorLen(Z, base_len)].*
     else
         broadcast(base_len, z);
 
-    switch (comptime types.numericType(O)) {
-        .bool, .int, .float => switch (comptime types.numericType(X)) {
-            .bool => switch (comptime types.numericType(Y)) {
-                .bool => switch (comptime types.numericType(Z)) {
+    switch (comptime meta.numericType(O)) {
+        .bool, .int, .float => switch (comptime meta.numericType(X)) {
+            .bool => switch (comptime meta.numericType(Y)) {
+                .bool => switch (comptime meta.numericType(Z)) {
                     .bool => @compileError("zsl.simd.fma_: not defined for " ++ @typeName(O) ++ ", " ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ " and " ++ @typeName(Z) ++ "\n"),
                     .int => switch (comptime options.int_mode) {
                         .default => o[0..base_len].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) * castVector(R, Y, base_len, vy) + castVector(R, Z, base_len, vz)),
@@ -711,10 +711,10 @@ pub inline fn fma_(o: anytype, x: anytype, y: anytype, z: anytype, comptime base
                     },
                     .float => o[0..base_len].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len, R), castVector(R, X, base_len, vx), castVector(R, Y, base_len, vy), castVector(R, Z, base_len, vz))),
                     .dyadic => unreachable,
-                    .complex => o[0..base_len].* = castVector(O, types.Scalar(R), base_len, @mulAdd(@Vector(base_len, types.Scalar(R)), castVector(types.Scalar(R), X, base_len, vx), castVector(types.Scalar(R), Y, base_len, vy), castVector(types.Scalar(R), Z, base_len, vz))),
+                    .complex => o[0..base_len].* = castVector(O, meta.Scalar(R), base_len, @mulAdd(@Vector(base_len, meta.Scalar(R)), castVector(meta.Scalar(R), X, base_len, vx), castVector(meta.Scalar(R), Y, base_len, vy), castVector(meta.Scalar(R), Z, base_len, vz))),
                     .custom => unreachable,
                 },
-                .int => switch (comptime types.numericType(Z)) {
+                .int => switch (comptime meta.numericType(Z)) {
                     .bool, .int => switch (comptime options.int_mode) {
                         .default => o[0..base_len].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) * castVector(R, Y, base_len, vy) + castVector(R, Z, base_len, vz)),
                         .wrap => o[0..base_len].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) *% castVector(R, Y, base_len, vy) +% castVector(R, Z, base_len, vz)),
@@ -722,26 +722,26 @@ pub inline fn fma_(o: anytype, x: anytype, y: anytype, z: anytype, comptime base
                     },
                     .float => o[0..base_len].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len, R), castVector(R, X, base_len, vx), castVector(R, Y, base_len, vy), castVector(R, Z, base_len, vz))),
                     .dyadic => unreachable,
-                    .complex => o[0..base_len].* = castVector(O, types.Scalar(R), base_len, @mulAdd(@Vector(base_len, types.Scalar(R)), castVector(types.Scalar(R), X, base_len, vx), castVector(types.Scalar(R), Y, base_len, vy), castVector(types.Scalar(R), Z, base_len, vz))),
+                    .complex => o[0..base_len].* = castVector(O, meta.Scalar(R), base_len, @mulAdd(@Vector(base_len, meta.Scalar(R)), castVector(meta.Scalar(R), X, base_len, vx), castVector(meta.Scalar(R), Y, base_len, vy), castVector(meta.Scalar(R), Z, base_len, vz))),
                     .custom => unreachable,
                 },
-                .float => switch (comptime types.numericType(Z)) {
+                .float => switch (comptime meta.numericType(Z)) {
                     .bool, .int, .float => o[0..base_len].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len, R), castVector(R, X, base_len, vx), castVector(R, Y, base_len, vy), castVector(R, Z, base_len, vz))),
                     .dyadic => unreachable,
-                    .complex => o[0..base_len].* = castVector(O, types.Scalar(R), base_len, @mulAdd(@Vector(base_len, types.Scalar(R)), castVector(types.Scalar(R), X, base_len, vx), castVector(types.Scalar(R), Y, base_len, vy), castVector(types.Scalar(R), Z, base_len, vz))),
+                    .complex => o[0..base_len].* = castVector(O, meta.Scalar(R), base_len, @mulAdd(@Vector(base_len, meta.Scalar(R)), castVector(meta.Scalar(R), X, base_len, vx), castVector(meta.Scalar(R), Y, base_len, vy), castVector(meta.Scalar(R), Z, base_len, vz))),
                     .custom => unreachable,
                 },
                 .dyadic => unreachable,
-                .complex => switch (comptime types.numericType(Z)) {
-                    .bool, .int, .float => o[0..base_len].* = castVector(O, types.Scalar(R), base_len, @mulAdd(@Vector(base_len, types.Scalar(R)), castVector(types.Scalar(R), X, base_len, vx), castVector(types.Scalar(R), Y, base_len, vy), castVector(types.Scalar(R), Z, base_len, vz))),
+                .complex => switch (comptime meta.numericType(Z)) {
+                    .bool, .int, .float => o[0..base_len].* = castVector(O, meta.Scalar(R), base_len, @mulAdd(@Vector(base_len, meta.Scalar(R)), castVector(meta.Scalar(R), X, base_len, vx), castVector(meta.Scalar(R), Y, base_len, vy), castVector(meta.Scalar(R), Z, base_len, vz))),
                     .dyadic => unreachable,
-                    .complex => o[0..base_len].* = castVector(O, types.Scalar(R), base_len, @mulAdd(@Vector(base_len, types.Scalar(R)), castVector(types.Scalar(R), X, base_len, vx), castVector(types.Scalar(R), Y, base_len, vy), castVector(types.Scalar(R), Z, base_len, vz))),
+                    .complex => o[0..base_len].* = castVector(O, meta.Scalar(R), base_len, @mulAdd(@Vector(base_len, meta.Scalar(R)), castVector(meta.Scalar(R), X, base_len, vx), castVector(meta.Scalar(R), Y, base_len, vy), castVector(meta.Scalar(R), Z, base_len, vz))),
                     .custom => unreachable,
                 },
                 .custom => unreachable,
             },
-            .int => switch (comptime types.numericType(Y)) {
-                .bool, .int => switch (comptime types.numericType(Z)) {
+            .int => switch (comptime meta.numericType(Y)) {
+                .bool, .int => switch (comptime meta.numericType(Z)) {
                     .bool, .int => switch (comptime options.int_mode) {
                         .default => o[0..base_len].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) * castVector(R, Y, base_len, vy) + castVector(R, Z, base_len, vz)),
                         .wrap => o[0..base_len].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) *% castVector(R, Y, base_len, vy) +% castVector(R, Z, base_len, vz)),
@@ -749,76 +749,76 @@ pub inline fn fma_(o: anytype, x: anytype, y: anytype, z: anytype, comptime base
                     },
                     .float => o[0..base_len].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len, R), castVector(R, X, base_len, vx), castVector(R, Y, base_len, vy), castVector(R, Z, base_len, vz))),
                     .dyadic => unreachable,
-                    .complex => o[0..base_len].* = castVector(O, types.Scalar(R), base_len, @mulAdd(@Vector(base_len, types.Scalar(R)), castVector(types.Scalar(R), X, base_len, vx), castVector(types.Scalar(R), Y, base_len, vy), castVector(types.Scalar(R), Z, base_len, vz))),
+                    .complex => o[0..base_len].* = castVector(O, meta.Scalar(R), base_len, @mulAdd(@Vector(base_len, meta.Scalar(R)), castVector(meta.Scalar(R), X, base_len, vx), castVector(meta.Scalar(R), Y, base_len, vy), castVector(meta.Scalar(R), Z, base_len, vz))),
                     .custom => unreachable,
                 },
-                .float => switch (comptime types.numericType(Z)) {
+                .float => switch (comptime meta.numericType(Z)) {
                     .bool, .int, .float => o[0..base_len].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len, R), castVector(R, X, base_len, vx), castVector(R, Y, base_len, vy), castVector(R, Z, base_len, vz))),
                     .dyadic => unreachable,
-                    .complex => o[0..base_len].* = castVector(O, types.Scalar(R), base_len, @mulAdd(@Vector(base_len, types.Scalar(R)), castVector(types.Scalar(R), X, base_len, vx), castVector(types.Scalar(R), Y, base_len, vy), castVector(types.Scalar(R), Z, base_len, vz))),
+                    .complex => o[0..base_len].* = castVector(O, meta.Scalar(R), base_len, @mulAdd(@Vector(base_len, meta.Scalar(R)), castVector(meta.Scalar(R), X, base_len, vx), castVector(meta.Scalar(R), Y, base_len, vy), castVector(meta.Scalar(R), Z, base_len, vz))),
                     .custom => unreachable,
                 },
                 .dyadic => unreachable,
-                .complex => switch (comptime types.numericType(Z)) {
-                    .bool, .int, .float => o[0..base_len].* = castVector(O, types.Scalar(R), base_len, @mulAdd(@Vector(base_len, types.Scalar(R)), castVector(types.Scalar(R), X, base_len, vx), castVector(types.Scalar(R), Y, base_len, vy), castVector(types.Scalar(R), Z, base_len, vz))),
+                .complex => switch (comptime meta.numericType(Z)) {
+                    .bool, .int, .float => o[0..base_len].* = castVector(O, meta.Scalar(R), base_len, @mulAdd(@Vector(base_len, meta.Scalar(R)), castVector(meta.Scalar(R), X, base_len, vx), castVector(meta.Scalar(R), Y, base_len, vy), castVector(meta.Scalar(R), Z, base_len, vz))),
                     .dyadic => unreachable,
-                    .complex => o[0..base_len].* = castVector(O, types.Scalar(R), base_len, @mulAdd(@Vector(base_len, types.Scalar(R)), castVector(types.Scalar(R), X, base_len, vx), castVector(types.Scalar(R), Y, base_len, vy), castVector(types.Scalar(R), Z, base_len, vz))),
+                    .complex => o[0..base_len].* = castVector(O, meta.Scalar(R), base_len, @mulAdd(@Vector(base_len, meta.Scalar(R)), castVector(meta.Scalar(R), X, base_len, vx), castVector(meta.Scalar(R), Y, base_len, vy), castVector(meta.Scalar(R), Z, base_len, vz))),
                     .custom => unreachable,
                 },
                 .custom => unreachable,
             },
-            .float => switch (comptime types.numericType(Y)) {
-                .bool, .int, .float => switch (comptime types.numericType(Z)) {
+            .float => switch (comptime meta.numericType(Y)) {
+                .bool, .int, .float => switch (comptime meta.numericType(Z)) {
                     .bool, .int, .float => o[0..base_len].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len, R), castVector(R, X, base_len, vx), castVector(R, Y, base_len, vy), castVector(R, Z, base_len, vz))),
                     .dyadic => unreachable,
-                    .complex => o[0..base_len].* = castVector(O, types.Scalar(R), base_len, @mulAdd(@Vector(base_len, types.Scalar(R)), castVector(types.Scalar(R), X, base_len, vx), castVector(types.Scalar(R), Y, base_len, vy), castVector(types.Scalar(R), Z, base_len, vz))),
+                    .complex => o[0..base_len].* = castVector(O, meta.Scalar(R), base_len, @mulAdd(@Vector(base_len, meta.Scalar(R)), castVector(meta.Scalar(R), X, base_len, vx), castVector(meta.Scalar(R), Y, base_len, vy), castVector(meta.Scalar(R), Z, base_len, vz))),
                     .custom => unreachable,
                 },
                 .dyadic => unreachable,
-                .complex => switch (comptime types.numericType(Z)) {
-                    .bool, .int, .float => o[0..base_len].* = castVector(O, types.Scalar(R), base_len, @mulAdd(@Vector(base_len, types.Scalar(R)), castVector(types.Scalar(R), X, base_len, vx), castVector(types.Scalar(R), Y, base_len, vy), castVector(types.Scalar(R), Z, base_len, vz))),
+                .complex => switch (comptime meta.numericType(Z)) {
+                    .bool, .int, .float => o[0..base_len].* = castVector(O, meta.Scalar(R), base_len, @mulAdd(@Vector(base_len, meta.Scalar(R)), castVector(meta.Scalar(R), X, base_len, vx), castVector(meta.Scalar(R), Y, base_len, vy), castVector(meta.Scalar(R), Z, base_len, vz))),
                     .dyadic => unreachable,
-                    .complex => o[0..base_len].* = castVector(O, types.Scalar(R), base_len, @mulAdd(@Vector(base_len, types.Scalar(R)), castVector(types.Scalar(R), X, base_len, vx), castVector(types.Scalar(R), Y, base_len, vy), castVector(types.Scalar(R), Z, base_len, vz))),
+                    .complex => o[0..base_len].* = castVector(O, meta.Scalar(R), base_len, @mulAdd(@Vector(base_len, meta.Scalar(R)), castVector(meta.Scalar(R), X, base_len, vx), castVector(meta.Scalar(R), Y, base_len, vy), castVector(meta.Scalar(R), Z, base_len, vz))),
                     .custom => unreachable,
                 },
                 .custom => unreachable,
             },
             .dyadic => unreachable,
-            .complex => switch (comptime types.numericType(Y)) {
-                .bool, .int, .float => switch (comptime types.numericType(Z)) {
-                    .bool, .int, .float => o[0..base_len].* = castVector(O, types.Scalar(R), base_len, @mulAdd(@Vector(base_len, types.Scalar(R)), castVector(types.Scalar(R), X, base_len, vx), castVector(types.Scalar(R), Y, base_len, vy), castVector(types.Scalar(R), Z, base_len, vz))),
+            .complex => switch (comptime meta.numericType(Y)) {
+                .bool, .int, .float => switch (comptime meta.numericType(Z)) {
+                    .bool, .int, .float => o[0..base_len].* = castVector(O, meta.Scalar(R), base_len, @mulAdd(@Vector(base_len, meta.Scalar(R)), castVector(meta.Scalar(R), X, base_len, vx), castVector(meta.Scalar(R), Y, base_len, vy), castVector(meta.Scalar(R), Z, base_len, vz))),
                     .dyadic => unreachable,
-                    .complex => o[0..base_len].* = castVector(O, types.Scalar(R), base_len, @mulAdd(@Vector(base_len, types.Scalar(R)), castVector(types.Scalar(R), X, base_len, vx), castVector(types.Scalar(R), Y, base_len, vy), castVector(types.Scalar(R), Z, base_len, vz))),
+                    .complex => o[0..base_len].* = castVector(O, meta.Scalar(R), base_len, @mulAdd(@Vector(base_len, meta.Scalar(R)), castVector(meta.Scalar(R), X, base_len, vx), castVector(meta.Scalar(R), Y, base_len, vy), castVector(meta.Scalar(R), Z, base_len, vz))),
                     .custom => unreachable,
                 },
                 .dyadic => unreachable,
-                .complex => switch (comptime types.numericType(Z)) {
+                .complex => switch (comptime meta.numericType(Z)) {
                     .bool, .int, .float => {
                         const vx_casted = castVector(R, X, base_len, vx);
                         const vy_casted = castVector(R, Y, base_len, vy);
 
-                        const a = @shuffle(types.Scalar(R), vx_casted, undefined, maskReals(base_len));
-                        const b = @shuffle(types.Scalar(R), vx_casted, undefined, maskIms(base_len));
-                        const c = @shuffle(types.Scalar(R), vy_casted, undefined, maskReals(base_len));
-                        const d = @shuffle(types.Scalar(R), vy_casted, undefined, maskIms(base_len));
+                        const a = @shuffle(meta.Scalar(R), vx_casted, undefined, maskReals(base_len));
+                        const b = @shuffle(meta.Scalar(R), vx_casted, undefined, maskIms(base_len));
+                        const c = @shuffle(meta.Scalar(R), vy_casted, undefined, maskReals(base_len));
+                        const d = @shuffle(meta.Scalar(R), vy_casted, undefined, maskIms(base_len));
 
-                        const vz_casted = castVector(types.Scalar(R), Z, base_len, vz);
+                        const vz_casted = castVector(meta.Scalar(R), Z, base_len, vz);
 
-                        o[0..base_len].* = castVector(O, types.Scalar(R), base_len, @mulAdd(@Vector(base_len, types.Scalar(R)), -b, d, @mulAdd(@Vector(base_len, types.Scalar(R)), a, c, vz_casted)));
+                        o[0..base_len].* = castVector(O, meta.Scalar(R), base_len, @mulAdd(@Vector(base_len, meta.Scalar(R)), -b, d, @mulAdd(@Vector(base_len, meta.Scalar(R)), a, c, vz_casted)));
                     },
                     .dyadic => unreachable,
                     .complex => {
                         const vx_casted = castVector(R, X, base_len, vx);
                         const vy_casted = castVector(R, Y, base_len, vy);
 
-                        const a = @shuffle(types.Scalar(R), vx_casted, undefined, maskReals(base_len));
-                        const b = @shuffle(types.Scalar(R), vx_casted, undefined, maskIms(base_len));
-                        const c = @shuffle(types.Scalar(R), vy_casted, undefined, maskReals(base_len));
-                        const d = @shuffle(types.Scalar(R), vy_casted, undefined, maskIms(base_len));
+                        const a = @shuffle(meta.Scalar(R), vx_casted, undefined, maskReals(base_len));
+                        const b = @shuffle(meta.Scalar(R), vx_casted, undefined, maskIms(base_len));
+                        const c = @shuffle(meta.Scalar(R), vy_casted, undefined, maskReals(base_len));
+                        const d = @shuffle(meta.Scalar(R), vy_casted, undefined, maskIms(base_len));
 
-                        const vz_re = @shuffle(types.Scalar(R), castVector(R, Z, base_len, vz), undefined, maskReals(base_len));
+                        const vz_re = @shuffle(meta.Scalar(R), castVector(R, Z, base_len, vz), undefined, maskReals(base_len));
 
-                        o[0..base_len].* = castVector(O, types.Scalar(R), base_len, @mulAdd(@Vector(base_len, types.Scalar(R)), -b, d, @mulAdd(@Vector(base_len, types.Scalar(R)), a, c, vz_re)));
+                        o[0..base_len].* = castVector(O, meta.Scalar(R), base_len, @mulAdd(@Vector(base_len, meta.Scalar(R)), -b, d, @mulAdd(@Vector(base_len, meta.Scalar(R)), a, c, vz_re)));
                     },
                     .custom => unreachable,
                 },
@@ -827,9 +827,9 @@ pub inline fn fma_(o: anytype, x: anytype, y: anytype, z: anytype, comptime base
             .custom => unreachable,
         },
         .dyadic => unreachable,
-        .complex => switch (comptime types.numericType(X)) {
-            .bool => switch (comptime types.numericType(Y)) {
-                .bool => switch (comptime types.numericType(Z)) {
+        .complex => switch (comptime meta.numericType(X)) {
+            .bool => switch (comptime meta.numericType(Y)) {
+                .bool => switch (comptime meta.numericType(Z)) {
                     .bool => @compileError("zsl.simd.fma_: not defined for " ++ @typeName(O) ++ ", " ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ " and " ++ @typeName(Z) ++ "\n"),
                     .int => switch (comptime options.int_mode) {
                         .default => vo[0 .. base_len * 2].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) * castVector(R, Y, base_len, vy) + castVector(R, Z, base_len, vz)),
@@ -838,10 +838,10 @@ pub inline fn fma_(o: anytype, x: anytype, y: anytype, z: anytype, comptime base
                     },
                     .float => vo[0 .. base_len * 2].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len, R), castVector(R, X, base_len, vx), castVector(R, Y, base_len, vy), castVector(R, Z, base_len, vz))),
                     .dyadic => unreachable,
-                    .complex => vo[0 .. base_len * 2].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len * 2, types.Scalar(R)), castVector(R, X, base_len, vx), castVector(R, Y, base_len, vy), castVector(R, Z, base_len, vz))),
+                    .complex => vo[0 .. base_len * 2].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len * 2, meta.Scalar(R)), castVector(R, X, base_len, vx), castVector(R, Y, base_len, vy), castVector(R, Z, base_len, vz))),
                     .custom => unreachable,
                 },
-                .int => switch (comptime types.numericType(Z)) {
+                .int => switch (comptime meta.numericType(Z)) {
                     .bool, .int => switch (comptime options.int_mode) {
                         .default => vo[0 .. base_len * 2].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) * castVector(R, Y, base_len, vy) + castVector(R, Z, base_len, vz)),
                         .wrap => vo[0 .. base_len * 2].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) *% castVector(R, Y, base_len, vy) +% castVector(R, Z, base_len, vz)),
@@ -849,34 +849,34 @@ pub inline fn fma_(o: anytype, x: anytype, y: anytype, z: anytype, comptime base
                     },
                     .float => vo[0 .. base_len * 2].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len, R), castVector(R, X, base_len, vx), castVector(R, Y, base_len, vy), castVector(R, Z, base_len, vz))),
                     .dyadic => unreachable,
-                    .complex => vo[0 .. base_len * 2].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len * 2, types.Scalar(R)), castVector(R, X, base_len, vx), castVector(R, Y, base_len, vy), castVector(R, Z, base_len, vz))),
+                    .complex => vo[0 .. base_len * 2].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len * 2, meta.Scalar(R)), castVector(R, X, base_len, vx), castVector(R, Y, base_len, vy), castVector(R, Z, base_len, vz))),
                     .custom => unreachable,
                 },
-                .float => switch (comptime types.numericType(Z)) {
+                .float => switch (comptime meta.numericType(Z)) {
                     .bool, .int, .float => vo[0 .. base_len * 2].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len, R), castVector(R, X, base_len, vx), castVector(R, Y, base_len, vy), castVector(R, Z, base_len, vz))),
                     .dyadic => unreachable,
-                    .complex => vo[0 .. base_len * 2].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len * 2, types.Scalar(R)), castVector(R, X, base_len, vx), castVector(R, Y, base_len, vy), castVector(R, Z, base_len, vz))),
+                    .complex => vo[0 .. base_len * 2].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len * 2, meta.Scalar(R)), castVector(R, X, base_len, vx), castVector(R, Y, base_len, vy), castVector(R, Z, base_len, vz))),
                     .custom => unreachable,
                 },
                 .dyadic => unreachable,
-                .complex => switch (comptime types.numericType(Z)) {
+                .complex => switch (comptime meta.numericType(Z)) {
                     .bool, .int, .float => {
-                        const vx_dup = @shuffle(types.Scalar(R), castVector(types.Scalar(R), X, base_len, vx), undefined, maskDupScalar(base_len));
+                        const vx_dup = @shuffle(meta.Scalar(R), castVector(meta.Scalar(R), X, base_len, vx), undefined, maskDupScalar(base_len));
 
-                        vo[0 .. base_len * 2].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len * 2, types.Scalar(R)), vx_dup, castVector(R, Y, base_len, vy), castVector(R, Z, base_len, vz)));
+                        vo[0 .. base_len * 2].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len * 2, meta.Scalar(R)), vx_dup, castVector(R, Y, base_len, vy), castVector(R, Z, base_len, vz)));
                     },
                     .dyadic => unreachable,
                     .complex => {
-                        const vx_dup = @shuffle(types.Scalar(R), castVector(types.Scalar(R), X, base_len, vx), undefined, maskDupScalar(base_len));
+                        const vx_dup = @shuffle(meta.Scalar(R), castVector(meta.Scalar(R), X, base_len, vx), undefined, maskDupScalar(base_len));
 
-                        vo[0 .. base_len * 2].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len * 2, types.Scalar(R)), vx_dup, castVector(R, Y, base_len, vy), castVector(R, Z, base_len, vz)));
+                        vo[0 .. base_len * 2].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len * 2, meta.Scalar(R)), vx_dup, castVector(R, Y, base_len, vy), castVector(R, Z, base_len, vz)));
                     },
                     .custom => unreachable,
                 },
                 .custom => unreachable,
             },
-            .int => switch (comptime types.numericType(Y)) {
-                .bool, .int => switch (comptime types.numericType(Z)) {
+            .int => switch (comptime meta.numericType(Y)) {
+                .bool, .int => switch (comptime meta.numericType(Z)) {
                     .bool, .int => switch (comptime options.int_mode) {
                         .default => vo[0 .. base_len * 2].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) * castVector(R, Y, base_len, vy) + castVector(R, Z, base_len, vz)),
                         .wrap => vo[0 .. base_len * 2].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) *% castVector(R, Y, base_len, vy) +% castVector(R, Z, base_len, vz)),
@@ -884,84 +884,84 @@ pub inline fn fma_(o: anytype, x: anytype, y: anytype, z: anytype, comptime base
                     },
                     .float => vo[0 .. base_len * 2].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len, R), castVector(R, X, base_len, vx), castVector(R, Y, base_len, vy), castVector(R, Z, base_len, vz))),
                     .dyadic => unreachable,
-                    .complex => vo[0 .. base_len * 2].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len * 2, types.Scalar(R)), castVector(R, X, base_len, vx), castVector(R, Y, base_len, vy), castVector(R, Z, base_len, vz))),
+                    .complex => vo[0 .. base_len * 2].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len * 2, meta.Scalar(R)), castVector(R, X, base_len, vx), castVector(R, Y, base_len, vy), castVector(R, Z, base_len, vz))),
                     .custom => unreachable,
                 },
-                .float => switch (comptime types.numericType(Z)) {
+                .float => switch (comptime meta.numericType(Z)) {
                     .bool, .int, .float => vo[0 .. base_len * 2].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len, R), castVector(R, X, base_len, vx), castVector(R, Y, base_len, vy), castVector(R, Z, base_len, vz))),
                     .dyadic => unreachable,
-                    .complex => vo[0 .. base_len * 2].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len * 2, types.Scalar(R)), castVector(R, X, base_len, vx), castVector(R, Y, base_len, vy), castVector(R, Z, base_len, vz))),
+                    .complex => vo[0 .. base_len * 2].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len * 2, meta.Scalar(R)), castVector(R, X, base_len, vx), castVector(R, Y, base_len, vy), castVector(R, Z, base_len, vz))),
                     .custom => unreachable,
                 },
                 .dyadic => unreachable,
-                .complex => switch (comptime types.numericType(Z)) {
+                .complex => switch (comptime meta.numericType(Z)) {
                     .bool, .int, .float => {
-                        const vx_dup = @shuffle(types.Scalar(R), castVector(types.Scalar(R), X, base_len, vx), undefined, maskDupScalar(base_len));
+                        const vx_dup = @shuffle(meta.Scalar(R), castVector(meta.Scalar(R), X, base_len, vx), undefined, maskDupScalar(base_len));
 
-                        vo[0 .. base_len * 2].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len * 2, types.Scalar(R)), vx_dup, castVector(R, Y, base_len, vy), castVector(R, Z, base_len, vz)));
+                        vo[0 .. base_len * 2].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len * 2, meta.Scalar(R)), vx_dup, castVector(R, Y, base_len, vy), castVector(R, Z, base_len, vz)));
                     },
                     .dyadic => unreachable,
                     .complex => {
-                        const vx_dup = @shuffle(types.Scalar(R), castVector(types.Scalar(R), X, base_len, vx), undefined, maskDupScalar(base_len));
+                        const vx_dup = @shuffle(meta.Scalar(R), castVector(meta.Scalar(R), X, base_len, vx), undefined, maskDupScalar(base_len));
 
-                        vo[0 .. base_len * 2].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len * 2, types.Scalar(R)), vx_dup, castVector(R, Y, base_len, vy), castVector(R, Z, base_len, vz)));
+                        vo[0 .. base_len * 2].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len * 2, meta.Scalar(R)), vx_dup, castVector(R, Y, base_len, vy), castVector(R, Z, base_len, vz)));
                     },
                     .custom => unreachable,
                 },
                 .custom => unreachable,
             },
-            .float => switch (comptime types.numericType(Y)) {
-                .bool, .int, .float => switch (comptime types.numericType(Z)) {
+            .float => switch (comptime meta.numericType(Y)) {
+                .bool, .int, .float => switch (comptime meta.numericType(Z)) {
                     .bool, .int, .float => vo[0 .. base_len * 2].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len, R), castVector(R, X, base_len, vx), castVector(R, Y, base_len, vy), castVector(R, Z, base_len, vz))),
                     .dyadic => unreachable,
-                    .complex => vo[0 .. base_len * 2].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len * 2, types.Scalar(R)), castVector(R, X, base_len, vx), castVector(R, Y, base_len, vy), castVector(R, Z, base_len, vz))),
+                    .complex => vo[0 .. base_len * 2].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len * 2, meta.Scalar(R)), castVector(R, X, base_len, vx), castVector(R, Y, base_len, vy), castVector(R, Z, base_len, vz))),
                     .custom => unreachable,
                 },
                 .dyadic => unreachable,
-                .complex => switch (comptime types.numericType(Z)) {
+                .complex => switch (comptime meta.numericType(Z)) {
                     .bool, .int, .float => {
-                        const vx_dup = @shuffle(types.Scalar(R), castVector(types.Scalar(R), X, base_len, vx), undefined, maskDupScalar(base_len));
+                        const vx_dup = @shuffle(meta.Scalar(R), castVector(meta.Scalar(R), X, base_len, vx), undefined, maskDupScalar(base_len));
 
-                        vo[0 .. base_len * 2].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len * 2, types.Scalar(R)), vx_dup, castVector(R, Y, base_len, vy), castVector(R, Z, base_len, vz)));
+                        vo[0 .. base_len * 2].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len * 2, meta.Scalar(R)), vx_dup, castVector(R, Y, base_len, vy), castVector(R, Z, base_len, vz)));
                     },
                     .dyadic => unreachable,
                     .complex => {
-                        const vx_dup = @shuffle(types.Scalar(R), castVector(types.Scalar(R), X, base_len, vx), undefined, maskDupScalar(base_len));
+                        const vx_dup = @shuffle(meta.Scalar(R), castVector(meta.Scalar(R), X, base_len, vx), undefined, maskDupScalar(base_len));
 
-                        vo[0 .. base_len * 2].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len * 2, types.Scalar(R)), vx_dup, castVector(R, Y, base_len, vy), castVector(R, Z, base_len, vz)));
+                        vo[0 .. base_len * 2].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len * 2, meta.Scalar(R)), vx_dup, castVector(R, Y, base_len, vy), castVector(R, Z, base_len, vz)));
                     },
                     .custom => unreachable,
                 },
                 .custom => unreachable,
             },
             .dyadic => unreachable,
-            .complex => switch (comptime types.numericType(Y)) {
-                .bool, .int, .float => switch (comptime types.numericType(Z)) {
+            .complex => switch (comptime meta.numericType(Y)) {
+                .bool, .int, .float => switch (comptime meta.numericType(Z)) {
                     .bool, .int, .float => {
-                        const vy_dup = @shuffle(types.Scalar(R), castVector(types.Scalar(R), Y, base_len, vy), undefined, maskDupScalar(base_len));
+                        const vy_dup = @shuffle(meta.Scalar(R), castVector(meta.Scalar(R), Y, base_len, vy), undefined, maskDupScalar(base_len));
 
-                        vo[0 .. base_len * 2].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len * 2, types.Scalar(R)), castVector(R, X, base_len, vx), vy_dup, castVector(R, Z, base_len, vz)));
+                        vo[0 .. base_len * 2].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len * 2, meta.Scalar(R)), castVector(R, X, base_len, vx), vy_dup, castVector(R, Z, base_len, vz)));
                     },
                     .dyadic => unreachable,
                     .complex => {
-                        const vy_dup = @shuffle(types.Scalar(R), castVector(types.Scalar(R), Y, base_len, vy), undefined, maskDupScalar(base_len));
+                        const vy_dup = @shuffle(meta.Scalar(R), castVector(meta.Scalar(R), Y, base_len, vy), undefined, maskDupScalar(base_len));
 
-                        vo[0 .. base_len * 2].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len * 2, types.Scalar(R)), castVector(R, X, base_len, vx), vy_dup, castVector(R, Z, base_len, vz)));
+                        vo[0 .. base_len * 2].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len * 2, meta.Scalar(R)), castVector(R, X, base_len, vx), vy_dup, castVector(R, Z, base_len, vz)));
                     },
                     .custom => unreachable,
                 },
                 .dyadic => unreachable,
-                .complex => switch (comptime types.numericType(Z)) {
+                .complex => switch (comptime meta.numericType(Z)) {
                     .bool, .int, .float => {
                         const vx_casted = castVector(R, X, base_len, vx);
                         const vy_casted = castVector(R, Y, base_len, vy);
                         const vz_casted = castVector(R, Z, base_len, vz);
 
-                        const vx_swap = @shuffle(types.Scalar(R), vx_casted, undefined, maskSwapComplex(base_len));
-                        const vy_reals = @shuffle(types.Scalar(R), vy_casted, undefined, maskDupReals(base_len));
-                        const vy_ims = @shuffle(types.Scalar(R), vy_casted, undefined, maskDupIms(base_len));
+                        const vx_swap = @shuffle(meta.Scalar(R), vx_casted, undefined, maskSwapComplex(base_len));
+                        const vy_reals = @shuffle(meta.Scalar(R), vy_casted, undefined, maskDupReals(base_len));
+                        const vy_ims = @shuffle(meta.Scalar(R), vy_casted, undefined, maskDupIms(base_len));
 
-                        vo[0 .. base_len * 2].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len * 2, types.Scalar(R)), vx_swap, vy_ims * maskAddSub(R, base_len), @mulAdd(@Vector(base_len * 2, types.Scalar(R)), vx_casted, vy_reals, vz_casted)));
+                        vo[0 .. base_len * 2].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len * 2, meta.Scalar(R)), vx_swap, vy_ims * maskAddSub(R, base_len), @mulAdd(@Vector(base_len * 2, meta.Scalar(R)), vx_casted, vy_reals, vz_casted)));
                     },
                     .dyadic => unreachable,
                     .complex => {
@@ -969,11 +969,11 @@ pub inline fn fma_(o: anytype, x: anytype, y: anytype, z: anytype, comptime base
                         const vy_casted = castVector(R, Y, base_len, vy);
                         const vz_casted = castVector(R, Z, base_len, vz);
 
-                        const vx_swap = @shuffle(types.Scalar(R), vx_casted, undefined, maskSwapComplex(base_len));
-                        const vy_reals = @shuffle(types.Scalar(R), vy_casted, undefined, maskDupReals(base_len));
-                        const vy_ims = @shuffle(types.Scalar(R), vy_casted, undefined, maskDupIms(base_len));
+                        const vx_swap = @shuffle(meta.Scalar(R), vx_casted, undefined, maskSwapComplex(base_len));
+                        const vy_reals = @shuffle(meta.Scalar(R), vy_casted, undefined, maskDupReals(base_len));
+                        const vy_ims = @shuffle(meta.Scalar(R), vy_casted, undefined, maskDupIms(base_len));
 
-                        vo[0 .. base_len * 2].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len * 2, types.Scalar(R)), vx_swap, vy_ims * maskAddSub(R, base_len), @mulAdd(@Vector(base_len * 2, types.Scalar(R)), vx_casted, vy_reals, vz_casted)));
+                        vo[0 .. base_len * 2].* = castVector(O, R, base_len, @mulAdd(@Vector(base_len * 2, meta.Scalar(R)), vx_swap, vy_ims * maskAddSub(R, base_len), @mulAdd(@Vector(base_len * 2, meta.Scalar(R)), vx_casted, vy_reals, vz_casted)));
                     },
                     .custom => unreachable,
                 },
@@ -1015,194 +1015,194 @@ pub inline fn fma_(o: anytype, x: anytype, y: anytype, z: anytype, comptime base
 /// `void`
 pub inline fn div_(o: anytype, x: anytype, y: anytype, comptime base_len: comptime_int) void {
     const O: type = @TypeOf(o[0]);
-    const X: type = if (comptime types.isManyItemPointer(@TypeOf(x))) @TypeOf(x[0]) else @TypeOf(x);
-    const Y: type = if (comptime types.isManyItemPointer(@TypeOf(y))) @TypeOf(y[0]) else @TypeOf(y);
+    const X: type = if (comptime meta.isManyItemPointer(@TypeOf(x))) @TypeOf(x[0]) else @TypeOf(x);
+    const Y: type = if (comptime meta.isManyItemPointer(@TypeOf(y))) @TypeOf(y[0]) else @TypeOf(y);
     const R: type = numeric.Div(X, Y);
 
-    const vo: [*]types.Scalar(O) = @ptrCast(o);
-    const vx: @Vector(baseToVectorLen(X, base_len), types.Scalar(X)) = if (comptime types.isManyItemPointer(@TypeOf(x)))
-        @as([*]const types.Scalar(X), @ptrCast(x))[0..baseToVectorLen(X, base_len)].*
+    const vo: [*]meta.Scalar(O) = @ptrCast(o);
+    const vx: @Vector(baseToVectorLen(X, base_len), meta.Scalar(X)) = if (comptime meta.isManyItemPointer(@TypeOf(x)))
+        @as([*]const meta.Scalar(X), @ptrCast(x))[0..baseToVectorLen(X, base_len)].*
     else
         broadcast(base_len, x);
-    const vy: @Vector(baseToVectorLen(Y, base_len), types.Scalar(Y)) = if (comptime types.isManyItemPointer(@TypeOf(y)))
-        @as([*]const types.Scalar(Y), @ptrCast(y))[0..baseToVectorLen(Y, base_len)].*
+    const vy: @Vector(baseToVectorLen(Y, base_len), meta.Scalar(Y)) = if (comptime meta.isManyItemPointer(@TypeOf(y)))
+        @as([*]const meta.Scalar(Y), @ptrCast(y))[0..baseToVectorLen(Y, base_len)].*
     else
         broadcast(base_len, y);
 
-    switch (comptime types.numericType(O)) {
-        .bool, .int, .float => switch (comptime types.numericType(X)) {
-            .bool => switch (comptime types.numericType(Y)) {
+    switch (comptime meta.numericType(O)) {
+        .bool, .int, .float => switch (comptime meta.numericType(X)) {
+            .bool => switch (comptime meta.numericType(Y)) {
                 .bool => @compileError("zsl.simd.div_: not defined for " ++ @typeName(O) ++ ", " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "\n"),
                 .int, .float => o[0..base_len].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) / castVector(R, Y, base_len, vy)),
                 .dyadic => unreachable,
                 .complex => {
                     const vy_casted = castVector(R, Y, base_len, vy);
 
-                    const c = @shuffle(types.Scalar(R), vy_casted, undefined, maskReals(base_len));
-                    const d = @shuffle(types.Scalar(R), vy_casted, undefined, maskIms(base_len));
-                    const a = castVector(types.Scalar(R), X, base_len, vx);
-                    const b: @Vector(base_len, types.Scalar(R)) = @splat(0.0);
+                    const c = @shuffle(meta.Scalar(R), vy_casted, undefined, maskReals(base_len));
+                    const d = @shuffle(meta.Scalar(R), vy_casted, undefined, maskIms(base_len));
+                    const a = castVector(meta.Scalar(R), X, base_len, vx);
+                    const b: @Vector(base_len, meta.Scalar(R)) = @splat(0.0);
 
                     const is_d_less = @abs(d) < @abs(c);
 
-                    const denom_major = @select(types.Scalar(R), is_d_less, c, d);
-                    const denom_minor = @select(types.Scalar(R), is_d_less, d, c);
+                    const denom_major = @select(meta.Scalar(R), is_d_less, c, d);
+                    const denom_minor = @select(meta.Scalar(R), is_d_less, d, c);
 
-                    const num_re_major = @select(types.Scalar(R), is_d_less, a, b);
-                    const num_re_minor = @select(types.Scalar(R), is_d_less, b, a);
+                    const num_re_major = @select(meta.Scalar(R), is_d_less, a, b);
+                    const num_re_minor = @select(meta.Scalar(R), is_d_less, b, a);
 
                     const r = denom_minor / denom_major;
-                    const den = @mulAdd(@Vector(base_len, types.Scalar(R)), r, denom_minor, denom_major);
+                    const den = @mulAdd(@Vector(base_len, meta.Scalar(R)), r, denom_minor, denom_major);
 
-                    const res_re_unscaled = @mulAdd(@Vector(base_len, types.Scalar(R)), r, num_re_minor, num_re_major);
+                    const res_re_unscaled = @mulAdd(@Vector(base_len, meta.Scalar(R)), r, num_re_minor, num_re_major);
                     const res_re = res_re_unscaled / den;
 
-                    o[0..base_len].* = castVector(O, types.Scalar(R), base_len, res_re);
+                    o[0..base_len].* = castVector(O, meta.Scalar(R), base_len, res_re);
                 },
                 .custom => unreachable,
             },
-            .int, .float => switch (comptime types.numericType(Y)) {
+            .int, .float => switch (comptime meta.numericType(Y)) {
                 .bool, .int, .float => o[0..base_len].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) / castVector(R, Y, base_len, vy)),
                 .dyadic => unreachable,
                 .complex => {
                     const vy_casted = castVector(R, Y, base_len, vy);
 
-                    const c = @shuffle(types.Scalar(R), vy_casted, undefined, maskReals(base_len));
-                    const d = @shuffle(types.Scalar(R), vy_casted, undefined, maskIms(base_len));
-                    const a = castVector(types.Scalar(R), X, base_len, vx);
-                    const b: @Vector(base_len, types.Scalar(R)) = @splat(0.0);
+                    const c = @shuffle(meta.Scalar(R), vy_casted, undefined, maskReals(base_len));
+                    const d = @shuffle(meta.Scalar(R), vy_casted, undefined, maskIms(base_len));
+                    const a = castVector(meta.Scalar(R), X, base_len, vx);
+                    const b: @Vector(base_len, meta.Scalar(R)) = @splat(0.0);
 
                     const is_d_less = @abs(d) < @abs(c);
 
-                    const denom_major = @select(types.Scalar(R), is_d_less, c, d);
-                    const denom_minor = @select(types.Scalar(R), is_d_less, d, c);
+                    const denom_major = @select(meta.Scalar(R), is_d_less, c, d);
+                    const denom_minor = @select(meta.Scalar(R), is_d_less, d, c);
 
-                    const num_re_major = @select(types.Scalar(R), is_d_less, a, b);
-                    const num_re_minor = @select(types.Scalar(R), is_d_less, b, a);
+                    const num_re_major = @select(meta.Scalar(R), is_d_less, a, b);
+                    const num_re_minor = @select(meta.Scalar(R), is_d_less, b, a);
 
                     const r = denom_minor / denom_major;
-                    const den = @mulAdd(@Vector(base_len, types.Scalar(R)), r, denom_minor, denom_major);
+                    const den = @mulAdd(@Vector(base_len, meta.Scalar(R)), r, denom_minor, denom_major);
 
-                    const res_re_unscaled = @mulAdd(@Vector(base_len, types.Scalar(R)), r, num_re_minor, num_re_major);
+                    const res_re_unscaled = @mulAdd(@Vector(base_len, meta.Scalar(R)), r, num_re_minor, num_re_major);
                     const res_re = res_re_unscaled / den;
 
-                    o[0..base_len].* = castVector(O, types.Scalar(R), base_len, res_re);
+                    o[0..base_len].* = castVector(O, meta.Scalar(R), base_len, res_re);
                 },
                 .custom => unreachable,
             },
             .dyadic => unreachable,
-            .complex => switch (comptime types.numericType(Y)) {
-                .bool, .int, .float => o[0..base_len].* = castVector(O, types.Scalar(R), base_len, castVector(types.Scalar(R), X, base_len, vx) / castVector(types.Scalar(R), Y, base_len, vy)),
+            .complex => switch (comptime meta.numericType(Y)) {
+                .bool, .int, .float => o[0..base_len].* = castVector(O, meta.Scalar(R), base_len, castVector(meta.Scalar(R), X, base_len, vx) / castVector(meta.Scalar(R), Y, base_len, vy)),
                 .dyadic => unreachable,
                 .complex => {
                     const vx_casted = castVector(R, X, base_len, vx);
                     const vy_casted = castVector(R, Y, base_len, vy);
 
-                    const c = @shuffle(types.Scalar(R), vy_casted, undefined, maskReals(base_len));
-                    const d = @shuffle(types.Scalar(R), vy_casted, undefined, maskIms(base_len));
-                    const a = @shuffle(types.Scalar(R), vx_casted, undefined, maskReals(base_len));
-                    const b = @shuffle(types.Scalar(R), vx_casted, undefined, maskIms(base_len));
+                    const c = @shuffle(meta.Scalar(R), vy_casted, undefined, maskReals(base_len));
+                    const d = @shuffle(meta.Scalar(R), vy_casted, undefined, maskIms(base_len));
+                    const a = @shuffle(meta.Scalar(R), vx_casted, undefined, maskReals(base_len));
+                    const b = @shuffle(meta.Scalar(R), vx_casted, undefined, maskIms(base_len));
 
                     const is_d_less = @abs(d) < @abs(c);
 
-                    const denom_major = @select(types.Scalar(R), is_d_less, c, d);
-                    const denom_minor = @select(types.Scalar(R), is_d_less, d, c);
+                    const denom_major = @select(meta.Scalar(R), is_d_less, c, d);
+                    const denom_minor = @select(meta.Scalar(R), is_d_less, d, c);
 
-                    const num_re_major = @select(types.Scalar(R), is_d_less, a, b);
-                    const num_re_minor = @select(types.Scalar(R), is_d_less, b, a);
+                    const num_re_major = @select(meta.Scalar(R), is_d_less, a, b);
+                    const num_re_minor = @select(meta.Scalar(R), is_d_less, b, a);
 
                     const r = denom_minor / denom_major;
-                    const den = @mulAdd(@Vector(base_len, types.Scalar(R)), r, denom_minor, denom_major);
+                    const den = @mulAdd(@Vector(base_len, meta.Scalar(R)), r, denom_minor, denom_major);
 
-                    const res_re_unscaled = @mulAdd(@Vector(base_len, types.Scalar(R)), r, num_re_minor, num_re_major);
+                    const res_re_unscaled = @mulAdd(@Vector(base_len, meta.Scalar(R)), r, num_re_minor, num_re_major);
                     const res_re = res_re_unscaled / den;
 
-                    o[0..base_len].* = castVector(O, types.Scalar(R), base_len, res_re);
+                    o[0..base_len].* = castVector(O, meta.Scalar(R), base_len, res_re);
                 },
                 .custom => unreachable,
             },
             .custom => unreachable,
         },
         .dyadic => unreachable,
-        .complex => switch (comptime types.numericType(X)) {
-            .bool => switch (comptime types.numericType(Y)) {
+        .complex => switch (comptime meta.numericType(X)) {
+            .bool => switch (comptime meta.numericType(Y)) {
                 .bool => @compileError("zsl.simd.div: not defined for " ++ @typeName(O) ++ ", " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "\n"),
                 .int, .float => vo[0 .. base_len * 2].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) / castVector(R, Y, base_len, vy)),
                 .dyadic => unreachable,
                 .complex => {
                     const vy_casted = castVector(R, Y, base_len, vy);
 
-                    const c = @shuffle(types.Scalar(R), vy_casted, undefined, maskReals(base_len));
-                    const d = @shuffle(types.Scalar(R), vy_casted, undefined, maskIms(base_len));
-                    const a = castVector(types.Scalar(R), X, base_len, vx);
-                    const b: @Vector(base_len, types.Scalar(R)) = @splat(0.0);
+                    const c = @shuffle(meta.Scalar(R), vy_casted, undefined, maskReals(base_len));
+                    const d = @shuffle(meta.Scalar(R), vy_casted, undefined, maskIms(base_len));
+                    const a = castVector(meta.Scalar(R), X, base_len, vx);
+                    const b: @Vector(base_len, meta.Scalar(R)) = @splat(0.0);
 
                     const is_d_less = @abs(d) < @abs(c);
 
-                    const denom_major = @select(types.Scalar(R), is_d_less, c, d);
-                    const denom_minor = @select(types.Scalar(R), is_d_less, d, c);
+                    const denom_major = @select(meta.Scalar(R), is_d_less, c, d);
+                    const denom_minor = @select(meta.Scalar(R), is_d_less, d, c);
 
-                    const num_re_major = @select(types.Scalar(R), is_d_less, a, b);
-                    const num_re_minor = @select(types.Scalar(R), is_d_less, b, a);
+                    const num_re_major = @select(meta.Scalar(R), is_d_less, a, b);
+                    const num_re_minor = @select(meta.Scalar(R), is_d_less, b, a);
 
-                    const num_im_major = @select(types.Scalar(R), is_d_less, b, -a);
-                    const num_im_minor = @select(types.Scalar(R), is_d_less, -a, b);
+                    const num_im_major = @select(meta.Scalar(R), is_d_less, b, -a);
+                    const num_im_minor = @select(meta.Scalar(R), is_d_less, -a, b);
 
                     const r = denom_minor / denom_major;
-                    const den = @mulAdd(@Vector(base_len, types.Scalar(R)), r, denom_minor, denom_major);
+                    const den = @mulAdd(@Vector(base_len, meta.Scalar(R)), r, denom_minor, denom_major);
 
-                    const res_re_unscaled = @mulAdd(@Vector(base_len, types.Scalar(R)), r, num_re_minor, num_re_major);
-                    const res_im_unscaled = @mulAdd(@Vector(base_len, types.Scalar(R)), r, num_im_minor, num_im_major);
+                    const res_re_unscaled = @mulAdd(@Vector(base_len, meta.Scalar(R)), r, num_re_minor, num_re_major);
+                    const res_im_unscaled = @mulAdd(@Vector(base_len, meta.Scalar(R)), r, num_im_minor, num_im_major);
 
                     const res_re = res_re_unscaled / den;
                     const res_im = res_im_unscaled / den;
 
-                    const vres = @shuffle(types.Scalar(R), res_re, res_im, maskZip(base_len));
+                    const vres = @shuffle(meta.Scalar(R), res_re, res_im, maskZip(base_len));
                     vo[0 .. base_len * 2].* = castVector(O, R, base_len, vres);
                 },
                 .custom => unreachable,
             },
-            .int, .float => switch (comptime types.numericType(Y)) {
+            .int, .float => switch (comptime meta.numericType(Y)) {
                 .bool, .int, .float => vo[0 .. base_len * 2].* = castVector(O, R, base_len, castVector(R, X, base_len, vx) / castVector(R, Y, base_len, vy)),
                 .dyadic => unreachable,
                 .complex => {
                     const vy_casted = castVector(R, Y, base_len, vy);
 
-                    const c = @shuffle(types.Scalar(R), vy_casted, undefined, maskReals(base_len));
-                    const d = @shuffle(types.Scalar(R), vy_casted, undefined, maskIms(base_len));
-                    const a = castVector(types.Scalar(R), X, base_len, vx);
-                    const b: @Vector(base_len, types.Scalar(R)) = @splat(0.0);
+                    const c = @shuffle(meta.Scalar(R), vy_casted, undefined, maskReals(base_len));
+                    const d = @shuffle(meta.Scalar(R), vy_casted, undefined, maskIms(base_len));
+                    const a = castVector(meta.Scalar(R), X, base_len, vx);
+                    const b: @Vector(base_len, meta.Scalar(R)) = @splat(0.0);
 
                     const is_d_less = @abs(d) < @abs(c);
 
-                    const denom_major = @select(types.Scalar(R), is_d_less, c, d);
-                    const denom_minor = @select(types.Scalar(R), is_d_less, d, c);
+                    const denom_major = @select(meta.Scalar(R), is_d_less, c, d);
+                    const denom_minor = @select(meta.Scalar(R), is_d_less, d, c);
 
-                    const num_re_major = @select(types.Scalar(R), is_d_less, a, b);
-                    const num_re_minor = @select(types.Scalar(R), is_d_less, b, a);
+                    const num_re_major = @select(meta.Scalar(R), is_d_less, a, b);
+                    const num_re_minor = @select(meta.Scalar(R), is_d_less, b, a);
 
-                    const num_im_major = @select(types.Scalar(R), is_d_less, b, -a);
-                    const num_im_minor = @select(types.Scalar(R), is_d_less, -a, b);
+                    const num_im_major = @select(meta.Scalar(R), is_d_less, b, -a);
+                    const num_im_minor = @select(meta.Scalar(R), is_d_less, -a, b);
 
                     const r = denom_minor / denom_major;
-                    const den = @mulAdd(@Vector(base_len, types.Scalar(R)), r, denom_minor, denom_major);
+                    const den = @mulAdd(@Vector(base_len, meta.Scalar(R)), r, denom_minor, denom_major);
 
-                    const res_re_unscaled = @mulAdd(@Vector(base_len, types.Scalar(R)), r, num_re_minor, num_re_major);
-                    const res_im_unscaled = @mulAdd(@Vector(base_len, types.Scalar(R)), r, num_im_minor, num_im_major);
+                    const res_re_unscaled = @mulAdd(@Vector(base_len, meta.Scalar(R)), r, num_re_minor, num_re_major);
+                    const res_im_unscaled = @mulAdd(@Vector(base_len, meta.Scalar(R)), r, num_im_minor, num_im_major);
 
                     const res_re = res_re_unscaled / den;
                     const res_im = res_im_unscaled / den;
 
-                    const vres = @shuffle(types.Scalar(R), res_re, res_im, maskZip(base_len));
+                    const vres = @shuffle(meta.Scalar(R), res_re, res_im, maskZip(base_len));
                     vo[0 .. base_len * 2].* = castVector(O, R, base_len, vres);
                 },
                 .custom => unreachable,
             },
             .dyadic => unreachable,
-            .complex => switch (comptime types.numericType(Y)) {
+            .complex => switch (comptime meta.numericType(Y)) {
                 .bool, .int, .float => {
                     const vx_casted = castVector(R, X, base_len, vx);
-                    const vy_dup = @shuffle(types.Scalar(R), castVector(types.Scalar(R), Y, base_len, vy), undefined, maskDupScalar(base_len));
+                    const vy_dup = @shuffle(meta.Scalar(R), castVector(meta.Scalar(R), Y, base_len, vy), undefined, maskDupScalar(base_len));
 
                     vo[0 .. base_len * 2].* = castVector(O, R, base_len, vx_casted / vy_dup);
                 },
@@ -1211,32 +1211,32 @@ pub inline fn div_(o: anytype, x: anytype, y: anytype, comptime base_len: compti
                     const vx_casted = castVector(R, X, base_len, vx);
                     const vy_casted = castVector(R, Y, base_len, vy);
 
-                    const c = @shuffle(types.Scalar(R), vy_casted, undefined, maskReals(base_len));
-                    const d = @shuffle(types.Scalar(R), vy_casted, undefined, maskIms(base_len));
-                    const a = @shuffle(types.Scalar(R), vx_casted, undefined, maskReals(base_len));
-                    const b = @shuffle(types.Scalar(R), vx_casted, undefined, maskIms(base_len));
+                    const c = @shuffle(meta.Scalar(R), vy_casted, undefined, maskReals(base_len));
+                    const d = @shuffle(meta.Scalar(R), vy_casted, undefined, maskIms(base_len));
+                    const a = @shuffle(meta.Scalar(R), vx_casted, undefined, maskReals(base_len));
+                    const b = @shuffle(meta.Scalar(R), vx_casted, undefined, maskIms(base_len));
 
                     const is_d_less = @abs(d) < @abs(c);
 
-                    const denom_major = @select(types.Scalar(R), is_d_less, c, d);
-                    const denom_minor = @select(types.Scalar(R), is_d_less, d, c);
+                    const denom_major = @select(meta.Scalar(R), is_d_less, c, d);
+                    const denom_minor = @select(meta.Scalar(R), is_d_less, d, c);
 
-                    const num_re_major = @select(types.Scalar(R), is_d_less, a, b);
-                    const num_re_minor = @select(types.Scalar(R), is_d_less, b, a);
+                    const num_re_major = @select(meta.Scalar(R), is_d_less, a, b);
+                    const num_re_minor = @select(meta.Scalar(R), is_d_less, b, a);
 
-                    const num_im_major = @select(types.Scalar(R), is_d_less, b, -a);
-                    const num_im_minor = @select(types.Scalar(R), is_d_less, -a, b);
+                    const num_im_major = @select(meta.Scalar(R), is_d_less, b, -a);
+                    const num_im_minor = @select(meta.Scalar(R), is_d_less, -a, b);
 
                     const r = denom_minor / denom_major;
-                    const den = @mulAdd(@Vector(base_len, types.Scalar(R)), r, denom_minor, denom_major);
+                    const den = @mulAdd(@Vector(base_len, meta.Scalar(R)), r, denom_minor, denom_major);
 
-                    const res_re_unscaled = @mulAdd(@Vector(base_len, types.Scalar(R)), r, num_re_minor, num_re_major);
-                    const res_im_unscaled = @mulAdd(@Vector(base_len, types.Scalar(R)), r, num_im_minor, num_im_major);
+                    const res_re_unscaled = @mulAdd(@Vector(base_len, meta.Scalar(R)), r, num_re_minor, num_re_major);
+                    const res_im_unscaled = @mulAdd(@Vector(base_len, meta.Scalar(R)), r, num_im_minor, num_im_major);
 
                     const res_re = res_re_unscaled / den;
                     const res_im = res_im_unscaled / den;
 
-                    vo[0 .. base_len * 2].* = castVector(O, R, base_len, @shuffle(types.Scalar(R), res_re, res_im, maskZip(base_len)));
+                    vo[0 .. base_len * 2].* = castVector(O, R, base_len, @shuffle(meta.Scalar(R), res_re, res_im, maskZip(base_len)));
                 },
                 .custom => unreachable,
             },

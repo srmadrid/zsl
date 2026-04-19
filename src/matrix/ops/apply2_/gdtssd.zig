@@ -1,18 +1,18 @@
 const std = @import("std");
 
-const types = @import("../../../types.zig");
+const meta = @import("../../../meta.zig");
 const numeric = @import("../../../numeric.zig");
 const matrix = @import("../../../matrix.zig");
 
 pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
-    const O: type = types.Child(@TypeOf(o));
+    const O: type = meta.Child(@TypeOf(o));
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 
-    if (comptime types.layoutOf(O) == .col_major) {
+    if (comptime meta.layoutOf(O) == .col_major) {
         var j: usize = 0;
         while (j < o.cols) : (j += 1) {
-            if (comptime types.uploOf(Y) == .upper) {
+            if (comptime meta.uploOf(Y) == .upper) {
                 var i: usize = 0;
                 while (i < j) : (i += 1) {
                     if (comptime op_ == numeric.add_)
@@ -21,8 +21,8 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
                         numeric.set(&o.data[o._index(i, j)], numeric.neg(y.data[y._index(i, j)]));
                 }
 
-                if (comptime types.diagOf(X) == .unit) {
-                    op_(&o.data[o._index(j, j)], numeric.one(types.Numeric(X)), y.data[y._index(j, j)]);
+                if (comptime meta.diagOf(X) == .unit) {
+                    op_(&o.data[o._index(j, j)], numeric.one(meta.Numeric(X)), y.data[y._index(j, j)]);
                 } else {
                     if (comptime op_ == numeric.add_)
                         numeric.set(&o.data[o._index(j, j)], y.data[y._index(j, j)])
@@ -46,8 +46,8 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
                         numeric.set(&o.data[o._index(i, j)], numeric.neg(y.data[y._index(j, i)]));
                 }
 
-                if (comptime types.diagOf(X) == .unit) {
-                    op_(&o.data[o._index(j, j)], numeric.one(types.Numeric(X)), y.data[y._index(j, j)]);
+                if (comptime meta.diagOf(X) == .unit) {
+                    op_(&o.data[o._index(j, j)], numeric.one(meta.Numeric(X)), y.data[y._index(j, j)]);
                 } else {
                     if (comptime op_ == numeric.add_)
                         numeric.set(&o.data[o._index(j, j)], y.data[y._index(j, j)])
@@ -67,7 +67,7 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
     } else {
         var i: usize = 0;
         while (i < o.rows) : (i += 1) {
-            if (comptime types.uploOf(Y) == .lower) {
+            if (comptime meta.uploOf(Y) == .lower) {
                 var j: usize = 0;
                 while (j < i) : (j += 1) {
                     if (comptime op_ == numeric.add_)
@@ -76,8 +76,8 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
                         numeric.set(&o.data[o._index(i, j)], numeric.neg(y.data[y._index(i, j)]));
                 }
 
-                if (comptime types.diagOf(X) == .unit) {
-                    op_(&o.data[o._index(i, i)], numeric.one(types.Numeric(X)), y.data[y._index(i, i)]);
+                if (comptime meta.diagOf(X) == .unit) {
+                    op_(&o.data[o._index(i, i)], numeric.one(meta.Numeric(X)), y.data[y._index(i, i)]);
                 } else {
                     if (comptime op_ == numeric.add_)
                         numeric.set(&o.data[o._index(i, i)], y.data[y._index(i, i)])
@@ -101,8 +101,8 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
                         numeric.set(&o.data[o._index(i, j)], numeric.neg(y.data[y._index(j, i)]));
                 }
 
-                if (comptime types.diagOf(X) == .unit) {
-                    op_(&o.data[o._index(i, i)], numeric.one(types.Numeric(X)), y.data[y._index(i, i)]);
+                if (comptime meta.diagOf(X) == .unit) {
+                    op_(&o.data[o._index(i, i)], numeric.one(meta.Numeric(X)), y.data[y._index(i, i)]);
                 } else {
                     if (comptime op_ == numeric.add_)
                         numeric.set(&o.data[o._index(i, i)], y.data[y._index(i, i)])
@@ -121,7 +121,7 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
         }
     }
 
-    if (comptime types.layoutOf(X) == .col_major) {
+    if (comptime meta.layoutOf(X) == .col_major) {
         var j: usize = 0;
         while (j < x.cols) : (j += 1) {
             var p: usize = x.ptr[j];
@@ -129,9 +129,9 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
                 const ty = if (x.idx[p] == j)
                     y.data[y._index(j, j)]
                 else if (x.idx[p] < j)
-                    (if (comptime types.uploOf(Y) == .upper) y.data[y._index(x.idx[p], j)] else y.data[y._index(j, x.idx[p])])
+                    (if (comptime meta.uploOf(Y) == .upper) y.data[y._index(x.idx[p], j)] else y.data[y._index(j, x.idx[p])])
                 else
-                    (if (comptime types.uploOf(Y) == .lower) y.data[y._index(x.idx[p], j)] else y.data[y._index(j, x.idx[p])]);
+                    (if (comptime meta.uploOf(Y) == .lower) y.data[y._index(x.idx[p], j)] else y.data[y._index(j, x.idx[p])]);
 
                 op_(&o.data[o._index(x.idx[p], j)], x.data[p], ty);
             }
@@ -144,9 +144,9 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
                 const ty = if (i == x.idx[p])
                     y.data[y._index(i, i)]
                 else if (i < x.idx[p])
-                    (if (comptime types.uploOf(Y) == .upper) y.data[y._index(i, x.idx[p])] else y.data[y._index(x.idx[p], i)])
+                    (if (comptime meta.uploOf(Y) == .upper) y.data[y._index(i, x.idx[p])] else y.data[y._index(x.idx[p], i)])
                 else
-                    (if (comptime types.uploOf(Y) == .lower) y.data[y._index(i, x.idx[p])] else y.data[y._index(x.idx[p], i)]);
+                    (if (comptime meta.uploOf(Y) == .lower) y.data[y._index(i, x.idx[p])] else y.data[y._index(x.idx[p], i)]);
 
                 op_(&o.data[o._index(i, x.idx[p])], x.data[p], ty);
             }

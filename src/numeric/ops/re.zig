@@ -1,4 +1,4 @@
-const types = @import("../../types.zig");
+const meta = @import("../../meta.zig");
 
 const int = @import("../../int.zig");
 const float = @import("../../float.zig");
@@ -8,17 +8,17 @@ const complex = @import("../../complex.zig");
 const numeric = @import("../../numeric.zig");
 
 pub fn Re(X: type) type {
-    comptime if (!types.isNumeric(X))
+    comptime if (!meta.isNumeric(X))
         @compileError("zsl.numeric.re: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
 
-    switch (comptime types.numericType(X)) {
+    switch (comptime meta.numericType(X)) {
         .bool => return X,
         .int => return X,
         .float => return X,
         .dyadic => return X,
-        .complex => return types.Scalar(X),
+        .complex => return meta.Scalar(X),
         .custom => {
-            if (comptime !types.hasMethod(X, "Re", fn (type) type, &.{X}))
+            if (comptime !meta.hasMethod(X, "Re", fn (type) type, &.{X}))
                 @compileError("zsl.numeric.re: " ++ @typeName(X) ++ " must implement `fn Re(type) type`");
 
             return X.Re(X);
@@ -54,14 +54,14 @@ pub fn re(x: anytype) numeric.Re(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Re(X);
 
-    switch (comptime types.numericType(X)) {
+    switch (comptime meta.numericType(X)) {
         .bool => return x,
         .int => return x,
         .float => return x,
         .dyadic => return x,
         .complex => return x.re,
         .custom => {
-            const Impl: type = comptime types.anyHasMethod(
+            const Impl: type = comptime meta.anyHasMethod(
                 &.{ R, X },
                 "re",
                 fn (X) numeric.Re(X),

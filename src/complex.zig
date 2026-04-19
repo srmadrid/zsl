@@ -2,7 +2,7 @@
 
 const complex = @This();
 
-const types = @import("types.zig");
+const meta = @import("meta.zig");
 const numeric = @import("numeric.zig");
 
 /// 32-bit complex type.
@@ -19,7 +19,7 @@ pub const cf128 = Complex(f128);
 pub const comptime_complex = Complex(comptime_float);
 
 pub fn Complex(comptime N: type) type {
-    if (!types.isNumeric(N) or types.isIntegral(N))
+    if (!meta.isNumeric(N) or meta.isIntegral(N))
         @compileError("zsl.Complex: N must be a non-integral numeric type, got \n\tN = " ++ @typeName(N) ++ "\n");
 
     return extern struct {
@@ -30,7 +30,7 @@ pub fn Complex(comptime N: type) type {
         pub const is_numeric = true;
         pub const is_complex = true;
         pub const is_signed = true;
-        pub const is_custom = types.isCustomType(N);
+        pub const is_custom = meta.isCustomType(N);
 
         // Scalar type
         pub const Scalar = N;
@@ -51,10 +51,10 @@ pub fn Complex(comptime N: type) type {
         pub fn initValue(value: anytype) Complex(N) {
             const V: type = @TypeOf(value);
 
-            comptime if (!types.isNumeric(V))
+            comptime if (!meta.isNumeric(V))
                 @compileError("zsl.Complex(N).initValue: value must be a numeric, got \n\tvalue: " ++ @typeName(V) ++ "\n");
 
-            switch (comptime types.numericType(V)) {
+            switch (comptime meta.numericType(V)) {
                 .bool, .int, .float, .dyadic => return .{
                     .re = numeric.cast(N, value),
                     .im = numeric.zero(N),
@@ -193,9 +193,9 @@ pub fn Complex(comptime N: type) type {
 pub const Coerce = @import("complex/coerce.zig").Coerce;
 
 pub fn Add(comptime X: type, comptime Y: type) type {
-    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
-        !types.numericType(X).le(.complex) or !types.numericType(Y).le(.complex) or
-        (types.numericType(X) != .complex and types.numericType(Y) != .complex))
+    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y) or
+        !meta.numericType(X).le(.complex) or !meta.numericType(Y).le(.complex) or
+        (meta.numericType(X) != .complex and meta.numericType(Y) != .complex))
         @compileError("zsl.complex.add: at least one of x or y must be a complex, the other must be a bool, an int, a float, a dyadic or a complex, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
@@ -223,13 +223,13 @@ pub fn add(x: anytype, y: anytype) complex.Add(@TypeOf(x), @TypeOf(y)) {
     const Y: type = @TypeOf(y);
     const R: type = Add(X, Y);
 
-    switch (comptime types.numericType(X)) {
-        .bool, .int, .float, .dyadic => switch (comptime types.numericType(Y)) {
-            .complex => return .addReal(numeric.cast(R, y), numeric.cast(types.Scalar(R), x)),
+    switch (comptime meta.numericType(X)) {
+        .bool, .int, .float, .dyadic => switch (comptime meta.numericType(Y)) {
+            .complex => return .addReal(numeric.cast(R, y), numeric.cast(meta.Scalar(R), x)),
             else => unreachable,
         },
-        .complex => switch (comptime types.numericType(Y)) {
-            .bool, .int, .float, .dyadic => return .addReal(numeric.cast(R, x), numeric.cast(types.Scalar(R), y)),
+        .complex => switch (comptime meta.numericType(Y)) {
+            .bool, .int, .float, .dyadic => return .addReal(numeric.cast(R, x), numeric.cast(meta.Scalar(R), y)),
             .complex => return .add(numeric.cast(R, x), numeric.cast(R, y)),
             .custom => unreachable,
         },
@@ -238,9 +238,9 @@ pub fn add(x: anytype, y: anytype) complex.Add(@TypeOf(x), @TypeOf(y)) {
 }
 
 pub fn Sub(comptime X: type, comptime Y: type) type {
-    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
-        !types.numericType(X).le(.complex) or !types.numericType(Y).le(.complex) or
-        (types.numericType(X) != .complex and types.numericType(Y) != .complex))
+    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y) or
+        !meta.numericType(X).le(.complex) or !meta.numericType(Y).le(.complex) or
+        (meta.numericType(X) != .complex and meta.numericType(Y) != .complex))
         @compileError("zsl.complex.sub: at least one of x or y to be a complex, the other must be a bool, an int, a float or a complex, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
@@ -269,13 +269,13 @@ pub fn sub(x: anytype, y: anytype) Sub(@TypeOf(x), @TypeOf(y)) {
     const Y: type = @TypeOf(y);
     const R: type = Sub(X, Y);
 
-    switch (comptime types.numericType(X)) {
-        .bool, .int, .float, .dyadic => switch (comptime types.numericType(Y)) {
-            .complex => return .addReal(numeric.cast(R, y).neg(), numeric.cast(types.Scalar(R), x)),
+    switch (comptime meta.numericType(X)) {
+        .bool, .int, .float, .dyadic => switch (comptime meta.numericType(Y)) {
+            .complex => return .addReal(numeric.cast(R, y).neg(), numeric.cast(meta.Scalar(R), x)),
             else => unreachable,
         },
-        .complex => switch (comptime types.numericType(Y)) {
-            .bool, .int, .float, .dyadic => return .subReal(numeric.cast(R, x), numeric.cast(types.Scalar(R), y)),
+        .complex => switch (comptime meta.numericType(Y)) {
+            .bool, .int, .float, .dyadic => return .subReal(numeric.cast(R, x), numeric.cast(meta.Scalar(R), y)),
             .complex => return .sub(numeric.cast(R, x), numeric.cast(R, y)),
             .custom => unreachable,
         },
@@ -284,9 +284,9 @@ pub fn sub(x: anytype, y: anytype) Sub(@TypeOf(x), @TypeOf(y)) {
 }
 
 pub fn Mul(comptime X: type, comptime Y: type) type {
-    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
-        !types.numericType(X).le(.complex) or !types.numericType(Y).le(.complex) or
-        (types.numericType(X) != .complex and types.numericType(Y) != .complex))
+    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y) or
+        !meta.numericType(X).le(.complex) or !meta.numericType(Y).le(.complex) or
+        (meta.numericType(X) != .complex and meta.numericType(Y) != .complex))
         @compileError("zsl.complex.mul: at least one of x or y to be a complex, the other must be a bool, an int, a float or a complex, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
@@ -315,13 +315,13 @@ pub fn mul(x: anytype, y: anytype) Mul(@TypeOf(x), @TypeOf(y)) {
     const Y: type = @TypeOf(y);
     const R: type = Mul(X, Y);
 
-    switch (comptime types.numericType(X)) {
-        .bool, .int, .float, .dyadic => switch (comptime types.numericType(Y)) {
-            .complex => return .mulReal(numeric.cast(R, y), numeric.cast(types.Scalar(R), x)),
+    switch (comptime meta.numericType(X)) {
+        .bool, .int, .float, .dyadic => switch (comptime meta.numericType(Y)) {
+            .complex => return .mulReal(numeric.cast(R, y), numeric.cast(meta.Scalar(R), x)),
             else => unreachable,
         },
-        .complex => switch (comptime types.numericType(Y)) {
-            .bool, .int, .float, .dyadic => return .mulReal(numeric.cast(R, x), numeric.cast(types.Scalar(R), y)),
+        .complex => switch (comptime meta.numericType(Y)) {
+            .bool, .int, .float, .dyadic => return .mulReal(numeric.cast(R, x), numeric.cast(meta.Scalar(R), y)),
             .complex => return .mul(numeric.cast(R, x), numeric.cast(R, y)),
             .custom => unreachable,
         },
@@ -330,9 +330,9 @@ pub fn mul(x: anytype, y: anytype) Mul(@TypeOf(x), @TypeOf(y)) {
 }
 
 pub fn Div(comptime X: type, comptime Y: type) type {
-    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
-        !types.numericType(X).le(.complex) or !types.numericType(Y).le(.complex) or
-        (types.numericType(X) != .complex and types.numericType(Y) != .complex))
+    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y) or
+        !meta.numericType(X).le(.complex) or !meta.numericType(Y).le(.complex) or
+        (meta.numericType(X) != .complex and meta.numericType(Y) != .complex))
         @compileError("zsl.complex.div: at least one of x or y to be a complex, the other must be a bool, an int, a float or a complex, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
@@ -360,13 +360,13 @@ pub fn div(x: anytype, y: anytype) Div(@TypeOf(x), @TypeOf(y)) {
     const Y: type = @TypeOf(y);
     const R: type = Div(X, Y);
 
-    switch (comptime types.numericType(X)) {
-        .bool, .int, .float, .dyadic => switch (comptime types.numericType(Y)) {
+    switch (comptime meta.numericType(X)) {
+        .bool, .int, .float, .dyadic => switch (comptime meta.numericType(Y)) {
             .complex => return .div(numeric.cast(R, x), numeric.cast(R, y)),
             else => unreachable,
         },
-        .complex => switch (comptime types.numericType(Y)) {
-            .bool, .int, .float, .dyadic => return .divReal(numeric.cast(R, x), numeric.cast(types.Scalar(R), y)),
+        .complex => switch (comptime meta.numericType(Y)) {
+            .bool, .int, .float, .dyadic => return .divReal(numeric.cast(R, x), numeric.cast(meta.Scalar(R), y)),
             .complex => return .div(numeric.cast(R, x), numeric.cast(R, y)),
             .custom => unreachable,
         },
@@ -393,19 +393,19 @@ pub fn eq(x: anytype, y: anytype) bool {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 
-    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
-        !types.numericType(X).le(.complex) or !types.numericType(Y).le(.complex) or
-        (types.numericType(X) != .complex and types.numericType(Y) != .complex))
+    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y) or
+        !meta.numericType(X).le(.complex) or !meta.numericType(Y).le(.complex) or
+        (meta.numericType(X) != .complex and meta.numericType(Y) != .complex))
         @compileError("zsl.complex.eq: at least one of x or y to be a complex, the other must be a bool, an int, a float or a complex, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    switch (comptime types.numericType(X)) {
-        .bool, .int, .float, .dyadic => switch (comptime types.numericType(Y)) {
-            .complex => return numeric.eq(x, y.re) and numeric.eq(numeric.zero(types.Scalar(Y)), y.im),
+    switch (comptime meta.numericType(X)) {
+        .bool, .int, .float, .dyadic => switch (comptime meta.numericType(Y)) {
+            .complex => return numeric.eq(x, y.re) and numeric.eq(numeric.zero(meta.Scalar(Y)), y.im),
             else => unreachable,
         },
-        .complex => switch (comptime types.numericType(Y)) {
-            .bool, .int, .float, .dyadic => return numeric.eq(x.re, y) and numeric.eq(x.im, numeric.zero(types.Scalar(X))),
+        .complex => switch (comptime meta.numericType(Y)) {
+            .bool, .int, .float, .dyadic => return numeric.eq(x.re, y) and numeric.eq(x.im, numeric.zero(meta.Scalar(X))),
             .complex => return numeric.eq(x.re, y.re) and numeric.eq(x.im, y.im),
             .custom => unreachable,
         },
@@ -432,19 +432,19 @@ pub fn ne(x: anytype, y: anytype) bool {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 
-    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
-        !types.numericType(X).le(.complex) or !types.numericType(Y).le(.complex) or
-        (types.numericType(X) != .complex and types.numericType(Y) != .complex))
+    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y) or
+        !meta.numericType(X).le(.complex) or !meta.numericType(Y).le(.complex) or
+        (meta.numericType(X) != .complex and meta.numericType(Y) != .complex))
         @compileError("zsl.complex.ne: at least one of x or y to be a complex, the other must be a bool, an int, a float or a complex, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    switch (comptime types.numericType(X)) {
-        .bool, .int, .float, .dyadic => switch (comptime types.numericType(Y)) {
-            .complex => return numeric.ne(x, y.re) or numeric.ne(numeric.zero(types.Scalar(Y)), y.im),
+    switch (comptime meta.numericType(X)) {
+        .bool, .int, .float, .dyadic => switch (comptime meta.numericType(Y)) {
+            .complex => return numeric.ne(x, y.re) or numeric.ne(numeric.zero(meta.Scalar(Y)), y.im),
             else => unreachable,
         },
-        .complex => switch (comptime types.numericType(Y)) {
-            .bool, .int, .float, .dyadic => return numeric.ne(x.re, y) or numeric.ne(x.im, numeric.zero(types.Scalar(X))),
+        .complex => switch (comptime meta.numericType(Y)) {
+            .bool, .int, .float, .dyadic => return numeric.ne(x.re, y) or numeric.ne(x.im, numeric.zero(meta.Scalar(X))),
             .complex => return numeric.ne(x.re, y.re) or numeric.ne(x.im, y.im),
             .custom => unreachable,
         },

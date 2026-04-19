@@ -1,4 +1,4 @@
-const types = @import("../../types.zig");
+const meta = @import("../../meta.zig");
 
 const int = @import("../../int.zig");
 const float = @import("../../float.zig");
@@ -8,17 +8,17 @@ const complex = @import("../../complex.zig");
 const numeric = @import("../../numeric.zig");
 
 pub fn Sign(X: type) type {
-    comptime if (!types.isNumeric(X))
+    comptime if (!meta.isNumeric(X))
         @compileError("zsl.numeric.sign: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
 
-    switch (comptime types.numericType(X)) {
+    switch (comptime meta.numericType(X)) {
         .bool => return X,
         .int => return X,
         .float => return X,
         .dyadic => return X,
         .complex => return X,
         .custom => {
-            if (comptime !types.hasMethod(X, "Sign", fn (type) type, &.{X}))
+            if (comptime !meta.hasMethod(X, "Sign", fn (type) type, &.{X}))
                 @compileError("zsl.numeric.sign: " ++ @typeName(X) ++ " must implement `fn Sign(type) type`");
 
             return X.Sign(X);
@@ -54,14 +54,14 @@ pub fn sign(x: anytype) numeric.Sign(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Sign(X);
 
-    switch (comptime types.numericType(X)) {
+    switch (comptime meta.numericType(X)) {
         .bool => return x,
         .int => return int.sign(x),
         .float => return float.sign(x),
         .dyadic => return dyadic.sign(x),
         .complex => return complex.sign(x),
         .custom => {
-            const Impl: type = comptime types.anyHasMethod(
+            const Impl: type = comptime meta.anyHasMethod(
                 &.{ R, X },
                 "sign",
                 fn (X) numeric.Sign(X),

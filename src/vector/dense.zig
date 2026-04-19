@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const types = @import("../types.zig");
+const meta = @import("../meta.zig");
 const numeric = @import("../numeric.zig");
 
 const vector = @import("../vector.zig");
@@ -11,7 +11,7 @@ const int = @import("../int.zig");
 /// Dense vector type, represented as a contiguous array of elements of type
 /// `N` and a stride.
 pub fn Dense(N: type) type {
-    if (!types.isNumeric(N))
+    if (!meta.isNumeric(N))
         @compileError("zsl.vector.Dense: N must be a numeric type, got \n\tN = " ++ @typeName(N) ++ "\n");
 
     return struct {
@@ -141,7 +141,7 @@ pub fn Dense(N: type) type {
 
             var i: usize = 0;
             while (i < len) : (i += 1) {
-                vec.data[i] = if (comptime @typeInfo(types.ReturnTypeFromInputs(@"fn", &types.structToArrayOfTypes(Args))) == .error_union)
+                vec.data[i] = if (comptime @typeInfo(meta.ReturnTypeFromInputs(@"fn", &meta.structToArrayOfTypes(Args))) == .error_union)
                     try @call(.auto, @"fn", args)
                 else
                     @call(.auto, @"fn", args);

@@ -1,4 +1,4 @@
-const types = @import("../../types.zig");
+const meta = @import("../../meta.zig");
 
 const int = @import("../../int.zig");
 const float = @import("../../float.zig");
@@ -32,12 +32,12 @@ pub fn eq(x: anytype, y: anytype) bool {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 
-    comptime if (!types.isNumeric(X) or !types.isNumeric(Y))
+    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y))
         @compileError("zsl.numeric.eq: x and y must be numerics, got \n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    if (comptime types.isCustomType(X)) {
-        if (comptime types.isCustomType(Y)) { // X and Y both custom
-            const Impl: type = comptime types.anyHasMethod(
+    if (comptime meta.isCustomType(X)) {
+        if (comptime meta.isCustomType(Y)) { // X and Y both custom
+            const Impl: type = comptime meta.anyHasMethod(
                 &.{ X, Y },
                 "eq",
                 fn (X, Y) bool,
@@ -47,25 +47,25 @@ pub fn eq(x: anytype, y: anytype) bool {
 
             return Impl.eq(x, y);
         } else { // only X custom
-            comptime if (!types.hasMethod(X, "eq", fn (X, Y) bool, &.{ X, Y }))
+            comptime if (!meta.hasMethod(X, "eq", fn (X, Y) bool, &.{ X, Y }))
                 @compileError("zsl.numeric.eq: " ++ @typeName(X) ++ " must implement `fn eq(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
 
             return X.eq(x, y);
         }
-    } else if (comptime types.isCustomType(Y)) { // only Y custom
-        comptime if (!types.hasMethod(Y, "eq", fn (X, Y) bool, &.{ X, Y }))
+    } else if (comptime meta.isCustomType(Y)) { // only Y custom
+        comptime if (!meta.hasMethod(Y, "eq", fn (X, Y) bool, &.{ X, Y }))
             @compileError("zsl.numeric.eq: " ++ @typeName(Y) ++ " must implement `fn eq(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
 
         return Y.eq(x, y);
     }
 
-    switch (comptime types.numericType(X)) {
-        .bool => switch (comptime types.numericType(Y)) {
+    switch (comptime meta.numericType(X)) {
+        .bool => switch (comptime meta.numericType(Y)) {
             .bool => return x == y,
             .int => return int.eq(x, y),
             .float => return float.eq(x, y),
             .dyadic => return dyadic.eq(x, y),
-            .complex => switch (comptime types.numericType(types.Scalar(Y))) {
+            .complex => switch (comptime meta.numericType(meta.Scalar(Y))) {
                 .bool, .int => unreachable,
                 .float => return float.eq(x, y.re) and float.eq(numeric.zero(X), y.im),
                 .dyadic => return dyadic.eq(x, y.re) and dyadic.eq(numeric.zero(X), y.im),
@@ -73,11 +73,11 @@ pub fn eq(x: anytype, y: anytype) bool {
             },
             .custom => unreachable,
         },
-        .int => switch (comptime types.numericType(Y)) {
+        .int => switch (comptime meta.numericType(Y)) {
             .bool, .int => return int.eq(x, y),
             .float => return float.eq(x, y),
             .dyadic => return dyadic.eq(x, y),
-            .complex => switch (comptime types.numericType(types.Scalar(Y))) {
+            .complex => switch (comptime meta.numericType(meta.Scalar(Y))) {
                 .bool, .int => unreachable,
                 .float => return float.eq(x, y.re) and float.eq(numeric.zero(X), y.im),
                 .dyadic => return dyadic.eq(x, y.re) and dyadic.eq(numeric.zero(X), y.im),
@@ -85,10 +85,10 @@ pub fn eq(x: anytype, y: anytype) bool {
             },
             .custom => unreachable,
         },
-        .float => switch (comptime types.numericType(Y)) {
+        .float => switch (comptime meta.numericType(Y)) {
             .bool, .int, .float => return float.eq(x, y),
             .dyadic => return dyadic.eq(x, y),
-            .complex => switch (comptime types.numericType(types.Scalar(Y))) {
+            .complex => switch (comptime meta.numericType(meta.Scalar(Y))) {
                 .bool, .int => unreachable,
                 .float => return float.eq(x, y.re) and float.eq(numeric.zero(X), y.im),
                 .dyadic => return dyadic.eq(x, y.re) and dyadic.eq(numeric.zero(X), y.im),
@@ -96,9 +96,9 @@ pub fn eq(x: anytype, y: anytype) bool {
             },
             .custom => unreachable,
         },
-        .dyadic => switch (comptime types.numericType(Y)) {
+        .dyadic => switch (comptime meta.numericType(Y)) {
             .bool, .int, .float, .dyadic => return dyadic.eq(x, y),
-            .complex => switch (comptime types.numericType(types.Scalar(Y))) {
+            .complex => switch (comptime meta.numericType(meta.Scalar(Y))) {
                 .bool, .int => unreachable,
                 .float => return float.eq(x, y.re) and float.eq(numeric.zero(X), y.im),
                 .dyadic => return dyadic.eq(x, y.re) and dyadic.eq(numeric.zero(X), y.im),
@@ -106,12 +106,12 @@ pub fn eq(x: anytype, y: anytype) bool {
             },
             .custom => unreachable,
         },
-        .complex => switch (comptime types.numericType(types.Scalar(X))) {
+        .complex => switch (comptime meta.numericType(meta.Scalar(X))) {
             .bool, .int => unreachable,
-            .float => switch (comptime types.numericType(Y)) {
+            .float => switch (comptime meta.numericType(Y)) {
                 .bool, .int, .float => return float.eq(x.re, y) and float.eq(x.im, numeric.zero(Y)),
                 .dyadic => return dyadic.eq(x.re, y) and dyadic.eq(x.im, numeric.zero(Y)),
-                .complex => switch (comptime types.numericType(types.Scalar(Y))) {
+                .complex => switch (comptime meta.numericType(meta.Scalar(Y))) {
                     .bool, .int => unreachable,
                     .float => return float.eq(x.re, y.re) and float.eq(x.im, y.im),
                     .dyadic => return dyadic.eq(x.re, y.re) and dyadic.eq(x.im, y.im),
@@ -119,7 +119,7 @@ pub fn eq(x: anytype, y: anytype) bool {
                 },
                 .custom => unreachable,
             },
-            .dyadic => switch (comptime types.numericType(Y)) {
+            .dyadic => switch (comptime meta.numericType(Y)) {
                 .bool, .int, .float, .dyadic => return dyadic.eq(x.re, y) and dyadic.eq(x.im, numeric.zero(Y)),
                 .complex => return dyadic.eq(x.re, y.re) and dyadic.eq(x.im, y.im),
                 .custom => unreachable,

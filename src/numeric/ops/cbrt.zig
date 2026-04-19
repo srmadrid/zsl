@@ -1,4 +1,4 @@
-const types = @import("../../types.zig");
+const meta = @import("../../meta.zig");
 
 const int = @import("../../int.zig");
 const float = @import("../../float.zig");
@@ -8,17 +8,17 @@ const complex = @import("../../complex.zig");
 const numeric = @import("../../numeric.zig");
 
 pub fn Cbrt(X: type) type {
-    comptime if (!types.isNumeric(X))
+    comptime if (!meta.isNumeric(X))
         @compileError("zsl.numeric.cbrt: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
 
-    switch (comptime types.numericType(X)) {
+    switch (comptime meta.numericType(X)) {
         .bool => @compileError("zsl.numeric.cbrt: not defined for " ++ @typeName(X) ++ "."),
         .int => @compileError("zsl.numeric.cbrt: not defined for " ++ @typeName(X) ++ "."),
         .float => return X,
         .dyadic => return X,
         .complex => return X,
         .custom => {
-            if (comptime !types.hasMethod(X, "Cbrt", fn (type) type, &.{X}))
+            if (comptime !meta.hasMethod(X, "Cbrt", fn (type) type, &.{X}))
                 @compileError("zsl.numeric.cbrt: " ++ @typeName(X) ++ " must implement `fn Cbrt(type) type`");
 
             return X.Cbrt(X);
@@ -54,14 +54,14 @@ pub fn cbrt(x: anytype) numeric.Cbrt(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Cbrt(X);
 
-    switch (comptime types.numericType(X)) {
+    switch (comptime meta.numericType(X)) {
         .bool => unreachable,
         .int => unreachable,
         .float => return float.cbrt(x),
         .dyadic => return dyadic.cbrt(x),
         .complex => return complex.cbrt(x),
         .custom => {
-            const Impl: type = comptime types.anyHasMethod(
+            const Impl: type = comptime meta.anyHasMethod(
                 &.{ R, X },
                 "cbrt",
                 fn (X) numeric.Cbrt(X),

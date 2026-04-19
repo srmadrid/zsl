@@ -1,4 +1,4 @@
-const types = @import("../../types.zig");
+const meta = @import("../../meta.zig");
 const numeric = @import("../../numeric.zig");
 
 /// Performs in-place computation of the hypotenuse `√(x² + y²)` of two numerics
@@ -36,43 +36,43 @@ pub fn hypot_(o: anytype, x: anytype, y: anytype) void {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 
-    comptime if (!types.isPointer(O) or types.isConstPointer(O) or
-        !types.isNumeric(types.Child(O)) or
-        !types.isNumeric(X) or
-        !types.isNumeric(Y))
+    comptime if (!meta.isPointer(O) or meta.isConstPointer(O) or
+        !meta.isNumeric(meta.Child(O)) or
+        !meta.isNumeric(X) or
+        !meta.isNumeric(Y))
         @compileError("zsl.numeric.hypot_: o must be a mutable one-item pointer to a numeric, and x and y must be numerics, got \n\to: " ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    O = types.Child(O);
+    O = meta.Child(O);
 
-    if (comptime types.isCustomType(O)) {
-        if (comptime types.isCustomType(X)) {
-            if (comptime types.isCustomType(Y)) { // O, X and Y all custom
-                if (comptime types.anyHasMethod(&.{ O, X, Y }, "hypot_", fn (*O, X, Y) void, &.{ *O, X, Y })) |Impl|
+    if (comptime meta.isCustomType(O)) {
+        if (comptime meta.isCustomType(X)) {
+            if (comptime meta.isCustomType(Y)) { // O, X and Y all custom
+                if (comptime meta.anyHasMethod(&.{ O, X, Y }, "hypot_", fn (*O, X, Y) void, &.{ *O, X, Y })) |Impl|
                     return Impl.hypot_(o, x, y);
             } else { // only O and X custom
-                if (comptime types.anyHasMethod(&.{ O, X }, "hypot_", fn (*O, X, Y) void, &.{ *O, X, Y })) |Impl|
+                if (comptime meta.anyHasMethod(&.{ O, X }, "hypot_", fn (*O, X, Y) void, &.{ *O, X, Y })) |Impl|
                     return Impl.hypot_(o, x, y);
             }
         } else {
-            if (comptime types.isCustomType(Y)) { // only O and Y custom
-                if (comptime types.anyHasMethod(&.{ O, Y }, "hypot_", fn (*O, X, Y) void, &.{ *O, X, Y })) |Impl|
+            if (comptime meta.isCustomType(Y)) { // only O and Y custom
+                if (comptime meta.anyHasMethod(&.{ O, Y }, "hypot_", fn (*O, X, Y) void, &.{ *O, X, Y })) |Impl|
                     return Impl.hypot_(o, x, y);
             } else { // only O custom
-                if (comptime types.hasMethod(O, "hypot_", fn (*O, X, Y) void, &.{ *O, X, Y }))
+                if (comptime meta.hasMethod(O, "hypot_", fn (*O, X, Y) void, &.{ *O, X, Y }))
                     return O.hypot_(o, x, y);
             }
         }
     } else {
-        if (comptime types.isCustomType(X)) {
-            if (comptime types.isCustomType(Y)) { // only X and Y custom
-                if (comptime types.anyHasMethod(&.{ X, Y }, "hypot_", fn (*O, X, Y) void, &.{ *O, X, Y })) |Impl|
+        if (comptime meta.isCustomType(X)) {
+            if (comptime meta.isCustomType(Y)) { // only X and Y custom
+                if (comptime meta.anyHasMethod(&.{ X, Y }, "hypot_", fn (*O, X, Y) void, &.{ *O, X, Y })) |Impl|
                     return Impl.hypot_(o, x, y);
             } else { // only X custom
-                if (comptime types.hasMethod(X, "hypot_", fn (*O, X, Y) void, &.{ *O, X, Y }))
+                if (comptime meta.hasMethod(X, "hypot_", fn (*O, X, Y) void, &.{ *O, X, Y }))
                     return X.hypot_(o, x, y);
             }
-        } else if (comptime types.isCustomType(Y)) { // only Y custom
-            if (comptime types.hasMethod(Y, "hypot_", fn (*O, X, Y) void, &.{ *O, X, Y }))
+        } else if (comptime meta.isCustomType(Y)) { // only Y custom
+            if (comptime meta.hasMethod(Y, "hypot_", fn (*O, X, Y) void, &.{ *O, X, Y }))
                 return Y.hypot_(o, x, y);
         }
     }

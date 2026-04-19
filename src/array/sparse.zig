@@ -1,19 +1,19 @@
 const std = @import("std");
 
-const types = @import("../types.zig");
-const Scalar = types.Scalar;
-const ReturnType1 = types.ReturnType1;
-const ReturnType2 = types.ReturnType2;
-const scast = types.scast;
-const cast = types.cast;
-const validateContext = types.validateContext;
+const meta = @import("../meta.zig");
+const Scalar = meta.Scalar;
+const ReturnType1 = meta.ReturnType1;
+const ReturnType2 = meta.ReturnType2;
+const scast = meta.scast;
+const cast = meta.cast;
+const validateContext = meta.validateContext;
 
 const numeric = @import("../numeric.zig");
 const int = @import("../int.zig");
 
 const array = @import("../array.zig");
 const max_dimensions = array.max_dimensions;
-const Order = types.Layout;
+const Order = meta.Layout;
 const Flags = array.Flags;
 const Range = array.Range;
 
@@ -21,7 +21,7 @@ const dense = @import("dense.zig");
 const Dense = dense.Dense;
 
 pub fn Sparse(T: type, order: Order) type {
-    if (!types.isNumeric(T))
+    if (!meta.isNumeric(T))
         @compileError("Strided requires a numeric type, got " ++ @typeName(T));
 
     return struct {

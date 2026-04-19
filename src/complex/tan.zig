@@ -1,4 +1,4 @@
-const types = @import("../types.zig");
+const meta = @import("../meta.zig");
 const numeric = @import("../numeric.zig");
 
 const complex = @import("../complex.zig");
@@ -18,7 +18,7 @@ const complex = @import("../complex.zig");
 pub fn tan(z: anytype) @TypeOf(z) {
     const Z = @TypeOf(z);
 
-    comptime if (!types.isNumeric(Z) or types.numericType(Z) != .complex)
+    comptime if (!meta.isNumeric(Z) or meta.numericType(Z) != .complex)
         @compileError("zsl.complex.tan: z must be a complex, got \n\tz: " ++ @typeName(Z) ++ "\n");
 
     const two_re = numeric.add(z.re, z.re);

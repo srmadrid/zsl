@@ -1,9 +1,9 @@
 const std = @import("std");
 
-const types = @import("../../types.zig");
-const Layout = types.Layout;
-const Uplo = types.Uplo;
-const Diag = types.Diag;
+const meta = @import("../../meta.zig");
+const Layout = meta.Layout;
+const Uplo = meta.Uplo;
+const Diag = meta.Diag;
 
 const numeric = @import("../../numeric.zig");
 
@@ -16,7 +16,7 @@ const matrix = @import("../../matrix.zig");
 /// elements are assumed to be 1 and not stored, or non-unit, meaning the
 /// diagonal elements are stored normally.
 pub fn Sparse(N: type, uplo: Uplo, diag: Diag, layout: Layout) type {
-    if (!types.isNumeric(N))
+    if (!meta.isNumeric(N))
         @compileError("zsl.matrix.triangular.Sparse: N must be a numeric type, got \n\tN = " ++ @typeName(N) ++ "\n");
 
     return struct {

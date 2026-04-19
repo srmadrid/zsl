@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const types = @import("../types.zig");
+const meta = @import("../meta.zig");
 
 const numeric = @import("../numeric.zig");
 
@@ -14,7 +14,7 @@ const utils = @import("utils.zig");
 /// real and imaginary parts independently, `[min.re, max.re)` and
 /// `[min.im, max.im)`.
 pub fn Uniform(N: type) type {
-    comptime if (!types.isNumeric(N) or types.numericType(N) == .bool)
+    comptime if (!meta.isNumeric(N) or meta.numericType(N) == .bool)
         @compileError("zsl.stats.Uniform: N must be a non-bool numeric type, got \n\tN = " ++ @typeName(N) ++ "\n");
 
     return struct {
@@ -52,7 +52,7 @@ pub fn Uniform(N: type) type {
         /// ## Returns
         /// `N`: A random value uniformly distributed between `min` and `max`.
         pub fn sample(self: stats.Uniform(N), prng: std.Random) N {
-            switch (comptime types.numericType(N)) {
+            switch (comptime meta.numericType(N)) {
                 .bool => unreachable,
                 .int => return utils.discreteUniform(N, self.min, self.max, prng),
                 .float, .dyadic => {
@@ -60,8 +60,8 @@ pub fn Uniform(N: type) type {
                     return numeric.add(self.min, numeric.mul(u, numeric.sub(self.max, self.min)));
                 },
                 .complex => {
-                    const u_re = utils.standardUniform(types.Scalar(N), prng);
-                    const u_im = utils.standardUniform(types.Scalar(N), prng);
+                    const u_re = utils.standardUniform(meta.Scalar(N), prng);
+                    const u_im = utils.standardUniform(meta.Scalar(N), prng);
                     return .{
                         .re = numeric.add(self.min.re, numeric.mul(u_re, numeric.sub(self.max.re, self.min.re))),
                         .im = numeric.add(self.min.im, numeric.mul(u_im, numeric.sub(self.max.im, self.min.im))),

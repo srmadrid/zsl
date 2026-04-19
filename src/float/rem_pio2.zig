@@ -1,4 +1,3 @@
-const types = @import("../types.zig");
 const numeric = @import("../numeric.zig");
 
 const float = @import("../float.zig");

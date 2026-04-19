@@ -1,4 +1,4 @@
-const types = @import("../types.zig");
+const meta = @import("../meta.zig");
 const numeric = @import("../numeric.zig");
 
 const float = @import("../float.zig");
@@ -21,7 +21,7 @@ const ldbl128 = @import("ldbl128.zig");
 pub fn acos(x: anytype) @TypeOf(x) {
     const X: type = @TypeOf(x);
 
-    comptime if (!types.isNumeric(X) or types.numericType(X) != .float)
+    comptime if (!meta.isNumeric(X) or meta.numericType(X) != .float)
         @compileError("zsl.float.acos: x must be a float, got \n\tx: " ++ @typeName(X) ++ "\n");
 
     switch (X) {

@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const types = @import("../types.zig");
+const meta = @import("../meta.zig");
 
 const numeric = @import("../numeric.zig");
 
@@ -11,7 +11,7 @@ const utils = @import("utils.zig");
 /// A Poisson distribution that yields discrete event counts of type `Int`. The
 /// distribution is parameterized by a continuous rate `lambda` of type `Real`.
 pub fn Poisson(comptime Int: type, comptime Real: type) type {
-    comptime if (!types.isNumeric(Int) or types.isNonIntegral(Int) or !types.isNumeric(Real) or types.isIntegral(Real) or !types.isReal(Real))
+    comptime if (!meta.isNumeric(Int) or meta.isNonIntegral(Int) or !meta.isNumeric(Real) or meta.isIntegral(Real) or !meta.isReal(Real))
         @compileError("zsl.stats.Poisson: Int must be an integral numeric type, and Real must be a real non-integral numeric type, got \n\tInt = " ++ @typeName(Int) ++ "\n\tReal = " ++ @typeName(Real) ++ "\n");
 
     return struct {

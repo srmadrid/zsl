@@ -1,4 +1,4 @@
-const types = @import("../../types.zig");
+const meta = @import("../../meta.zig");
 
 const int = @import("../../int.zig");
 const float = @import("../../float.zig");
@@ -32,12 +32,12 @@ pub fn ne(x: anytype, y: anytype) bool {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 
-    comptime if (!types.isNumeric(X) or !types.isNumeric(Y))
+    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y))
         @compileError("zsl.numeric.ne: x and y must be numerics, got \n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    if (comptime types.isCustomType(X)) {
-        if (comptime types.isCustomType(Y)) { // X and Y both custom
-            const Impl: type = comptime types.anyHasMethod(
+    if (comptime meta.isCustomType(X)) {
+        if (comptime meta.isCustomType(Y)) { // X and Y both custom
+            const Impl: type = comptime meta.anyHasMethod(
                 &.{ X, Y },
                 "ne",
                 fn (X, Y) bool,
@@ -47,13 +47,13 @@ pub fn ne(x: anytype, y: anytype) bool {
 
             return Impl.ne(x, y);
         } else { // only X custom
-            comptime if (!types.hasMethod(X, "ne", fn (X, Y) bool, &.{ X, Y }))
+            comptime if (!meta.hasMethod(X, "ne", fn (X, Y) bool, &.{ X, Y }))
                 @compileError("zsl.numeric.ne: " ++ @typeName(X) ++ " must implement `fn ne(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
 
             return X.ne(x, y);
         }
-    } else if (comptime types.isCustomType(Y)) { // only Y custom
-        comptime if (!types.hasMethod(Y, "ne", fn (X, Y) bool, &.{ X, Y }))
+    } else if (comptime meta.isCustomType(Y)) { // only Y custom
+        comptime if (!meta.hasMethod(Y, "ne", fn (X, Y) bool, &.{ X, Y }))
             @compileError("zsl.numeric.ne: " ++ @typeName(Y) ++ " must implement `fn ne(" ++ @typeName(X) ++ ", " ++ @typeName(Y) ++ ") bool`");
 
         return Y.ne(x, y);

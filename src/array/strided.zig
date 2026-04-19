@@ -1,18 +1,18 @@
 const std = @import("std");
 
-const types = @import("../types.zig");
-const ReturnType1 = types.ReturnType1;
-const ReturnType2 = types.ReturnType2;
-const EnsureArray = types.EnsureArray;
-const Coerce = types.Coerce;
-const Numeric = types.Numeric;
-const orderOf = types.layoutOf;
+const meta = @import("../meta.zig");
+const ReturnType1 = meta.ReturnType1;
+const ReturnType2 = meta.ReturnType2;
+const EnsureArray = meta.EnsureArray;
+const Coerce = meta.Coerce;
+const Numeric = meta.Numeric;
+const orderOf = meta.layoutOf;
 
 const numeric = @import("../numeric.zig");
 const int = @import("../int.zig");
 
 const array = @import("../array.zig");
-const Order = types.Layout;
+const Order = meta.Layout;
 const Flags = array.Flags;
 const Range = array.Range;
 
@@ -20,7 +20,7 @@ const dense = @import("dense.zig");
 const Dense = dense.Dense;
 
 pub fn Strided(T: type, base_order: Order) type {
-    if (!types.isNumeric(T))
+    if (!meta.isNumeric(T))
         @compileError("Strided requires a numeric type, got " ++ @typeName(T));
 
     return struct {
@@ -122,23 +122,23 @@ pub fn Strided(T: type, base_order: Order) type {
             var strides: [array.max_dimensions]i32 = .{0} ** array.max_dimensions;
             var size: u32 = 1;
 
-            var i: i32 = types.scast(i32, shape.len - 1);
-            const diff: i32 = types.scast(i32, shape.len - self.ndim);
+            var i: i32 = meta.scast(i32, shape.len - 1);
+            const diff: i32 = meta.scast(i32, shape.len - self.ndim);
             while (i >= 0) : (i -= 1) {
                 if (i - diff >= 0) {
-                    new_shape[types.scast(u32, i)] = int.max(self.shape[types.scast(u32, i - diff)], shape[types.scast(u32, i)]);
-                    strides[types.scast(u32, i)] = self.strides[types.scast(u32, i - diff)];
+                    new_shape[meta.scast(u32, i)] = int.max(self.shape[meta.scast(u32, i - diff)], shape[meta.scast(u32, i)]);
+                    strides[meta.scast(u32, i)] = self.strides[meta.scast(u32, i - diff)];
                 } else {
-                    new_shape[types.scast(u32, i)] = shape[types.scast(u32, i)];
-                    strides[types.scast(u32, i)] = 0; // No stride for the new dimensions.
+                    new_shape[meta.scast(u32, i)] = shape[meta.scast(u32, i)];
+                    strides[meta.scast(u32, i)] = 0; // No stride for the new dimensions.
                 }
 
-                size *= new_shape[types.scast(u32, i)];
+                size *= new_shape[meta.scast(u32, i)];
             }
 
             return Strided(T, base_order){
                 .data = self.data,
-                .ndim = types.scast(u32, shape.len),
+                .ndim = meta.scast(u32, shape.len),
                 .shape = new_shape,
                 .strides = strides,
                 .size = size,
@@ -217,9 +217,9 @@ pub fn Strided(T: type, base_order: Order) type {
                 }
 
                 if (stride < 0) {
-                    offset -= range.start * types.scast(u32, int.abs(stride));
+                    offset -= range.start * meta.scast(u32, int.abs(stride));
                 } else {
-                    offset += range.start * types.scast(u32, stride);
+                    offset += range.start * meta.scast(u32, stride);
                 }
 
                 i += 1;
@@ -247,9 +247,9 @@ pub fn Strided(T: type, base_order: Order) type {
             while (i < position.len) : (i += 1) {
                 const stride: i32 = self.strides[i];
                 if (stride < 0) {
-                    idx -= position[i] * types.scast(u32, int.abs(stride));
+                    idx -= position[i] * meta.scast(u32, int.abs(stride));
                 } else {
-                    idx += position[i] * types.scast(u32, stride);
+                    idx += position[i] * meta.scast(u32, stride);
                 }
             }
 
@@ -307,30 +307,30 @@ fn loop1(
     comptime op: anytype,
     comptime @"inline": bool,
     depth: u32,
-    comptime order: types.IterationOrder,
-    ir: if (types.isStridedArray(@TypeOf(result))) i32 else u32,
-    ix: if (types.isStridedArray(@TypeOf(x))) i32 else u32,
+    comptime order: meta.IterationOrder,
+    ir: if (meta.isStridedArray(@TypeOf(result))) i32 else u32,
+    ix: if (meta.isStridedArray(@TypeOf(x))) i32 else u32,
     ctx: anytype,
 ) !void {
     if (depth == 0) {
         const opinfo = @typeInfo(@TypeOf(op));
         const idx: u32 = if (comptime order == .left_to_right) 0 else result.ndim - 1;
 
-        var jr: if (types.isStridedArray(@TypeOf(result))) i32 else u32 = ir;
-        var jx: if (types.isStridedArray(@TypeOf(x))) i32 else u32 = ix;
+        var jr: if (meta.isStridedArray(@TypeOf(result))) i32 else u32 = ir;
+        var jx: if (meta.isStridedArray(@TypeOf(x))) i32 else u32 = ix;
         var j: u32 = 0;
         while (j < x.shape[idx]) : (j += 1) {
             if (comptime !@"inline") {
                 if (comptime opinfo.@"fn".params.len == 1) {
-                    result.data[types.scast(u32, jr)] = op(x.data[types.scast(u32, jx)]);
+                    result.data[meta.scast(u32, jr)] = op(x.data[meta.scast(u32, jx)]);
                 } else if (comptime opinfo.@"fn".params.len == 2) {
-                    result.data[types.scast(u32, jr)] = try op(x.data[types.scast(u32, jx)], ctx);
+                    result.data[meta.scast(u32, jr)] = try op(x.data[meta.scast(u32, jx)], ctx);
                 }
             } else {
                 if (comptime opinfo.@"fn".params.len == 2) {
-                    op(&result.data[types.scast(u32, jr)], x.data[types.scast(u32, jx)]);
+                    op(&result.data[meta.scast(u32, jr)], x.data[meta.scast(u32, jx)]);
                 } else if (comptime opinfo.@"fn".params.len == 3) {
-                    try op(&result.data[types.scast(u32, jr)], x.data[types.scast(u32, jx)], ctx);
+                    try op(&result.data[meta.scast(u32, jr)], x.data[meta.scast(u32, jx)], ctx);
                 }
             }
 
@@ -340,8 +340,8 @@ fn loop1(
     } else {
         const idx: u32 = if (comptime order == .left_to_right) depth else result.ndim - depth - 1;
 
-        var jr: if (types.isStridedArray(@TypeOf(result))) i32 else u32 = ir;
-        var jx: if (types.isStridedArray(@TypeOf(x))) i32 else u32 = ix;
+        var jr: if (meta.isStridedArray(@TypeOf(result))) i32 else u32 = ir;
+        var jx: if (meta.isStridedArray(@TypeOf(x))) i32 else u32 = ix;
         var j: u32 = 0;
         while (j < x.shape[idx]) : (j += 1) {
             try loop1(
@@ -381,7 +381,7 @@ pub fn apply1(
         result.ndim - 1,
         comptime orderOf(@TypeOf(x)).toIterationOrder(),
         0,
-        types.scast(i32, x.offset),
+        meta.scast(i32, x.offset),
         ctx,
     );
 
@@ -416,8 +416,8 @@ pub fn apply1_(
         true,
         o.ndim - 1,
         comptime orderOf(@TypeOf(o)).toIterationOrder(),
-        if (comptime types.isStridedArray(@TypeOf(o))) types.scast(i32, o.offset) else 0,
-        if (comptime types.isStridedArray(@TypeOf(xx))) types.scast(i32, xx.offset) else 0,
+        if (comptime meta.isStridedArray(@TypeOf(o))) meta.scast(i32, o.offset) else 0,
+        if (comptime meta.isStridedArray(@TypeOf(xx))) meta.scast(i32, xx.offset) else 0,
         ctx,
     );
 
@@ -431,30 +431,30 @@ fn loop2_left(
     comptime op: anytype,
     comptime @"inline": bool,
     depth: u32,
-    comptime order: types.IterationOrder,
-    ir: if (types.isStridedArray(@TypeOf(result))) i32 else u32,
-    iy: if (types.isStridedArray(@TypeOf(y))) i32 else u32,
+    comptime order: meta.IterationOrder,
+    ir: if (meta.isStridedArray(@TypeOf(result))) i32 else u32,
+    iy: if (meta.isStridedArray(@TypeOf(y))) i32 else u32,
     ctx: anytype,
 ) !void {
     if (depth == 0) {
         const opinfo = @typeInfo(@TypeOf(op));
         const idx: u32 = if (comptime order == .left_to_right) 0 else result.ndim - 1;
 
-        var jr: if (types.isStridedArray(@TypeOf(result))) i32 else u32 = ir;
-        var jy: if (types.isStridedArray(@TypeOf(y))) i32 else u32 = iy;
+        var jr: if (meta.isStridedArray(@TypeOf(result))) i32 else u32 = ir;
+        var jy: if (meta.isStridedArray(@TypeOf(y))) i32 else u32 = iy;
         var j: u32 = 0;
         while (j < y.shape[idx]) : (j += 1) {
             if (comptime !@"inline") {
                 if (comptime opinfo.@"fn".params.len == 2) {
-                    result.data[types.scast(u32, jr)] = op(x, y.data[types.scast(u32, jy)]);
+                    result.data[meta.scast(u32, jr)] = op(x, y.data[meta.scast(u32, jy)]);
                 } else if (comptime opinfo.@"fn".params.len == 3) {
-                    result.data[types.scast(u32, jr)] = try op(x, y.data[types.scast(u32, jy)], ctx);
+                    result.data[meta.scast(u32, jr)] = try op(x, y.data[meta.scast(u32, jy)], ctx);
                 }
             } else {
                 if (comptime opinfo.@"fn".params.len == 3) {
-                    op(&result.data[types.scast(u32, jr)], x, y.data[types.scast(u32, jy)]);
+                    op(&result.data[meta.scast(u32, jr)], x, y.data[meta.scast(u32, jy)]);
                 } else if (comptime opinfo.@"fn".params.len == 4) {
-                    try op(&result.data[types.scast(u32, jr)], x, y.data[types.scast(u32, jy)], ctx);
+                    try op(&result.data[meta.scast(u32, jr)], x, y.data[meta.scast(u32, jy)], ctx);
                 }
             }
 
@@ -464,8 +464,8 @@ fn loop2_left(
     } else {
         const idx: u32 = if (comptime order == .left_to_right) depth else result.ndim - depth - 1;
 
-        var jr: if (types.isStridedArray(@TypeOf(result))) i32 else u32 = ir;
-        var jy: if (types.isStridedArray(@TypeOf(y))) i32 else u32 = iy;
+        var jr: if (meta.isStridedArray(@TypeOf(result))) i32 else u32 = ir;
+        var jy: if (meta.isStridedArray(@TypeOf(y))) i32 else u32 = iy;
         var j: u32 = 0;
         while (j < y.shape[idx]) : (j += 1) {
             try loop2_left(
@@ -494,30 +494,30 @@ fn loop2_right(
     comptime op: anytype,
     comptime @"inline": bool,
     depth: u32,
-    comptime order: types.IterationOrder,
-    ir: if (types.isStridedArray(@TypeOf(result))) i32 else u32,
-    ix: if (types.isStridedArray(@TypeOf(x))) i32 else u32,
+    comptime order: meta.IterationOrder,
+    ir: if (meta.isStridedArray(@TypeOf(result))) i32 else u32,
+    ix: if (meta.isStridedArray(@TypeOf(x))) i32 else u32,
     ctx: anytype,
 ) !void {
     if (depth == 0) {
         const opinfo = @typeInfo(@TypeOf(op));
         const idx: u32 = if (comptime order == .left_to_right) 0 else result.ndim - 1;
 
-        var jr: if (types.isStridedArray(@TypeOf(result))) i32 else u32 = ir;
-        var jx: if (types.isStridedArray(@TypeOf(x))) i32 else u32 = ix;
+        var jr: if (meta.isStridedArray(@TypeOf(result))) i32 else u32 = ir;
+        var jx: if (meta.isStridedArray(@TypeOf(x))) i32 else u32 = ix;
         var j: u32 = 0;
         while (j < x.shape[idx]) : (j += 1) {
             if (comptime !@"inline") {
                 if (comptime opinfo.@"fn".params.len == 2) {
-                    result.data[types.scast(u32, jr)] = op(x.data[types.scast(u32, jx)], y);
+                    result.data[meta.scast(u32, jr)] = op(x.data[meta.scast(u32, jx)], y);
                 } else if (comptime opinfo.@"fn".params.len == 3) {
-                    result.data[types.scast(u32, jr)] = try op(x.data[types.scast(u32, jx)], y, ctx);
+                    result.data[meta.scast(u32, jr)] = try op(x.data[meta.scast(u32, jx)], y, ctx);
                 }
             } else {
                 if (comptime opinfo.@"fn".params.len == 3) {
-                    op(&result.data[types.scast(u32, jr)], x.data[types.scast(u32, jx)], y);
+                    op(&result.data[meta.scast(u32, jr)], x.data[meta.scast(u32, jx)], y);
                 } else if (comptime opinfo.@"fn".params.len == 4) {
-                    try op(&result.data[types.scast(u32, jr)], x.data[types.scast(u32, jx)], y, ctx);
+                    try op(&result.data[meta.scast(u32, jr)], x.data[meta.scast(u32, jx)], y, ctx);
                 }
             }
 
@@ -527,8 +527,8 @@ fn loop2_right(
     } else {
         const idx: u32 = if (comptime order == .left_to_right) depth else result.ndim - depth - 1;
 
-        var jr: if (types.isStridedArray(@TypeOf(result))) i32 else u32 = ir;
-        var jx: if (types.isStridedArray(@TypeOf(x))) i32 else u32 = ix;
+        var jr: if (meta.isStridedArray(@TypeOf(result))) i32 else u32 = ir;
+        var jx: if (meta.isStridedArray(@TypeOf(x))) i32 else u32 = ix;
         var j: u32 = 0;
         while (j < x.shape[idx]) : (j += 1) {
             try loop2_right(
@@ -557,32 +557,32 @@ fn loop2(
     comptime op: anytype,
     comptime @"inline": bool,
     depth: u32,
-    comptime order: types.IterationOrder,
-    ir: if (types.isStridedArray(@TypeOf(result))) i32 else u32,
-    ix: if (types.isStridedArray(@TypeOf(x))) i32 else u32,
-    iy: if (types.isStridedArray(@TypeOf(y))) i32 else u32,
+    comptime order: meta.IterationOrder,
+    ir: if (meta.isStridedArray(@TypeOf(result))) i32 else u32,
+    ix: if (meta.isStridedArray(@TypeOf(x))) i32 else u32,
+    iy: if (meta.isStridedArray(@TypeOf(y))) i32 else u32,
     ctx: anytype,
 ) !void {
     if (depth == 0) {
         const opinfo = @typeInfo(@TypeOf(op));
         const idx: u32 = if (comptime order == .left_to_right) 0 else result.ndim - 1;
 
-        var jr: if (types.isStridedArray(@TypeOf(result))) i32 else u32 = ir;
-        var jx: if (types.isStridedArray(@TypeOf(x))) i32 else u32 = ix;
-        var jy: if (types.isStridedArray(@TypeOf(y))) i32 else u32 = iy;
+        var jr: if (meta.isStridedArray(@TypeOf(result))) i32 else u32 = ir;
+        var jx: if (meta.isStridedArray(@TypeOf(x))) i32 else u32 = ix;
+        var jy: if (meta.isStridedArray(@TypeOf(y))) i32 else u32 = iy;
         var j: u32 = 0;
         while (j < x.shape[idx]) : (j += 1) {
             if (comptime !@"inline") {
                 if (comptime opinfo.@"fn".params.len == 2) {
-                    result.data[types.scast(u32, jr)] = op(x.data[types.scast(u32, jx)], y.data[types.scast(u32, jy)]);
+                    result.data[meta.scast(u32, jr)] = op(x.data[meta.scast(u32, jx)], y.data[meta.scast(u32, jy)]);
                 } else if (comptime opinfo.@"fn".params.len == 3) {
-                    result.data[types.scast(u32, jr)] = try op(x.data[types.scast(u32, jx)], y.data[types.scast(u32, jy)], ctx);
+                    result.data[meta.scast(u32, jr)] = try op(x.data[meta.scast(u32, jx)], y.data[meta.scast(u32, jy)], ctx);
                 }
             } else {
                 if (comptime opinfo.@"fn".params.len == 3) {
-                    op(&result.data[types.scast(u32, jr)], x.data[types.scast(u32, jx)], y.data[types.scast(u32, jy)]);
+                    op(&result.data[meta.scast(u32, jr)], x.data[meta.scast(u32, jx)], y.data[meta.scast(u32, jy)]);
                 } else if (comptime opinfo.@"fn".params.len == 4) {
-                    try op(&result.data[types.scast(u32, jr)], x.data[types.scast(u32, jx)], y.data[types.scast(u32, jy)], ctx);
+                    try op(&result.data[meta.scast(u32, jr)], x.data[meta.scast(u32, jx)], y.data[meta.scast(u32, jy)], ctx);
                 }
             }
 
@@ -593,9 +593,9 @@ fn loop2(
     } else {
         const idx: u32 = if (comptime order == .left_to_right) depth else result.ndim - depth - 1;
 
-        var jr: if (types.isStridedArray(@TypeOf(result))) i32 else u32 = ir;
-        var jx: if (types.isStridedArray(@TypeOf(x))) i32 else u32 = ix;
-        var jy: if (types.isStridedArray(@TypeOf(y))) i32 else u32 = iy;
+        var jr: if (meta.isStridedArray(@TypeOf(result))) i32 else u32 = ir;
+        var jx: if (meta.isStridedArray(@TypeOf(x))) i32 else u32 = ix;
+        var jy: if (meta.isStridedArray(@TypeOf(y))) i32 else u32 = iy;
         var j: u32 = 0;
         while (j < x.shape[idx]) : (j += 1) {
             try loop2(
@@ -629,7 +629,7 @@ pub fn apply2(
     const X: type = Numeric(@TypeOf(x));
     const Y: type = Numeric(@TypeOf(y));
 
-    if (comptime !types.isStridedArray(@TypeOf(x))) {
+    if (comptime !meta.isStridedArray(@TypeOf(x))) {
         var result: EnsureArray(Coerce(@TypeOf(x), @TypeOf(y)), ReturnType2(op, X, Y)) = try .init(allocator, y.shape[0..y.ndim]);
         errdefer result.deinit(allocator);
 
@@ -642,12 +642,12 @@ pub fn apply2(
             result.ndim - 1,
             comptime orderOf(@TypeOf(result)).toIterationOrder(),
             0,
-            if (comptime types.isStridedArray(@TypeOf(y))) types.scast(i32, y.offset) else 0,
+            if (comptime meta.isStridedArray(@TypeOf(y))) meta.scast(i32, y.offset) else 0,
             ctx,
         );
 
         return result;
-    } else if (comptime !types.isStridedArray(@TypeOf(y))) {
+    } else if (comptime !meta.isStridedArray(@TypeOf(y))) {
         var result: EnsureArray(Coerce(@TypeOf(x), @TypeOf(y)), ReturnType2(op, X, Y)) = try .init(allocator, x.shape[0..x.ndim]);
         errdefer result.deinit(allocator);
 
@@ -660,7 +660,7 @@ pub fn apply2(
             result.ndim - 1,
             comptime orderOf(@TypeOf(result)).toIterationOrder(),
             0,
-            if (comptime types.isStridedArray(@TypeOf(x))) types.scast(i32, x.offset) else 0,
+            if (comptime meta.isStridedArray(@TypeOf(x))) meta.scast(i32, x.offset) else 0,
             ctx,
         );
 
@@ -691,8 +691,8 @@ pub fn apply2(
         result.ndim - 1,
         comptime Order.resolve3(orderOf(@TypeOf(x)), orderOf(@TypeOf(y)), orderOf(@TypeOf(result))).toIterationOrder(),
         0,
-        if (comptime types.isStridedArray(@TypeOf(xx))) types.scast(i32, xx.offset) else 0,
-        if (comptime types.isStridedArray(@TypeOf(yy))) types.scast(i32, yy.offset) else 0,
+        if (comptime meta.isStridedArray(@TypeOf(xx))) meta.scast(i32, xx.offset) else 0,
+        if (comptime meta.isStridedArray(@TypeOf(yy))) meta.scast(i32, yy.offset) else 0,
         ctx,
     );
 
@@ -709,7 +709,7 @@ pub fn apply2_(
     const X: type = Numeric(@TypeOf(x));
     const Y: type = Numeric(@TypeOf(y));
 
-    if (comptime !types.isStridedArray(@TypeOf(x))) {
+    if (comptime !meta.isStridedArray(@TypeOf(x))) {
         var yy: Strided(Y) = undefined;
         if (std.mem.eql(u32, o.shape[0..o.ndim], y.shape[0..y.ndim])) {
             yy = y;
@@ -730,13 +730,13 @@ pub fn apply2_(
             true,
             o.ndim - 1,
             comptime orderOf(@TypeOf(o)).toIterationOrder(),
-            if (comptime types.isStridedArray(@TypeOf(o))) types.scast(i32, o.offset) else 0,
-            if (comptime types.isStridedArray(@TypeOf(yy))) types.scast(i32, yy.offset) else 0,
+            if (comptime meta.isStridedArray(@TypeOf(o))) meta.scast(i32, o.offset) else 0,
+            if (comptime meta.isStridedArray(@TypeOf(yy))) meta.scast(i32, yy.offset) else 0,
             ctx,
         );
 
         return;
-    } else if (comptime !types.isStridedArray(@TypeOf(y))) {
+    } else if (comptime !meta.isStridedArray(@TypeOf(y))) {
         var xx: Strided(X) = undefined;
         if (std.mem.eql(u32, o.shape[0..o.ndim], x.shape[0..x.ndim])) {
             xx = x;
@@ -757,8 +757,8 @@ pub fn apply2_(
             true,
             o.ndim - 1,
             comptime orderOf(@TypeOf(o)).toIterationOrder(),
-            if (comptime types.isStridedArray(@TypeOf(o))) types.scast(i32, o.offset) else 0,
-            if (comptime types.isStridedArray(@TypeOf(xx))) types.scast(i32, xx.offset) else 0,
+            if (comptime meta.isStridedArray(@TypeOf(o))) meta.scast(i32, o.offset) else 0,
+            if (comptime meta.isStridedArray(@TypeOf(xx))) meta.scast(i32, xx.offset) else 0,
             ctx,
         );
 
@@ -790,9 +790,9 @@ pub fn apply2_(
         true,
         o.ndim - 1,
         comptime Order.resolve3(orderOf(@TypeOf(x)), orderOf(@TypeOf(y)), orderOf(@TypeOf(o))).toIterationOrder(),
-        if (comptime types.isStridedArray(@TypeOf(o))) types.scast(i32, o.offset) else 0,
-        if (comptime types.isStridedArray(@TypeOf(xx))) types.scast(i32, xx.offset) else 0,
-        if (comptime types.isStridedArray(@TypeOf(yy))) types.scast(i32, yy.offset) else 0,
+        if (comptime meta.isStridedArray(@TypeOf(o))) meta.scast(i32, o.offset) else 0,
+        if (comptime meta.isStridedArray(@TypeOf(xx))) meta.scast(i32, xx.offset) else 0,
+        if (comptime meta.isStridedArray(@TypeOf(yy))) meta.scast(i32, yy.offset) else 0,
         ctx,
     );
 

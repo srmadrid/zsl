@@ -1,12 +1,12 @@
-const types = @import("../types.zig");
+const meta = @import("../meta.zig");
 const numeric = @import("../numeric.zig");
 
 const int = @import("../int.zig");
 
 pub fn Pow(comptime X: type, comptime Y: type) type {
-    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
-        !types.numericType(X).le(.int) or !types.numericType(Y).le(.int) or
-        (types.numericType(X) != .int and types.numericType(Y) != .int))
+    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y) or
+        !meta.numericType(X).le(.int) or !meta.numericType(Y).le(.int) or
+        (meta.numericType(X) != .int and meta.numericType(Y) != .int))
         @compileError("zsl.int.pow: at least one of x or y must be an int, the other must be a bool or an int, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 

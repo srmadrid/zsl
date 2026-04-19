@@ -1,4 +1,4 @@
-const types = @import("../../types.zig");
+const meta = @import("../../meta.zig");
 const numeric = @import("../../numeric.zig");
 
 /// Performs in-place computation of the arctangent `tan⁻¹(y/x)` of two numerics
@@ -37,43 +37,43 @@ pub fn atan2_(o: anytype, y: anytype, x: anytype) void {
     const Y: type = @TypeOf(y);
     const X: type = @TypeOf(x);
 
-    comptime if (!types.isPointer(O) or types.isConstPointer(O) or
-        !types.isNumeric(types.Child(O)) or
-        !types.isNumeric(Y) or
-        !types.isNumeric(X))
+    comptime if (!meta.isPointer(O) or meta.isConstPointer(O) or
+        !meta.isNumeric(meta.Child(O)) or
+        !meta.isNumeric(Y) or
+        !meta.isNumeric(X))
         @compileError("zsl.numeric.atan2_: o must be a mutable one-item pointer to a numeric, and y and x must be numerics, got \n\to: " ++ @typeName(O) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\tx: " ++ @typeName(X) ++ "\n");
 
-    O = types.Child(O);
+    O = meta.Child(O);
 
-    if (comptime types.isCustomType(O)) {
-        if (comptime types.isCustomType(Y)) {
-            if (comptime types.isCustomType(X)) { // O, Y and X all custom
-                if (comptime types.anyHasMethod(&.{ O, Y, X }, "atan2_", fn (*O, Y, X) void, &.{ *O, Y, X })) |Impl|
+    if (comptime meta.isCustomType(O)) {
+        if (comptime meta.isCustomType(Y)) {
+            if (comptime meta.isCustomType(X)) { // O, Y and X all custom
+                if (comptime meta.anyHasMethod(&.{ O, Y, X }, "atan2_", fn (*O, Y, X) void, &.{ *O, Y, X })) |Impl|
                     return Impl.atan2_(o, y, x);
             } else { // only O and Y custom
-                if (comptime types.anyHasMethod(&.{ O, Y }, "atan2_", fn (*O, Y, X) void, &.{ *O, Y, X })) |Impl|
+                if (comptime meta.anyHasMethod(&.{ O, Y }, "atan2_", fn (*O, Y, X) void, &.{ *O, Y, X })) |Impl|
                     return Impl.atan2_(o, y, x);
             }
         } else {
-            if (comptime types.isCustomType(X)) { // only O and X custom
-                if (comptime types.anyHasMethod(&.{ O, X }, "atan2_", fn (*O, Y, X) void, &.{ *O, Y, X })) |Impl|
+            if (comptime meta.isCustomType(X)) { // only O and X custom
+                if (comptime meta.anyHasMethod(&.{ O, X }, "atan2_", fn (*O, Y, X) void, &.{ *O, Y, X })) |Impl|
                     return Impl.atan2_(o, y, x);
             } else { // only O custom
-                if (comptime types.hasMethod(O, "atan2_", fn (*O, Y, X) void, &.{ *O, Y, X }))
+                if (comptime meta.hasMethod(O, "atan2_", fn (*O, Y, X) void, &.{ *O, Y, X }))
                     return O.atan2_(o, y, x);
             }
         }
     } else {
-        if (comptime types.isCustomType(Y)) {
-            if (comptime types.isCustomType(X)) { // only Y and X custom
-                if (comptime types.anyHasMethod(&.{ Y, X }, "atan2_", fn (*O, Y, X) void, &.{ *O, Y, X })) |Impl|
+        if (comptime meta.isCustomType(Y)) {
+            if (comptime meta.isCustomType(X)) { // only Y and X custom
+                if (comptime meta.anyHasMethod(&.{ Y, X }, "atan2_", fn (*O, Y, X) void, &.{ *O, Y, X })) |Impl|
                     return Impl.atan2_(o, y, x);
             } else { // only Y custom
-                if (comptime types.hasMethod(Y, "atan2_", fn (*O, Y, X) void, &.{ *O, Y, X }))
+                if (comptime meta.hasMethod(Y, "atan2_", fn (*O, Y, X) void, &.{ *O, Y, X }))
                     return Y.atan2_(o, y, x);
             }
-        } else if (comptime types.isCustomType(X)) { // only X custom
-            if (comptime types.hasMethod(Y, "atan2_", fn (*O, Y, X) void, &.{ *O, Y, X }))
+        } else if (comptime meta.isCustomType(X)) { // only X custom
+            if (comptime meta.hasMethod(Y, "atan2_", fn (*O, Y, X) void, &.{ *O, Y, X }))
                 return Y.atan2_(o, y, x);
         }
     }

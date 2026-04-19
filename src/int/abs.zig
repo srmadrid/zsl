@@ -1,4 +1,4 @@
-const types = @import("../types.zig");
+const meta = @import("../meta.zig");
 
 /// Returns the absolute value of an int `x`.
 ///
@@ -15,7 +15,7 @@ const types = @import("../types.zig");
 pub fn abs(x: anytype) @TypeOf(x) {
     const X: type = @TypeOf(x);
 
-    comptime if (!types.isNumeric(X) or types.numericType(X) != .int)
+    comptime if (!meta.isNumeric(X) or meta.numericType(X) != .int)
         @compileError("zsl.int.abs: x must be an int, got \n\tx: " ++ @typeName(X) ++ "\n");
 
     if (comptime X == comptime_int)

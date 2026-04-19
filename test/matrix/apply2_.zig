@@ -6429,14 +6429,14 @@ test "zsl.matrix.apply2_" {
     const rand = prng.random();
 
     inline for (combinations) |combination| {
-        const square = zsl.types.isSquareMatrix(combination[0]) or zsl.types.isSquareMatrix(combination[1]) or zsl.types.isSquareMatrix(combination[2]);
+        const square = zsl.meta.isSquareMatrix(combination[0]) or zsl.meta.isSquareMatrix(combination[1]) or zsl.meta.isSquareMatrix(combination[2]);
         const can_alias_B = combination[0] == combination[1];
         const can_alias_C = combination[0] == combination[2];
 
         const ops_to_test =
-            if (comptime zsl.types.isNumeric(combination[1]))
+            if (comptime zsl.meta.isNumeric(combination[1]))
                 .{"mul"}
-            else if (comptime zsl.types.isNumeric(combination[2]))
+            else if (comptime zsl.meta.isNumeric(combination[2]))
                 .{ "mul", "div" }
             else
                 .{ "add", "sub" };
@@ -6469,7 +6469,7 @@ fn executeTestBlock(
 ) !void {
     inline for (ops) |op| {
         var A = try tzsl.matrix.randomMatrix(
-            if (comptime zsl.types.isSparseMatrix(combination[0])) zsl.matrix.builder.Sparse(zsl.types.Numeric(combination[0])) else combination[0],
+            if (comptime zsl.meta.isSparseMatrix(combination[0])) zsl.matrix.builder.Sparse(zsl.meta.Numeric(combination[0])) else combination[0],
             allocator,
             rand,
             m,
@@ -6479,7 +6479,7 @@ fn executeTestBlock(
 
         var B = if (comptime alias_B)
             A
-        else if (comptime zsl.types.isNumeric(combination[1]))
+        else if (comptime zsl.meta.isNumeric(combination[1]))
             tzsl.randomNumber(combination[1], rand)
         else
             try tzsl.matrix.randomMatrix(
@@ -6494,7 +6494,7 @@ fn executeTestBlock(
 
         var C = if (comptime alias_C)
             A
-        else if (comptime zsl.types.isNumeric(combination[2]))
+        else if (comptime zsl.meta.isNumeric(combination[2]))
             tzsl.randomNumber(combination[2], rand)
         else
             try tzsl.matrix.randomMatrix(
@@ -6508,13 +6508,13 @@ fn executeTestBlock(
         defer if (comptime !alias_C) tzsl.deinit(allocator, &C);
 
         var D = if (comptime std.mem.eql(u8, op, "add"))
-            try tzsl.matrix.correctApply2(zsl.types.Numeric(combination[0]), allocator, m, n, B, C, zsl.numeric.add_)
+            try tzsl.matrix.correctApply2(zsl.meta.Numeric(combination[0]), allocator, m, n, B, C, zsl.numeric.add_)
         else if (comptime std.mem.eql(u8, op, "sub"))
-            try tzsl.matrix.correctApply2(zsl.types.Numeric(combination[0]), allocator, m, n, B, C, zsl.numeric.sub_)
+            try tzsl.matrix.correctApply2(zsl.meta.Numeric(combination[0]), allocator, m, n, B, C, zsl.numeric.sub_)
         else if (comptime std.mem.eql(u8, op, "mul"))
-            try tzsl.matrix.correctApply2(zsl.types.Numeric(combination[0]), allocator, m, n, B, C, zsl.numeric.mul_)
+            try tzsl.matrix.correctApply2(zsl.meta.Numeric(combination[0]), allocator, m, n, B, C, zsl.numeric.mul_)
         else
-            try tzsl.matrix.correctApply2(zsl.types.Numeric(combination[0]), allocator, m, n, B, C, zsl.numeric.div_);
+            try tzsl.matrix.correctApply2(zsl.meta.Numeric(combination[0]), allocator, m, n, B, C, zsl.numeric.div_);
         defer D.deinit(allocator);
 
         if (comptime std.mem.eql(u8, op, "add"))
@@ -6526,12 +6526,12 @@ fn executeTestBlock(
         else
             zsl.matrix.div_(&A, B, C) catch unreachable;
 
-        var A_test = if (comptime zsl.types.isSparseMatrix(combination[0]))
-            try switch (comptime zsl.types.matrixKind(combination[0])) {
-                .general => A.compile(allocator, zsl.types.layoutOf(combination[0])),
-                .symmetric => A.compileSymmetric(allocator, zsl.types.uploOf(combination[0]), zsl.types.layoutOf(combination[0])),
-                .hermitian => A.compileHermitian(allocator, zsl.types.uploOf(combination[0]), zsl.types.layoutOf(combination[0])),
-                .triangular => A.compileTriangular(allocator, zsl.types.uploOf(combination[0]), zsl.types.diagOf(combination[0]), zsl.types.layoutOf(combination[0])),
+        var A_test = if (comptime zsl.meta.isSparseMatrix(combination[0]))
+            try switch (comptime zsl.meta.matrixKind(combination[0])) {
+                .general => A.compile(allocator, zsl.meta.layoutOf(combination[0])),
+                .symmetric => A.compileSymmetric(allocator, zsl.meta.uploOf(combination[0]), zsl.meta.layoutOf(combination[0])),
+                .hermitian => A.compileHermitian(allocator, zsl.meta.uploOf(combination[0]), zsl.meta.layoutOf(combination[0])),
+                .triangular => A.compileTriangular(allocator, zsl.meta.uploOf(combination[0]), zsl.meta.diagOf(combination[0]), zsl.meta.layoutOf(combination[0])),
                 else => unreachable,
             }
         else
@@ -6543,8 +6543,8 @@ fn executeTestBlock(
             std.debug.print("Failed on A: {s} = B: {s} {s} C: {s}, case m = {}, n = {}, aliasing = {s}\n", .{ @typeName(combination[0]), @typeName(combination[1]), op, @typeName(combination[2]), m, n, aliasing });
 
             tzsl.matrix.printMatrix("A", A_test);
-            if (comptime zsl.types.isMatrix(@TypeOf(B))) tzsl.matrix.printMatrix("B", B) else std.debug.print("B: {}\n", .{B});
-            if (comptime zsl.types.isMatrix(@TypeOf(C))) tzsl.matrix.printMatrix("C", C) else std.debug.print("C: {}\n", .{C});
+            if (comptime zsl.meta.isMatrix(@TypeOf(B))) tzsl.matrix.printMatrix("B", B) else std.debug.print("B: {}\n", .{B});
+            if (comptime zsl.meta.isMatrix(@TypeOf(C))) tzsl.matrix.printMatrix("C", C) else std.debug.print("C: {}\n", .{C});
             tzsl.matrix.printMatrix("D", D);
 
             return e;

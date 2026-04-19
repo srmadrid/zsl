@@ -1,9 +1,9 @@
 const std = @import("std");
 
-const types = @import("../types.zig");
-const Layout = types.Layout;
-const Uplo = types.Uplo;
-const Diag = types.Diag;
+const meta = @import("../meta.zig");
+const Layout = meta.Layout;
+const Uplo = meta.Uplo;
+const Diag = meta.Diag;
 
 const numeric = @import("../numeric.zig");
 const int = @import("../int.zig");
@@ -26,7 +26,7 @@ pub const Direction = enum {
 /// `data[j] = i`, then the element at row `i` and column `j` is 1, and all
 /// other elements in column `j` are 0.
 pub fn Permutation(N: type) type {
-    if (!types.isNumeric(N))
+    if (!meta.isNumeric(N))
         @compileError("zsl.matrix.Permutation: N must be a numeric type, got \n\tN = " ++ @typeName(N) ++ "\n");
 
     return struct {
@@ -39,9 +39,9 @@ pub fn Permutation(N: type) type {
         // Type signatures
         pub const is_matrix = true;
         pub const is_permutation = true;
-        pub const storage_layout = types.default_layout;
-        pub const storage_uplo = types.default_uplo;
-        pub const storage_diag = types.default_diag;
+        pub const storage_layout = meta.default_layout;
+        pub const storage_uplo = meta.default_uplo;
+        pub const storage_diag = meta.default_diag;
 
         // Numeric type
         pub const Numeric = N;

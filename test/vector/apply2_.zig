@@ -66,9 +66,9 @@ test "zsl.vector.apply2_" {
         const can_alias_C = combination[0] == combination[2];
 
         const ops_to_test =
-            if (comptime zsl.types.isNumeric(combination[1]))
+            if (comptime zsl.meta.isNumeric(combination[1]))
                 .{"mul"}
-            else if (comptime zsl.types.isNumeric(combination[2]))
+            else if (comptime zsl.meta.isNumeric(combination[2]))
                 .{ "mul", "div" }
             else
                 .{ "add", "sub" };
@@ -102,7 +102,7 @@ fn executeTestBlock(
 
         var B = if (comptime alias_B)
             A
-        else if (comptime zsl.types.isNumeric(combination[1]))
+        else if (comptime zsl.meta.isNumeric(combination[1]))
             tzsl.randomNumber(combination[1], rand)
         else
             try tzsl.vector.randomVector(
@@ -116,7 +116,7 @@ fn executeTestBlock(
 
         var C = if (comptime alias_C)
             A
-        else if (comptime zsl.types.isNumeric(combination[2]))
+        else if (comptime zsl.meta.isNumeric(combination[2]))
             tzsl.randomNumber(combination[2], rand)
         else
             try tzsl.vector.randomVector(
@@ -129,13 +129,13 @@ fn executeTestBlock(
         defer if (comptime !alias_C) tzsl.deinit(allocator, &C);
 
         var D = if (comptime std.mem.eql(u8, op, "add"))
-            try tzsl.vector.correctApply2(zsl.types.Numeric(combination[0]), allocator, len, B, C, zsl.numeric.add_)
+            try tzsl.vector.correctApply2(zsl.meta.Numeric(combination[0]), allocator, len, B, C, zsl.numeric.add_)
         else if (comptime std.mem.eql(u8, op, "sub"))
-            try tzsl.vector.correctApply2(zsl.types.Numeric(combination[0]), allocator, len, B, C, zsl.numeric.sub_)
+            try tzsl.vector.correctApply2(zsl.meta.Numeric(combination[0]), allocator, len, B, C, zsl.numeric.sub_)
         else if (comptime std.mem.eql(u8, op, "mul"))
-            try tzsl.vector.correctApply2(zsl.types.Numeric(combination[0]), allocator, len, B, C, zsl.numeric.mul_)
+            try tzsl.vector.correctApply2(zsl.meta.Numeric(combination[0]), allocator, len, B, C, zsl.numeric.mul_)
         else
-            try tzsl.vector.correctApply2(zsl.types.Numeric(combination[0]), allocator, len, B, C, zsl.numeric.div_);
+            try tzsl.vector.correctApply2(zsl.meta.Numeric(combination[0]), allocator, len, B, C, zsl.numeric.div_);
         defer D.deinit(allocator);
 
         if (comptime std.mem.eql(u8, op, "add"))
@@ -155,8 +155,8 @@ fn executeTestBlock(
             );
 
             tzsl.vector.printVector("A", A);
-            if (comptime zsl.types.isVector(@TypeOf(B))) tzsl.vector.printVector("B", B) else std.debug.print("B: {}\n", .{B});
-            if (comptime zsl.types.isVector(@TypeOf(C))) tzsl.vector.printVector("C", C) else std.debug.print("C: {}\n", .{C});
+            if (comptime zsl.meta.isVector(@TypeOf(B))) tzsl.vector.printVector("B", B) else std.debug.print("B: {}\n", .{B});
+            if (comptime zsl.meta.isVector(@TypeOf(C))) tzsl.vector.printVector("C", C) else std.debug.print("C: {}\n", .{C});
             tzsl.vector.printVector("D", D);
 
             return e;

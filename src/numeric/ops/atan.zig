@@ -1,4 +1,4 @@
-const types = @import("../../types.zig");
+const meta = @import("../../meta.zig");
 
 const int = @import("../../int.zig");
 const float = @import("../../float.zig");
@@ -8,17 +8,17 @@ const complex = @import("../../complex.zig");
 const numeric = @import("../../numeric.zig");
 
 pub fn Atan(X: type) type {
-    comptime if (!types.isNumeric(X))
+    comptime if (!meta.isNumeric(X))
         @compileError("zsl.numeric.atan: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
 
-    switch (comptime types.numericType(X)) {
+    switch (comptime meta.numericType(X)) {
         .bool => @compileError("zsl.numeric.atan: not defined for " ++ @typeName(X) ++ "."),
         .int => @compileError("zsl.numeric.atan: not defined for " ++ @typeName(X) ++ "."),
         .float => return X,
         .dyadic => return X,
         .complex => return X,
         .custom => {
-            if (comptime !types.hasMethod(X, "Atan", fn (type) type, &.{X}))
+            if (comptime !meta.hasMethod(X, "Atan", fn (type) type, &.{X}))
                 @compileError("zsl.numeric.atan: " ++ @typeName(X) ++ " must implement `fn Atan(type) type`");
 
             return X.Atan(X);
@@ -54,14 +54,14 @@ pub fn atan(x: anytype) numeric.Atan(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Atan(X);
 
-    switch (comptime types.numericType(X)) {
+    switch (comptime meta.numericType(X)) {
         .bool => unreachable,
         .int => unreachable,
         .float => return float.atan(x),
         .dyadic => return dyadic.atan(x),
         .complex => return complex.atan(x),
         .custom => {
-            const Impl: type = comptime types.anyHasMethod(
+            const Impl: type = comptime meta.anyHasMethod(
                 &.{ R, X },
                 "atan",
                 fn (X) numeric.Atan(X),

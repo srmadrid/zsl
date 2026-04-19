@@ -37,14 +37,14 @@ fn processPrecision(
     results: anytype,
 ) void {
     const data_fields: comptime_int = @typeInfo(@TypeOf(data[0])).@"struct".fields.len;
-    var ulps: [data.len * (if (zsl.types.isComplex(@TypeOf(results[0]))) 2 else 1)]f128 = undefined;
+    var ulps: [data.len * (if (zsl.meta.isComplex(@TypeOf(results[0]))) 2 else 1)]f128 = undefined;
 
     var sum_ulp: f128 = 0.0;
     var max_ulp: f128 = 0;
     var exact_count: usize = 0;
     var subnormal_count: usize = 0;
 
-    if (comptime zsl.types.isComplex(@TypeOf(results[0]))) {
+    if (comptime zsl.meta.isComplex(@TypeOf(results[0]))) {
         for (0..data.len) |i| {
             var ulp: f128 = undefined;
             if (float.isSubnormal(data[i][1].re) or // input 1 real part

@@ -1,7 +1,7 @@
 const std = @import("std");
 
-const types = @import("../types.zig");
-const Layout = types.Layout;
+const meta = @import("../meta.zig");
+const Layout = meta.Layout;
 
 const numeric = @import("../numeric.zig");
 const int = @import("../int.zig");
@@ -14,7 +14,7 @@ const array = @import("../array.zig");
 /// Diagonal matrix type, represented as a contiguous array of `min(rows, cols)`
 /// elements of type `N`.
 pub fn Diagonal(N: type) type {
-    if (!types.isNumeric(N))
+    if (!meta.isNumeric(N))
         @compileError("zsl.matrix.Diagonal: N must be a numeric type, got \n\tN = " ++ @typeName(N) ++ "\n");
 
     return struct {
@@ -26,9 +26,9 @@ pub fn Diagonal(N: type) type {
         // Type signatures
         pub const is_matrix = true;
         pub const is_diagonal = true;
-        pub const storage_layout = types.default_layout;
-        pub const storage_uplo = types.default_uplo;
-        pub const storage_diag = types.default_diag;
+        pub const storage_layout = meta.default_layout;
+        pub const storage_uplo = meta.default_uplo;
+        pub const storage_diag = meta.default_diag;
 
         // Numeric type
         pub const Numeric = N;
@@ -130,7 +130,7 @@ pub fn Diagonal(N: type) type {
 
             var i: usize = 0;
             while (i < int.min(rows, cols)) : (i += 1) {
-                mat.data[i] = if (comptime @typeInfo(types.ReturnTypeFromInputs(@"fn", &types.structToArrayOfTypes(Args))) == .error_union)
+                mat.data[i] = if (comptime @typeInfo(meta.ReturnTypeFromInputs(@"fn", &meta.structToArrayOfTypes(Args))) == .error_union)
                     try @call(.auto, @"fn", args)
                 else
                     @call(.auto, @"fn", args);

@@ -4,8 +4,8 @@ const dyadic = @This();
 
 const std = @import("std");
 
-const types = @import("types.zig");
-const Cmp = types.Cmp;
+const meta = @import("meta.zig");
+const Cmp = meta.Cmp;
 
 const numeric = @import("numeric.zig");
 
@@ -65,10 +65,10 @@ pub fn Dyadic(mantissa_bits: u16, exponent_bits: u16) type {
         pub fn initValue(value: anytype) Dyadic(mantissa_bits, exponent_bits) {
             const V: type = @TypeOf(value);
 
-            comptime if (!types.isNumeric(V))
+            comptime if (!meta.isNumeric(V))
                 @compileError("zsl.Dyadic(mantissa_bits, exponent_bits).initValue: value must be a numeric, got \n\tvalue: " ++ @typeName(V) ++ "\n");
 
-            switch (comptime types.numericType(V)) {
+            switch (comptime meta.numericType(V)) {
                 .bool => if (value) .one else .zero,
                 .int => {
                     var result: Dyadic(mantissa_bits, exponent_bits) = .{
@@ -136,7 +136,7 @@ pub fn Dyadic(mantissa_bits: u16, exponent_bits: u16) type {
                 return x;
 
             // Addition or subtraction
-            const cmp_abs: types.Cmp = x.abs().cmp(y.abs());
+            const cmp_abs: meta.Cmp = x.abs().cmp(y.abs());
             if (x.positive == y.positive) {
                 var result: Dyadic(mantissa_bits, exponent_bits) =
                     if (cmp_abs == .gt)
@@ -569,9 +569,9 @@ pub fn Dyadic(mantissa_bits: u16, exponent_bits: u16) type {
 pub const Coerce = @import("dyadic/coerce.zig").Coerce;
 
 pub fn Add(comptime X: type, comptime Y: type) type {
-    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
-        !types.numericType(X).le(.dyadic) or !types.numericType(Y).le(.dyadic) or
-        (types.numericType(X) != .dyadic and types.numericType(Y) != .dyadic))
+    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y) or
+        !meta.numericType(X).le(.dyadic) or !meta.numericType(Y).le(.dyadic) or
+        (meta.numericType(X) != .dyadic and meta.numericType(Y) != .dyadic))
         @compileError("zsl.dyadic.add: at least one of x or y must be a dyadic, the other must be a bool, an int, a float or a dyadic, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
@@ -601,9 +601,9 @@ pub fn add(x: anytype, y: anytype) dyadic.Add(@TypeOf(x), @TypeOf(y)) {
 }
 
 pub fn Sub(comptime X: type, comptime Y: type) type {
-    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
-        !types.numericType(X).le(.dyadic) or !types.numericType(Y).le(.dyadic) or
-        (types.numericType(X) != .dyadic and types.numericType(Y) != .dyadic))
+    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y) or
+        !meta.numericType(X).le(.dyadic) or !meta.numericType(Y).le(.dyadic) or
+        (meta.numericType(X) != .dyadic and meta.numericType(Y) != .dyadic))
         @compileError("zsl.dyadic.sub: at least one of x or y must be a dyadic, the other must be a bool, an int, a float or a dyadic, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
@@ -633,9 +633,9 @@ pub fn sub(x: anytype, y: anytype) Sub(@TypeOf(x), @TypeOf(y)) {
 }
 
 pub fn Mul(comptime X: type, comptime Y: type) type {
-    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
-        !types.numericType(X).le(.dyadic) or !types.numericType(Y).le(.dyadic) or
-        (types.numericType(X) != .dyadic and types.numericType(Y) != .dyadic))
+    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y) or
+        !meta.numericType(X).le(.dyadic) or !meta.numericType(Y).le(.dyadic) or
+        (meta.numericType(X) != .dyadic and meta.numericType(Y) != .dyadic))
         @compileError("zsl.dyadic.mul: at least one of x or y must be a dyadic, the other must be a bool, an int, a float or a dyadic, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
@@ -665,9 +665,9 @@ pub fn mul(x: anytype, y: anytype) Mul(@TypeOf(x), @TypeOf(y)) {
 }
 
 pub fn Fma(comptime X: type, comptime Y: type, comptime Z: type) type {
-    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or !types.isNumeric(Z) or
-        !types.numericType(X).le(.dyadic) or !types.numericType(Y).le(.dyadic) or !types.numericType(Z).le(.dyadic) or
-        (types.numericType(X) != .dyadic and types.numericType(Y) != .dyadic and types.numericType(Z) != .dyadic))
+    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y) or !meta.isNumeric(Z) or
+        !meta.numericType(X).le(.dyadic) or !meta.numericType(Y).le(.dyadic) or !meta.numericType(Z).le(.dyadic) or
+        (meta.numericType(X) != .dyadic and meta.numericType(Y) != .dyadic and meta.numericType(Z) != .dyadic))
         @compileError("zsl.dyadic.fma: at least one of x, y or z must be a dyadic, the others must be bool, int, float or dyadic, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\tz: " ++ @typeName(Z) ++ "\n");
 
@@ -700,9 +700,9 @@ pub fn fma(x: anytype, y: anytype, z: anytype) dyadic.Fma(@TypeOf(x), @TypeOf(y)
 }
 
 pub fn Div(comptime X: type, comptime Y: type) type {
-    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
-        !types.numericType(X).le(.dyadic) or !types.numericType(Y).le(.dyadic) or
-        (types.numericType(X) != .dyadic and types.numericType(Y) != .dyadic))
+    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y) or
+        !meta.numericType(X).le(.dyadic) or !meta.numericType(Y).le(.dyadic) or
+        (meta.numericType(X) != .dyadic and meta.numericType(Y) != .dyadic))
         @compileError("zsl.dyadic.div: at least one of x or y must be a dyadic, the other must be a bool, an int, a float or a dyadic, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 

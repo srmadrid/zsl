@@ -1,4 +1,4 @@
-const types = @import("../../types.zig");
+const meta = @import("../../meta.zig");
 
 const int = @import("../../int.zig");
 const float = @import("../../float.zig");
@@ -8,17 +8,17 @@ const complex = @import("../../complex.zig");
 const numeric = @import("../../numeric.zig");
 
 pub fn Sqrt(X: type) type {
-    comptime if (!types.isNumeric(X))
+    comptime if (!meta.isNumeric(X))
         @compileError("zsl.numeric.sqrt: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
 
-    switch (comptime types.numericType(X)) {
+    switch (comptime meta.numericType(X)) {
         .bool => @compileError("zsl.numeric.sqrt: not defined for " ++ @typeName(X) ++ "."),
         .int => @compileError("zsl.numeric.sqrt: not defined for " ++ @typeName(X) ++ "."),
         .float => return X,
         .dyadic => return X,
         .complex => return X,
         .custom => {
-            if (comptime !types.hasMethod(X, "Sqrt", fn (type) type, &.{X}))
+            if (comptime !meta.hasMethod(X, "Sqrt", fn (type) type, &.{X}))
                 @compileError("zsl.numeric.sqrt: " ++ @typeName(X) ++ " must implement `fn Sqrt(type) type`");
 
             return X.Sqrt(X);
@@ -54,14 +54,14 @@ pub fn sqrt(x: anytype) numeric.Sqrt(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Sqrt(X);
 
-    switch (comptime types.numericType(X)) {
+    switch (comptime meta.numericType(X)) {
         .bool => unreachable,
         .int => unreachable,
         .float => return float.sqrt(x),
         .dyadic => return dyadic.sqrt(x),
         .complex => return complex.sqrt(x),
         .custom => {
-            const Impl: type = comptime types.anyHasMethod(
+            const Impl: type = comptime meta.anyHasMethod(
                 &.{ R, X },
                 "sqrt",
                 fn (X) numeric.Sqrt(X),

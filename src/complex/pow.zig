@@ -1,12 +1,12 @@
-const types = @import("../types.zig");
+const meta = @import("../meta.zig");
 const numeric = @import("../numeric.zig");
 
 const complex = @import("../complex.zig");
 
 pub fn Pow(comptime X: type, comptime Y: type) type {
-    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
-        !types.numericType(X).le(.complex) or !types.numericType(Y).le(.complex) or
-        (types.numericType(X) != .complex and types.numericType(Y) != .complex))
+    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y) or
+        !meta.numericType(X).le(.complex) or !meta.numericType(Y).le(.complex) or
+        (meta.numericType(X) != .complex and meta.numericType(Y) != .complex))
         @compileError("zsl.complex.pow: at least one of x or y must be a complex, the other must be a bool, an int, a float, a dyadic or a complex, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
@@ -36,7 +36,7 @@ pub fn pow(x: anytype, y: anytype) complex.Pow(@TypeOf(x), @TypeOf(y)) {
     const Y: type = @TypeOf(y);
     // const R: type = complex.Pow(X, Y);
 
-    if (comptime !types.isComplex(X)) {
+    if (comptime !meta.isComplex(X)) {
         // x is real, y is complex
         const r = numeric.pow(x, y.re);
         const theta = numeric.mul(y.im, numeric.ln(x));
@@ -45,7 +45,7 @@ pub fn pow(x: anytype, y: anytype) complex.Pow(@TypeOf(x), @TypeOf(y)) {
             .re = numeric.mul(r, numeric.cos(theta)),
             .im = numeric.mul(r, numeric.sin(theta)),
         };
-    } else if (comptime !types.isComplex(Y)) {
+    } else if (comptime !meta.isComplex(Y)) {
         // x is complex, y is real
         const r = numeric.pow(complex.abs(x), y);
         const theta = numeric.mul(complex.arg(x), y);

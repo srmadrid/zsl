@@ -1,4 +1,4 @@
-const types = @import("../../types.zig");
+const meta = @import("../../meta.zig");
 
 const int = @import("../../int.zig");
 const float = @import("../../float.zig");
@@ -8,17 +8,17 @@ const complex = @import("../../complex.zig");
 const numeric = @import("../../numeric.zig");
 
 pub fn Sinh(X: type) type {
-    comptime if (!types.isNumeric(X))
+    comptime if (!meta.isNumeric(X))
         @compileError("zsl.numeric.sinh: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
 
-    switch (comptime types.numericType(X)) {
+    switch (comptime meta.numericType(X)) {
         .bool => @compileError("zsl.numeric.sinh: not defined for " ++ @typeName(X) ++ "."),
         .int => @compileError("zsl.numeric.sinh: not defined for " ++ @typeName(X) ++ "."),
         .float => return X,
         .dyadic => return X,
         .complex => return X,
         .custom => {
-            if (comptime !types.hasMethod(X, "Sinh", fn (type) type, &.{X}))
+            if (comptime !meta.hasMethod(X, "Sinh", fn (type) type, &.{X}))
                 @compileError("zsl.numeric.sinh: " ++ @typeName(X) ++ " must implement `fn Sinh(type) type`");
 
             return X.Sinh(X);
@@ -54,14 +54,14 @@ pub fn sinh(x: anytype) numeric.Sinh(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Sinh(X);
 
-    switch (comptime types.numericType(X)) {
+    switch (comptime meta.numericType(X)) {
         .bool => unreachable,
         .int => unreachable,
         .float => return float.sinh(x),
         .dyadic => return dyadic.sinh(x),
         .complex => return complex.sinh(x),
         .custom => {
-            const Impl: type = comptime types.anyHasMethod(
+            const Impl: type = comptime meta.anyHasMethod(
                 &.{ R, X },
                 "sinh",
                 fn (X) numeric.Sinh(X),

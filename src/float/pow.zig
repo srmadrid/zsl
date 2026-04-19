@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const types = @import("../types.zig");
+const meta = @import("../meta.zig");
 const numeric = @import("../numeric.zig");
 
 const float = @import("../float.zig");
@@ -9,9 +9,9 @@ const dbl64 = @import("dbl64.zig");
 const ldbl128 = @import("ldbl128.zig");
 
 pub fn Pow(comptime X: type, comptime Y: type) type {
-    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
-        !types.numericType(X).le(.float) or !types.numericType(Y).le(.float) or
-        (types.numericType(X) != .float and types.numericType(Y) != .float))
+    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y) or
+        !meta.numericType(X).le(.float) or !meta.numericType(Y).le(.float) or
+        (meta.numericType(X) != .float and meta.numericType(Y) != .float))
         @compileError("zsl.float.pow: at least one of x or y must be a float, the other must be a bool, an int or a float, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 

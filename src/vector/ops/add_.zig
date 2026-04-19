@@ -1,4 +1,4 @@
-const types = @import("../../types.zig");
+const meta = @import("../../meta.zig");
 
 const numeric = @import("../../numeric.zig");
 
@@ -45,41 +45,41 @@ pub fn add_(o: anytype, x: anytype, y: anytype) !void {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 
-    comptime if (!types.isPointer(O) or types.isConstPointer(O) or !types.isVector(types.Child(O)) or
-        !types.isVector(X) or !types.isVector(Y))
+    comptime if (!meta.isPointer(O) or meta.isConstPointer(O) or !meta.isVector(meta.Child(O)) or
+        !meta.isVector(X) or !meta.isVector(Y))
         @compileError("zsl.vector.add_: o must be a mutable one-itme pointer to a vector, and x and y must be vectors, got\n\to: " ++
             @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    O = types.Child(O);
+    O = meta.Child(O);
 
-    if (comptime types.isCustomType(O)) {
-        if (comptime types.isCustomType(X)) {
-            if (comptime types.isCustomType(Y)) { // O, X and Y all custom vectors
-                if (comptime types.anyHasMethod(&.{ O, X, Y }, "add_", fn (*O, X, Y) anyerror!void, &.{ *O, X, Y })) |Impl|
+    if (comptime meta.isCustomType(O)) {
+        if (comptime meta.isCustomType(X)) {
+            if (comptime meta.isCustomType(Y)) { // O, X and Y all custom vectors
+                if (comptime meta.anyHasMethod(&.{ O, X, Y }, "add_", fn (*O, X, Y) anyerror!void, &.{ *O, X, Y })) |Impl|
                     return Impl.add_(o, x, y);
             } else { // only O and X custom vectors
-                if (comptime types.anyHasMethod(&.{ O, X }, "add_", fn (*O, X, Y) anyerror!void, &.{ *O, X, Y })) |Impl|
+                if (comptime meta.anyHasMethod(&.{ O, X }, "add_", fn (*O, X, Y) anyerror!void, &.{ *O, X, Y })) |Impl|
                     return Impl.add_(o, x, y);
             }
-        } else if (comptime types.isCustomType(Y)) {
-            if (comptime types.isCustomType(Y)) { // only O and Y custom vectors
-                if (comptime types.anyHasMethod(&.{ O, Y }, "add_", fn (*O, X, Y) anyerror!void, &.{ *O, X, Y })) |Impl|
+        } else if (comptime meta.isCustomType(Y)) {
+            if (comptime meta.isCustomType(Y)) { // only O and Y custom vectors
+                if (comptime meta.anyHasMethod(&.{ O, Y }, "add_", fn (*O, X, Y) anyerror!void, &.{ *O, X, Y })) |Impl|
                     return Impl.add_(o, x, y);
             } else { // only O vector
-                if (comptime types.hasMethod(O, "add_", fn (*O, X, Y) anyerror!void, &.{ *O, X, Y }))
+                if (comptime meta.hasMethod(O, "add_", fn (*O, X, Y) anyerror!void, &.{ *O, X, Y }))
                     return O.add_(o, x, y);
             }
         }
-    } else if (comptime types.isCustomType(X)) {
-        if (comptime types.isCustomType(Y)) { // only X and Y custom vectors
-            if (comptime types.anyHasMethod(&.{ X, Y }, "add_", fn (*O, X, Y) anyerror!void, &.{ *O, X, Y })) |Impl|
+    } else if (comptime meta.isCustomType(X)) {
+        if (comptime meta.isCustomType(Y)) { // only X and Y custom vectors
+            if (comptime meta.anyHasMethod(&.{ X, Y }, "add_", fn (*O, X, Y) anyerror!void, &.{ *O, X, Y })) |Impl|
                 return Impl.add_(o, x, y);
         } else { // only X custom vector
-            if (comptime types.hasMethod(X, "add_", fn (*O, X, Y) anyerror!void, &.{ *O, X, Y }))
+            if (comptime meta.hasMethod(X, "add_", fn (*O, X, Y) anyerror!void, &.{ *O, X, Y }))
                 return X.add_(o, x, y);
         }
-    } else if (comptime types.isCustomType(Y)) { // only Y custom vector
-        if (comptime types.hasMethod(Y, "add_", fn (*O, X, Y) anyerror!void, &.{ *O, X, Y }))
+    } else if (comptime meta.isCustomType(Y)) { // only Y custom vector
+        if (comptime meta.hasMethod(Y, "add_", fn (*O, X, Y) anyerror!void, &.{ *O, X, Y }))
             return Y.add_(o, x, y);
     }
 

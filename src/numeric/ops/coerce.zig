@@ -1,4 +1,4 @@
-const types = @import("../../types.zig");
+const meta = @import("../../meta.zig");
 
 const int = @import("../../int.zig");
 const float = @import("../../float.zig");
@@ -14,7 +14,7 @@ const numeric = @import("../../numeric.zig");
 /// The bit-width of the result is either the larger of the two bit-widths (if
 /// the signed type is larger) or the larger of the two bit-widths plus one (if
 /// the unsigned type is larger). If both ints are "standard" (see
-/// `types.standard_integer_types`), the result is the next larger standard type
+/// `meta.standard_integer_types`), the result is the next larger standard type
 /// that can hold both values.
 ///
 /// ## Arguments
@@ -33,12 +33,12 @@ const numeric = @import("../../numeric.zig");
 /// * `fn Coerce(type, type) type`: Returns the smallest type that can represent
 ///   all values of types `X` and `Y`.
 pub fn Coerce(comptime X: type, comptime Y: type) type {
-    comptime if (!types.isNumeric(X) or !types.isNumeric(Y))
+    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y))
         @compileError("zsl.numeric.Coerce: X and Y must be numeric types, got \n\tX = " ++ @typeName(X) ++ "\n\tY = " ++ @typeName(Y) ++ "\n");
 
-    if (comptime types.isCustomType(X)) {
-        if (comptime types.isCustomType(Y)) { // X and Y both custom
-            const Impl: type = comptime types.anyHasMethod(
+    if (comptime meta.isCustomType(X)) {
+        if (comptime meta.isCustomType(Y)) { // X and Y both custom
+            const Impl: type = comptime meta.anyHasMethod(
                 &.{ X, Y },
                 "Coerce",
                 fn (type, type) type,
@@ -48,20 +48,20 @@ pub fn Coerce(comptime X: type, comptime Y: type) type {
 
             return Impl.Coerce(X, Y);
         } else { // only X custom
-            comptime if (!types.hasMethod(X, "Coerce", fn (type, type) type, &.{ X, Y }))
+            comptime if (!meta.hasMethod(X, "Coerce", fn (type, type) type, &.{ X, Y }))
                 @compileError("zsl.numeric.Coerce: " ++ @typeName(X) ++ " must implement `fn Coerce(type, type) type`");
 
             return X.Coerce(X, Y);
         }
-    } else if (comptime types.isCustomType(Y)) { // only Y custom
-        comptime if (!types.hasMethod(Y, "Coerce", fn (type, type) type, &.{ X, Y }))
+    } else if (comptime meta.isCustomType(Y)) { // only Y custom
+        comptime if (!meta.hasMethod(Y, "Coerce", fn (type, type) type, &.{ X, Y }))
             @compileError("zsl.numeric.Coerce: " ++ @typeName(Y) ++ " must implement `fn Coerce(type, type) type`");
 
         return Y.Coerce(X, Y);
     }
 
-    switch (comptime types.numericType(X)) {
-        .bool => switch (comptime types.numericType(Y)) {
+    switch (comptime meta.numericType(X)) {
+        .bool => switch (comptime meta.numericType(Y)) {
             .bool => return bool,
             .int => return int.Coerce(X, Y),
             .float => return float.Coerce(X, Y),
@@ -69,25 +69,25 @@ pub fn Coerce(comptime X: type, comptime Y: type) type {
             .complex => return complex.Coerce(X, Y),
             .custom => unreachable,
         },
-        .int => switch (comptime types.numericType(Y)) {
+        .int => switch (comptime meta.numericType(Y)) {
             .bool, .int => return int.Coerce(X, Y),
             .float => return float.Coerce(X, Y),
             .dyadic => return dyadic.Coerce(X, Y),
             .complex => return complex.Coerce(X, Y),
             .custom => unreachable,
         },
-        .float => switch (comptime types.numericType(Y)) {
+        .float => switch (comptime meta.numericType(Y)) {
             .bool, .int, .float => return float.Coerce(X, Y),
             .dyadic => return dyadic.Coerce(X, Y),
             .complex => return complex.Coerce(X, Y),
             .custom => unreachable,
         },
-        .dyadic => switch (comptime types.numericType(Y)) {
+        .dyadic => switch (comptime meta.numericType(Y)) {
             .bool, .int, .float, .dyadic => return dyadic.Coerce(X, Y),
             .complex => return complex.Coerce(X, Y),
             .custom => unreachable,
         },
-        .complex => switch (comptime types.numericType(Y)) {
+        .complex => switch (comptime meta.numericType(Y)) {
             .bool, .int, .float, .dyadic, .complex => return complex.Coerce(X, Y),
             .custom => unreachable,
         },

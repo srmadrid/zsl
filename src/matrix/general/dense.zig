@@ -1,9 +1,9 @@
 const std = @import("std");
 
-const types = @import("../../types.zig");
-const Layout = types.Layout;
-const Uplo = types.Uplo;
-const Diag = types.Diag;
+const meta = @import("../../meta.zig");
+const Layout = meta.Layout;
+const Uplo = meta.Uplo;
+const Diag = meta.Diag;
 
 const numeric = @import("../../numeric.zig");
 const int = @import("../../int.zig");
@@ -16,7 +16,7 @@ const array = @import("../../array.zig");
 /// `rows × cols` elements of type `N`, stored in either column-major or
 /// row-major order with a specified leading dimension.
 pub fn Dense(N: type, layout: Layout) type {
-    if (!types.isNumeric(N))
+    if (!meta.isNumeric(N))
         @compileError("zsl.matrix.general.Dense: N must be a numeric type, got \n\tN = " ++ @typeName(N) ++ "\n");
 
     return struct {
@@ -31,8 +31,8 @@ pub fn Dense(N: type, layout: Layout) type {
         pub const is_dense = true;
         pub const is_general = true;
         pub const storage_layout = layout;
-        pub const storage_uplo = types.default_uplo;
-        pub const storage_diag = types.default_diag;
+        pub const storage_uplo = meta.default_uplo;
+        pub const storage_diag = meta.default_diag;
 
         // Numeric type
         pub const Numeric = N;
@@ -153,7 +153,7 @@ pub fn Dense(N: type, layout: Layout) type {
                 while (j < cols) : (j += 1) {
                     var i: usize = 0;
                     while (i < rows) : (i += 1) {
-                        mat.data[i + j * mat.ld] = if (comptime @typeInfo(types.ReturnTypeFromInputs(@"fn", &types.structToArrayOfTypes(Args))) == .error_union)
+                        mat.data[i + j * mat.ld] = if (comptime @typeInfo(meta.ReturnTypeFromInputs(@"fn", &meta.structToArrayOfTypes(Args))) == .error_union)
                             try @call(.auto, @"fn", args)
                         else
                             @call(.auto, @"fn", args);
@@ -164,7 +164,7 @@ pub fn Dense(N: type, layout: Layout) type {
                 while (i < rows) : (i += 1) {
                     var j: usize = 0;
                     while (j < cols) : (j += 1) {
-                        mat.data[i * mat.ld + j] = if (comptime @typeInfo(types.ReturnTypeFromInputs(@"fn", &types.structToArrayOfTypes(Args))) == .error_union)
+                        mat.data[i * mat.ld + j] = if (comptime @typeInfo(meta.ReturnTypeFromInputs(@"fn", &meta.structToArrayOfTypes(Args))) == .error_union)
                             try @call(.auto, @"fn", args)
                         else
                             @call(.auto, @"fn", args);
@@ -465,7 +465,7 @@ pub fn Dense(N: type, layout: Layout) type {
                 .data = self.data + self._index(r, 0),
                 .len = self.cols,
                 .inc = if (comptime layout == .col_major)
-                    types.scast(isize, self.ld)
+                    meta.scast(isize, self.ld)
                 else
                     1,
                 .flags = .{ .owns_data = false },
@@ -494,7 +494,7 @@ pub fn Dense(N: type, layout: Layout) type {
                 .inc = if (comptime layout == .col_major)
                     1
                 else
-                    types.scast(isize, self.ld),
+                    meta.scast(isize, self.ld),
                 .flags = .{ .owns_data = false },
             };
         }

@@ -1,4 +1,4 @@
-const types = @import("../../types.zig");
+const meta = @import("../../meta.zig");
 const numeric = @import("../../numeric.zig");
 
 /// Casts a value of any numeric type to any numeric type. Some casts may lead
@@ -72,109 +72,109 @@ const numeric = @import("../../numeric.zig");
 pub fn cast(comptime N: type, value: anytype) N {
     const V: type = @TypeOf(value);
 
-    comptime if (!types.isNumeric(N) or !types.isNumeric(V))
+    comptime if (!meta.isNumeric(N) or !meta.isNumeric(V))
         @compileError("zsl.cast: N must be a numeric type and value must be a numeric, got\n\tN = " ++ @typeName(N) ++ "\n\tvalue: " ++ @typeName(V) ++ "\n");
 
     if (comptime N == V)
         return value;
 
-    switch (comptime types.numericType(V)) {
-        .bool => switch (comptime types.numericType(N)) {
+    switch (comptime meta.numericType(V)) {
+        .bool => switch (comptime meta.numericType(N)) {
             .bool => unreachable,
             .int, .float, .dyadic, .complex => return if (value) numeric.one(N) else numeric.zero(N),
             .custom => {
-                if (comptime !types.hasMethod(N, "fromBool", fn (V) N, &.{V}))
+                if (comptime !meta.hasMethod(N, "fromBool", fn (V) N, &.{V}))
                     return if (value) numeric.one(N) else numeric.zero(N);
 
                 return N.fromBool(value);
             },
         },
-        .int => switch (comptime types.numericType(N)) {
+        .int => switch (comptime meta.numericType(N)) {
             .bool => return numeric.ne(value, numeric.zero(V)),
             .int => return @intCast(value),
             .float => return @floatFromInt(value),
             .dyadic => return .initValue(value),
             .complex => return .initValue(value),
             .custom => {
-                comptime if (!types.hasMethod(N, "fromInt", fn (V) N, &.{V}))
+                comptime if (!meta.hasMethod(N, "fromInt", fn (V) N, &.{V}))
                     @compileError("zsl.cast: " ++ @typeName(N) ++ " must implement `fn fromInt(" ++ @typeName(V) ++ ") " ++ @typeName(N) ++ "`");
 
                 return N.fromInt(value);
             },
         },
-        .float => switch (comptime types.numericType(N)) {
+        .float => switch (comptime meta.numericType(N)) {
             .bool => return numeric.ne(value, numeric.zero(V)),
             .int => return @trunc(value),
             .float => return @floatCast(value),
             .dyadic => return .initValue(value),
             .complex => return .initValue(value),
             .custom => {
-                comptime if (!types.hasMethod(N, "fromFloat", fn (V) N, &.{V}))
+                comptime if (!meta.hasMethod(N, "fromFloat", fn (V) N, &.{V}))
                     @compileError("zsl.cast: " ++ @typeName(N) ++ " must implement `fn fromFloat(" ++ @typeName(V) ++ ") " ++ @typeName(N) ++ "`");
 
                 return N.fromFloat(value);
             },
         },
-        .dyadic => switch (comptime types.numericType(N)) {
+        .dyadic => switch (comptime meta.numericType(N)) {
             .bool => return numeric.ne(value, numeric.zero(V)),
             .int => return value.toInt(N),
             .float => return value.toFloat(N),
             .dyadic => return .initValue(value),
             .complex => return .initValue(value),
             .custom => {
-                comptime if (!types.hasMethod(N, "fromDyadic", fn (V) N, &.{V}))
+                comptime if (!meta.hasMethod(N, "fromDyadic", fn (V) N, &.{V}))
                     @compileError("zsl.cast: " ++ @typeName(N) ++ " must implement `fn fromDyadic(" ++ @typeName(V) ++ ") " ++ @typeName(N) ++ "`");
 
                 return N.fromDyadic(value);
             },
         },
-        .complex => switch (comptime types.numericType(N)) {
+        .complex => switch (comptime meta.numericType(N)) {
             .bool => return numeric.ne(value, numeric.zero(V)),
             .int => return value.toInt(N),
             .float => return value.toFloat(N),
             .dyadic => return .initValue(value),
             .complex => return .initValue(value),
             .custom => {
-                comptime if (!types.hasMethod(N, "fromComplex", fn (V) N, &.{V}))
+                comptime if (!meta.hasMethod(N, "fromComplex", fn (V) N, &.{V}))
                     @compileError("zsl.cast: " ++ @typeName(N) ++ " must implement `fn fromComplex(" ++ @typeName(V) ++ ") " ++ @typeName(N) ++ "`");
 
                 return N.fromComplex(value);
             },
         },
-        .custom => switch (comptime types.numericType(N)) {
+        .custom => switch (comptime meta.numericType(N)) {
             .bool => {
-                if (comptime !types.hasMethod(V, "toBool", fn (V) N, &.{V}))
+                if (comptime !meta.hasMethod(V, "toBool", fn (V) N, &.{V}))
                     return numeric.ne(value, numeric.zero(V));
 
                 return V.toBool(value);
             },
             .int => {
-                comptime if (!types.hasMethod(V, "toInt", fn (V, type) N, &.{ V, N }))
+                comptime if (!meta.hasMethod(V, "toInt", fn (V, type) N, &.{ V, N }))
                     @compileError("zsl.cast: " ++ @typeName(V) ++ " must implement `fn toInt(" ++ @typeName(V) ++ ", type) " ++ @typeName(N) ++ "`");
 
                 return V.toInt(value, N);
             },
             .float => {
-                comptime if (!types.hasMethod(V, "toFloat", fn (V, type) N, &.{ V, N }))
+                comptime if (!meta.hasMethod(V, "toFloat", fn (V, type) N, &.{ V, N }))
                     @compileError("zsl.cast: " ++ @typeName(V) ++ " must implement `fn toFloat(" ++ @typeName(V) ++ ", type) " ++ @typeName(N) ++ "`");
 
                 return V.toFloat(value, N);
             },
             .dyadic => {
-                comptime if (!types.hasMethod(V, "toDyadic", fn (V, type) N, &.{ V, N }))
+                comptime if (!meta.hasMethod(V, "toDyadic", fn (V, type) N, &.{ V, N }))
                     @compileError("zsl.cast: " ++ @typeName(V) ++ " must implement `fn toDyadic(" ++ @typeName(V) ++ ", type) " ++ @typeName(N) ++ "`");
 
                 return V.toDyadic(value, N);
             },
             .complex => {
-                comptime if (!types.hasMethod(V, "toComplex", fn (V, type) N, &.{ V, N }))
+                comptime if (!meta.hasMethod(V, "toComplex", fn (V, type) N, &.{ V, N }))
                     @compileError("zsl.cast: " ++ @typeName(V) ++ " must implement `fn toComplex(" ++ @typeName(V) ++ ", type) " ++ @typeName(N) ++ "`");
 
                 return V.toComplex(value, N);
             },
             .custom => {
-                if (comptime !types.hasMethod(N, "fromCustom", fn (V) N, &.{V})) {
-                    comptime if (!types.hasMethod(V, "toCustom", fn (V, type) N, &.{ V, N }))
+                if (comptime !meta.hasMethod(N, "fromCustom", fn (V) N, &.{V})) {
+                    comptime if (!meta.hasMethod(V, "toCustom", fn (V, type) N, &.{ V, N }))
                         @compileError("zsl.cast: " ++ @typeName(N) ++ " must implement `fn fromCustom(" ++ @typeName(V) ++ ") " ++ @typeName(N) ++ "`, or " ++ @typeName(V) ++ " must implement `fn toCustom(" ++ @typeName(V) ++ ", type) " ++ @typeName(N) ++ "`");
 
                     return V.toCustom(value, N);

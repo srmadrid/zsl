@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const types = @import("../../types.zig");
+const meta = @import("../../meta.zig");
 
 const numeric = @import("../../numeric.zig");
 const vector = @import("../../vector.zig");
@@ -8,21 +8,21 @@ const vector = @import("../../vector.zig");
 const vecops = @import("../ops.zig");
 
 pub fn Mul(comptime X: type, comptime Y: type) type {
-    comptime if ((!types.isVector(X) and !types.isNumeric(X)) or (!types.isVector(Y) and !types.isNumeric(Y)) or
-        (!types.isVector(X) and !types.isVector(Y)) or (types.isVector(X) and types.isVector(Y)))
+    comptime if ((!meta.isVector(X) and !meta.isNumeric(X)) or (!meta.isVector(Y) and !meta.isNumeric(Y)) or
+        (!meta.isVector(X) and !meta.isVector(Y)) or (meta.isVector(X) and meta.isVector(Y)))
         @compileError("zsl.vector.mul: at least one of x or y must be a vector, the other must be a numeric, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    if (comptime types.isCustomType(X) and types.isVector(X)) {
-        if (comptime types.isCustomType(Y) and types.isVector(Y)) { // X and Y both custom vectors
-            if (comptime types.anyHasMethod(&.{ X, Y }, "Mul", fn (type, type) type, &.{ X, Y })) |Impl|
+    if (comptime meta.isCustomType(X) and meta.isVector(X)) {
+        if (comptime meta.isCustomType(Y) and meta.isVector(Y)) { // X and Y both custom vectors
+            if (comptime meta.anyHasMethod(&.{ X, Y }, "Mul", fn (type, type) type, &.{ X, Y })) |Impl|
                 return Impl.Mul(X, Y);
         } else { // only X custom vector
-            if (comptime types.hasMethod(X, "Mul", fn (type, type) type, &.{ X, Y }))
+            if (comptime meta.hasMethod(X, "Mul", fn (type, type) type, &.{ X, Y }))
                 return X.Mul(X, Y);
         }
-    } else if (comptime types.isCustomType(Y) and types.isVector(Y)) { // only Y custom vector
-        if (comptime types.hasMethod(Y, "Mul", fn (type, type) type, &.{ X, Y }))
+    } else if (comptime meta.isCustomType(Y) and meta.isVector(Y)) { // only Y custom vector
+        if (comptime meta.hasMethod(Y, "Mul", fn (type, type) type, &.{ X, Y }))
             return Y.Mul(X, Y);
     }
 
@@ -74,11 +74,11 @@ pub fn mul(allocator: std.mem.Allocator, x: anytype, y: anytype) !vector.Mul(@Ty
     const Y: type = @TypeOf(y);
     const R: type = vector.Mul(@TypeOf(x), @TypeOf(y));
 
-    if (comptime types.isCustomType(X) and types.isVector(X)) { // only X custom vector
-        if (comptime types.hasMethod(X, "mul", fn (std.mem.Allocator, X, Y) anyerror!R, &.{ std.mem.Allocator, X, Y }))
+    if (comptime meta.isCustomType(X) and meta.isVector(X)) { // only X custom vector
+        if (comptime meta.hasMethod(X, "mul", fn (std.mem.Allocator, X, Y) anyerror!R, &.{ std.mem.Allocator, X, Y }))
             return X.mul(allocator, x, y);
-    } else if (comptime types.isCustomType(Y) and types.isVector(Y)) { // only Y custom vector
-        if (comptime types.hasMethod(Y, "mul", fn (std.mem.Allocator, X, Y) anyerror!R, &.{ std.mem.Allocator, X, Y }))
+    } else if (comptime meta.isCustomType(Y) and meta.isVector(Y)) { // only Y custom vector
+        if (comptime meta.hasMethod(Y, "mul", fn (std.mem.Allocator, X, Y) anyerror!R, &.{ std.mem.Allocator, X, Y }))
             return Y.mul(allocator, x, y);
     }
 

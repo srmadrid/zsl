@@ -1,4 +1,4 @@
-const types = @import("../types.zig");
+const meta = @import("../meta.zig");
 
 /// Returns the sign of an dyadic `x`.
 ///
@@ -15,7 +15,7 @@ const types = @import("../types.zig");
 pub fn sign(x: anytype) @TypeOf(x) {
     const X: type = @TypeOf(x);
 
-    comptime if (!types.isNumeric(X) or types.numericType(X) != .dyadic)
+    comptime if (!meta.isNumeric(X) or meta.numericType(X) != .dyadic)
         @compileError("zml.dyadic.sign: x must be an dyadic, got \n\tx: " ++ @typeName(X) ++ "\n");
 
     return if (x.isZero()) .zero else if (x.positive) .one else .negOne;

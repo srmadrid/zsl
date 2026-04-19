@@ -1,4 +1,4 @@
-const types = @import("../../types.zig");
+const meta = @import("../../meta.zig");
 
 const numeric = @import("../../numeric.zig");
 
@@ -46,30 +46,30 @@ pub fn mul_(o: anytype, x: anytype, y: anytype) !void {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 
-    comptime if (!types.isPointer(O) or types.isConstPointer(O) or !types.isVector(types.Child(O)) or
-        (!types.isVector(X) and !types.isNumeric(X)) or (!types.isVector(Y) and !types.isNumeric(Y)) or
-        (!types.isVector(X) and !types.isVector(Y)))
+    comptime if (!meta.isPointer(O) or meta.isConstPointer(O) or !meta.isVector(meta.Child(O)) or
+        (!meta.isVector(X) and !meta.isNumeric(X)) or (!meta.isVector(Y) and !meta.isNumeric(Y)) or
+        (!meta.isVector(X) and !meta.isVector(Y)))
         @compileError("zsl.vector.mul_: o must be a mutable one-itme pointer to a vector, and at least one of x or y must be a vector, the other must be a vector or a numeric, got\n\to: " ++
             @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    O = types.Child(O);
+    O = meta.Child(O);
 
-    if (comptime types.isCustomType(O)) {
-        if (comptime types.isCustomType(X) and types.isVector(X)) { // only O and X custom vectors
-            if (comptime types.anyHasMethod(&.{ O, X }, "mul_", fn (*O, X, Y) anyerror!void, &.{ *O, X, Y })) |Impl|
+    if (comptime meta.isCustomType(O)) {
+        if (comptime meta.isCustomType(X) and meta.isVector(X)) { // only O and X custom vectors
+            if (comptime meta.anyHasMethod(&.{ O, X }, "mul_", fn (*O, X, Y) anyerror!void, &.{ *O, X, Y })) |Impl|
                 return Impl.mul_(o, x, y);
-        } else if (comptime types.isCustomType(Y) and types.isVector(Y)) { // only O and Y custom vectors
-            if (comptime types.anyHasMethod(&.{ O, Y }, "mul_", fn (*O, X, Y) anyerror!void, &.{ *O, X, Y })) |Impl|
+        } else if (comptime meta.isCustomType(Y) and meta.isVector(Y)) { // only O and Y custom vectors
+            if (comptime meta.anyHasMethod(&.{ O, Y }, "mul_", fn (*O, X, Y) anyerror!void, &.{ *O, X, Y })) |Impl|
                 return Impl.mul_(o, x, y);
         } else { // only O custom vector
-            if (comptime types.hasMethod(O, "mul_", fn (*O, X, Y) anyerror!void, &.{ *O, X, Y }))
+            if (comptime meta.hasMethod(O, "mul_", fn (*O, X, Y) anyerror!void, &.{ *O, X, Y }))
                 return O.mul_(o, x, y);
         }
-    } else if (comptime types.isCustomType(X)) { // only X custom vector
-        if (comptime types.hasMethod(X, "mul_", fn (*O, X, Y) anyerror!void, &.{ *O, X, Y }))
+    } else if (comptime meta.isCustomType(X)) { // only X custom vector
+        if (comptime meta.hasMethod(X, "mul_", fn (*O, X, Y) anyerror!void, &.{ *O, X, Y }))
             return X.mul_(o, x, y);
-    } else if (comptime types.isCustomType(Y)) { // only Y custom vector
-        if (comptime types.hasMethod(Y, "mul_", fn (*O, X, Y) anyerror!void, &.{ *O, X, Y }))
+    } else if (comptime meta.isCustomType(Y)) { // only Y custom vector
+        if (comptime meta.hasMethod(Y, "mul_", fn (*O, X, Y) anyerror!void, &.{ *O, X, Y }))
             return Y.mul_(o, x, y);
     }
 

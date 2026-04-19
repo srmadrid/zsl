@@ -2,7 +2,7 @@
 
 const std = @import("std");
 
-const types = @import("../types.zig");
+const meta = @import("../meta.zig");
 
 /// Checks if the input type is a supported type (numeric, vector, matrix,
 /// array, or expression).
@@ -151,7 +151,7 @@ pub fn isNumeric(comptime T: type) bool {
 /// ## Returns
 /// `bool`: `true` if the type is a custom numeric type, `false` otherwise.
 pub fn isCustomNumeric(comptime T: type) bool {
-    return isNumeric(T) and types.numericType(T) == .custom;
+    return isNumeric(T) and meta.numericType(T) == .custom;
 }
 
 /// Checks if the input type is an instance of a vector.
@@ -590,10 +590,10 @@ pub fn isExpression(comptime T: type) bool {
 /// ## Returns
 /// `bool`: `true` if the type is integral, `false` otherwise.
 pub fn isIntegral(comptime N: type) bool {
-    if (comptime !types.isNumeric(N))
-        @compileError("zsl.types.isIntegral: " ++ @typeName(N) ++ " is not a supported numeric type");
+    if (comptime !meta.isNumeric(N))
+        @compileError("zsl.meta.isIntegral: " ++ @typeName(N) ++ " is not a supported numeric type");
 
-    switch (comptime types.numericType(N)) {
+    switch (comptime meta.numericType(N)) {
         .bool => return true,
         .int => return true,
         .float => return false,
@@ -610,8 +610,8 @@ pub fn isIntegral(comptime N: type) bool {
 /// ## Returns
 /// `bool`: `true` if the type is non-integral, `false` otherwise.
 pub fn isNonIntegral(comptime N: type) bool {
-    if (comptime !types.isNumeric(N))
-        @compileError("zsl.types.isNonIntegral: " ++ @typeName(N) ++ " is not a supported numeric type");
+    if (comptime !meta.isNumeric(N))
+        @compileError("zsl.meta.isNonIntegral: " ++ @typeName(N) ++ " is not a supported numeric type");
 
     return !isIntegral(N);
 }
@@ -625,10 +625,10 @@ pub fn isNonIntegral(comptime N: type) bool {
 /// ## Returns
 /// `bool`: `true` if the type is real, `false` otherwise.
 pub fn isReal(comptime N: type) bool {
-    if (comptime !types.isNumeric(N))
-        @compileError("zsl.types.isReal: " ++ @typeName(N) ++ " is not a supported numeric type");
+    if (comptime !meta.isNumeric(N))
+        @compileError("zsl.meta.isReal: " ++ @typeName(N) ++ " is not a supported numeric type");
 
-    switch (comptime types.numericType(N)) {
+    switch (comptime meta.numericType(N)) {
         .bool => return true,
         .int => return true,
         .float => return true,
@@ -645,10 +645,10 @@ pub fn isReal(comptime N: type) bool {
 /// ## Returns
 /// `bool`: `true` if the type is complex, `false` otherwise.
 pub fn isComplex(comptime N: type) bool {
-    if (comptime !types.isNumeric(N))
-        @compileError("zsl.types.isComplex: " ++ @typeName(N) ++ " is not a supported numeric type");
+    if (comptime !meta.isNumeric(N))
+        @compileError("zsl.meta.isComplex: " ++ @typeName(N) ++ " is not a supported numeric type");
 
-    switch (comptime types.numericType(N)) {
+    switch (comptime meta.numericType(N)) {
         .bool => return false,
         .int => return false,
         .float => return false,
@@ -665,10 +665,10 @@ pub fn isComplex(comptime N: type) bool {
 /// ## Returns
 /// `bool`: `true` if the type is signed, `false` otherwise.
 pub fn isSigned(comptime N: type) bool {
-    if (comptime !types.isNumeric(N))
-        @compileError("zsl.types.isSigned: " ++ @typeName(N) ++ " is not a supported numeric type");
+    if (comptime !meta.isNumeric(N))
+        @compileError("zsl.meta.isSigned: " ++ @typeName(N) ++ " is not a supported numeric type");
 
-    switch (comptime types.numericType(N)) {
+    switch (comptime meta.numericType(N)) {
         .int => {
             switch (comptime @typeInfo(N)) {
                 .int => |info| return info.signedness == .signed,
@@ -690,10 +690,10 @@ pub fn isSigned(comptime N: type) bool {
 /// ## Returns
 /// `bool`: `true` if the type is unsigned, `false` otherwise.
 pub fn isUnsigned(comptime N: type) bool {
-    if (comptime !types.isNumeric(N))
-        @compileError("zsl.types.isUnsigned: " ++ @typeName(N) ++ " is not a supported numeric type");
+    if (comptime !meta.isNumeric(N))
+        @compileError("zsl.meta.isUnsigned: " ++ @typeName(N) ++ " is not a supported numeric type");
 
-    switch (comptime types.numericType(N)) {
+    switch (comptime meta.numericType(N)) {
         .bool => return true,
         .int => {
             switch (comptime @typeInfo(N)) {

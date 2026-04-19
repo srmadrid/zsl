@@ -1,4 +1,4 @@
-const types = @import("../../types.zig");
+const meta = @import("../../meta.zig");
 
 const int = @import("../../int.zig");
 const float = @import("../../float.zig");
@@ -8,12 +8,12 @@ const complex = @import("../../complex.zig");
 const numeric = @import("../../numeric.zig");
 
 pub fn Add(X: type, Y: type) type {
-    comptime if (!types.isNumeric(X) or !types.isNumeric(Y))
+    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y))
         @compileError("zsl.numeric.add: x and y must be numerics, got \n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    if (comptime types.isCustomType(X)) {
-        if (comptime types.isCustomType(Y)) { // X and Y both custom
-            const Impl: type = comptime types.anyHasMethod(
+    if (comptime meta.isCustomType(X)) {
+        if (comptime meta.isCustomType(Y)) { // X and Y both custom
+            const Impl: type = comptime meta.anyHasMethod(
                 &.{ X, Y },
                 "Add",
                 fn (type, type) type,
@@ -23,20 +23,20 @@ pub fn Add(X: type, Y: type) type {
 
             return Impl.Add(X, Y);
         } else { // only X custom
-            comptime if (!types.hasMethod(X, "Add", fn (type, type) type, &.{ X, Y }))
+            comptime if (!meta.hasMethod(X, "Add", fn (type, type) type, &.{ X, Y }))
                 @compileError("zsl.numeric.add: " ++ @typeName(X) ++ " must implement `fn Add(type, type) type`");
 
             return X.Add(X, Y);
         }
-    } else if (comptime types.isCustomType(Y)) { // only Y custom
-        comptime if (!types.hasMethod(Y, "Add", fn (type, type) type, &.{ X, Y }))
+    } else if (comptime meta.isCustomType(Y)) { // only Y custom
+        comptime if (!meta.hasMethod(Y, "Add", fn (type, type) type, &.{ X, Y }))
             @compileError("zsl.numeric.add: " ++ @typeName(Y) ++ " must implement `fn Add(type, type) type`");
 
         return Y.Add(X, Y);
     }
 
-    switch (comptime types.numericType(X)) {
-        .bool => switch (comptime types.numericType(Y)) {
+    switch (comptime meta.numericType(X)) {
+        .bool => switch (comptime meta.numericType(Y)) {
             .bool => @compileError("zsl.numeric.add: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
             .int => return int.Add(X, Y),
             .float => return float.Add(X, Y),
@@ -44,25 +44,25 @@ pub fn Add(X: type, Y: type) type {
             .complex => return complex.Add(X, Y),
             .custom => unreachable,
         },
-        .int => switch (comptime types.numericType(Y)) {
+        .int => switch (comptime meta.numericType(Y)) {
             .bool, .int => return int.Add(X, Y),
             .float => return float.Add(X, Y),
             .dyadic => return dyadic.Add(X, Y),
             .complex => return complex.Add(X, Y),
             .custom => unreachable,
         },
-        .float => switch (comptime types.numericType(Y)) {
+        .float => switch (comptime meta.numericType(Y)) {
             .bool, .int, .float => return float.Add(X, Y),
             .dyadic => return dyadic.Add(X, Y),
             .complex => return complex.Add(X, Y),
             .custom => unreachable,
         },
-        .dyadic => switch (comptime types.numericType(Y)) {
+        .dyadic => switch (comptime meta.numericType(Y)) {
             .bool, .int, .float, .dyadic => return dyadic.Add(X, Y),
             .complex => return complex.Add(X, Y),
             .custom => unreachable,
         },
-        .complex => switch (comptime types.numericType(Y)) {
+        .complex => switch (comptime meta.numericType(Y)) {
             .bool, .int, .float, .dyadic, .complex => return complex.Add(X, Y),
             .custom => unreachable,
         },
@@ -100,9 +100,9 @@ pub fn add(x: anytype, y: anytype) numeric.Add(@TypeOf(x), @TypeOf(y)) {
     const Y: type = @TypeOf(y);
     const R: type = numeric.Add(X, Y);
 
-    if (comptime types.isCustomType(X)) {
-        if (comptime types.isCustomType(Y)) { // X and Y both custom
-            const Impl: type = comptime types.anyHasMethod(
+    if (comptime meta.isCustomType(X)) {
+        if (comptime meta.isCustomType(Y)) { // X and Y both custom
+            const Impl: type = comptime meta.anyHasMethod(
                 &.{ R, X, Y },
                 "add",
                 fn (X, Y) R,
@@ -112,7 +112,7 @@ pub fn add(x: anytype, y: anytype) numeric.Add(@TypeOf(x), @TypeOf(y)) {
 
             return Impl.add(x, y);
         } else { // only X custom
-            const Impl: type = comptime types.anyHasMethod(
+            const Impl: type = comptime meta.anyHasMethod(
                 &.{ R, X },
                 "add",
                 fn (X, Y) R,
@@ -122,8 +122,8 @@ pub fn add(x: anytype, y: anytype) numeric.Add(@TypeOf(x), @TypeOf(y)) {
 
             return Impl.add(x, y);
         }
-    } else if (comptime types.isCustomType(Y)) { // only Y custom
-        const Impl: type = comptime types.anyHasMethod(
+    } else if (comptime meta.isCustomType(Y)) { // only Y custom
+        const Impl: type = comptime meta.anyHasMethod(
             &.{ R, Y },
             "add",
             fn (X, Y) R,
@@ -134,8 +134,8 @@ pub fn add(x: anytype, y: anytype) numeric.Add(@TypeOf(x), @TypeOf(y)) {
         return Impl.add(x, y);
     }
 
-    switch (comptime types.numericType(X)) {
-        .bool => switch (comptime types.numericType(Y)) {
+    switch (comptime meta.numericType(X)) {
+        .bool => switch (comptime meta.numericType(Y)) {
             .bool => unreachable,
             .int => return int.add(x, y),
             .float => return float.add(x, y),
@@ -143,25 +143,25 @@ pub fn add(x: anytype, y: anytype) numeric.Add(@TypeOf(x), @TypeOf(y)) {
             .complex => return complex.add(x, y),
             .custom => unreachable,
         },
-        .int => switch (comptime types.numericType(Y)) {
+        .int => switch (comptime meta.numericType(Y)) {
             .bool, .int => return int.add(x, y),
             .float => return float.add(x, y),
             .dyadic => return dyadic.add(x, y),
             .complex => return complex.add(x, y),
             .custom => unreachable,
         },
-        .float => switch (comptime types.numericType(Y)) {
+        .float => switch (comptime meta.numericType(Y)) {
             .bool, .int, .float => return float.add(x, y),
             .dyadic => return dyadic.add(x, y),
             .complex => return complex.add(x, y),
             .custom => unreachable,
         },
-        .dyadic => switch (comptime types.numericType(Y)) {
+        .dyadic => switch (comptime meta.numericType(Y)) {
             .bool, .int, .float, .dyadic => return dyadic.add(x, y),
             .complex => return complex.add(x, y),
             .custom => unreachable,
         },
-        .complex => switch (comptime types.numericType(Y)) {
+        .complex => switch (comptime meta.numericType(Y)) {
             .bool, .int, .float, .dyadic, .complex => return complex.add(x, y),
             .custom => unreachable,
         },

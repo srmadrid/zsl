@@ -1,15 +1,15 @@
-const types = @import("../../../types.zig");
+const meta = @import("../../../meta.zig");
 
 pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
-    const O: type = types.Child(@TypeOf(o));
+    const O: type = meta.Child(@TypeOf(o));
     const X: type = @TypeOf(x);
 
-    if (comptime types.layoutOf(O) == .col_major) {
+    if (comptime meta.layoutOf(O) == .col_major) {
         var j: usize = 0;
         while (j < o.cols) : (j += 1) {
             var i: usize = 0;
             while (i < j) : (i += 1) {
-                const tx = if (comptime types.uploOf(X) == .upper) x.data[x._index(i, j)] else x.data[x._index(j, i)];
+                const tx = if (comptime meta.uploOf(X) == .upper) x.data[x._index(i, j)] else x.data[x._index(j, i)];
                 op_(&o.data[o._index(i, j)], tx, y);
             }
 
@@ -17,7 +17,7 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
 
             i = j + 1;
             while (i < o.rows) : (i += 1) {
-                const tx = if (comptime types.uploOf(X) == .lower) x.data[x._index(i, j)] else x.data[x._index(j, i)];
+                const tx = if (comptime meta.uploOf(X) == .lower) x.data[x._index(i, j)] else x.data[x._index(j, i)];
                 op_(&o.data[o._index(i, j)], tx, y);
             }
         }
@@ -26,7 +26,7 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
         while (i < o.rows) : (i += 1) {
             var j: usize = 0;
             while (j < i) : (j += 1) {
-                const tx = if (comptime types.uploOf(X) == .lower) x.data[x._index(i, j)] else x.data[x._index(j, i)];
+                const tx = if (comptime meta.uploOf(X) == .lower) x.data[x._index(i, j)] else x.data[x._index(j, i)];
                 op_(&o.data[o._index(i, j)], tx, y);
             }
 
@@ -34,7 +34,7 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
 
             j = i + 1;
             while (j < o.cols) : (j += 1) {
-                const tx = if (comptime types.uploOf(X) == .upper) x.data[x._index(i, j)] else x.data[x._index(j, i)];
+                const tx = if (comptime meta.uploOf(X) == .upper) x.data[x._index(i, j)] else x.data[x._index(j, i)];
                 op_(&o.data[o._index(i, j)], tx, y);
             }
         }

@@ -1,4 +1,4 @@
-const types = @import("../types.zig");
+const meta = @import("../meta.zig");
 
 const int = @import("../int.zig");
 
@@ -15,21 +15,21 @@ const int = @import("../int.zig");
 pub fn Coerce(comptime X: type, comptime Y: type) type {
     @setEvalBranchQuota(10000);
 
-    comptime if (!types.isNumeric(X) or !types.isNumeric(Y) or
-        !types.numericType(X).le(.float) or !types.numericType(Y).le(.float) or
-        (types.numericType(X) != .float and types.numericType(Y) != .float))
+    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y) or
+        !meta.numericType(X).le(.float) or !meta.numericType(Y).le(.float) or
+        (meta.numericType(X) != .float and meta.numericType(Y) != .float))
         @compileError("zsl.float.Coerce: at least one of X or Y must be a float type, the other must be a bool, an int or a float type, got\n\tX = " ++
             @typeName(X) ++ "\n\tY = " ++ @typeName(Y) ++ "\n");
 
     if (comptime X == Y)
         return X;
 
-    switch (comptime types.numericType(X)) {
-        .bool => switch (comptime types.numericType(Y)) {
+    switch (comptime meta.numericType(X)) {
+        .bool => switch (comptime meta.numericType(Y)) {
             .float => return Y,
             else => unreachable,
         },
-        .int => switch (comptime types.numericType(Y)) {
+        .int => switch (comptime meta.numericType(Y)) {
             .float => {
                 if (X == comptime_int)
                     return Y;
@@ -51,7 +51,7 @@ pub fn Coerce(comptime X: type, comptime Y: type) type {
             },
             else => unreachable,
         },
-        .float => switch (comptime types.numericType(Y)) {
+        .float => switch (comptime meta.numericType(Y)) {
             .bool => return X,
             .int => return Coerce(Y, X),
             .float => {

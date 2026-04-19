@@ -1,21 +1,21 @@
 const std = @import("std");
 
-const types = @import("../../../types.zig");
+const meta = @import("../../../meta.zig");
 
 const int = @import("../../../int.zig");
 
 const numeric = @import("../../../numeric.zig");
 
 pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
-    const O: type = types.Child(@TypeOf(o));
+    const O: type = meta.Child(@TypeOf(o));
     const X: type = @TypeOf(x);
 
     const aliased = (comptime O == X) and std.meta.eql(o.*, x);
 
-    if (comptime types.layoutOf(O) == .col_major) {
+    if (comptime meta.layoutOf(O) == .col_major) {
         var j: usize = 0;
         while (j < o.cols) : (j += 1) {
-            if (comptime types.uploOf(O) == .upper) {
+            if (comptime meta.uploOf(O) == .upper) {
                 if (!aliased) {
                     var i: usize = 0;
                     while (i < int.min(j, o.rows)) : (i += 1) {
@@ -24,15 +24,15 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
                 }
 
                 if (j < o.rows) {
-                    if (comptime types.diagOf(X) == .unit)
-                        op_(&o.data[o._index(j, j)], numeric.one(types.Numeric(X)), y.data[j])
+                    if (comptime meta.diagOf(X) == .unit)
+                        op_(&o.data[o._index(j, j)], numeric.one(meta.Numeric(X)), y.data[j])
                     else
                         op_(&o.data[o._index(j, j)], x.data[x._index(j, j)], y.data[j]);
                 }
             } else {
                 if (j < o.rows) {
-                    if (comptime types.diagOf(X) == .unit)
-                        op_(&o.data[o._index(j, j)], numeric.one(types.Numeric(X)), y.data[j])
+                    if (comptime meta.diagOf(X) == .unit)
+                        op_(&o.data[o._index(j, j)], numeric.one(meta.Numeric(X)), y.data[j])
                     else
                         op_(&o.data[o._index(j, j)], x.data[x._index(j, j)], y.data[j]);
                 }
@@ -48,7 +48,7 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
     } else {
         var i: usize = 0;
         while (i < o.rows) : (i += 1) {
-            if (comptime types.uploOf(O) == .lower) {
+            if (comptime meta.uploOf(O) == .lower) {
                 if (!aliased) {
                     var j: usize = 0;
                     while (j < int.min(i, o.cols)) : (j += 1) {
@@ -57,15 +57,15 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
                 }
 
                 if (i < o.cols) {
-                    if (comptime types.diagOf(X) == .unit)
-                        op_(&o.data[o._index(i, i)], numeric.one(types.Numeric(X)), y.data[i])
+                    if (comptime meta.diagOf(X) == .unit)
+                        op_(&o.data[o._index(i, i)], numeric.one(meta.Numeric(X)), y.data[i])
                     else
                         op_(&o.data[o._index(i, i)], x.data[x._index(i, i)], y.data[i]);
                 }
             } else {
                 if (i < o.cols) {
-                    if (comptime types.diagOf(X) == .unit)
-                        op_(&o.data[o._index(i, i)], numeric.one(types.Numeric(X)), y.data[i])
+                    if (comptime meta.diagOf(X) == .unit)
+                        op_(&o.data[o._index(i, i)], numeric.one(meta.Numeric(X)), y.data[i])
                     else
                         op_(&o.data[o._index(i, i)], x.data[x._index(i, i)], y.data[i]);
                 }

@@ -1,4 +1,4 @@
-const types = @import("../../types.zig");
+const meta = @import("../../meta.zig");
 const numeric = @import("../../numeric.zig");
 
 /// Performs in-place computation of the fused multiplication and addition of
@@ -38,81 +38,81 @@ pub fn fma_(o: anytype, x: anytype, y: anytype, z: anytype) void {
     const Y: type = @TypeOf(y);
     const Z: type = @TypeOf(z);
 
-    comptime if (!types.isPointer(O) or types.isConstPointer(O) or
-        !types.isNumeric(types.Child(O)) or
-        !types.isNumeric(X) or
-        !types.isNumeric(Y) or
-        !types.isNumeric(Z))
+    comptime if (!meta.isPointer(O) or meta.isConstPointer(O) or
+        !meta.isNumeric(meta.Child(O)) or
+        !meta.isNumeric(X) or
+        !meta.isNumeric(Y) or
+        !meta.isNumeric(Z))
         @compileError("zsl.numeric.fma_: o must be a mutable one-item pointer to a numeric, and x, y and < must be numerics, got \n\to: " ++ @typeName(O) ++ "\n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n\tz: " ++ @typeName(Z) ++ "\n");
 
-    O = types.Child(O);
+    O = meta.Child(O);
 
-    if (comptime types.isCustomType(O)) {
-        if (comptime types.isCustomType(X)) {
-            if (comptime types.isCustomType(Y)) {
-                if (comptime types.isCustomType(Z)) { // O, X, Y and Z all custom
-                    if (comptime types.anyHasMethod(&.{ O, X, Y, Z }, "fma_", fn (*O, X, Y, Z) void, &.{ *O, X, Y, Z })) |Impl|
+    if (comptime meta.isCustomType(O)) {
+        if (comptime meta.isCustomType(X)) {
+            if (comptime meta.isCustomType(Y)) {
+                if (comptime meta.isCustomType(Z)) { // O, X, Y and Z all custom
+                    if (comptime meta.anyHasMethod(&.{ O, X, Y, Z }, "fma_", fn (*O, X, Y, Z) void, &.{ *O, X, Y, Z })) |Impl|
                         return Impl.fma_(o, x, y, z);
                 } else { // only O, X and Y custom
-                    if (comptime types.anyHasMethod(&.{ O, X, Y }, "fma_", fn (*O, X, Y, Z) void, &.{ *O, X, Y, Z })) |Impl|
+                    if (comptime meta.anyHasMethod(&.{ O, X, Y }, "fma_", fn (*O, X, Y, Z) void, &.{ *O, X, Y, Z })) |Impl|
                         return Impl.fma_(o, x, y, z);
                 }
             } else {
-                if (comptime types.isCustomType(Z)) { // only O, X and Z custom
-                    if (comptime types.anyHasMethod(&.{ O, X, Z }, "fma_", fn (*O, X, Y, Z) void, &.{ *O, X, Y, Z })) |Impl|
+                if (comptime meta.isCustomType(Z)) { // only O, X and Z custom
+                    if (comptime meta.anyHasMethod(&.{ O, X, Z }, "fma_", fn (*O, X, Y, Z) void, &.{ *O, X, Y, Z })) |Impl|
                         return Impl.fma_(o, x, y, z);
                 } else { // only O and X custom
-                    if (comptime types.anyHasMethod(&.{ O, X }, "fma_", fn (*O, X, Y, Z) void, &.{ *O, X, Y, Z })) |Impl|
+                    if (comptime meta.anyHasMethod(&.{ O, X }, "fma_", fn (*O, X, Y, Z) void, &.{ *O, X, Y, Z })) |Impl|
                         return Impl.fma_(o, x, y, z);
                 }
             }
         } else {
-            if (comptime types.isCustomType(Y)) {
-                if (comptime types.isCustomType(Z)) { // only O, Y and Z custom
-                    if (comptime types.anyHasMethod(&.{ O, Y, Z }, "fma_", fn (*O, X, Y, Z) void, &.{ *O, X, Y, Z })) |Impl|
+            if (comptime meta.isCustomType(Y)) {
+                if (comptime meta.isCustomType(Z)) { // only O, Y and Z custom
+                    if (comptime meta.anyHasMethod(&.{ O, Y, Z }, "fma_", fn (*O, X, Y, Z) void, &.{ *O, X, Y, Z })) |Impl|
                         return Impl.fma_(o, x, y, z);
                 } else { // only O and Y custom
-                    if (comptime types.anyHasMethod(&.{ O, Y }, "fma_", fn (*O, X, Y, Z) void, &.{ *O, X, Y, Z })) |Impl|
+                    if (comptime meta.anyHasMethod(&.{ O, Y }, "fma_", fn (*O, X, Y, Z) void, &.{ *O, X, Y, Z })) |Impl|
                         return Impl.fma_(o, x, y, z);
                 }
             } else {
-                if (comptime types.isCustomType(Z)) { // only O and Z custom
-                    if (comptime types.anyHasMethod(&.{ O, Z }, "fma_", fn (*O, X, Y, Z) void, &.{ *O, X, Y, Z })) |Impl|
+                if (comptime meta.isCustomType(Z)) { // only O and Z custom
+                    if (comptime meta.anyHasMethod(&.{ O, Z }, "fma_", fn (*O, X, Y, Z) void, &.{ *O, X, Y, Z })) |Impl|
                         return Impl.fma_(o, x, y, z);
                 } else { // only O custom
-                    if (comptime types.hasMethod(O, "fma_", fn (*O, X, Y, Z) void, &.{ *O, X, Y, Z }))
+                    if (comptime meta.hasMethod(O, "fma_", fn (*O, X, Y, Z) void, &.{ *O, X, Y, Z }))
                         return O.fma_(o, x, y, z);
                 }
             }
         }
-    } else if (comptime types.isCustomType(X)) {
-        if (comptime types.isCustomType(Y)) {
-            if (comptime types.isCustomType(Z)) { // only X, Y and Z custom
-                if (comptime types.anyHasMethod(&.{ X, Y, Z }, "fma_", fn (*O, X, Y, Z) void, &.{ *O, X, Y, Z })) |Impl|
+    } else if (comptime meta.isCustomType(X)) {
+        if (comptime meta.isCustomType(Y)) {
+            if (comptime meta.isCustomType(Z)) { // only X, Y and Z custom
+                if (comptime meta.anyHasMethod(&.{ X, Y, Z }, "fma_", fn (*O, X, Y, Z) void, &.{ *O, X, Y, Z })) |Impl|
                     return Impl.fma_(o, x, y, z);
             } else { // only X and Y custom
-                if (comptime types.anyHasMethod(&.{ X, Y }, "fma_", fn (*O, X, Y, Z) void, &.{ *O, X, Y, Z })) |Impl|
+                if (comptime meta.anyHasMethod(&.{ X, Y }, "fma_", fn (*O, X, Y, Z) void, &.{ *O, X, Y, Z })) |Impl|
                     return Impl.fma_(o, x, y, z);
             }
         } else {
-            if (comptime types.isCustomType(Z)) { // only X and Z custom
-                if (comptime types.anyHasMethod(&.{ X, Z }, "fma_", fn (*O, X, Y, Z) void, &.{ *O, X, Y, Z })) |Impl|
+            if (comptime meta.isCustomType(Z)) { // only X and Z custom
+                if (comptime meta.anyHasMethod(&.{ X, Z }, "fma_", fn (*O, X, Y, Z) void, &.{ *O, X, Y, Z })) |Impl|
                     return Impl.fma_(o, x, y, z);
             } else { // only X custom
-                if (comptime types.hasMethod(X, "fma_", fn (*O, X, Y, Z) void, &.{ *O, X, Y, Z }))
+                if (comptime meta.hasMethod(X, "fma_", fn (*O, X, Y, Z) void, &.{ *O, X, Y, Z }))
                     return X.fma_(o, x, y, z);
             }
         }
-    } else if (comptime types.isCustomType(Y)) {
-        if (comptime types.isCustomType(Z)) { // only Y and Z custom
-            if (comptime types.anyHasMethod(&.{ Y, Z }, "fma_", fn (*O, X, Y, Z) void, &.{ *O, X, Y, Z })) |Impl|
+    } else if (comptime meta.isCustomType(Y)) {
+        if (comptime meta.isCustomType(Z)) { // only Y and Z custom
+            if (comptime meta.anyHasMethod(&.{ Y, Z }, "fma_", fn (*O, X, Y, Z) void, &.{ *O, X, Y, Z })) |Impl|
                 return Impl.fma_(o, x, y, z);
         } else { // only Y custom
-            if (comptime types.hasMethod(Y, "fma_", fn (*O, X, Y, Z) void, &.{ *O, X, Y, Z }))
+            if (comptime meta.hasMethod(Y, "fma_", fn (*O, X, Y, Z) void, &.{ *O, X, Y, Z }))
                 return Y.fma_(o, x, y, z);
         }
-    } else if (comptime types.isCustomType(Z)) { // only Z custom
-        if (comptime types.hasMethod(Z, "fma_", fn (*O, X, Y, Z) void, &.{ *O, X, Y, Z }))
+    } else if (comptime meta.isCustomType(Z)) { // only Z custom
+        if (comptime meta.hasMethod(Z, "fma_", fn (*O, X, Y, Z) void, &.{ *O, X, Y, Z }))
             return Z.fma_(o, x, y, z);
     }
 

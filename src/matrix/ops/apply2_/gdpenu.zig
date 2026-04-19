@@ -1,12 +1,12 @@
-const types = @import("../../../types.zig");
+const meta = @import("../../../meta.zig");
 
 const numeric = @import("../../../numeric.zig");
 
 pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
-    const O = types.Child(@TypeOf(o));
+    const O = meta.Child(@TypeOf(o));
     const X = @TypeOf(x);
 
-    o.setAll(numeric.zero(types.Numeric(O)));
+    o.setAll(numeric.zero(meta.Numeric(O)));
 
     var k: usize = 0;
     while (k < x.rows) : (k += 1) {
@@ -16,6 +16,6 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
         if (comptime op_ == numeric.mul_)
             numeric.set(&o.data[o._index(i, j)], y)
         else
-            op_(&o.data[o._index(i, j)], numeric.one(types.Numeric(X)), y);
+            op_(&o.data[o._index(i, j)], numeric.one(meta.Numeric(X)), y);
     }
 }

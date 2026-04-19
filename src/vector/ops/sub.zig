@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const types = @import("../../types.zig");
+const meta = @import("../../meta.zig");
 
 const numeric = @import("../../numeric.zig");
 const vector = @import("../../vector.zig");
@@ -8,20 +8,20 @@ const vector = @import("../../vector.zig");
 const vecops = @import("../ops.zig");
 
 pub fn Sub(comptime X: type, comptime Y: type) type {
-    comptime if (!types.isVector(X) or !types.isVector(Y))
+    comptime if (!meta.isVector(X) or !meta.isVector(Y))
         @compileError("zsl.vector.sub: x and y must be vectors, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    if (comptime types.isCustomType(X) and types.isVector(X)) {
-        if (comptime types.isCustomType(Y) and types.isVector(Y)) { // X and Y both custom vectors
-            if (comptime types.anyHasMethod(&.{ X, Y }, "Sub", fn (type, type) type, &.{ X, Y })) |Impl|
+    if (comptime meta.isCustomType(X) and meta.isVector(X)) {
+        if (comptime meta.isCustomType(Y) and meta.isVector(Y)) { // X and Y both custom vectors
+            if (comptime meta.anyHasMethod(&.{ X, Y }, "Sub", fn (type, type) type, &.{ X, Y })) |Impl|
                 return Impl.Sub(X, Y);
         } else { // only X custom vector
-            if (comptime types.hasMethod(X, "Sub", fn (type, type) type, &.{ X, Y }))
+            if (comptime meta.hasMethod(X, "Sub", fn (type, type) type, &.{ X, Y }))
                 return X.Sub(X, Y);
         }
-    } else if (comptime types.isCustomType(Y) and types.isVector(Y)) { // only Y custom vector
-        if (comptime types.hasMethod(Y, "Sub", fn (type, type) type, &.{ X, Y }))
+    } else if (comptime meta.isCustomType(Y) and meta.isVector(Y)) { // only Y custom vector
+        if (comptime meta.hasMethod(Y, "Sub", fn (type, type) type, &.{ X, Y }))
             return Y.Sub(X, Y);
     }
 
@@ -75,16 +75,16 @@ pub fn sub(allocator: std.mem.Allocator, x: anytype, y: anytype) !vector.Sub(@Ty
     const Y: type = @TypeOf(y);
     const R: type = vector.Sub(@TypeOf(x), @TypeOf(y));
 
-    if (comptime types.isCustomType(X)) {
-        if (comptime types.isCustomType(Y)) { // X and Y both custom vectors
-            if (comptime types.anyHasMethod(&.{ X, Y }, "sub", fn (std.mem.Allocator, X, Y) anyerror!R, &.{ std.mem.Allocator, X, Y })) |Impl|
+    if (comptime meta.isCustomType(X)) {
+        if (comptime meta.isCustomType(Y)) { // X and Y both custom vectors
+            if (comptime meta.anyHasMethod(&.{ X, Y }, "sub", fn (std.mem.Allocator, X, Y) anyerror!R, &.{ std.mem.Allocator, X, Y })) |Impl|
                 return Impl.sub(allocator, x, y);
         } else { // only X custom vector
-            if (comptime types.hasMethod(X, "sub", fn (std.mem.Allocator, X, Y) anyerror!R, &.{ std.mem.Allocator, X, Y }))
+            if (comptime meta.hasMethod(X, "sub", fn (std.mem.Allocator, X, Y) anyerror!R, &.{ std.mem.Allocator, X, Y }))
                 return X.sub(allocator, x, y);
         }
-    } else if (comptime types.isCustomType(Y)) { // only Y custom vector
-        if (comptime types.hasMethod(Y, "sub", fn (std.mem.Allocator, X, Y) anyerror!R, &.{ std.mem.Allocator, X, Y }))
+    } else if (comptime meta.isCustomType(Y)) { // only Y custom vector
+        if (comptime meta.hasMethod(Y, "sub", fn (std.mem.Allocator, X, Y) anyerror!R, &.{ std.mem.Allocator, X, Y }))
             return Y.sub(allocator, x, y);
     }
 

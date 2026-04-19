@@ -1,35 +1,35 @@
-const types = @import("../../../types.zig");
+const meta = @import("../../../meta.zig");
 
 const numeric = @import("../../../numeric.zig");
 
 pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
-    const O = types.Child(@TypeOf(o));
+    const O = meta.Child(@TypeOf(o));
     const X = @TypeOf(x);
     const Y = @TypeOf(y);
 
-    if (comptime types.layoutOf(O) == .col_major) {
+    if (comptime meta.layoutOf(O) == .col_major) {
         var j: usize = 0;
         while (j < o.cols) : (j += 1) {
-            if (comptime types.uploOf(X) == .upper) {
+            if (comptime meta.uploOf(X) == .upper) {
                 var i: usize = 0;
                 while (i < j) : (i += 1) {
                     numeric.set(&o.data[o._index(i, j)], x.data[x._index(i, j)]);
                 }
 
-                const tx = if (comptime types.diagOf(X) == .unit) numeric.one(types.Numeric(X)) else x.data[x._index(j, j)];
+                const tx = if (comptime meta.diagOf(X) == .unit) numeric.one(meta.Numeric(X)) else x.data[x._index(j, j)];
                 numeric.set(&o.data[o._index(j, j)], tx);
 
                 i = j + 1;
                 while (i < o.rows) : (i += 1) {
-                    o.data[o._index(i, j)] = numeric.zero(types.Numeric(O));
+                    o.data[o._index(i, j)] = numeric.zero(meta.Numeric(O));
                 }
             } else {
                 var i: usize = 0;
                 while (i < j) : (i += 1) {
-                    o.data[o._index(i, j)] = numeric.zero(types.Numeric(O));
+                    o.data[o._index(i, j)] = numeric.zero(meta.Numeric(O));
                 }
 
-                const tx = if (comptime types.diagOf(X) == .unit) numeric.one(types.Numeric(X)) else x.data[x._index(j, j)];
+                const tx = if (comptime meta.diagOf(X) == .unit) numeric.one(meta.Numeric(X)) else x.data[x._index(j, j)];
                 numeric.set(&o.data[o._index(j, j)], tx);
 
                 i = j + 1;
@@ -41,26 +41,26 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
     } else {
         var i: usize = 0;
         while (i < o.rows) : (i += 1) {
-            if (comptime types.uploOf(X) == .lower) {
+            if (comptime meta.uploOf(X) == .lower) {
                 var j: usize = 0;
                 while (j < i) : (j += 1) {
                     numeric.set(&o.data[o._index(i, j)], x.data[x._index(i, j)]);
                 }
 
-                const tx = if (comptime types.diagOf(X) == .unit) numeric.one(types.Numeric(X)) else x.data[x._index(i, i)];
+                const tx = if (comptime meta.diagOf(X) == .unit) numeric.one(meta.Numeric(X)) else x.data[x._index(i, i)];
                 numeric.set(&o.data[o._index(i, i)], tx);
 
                 j = i + 1;
                 while (j < o.cols) : (j += 1) {
-                    o.data[o._index(i, j)] = numeric.zero(types.Numeric(O));
+                    o.data[o._index(i, j)] = numeric.zero(meta.Numeric(O));
                 }
             } else {
                 var j: usize = 0;
                 while (j < i) : (j += 1) {
-                    o.data[o._index(i, j)] = numeric.zero(types.Numeric(O));
+                    o.data[o._index(i, j)] = numeric.zero(meta.Numeric(O));
                 }
 
-                const tx = if (comptime types.diagOf(X) == .unit) numeric.one(types.Numeric(X)) else x.data[x._index(i, i)];
+                const tx = if (comptime meta.diagOf(X) == .unit) numeric.one(meta.Numeric(X)) else x.data[x._index(i, i)];
                 numeric.set(&o.data[o._index(i, i)], tx);
 
                 j = i + 1;
@@ -77,12 +77,12 @@ pub fn apply2_(o: anytype, x: anytype, y: anytype, comptime op_: anytype) void {
         const j = if (y.direction == .forward) y.data[k] else k;
 
         const tx = if (i == j)
-            (if (comptime types.diagOf(X) == .unit) numeric.one(types.Numeric(X)) else x.data[x._index(i, i)])
+            (if (comptime meta.diagOf(X) == .unit) numeric.one(meta.Numeric(X)) else x.data[x._index(i, i)])
         else if (i < j)
-            (if (comptime types.uploOf(X) == .upper) x.data[x._index(i, j)] else numeric.zero(types.Numeric(X)))
+            (if (comptime meta.uploOf(X) == .upper) x.data[x._index(i, j)] else numeric.zero(meta.Numeric(X)))
         else
-            (if (comptime types.uploOf(X) == .lower) x.data[x._index(i, j)] else numeric.zero(types.Numeric(X)));
+            (if (comptime meta.uploOf(X) == .lower) x.data[x._index(i, j)] else numeric.zero(meta.Numeric(X)));
 
-        op_(&o.data[o._index(i, j)], tx, numeric.one(types.Numeric(Y)));
+        op_(&o.data[o._index(i, j)], tx, numeric.one(meta.Numeric(Y)));
     }
 }

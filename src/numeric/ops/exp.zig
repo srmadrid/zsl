@@ -1,4 +1,4 @@
-const types = @import("../../types.zig");
+const meta = @import("../../meta.zig");
 
 const int = @import("../../int.zig");
 const float = @import("../../float.zig");
@@ -8,17 +8,17 @@ const complex = @import("../../complex.zig");
 const numeric = @import("../../numeric.zig");
 
 pub fn Exp(X: type) type {
-    comptime if (!types.isNumeric(X))
+    comptime if (!meta.isNumeric(X))
         @compileError("zsl.numeric.exp: x must be a numeric, got \n\tx: " ++ @typeName(X) ++ "\n");
 
-    switch (comptime types.numericType(X)) {
+    switch (comptime meta.numericType(X)) {
         .bool => @compileError("zsl.numeric.exp: not defined for " ++ @typeName(X) ++ "."),
         .int => @compileError("zsl.numeric.exp: not defined for " ++ @typeName(X) ++ "."),
         .float => return X,
         .dyadic => return X,
         .complex => return X,
         .custom => {
-            if (comptime !types.hasMethod(X, "Exp", fn (type) type, &.{X}))
+            if (comptime !meta.hasMethod(X, "Exp", fn (type) type, &.{X}))
                 @compileError("zsl.numeric.exp: " ++ @typeName(X) ++ " must implement `fn Exp(type) type`");
 
             return X.Exp(X);
@@ -54,14 +54,14 @@ pub fn exp(x: anytype) numeric.Exp(@TypeOf(x)) {
     const X: type = @TypeOf(x);
     const R: type = numeric.Exp(X);
 
-    switch (comptime types.numericType(X)) {
+    switch (comptime meta.numericType(X)) {
         .bool => unreachable,
         .int => unreachable,
         .float => return float.exp(x),
         .dyadic => return dyadic.exp(x),
         .complex => return complex.exp(x),
         .custom => {
-            const Impl: type = comptime types.anyHasMethod(
+            const Impl: type = comptime meta.anyHasMethod(
                 &.{ R, X },
                 "exp",
                 fn (X) numeric.Exp(X),
