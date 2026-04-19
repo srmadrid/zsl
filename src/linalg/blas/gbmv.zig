@@ -1,109 +1,211 @@
-const std = @import("std");
+const options = @import("options");
 
-const types = @import("../../types.zig");
-const scast = types.scast;
-const ops = @import("../../ops.zig");
-const constants = @import("../../constants.zig");
+const meta = @import("../../meta.zig");
+const Layout = meta.Layout;
+
+const numeric = @import("../../numeric.zig");
+
 const int = @import("../../int.zig");
 
 const linalg = @import("../../linalg.zig");
-const blas = @import("../blas.zig");
-const Order = types.Order;
-const Transpose = linalg.Transpose;
 
-pub fn gbmv(
-    order: Order,
-    transa: Transpose,
-    m: i32,
-    n: i32,
-    kl: i32,
-    ku: i32,
-    alpha: anytype,
-    a: anytype,
-    lda: i32,
-    x: anytype,
-    incx: i32,
-    beta: anytype,
-    y: anytype,
-    incy: i32,
-    ctx: anytype,
-) !void {
-    if (order == .col_major) {
-        return k_gbmv(
-            transa,
-            m,
-            n,
-            kl,
-            ku,
-            alpha,
-            a,
-            lda,
-            x,
-            incx,
-            beta,
-            y,
-            incy,
-            ctx,
-        );
+/// Computes a matrix-vector product with a general band matrix defined as:
+///
+/// ```zig
+/// y = alpha * A * x + beta * y,
+/// ```
+///
+/// or
+///
+/// ```zig
+///     y = alpha * Aᵀ * x + beta * y,
+/// ```
+///
+/// or
+///
+/// ```zig
+///     y = alpha * conj(A) * x + beta * y,
+/// ```
+///
+/// or
+///
+/// ```zig
+///     y = alpha * Aᴴ * x + beta * y,
+/// ```
+///
+/// where `alpha` and `beta` are scalars, `x` and `y` are vectors, and `A` is an
+/// `m`-by-`n` band matrix with `kl` sub-diagonals and `ku` super-diagonals.
+///
+/// If the `link_cblas` option is not `null`, the function will try to call the
+/// corresponding CBLAS function, if available. In that case, no errors will be
+/// raised even if the arguments are invalid.
+///
+/// ## Signature
+/// ```zig
+/// linalg.blas.gbmv(layout: Layout, transa: linalg.Transpose, m: isize, n: isize, kl: isize, ku: isize, alpha: Al, a: [*]const A, lda: isize, x: [*]const X, incx: isize, beta: Be, y: [*]Y, incy: isize) !void
+/// ```
+///
+/// ## Arguments
+/// * `layout` (`Layout`): Specifies whether two-dimensional array storage is
+///   col-major or row-major.
+/// * `transa` (`linalg.Transpose`): Specifies the operation to be performed on
+///   `A`:
+///   * `no_transpose`: `y = alpha * A * x + beta * y`
+///   * `transpose`: `y = alpha * Aᵀ * x + beta * y`
+///   * `conj_no_transpose`: `y = alpha * conj(A) * x + beta * y`
+///   * `conj_transpose`: `y = alpha * Aᴴ * x + beta * y`
+/// * `m` (`isize`): Specifies the number of rows of the matrix `A`. Must be
+///   greater than or equal to 0.
+/// * `n` (`isize`): Specifies the number of columns of the matrix `A`. Must be
+///   greater than or equal to 0.
+/// * `kl` (`isize`): Specifies the number of sub-diagonals of the matrix `A`.
+///   Must be greater than or equal to 0.
+/// * `ku` (`isize`): Specifies the number of super-diagonals of the matrix `A`.
+///   Must be greater than or equal to 0.
+/// * `alpha` (`anytype`): Specifies the scalar `alpha`.
+/// * `a` (`anytype`): Array, size at least `lda * n`.
+/// * `lda` (`isize`): Specifies the leading dimension of `a` as declared in the
+///   calling (sub)program. Must be greater than or equal to `kl + ku + 1`.
+/// * `x` (`anytype`): Array, size at least `1 + (n - 1) * abs(incx)` when
+///   `transa` is `no_transpose` or `conj_no_transpose`, or
+///   `1 + (m - 1) * abs(incx)` otherwise.
+/// * `incx` (`isize`): Specifies the increment for indexing vector `x`. Must be
+///   different from 0.
+/// * `beta` (`anytype`): Specifies the scalar `beta`. When `beta` is 0, then
+///   `y` need not be set on input.
+/// * `y` (`anytype`): Array, size at least `1 + (m - 1) * abs(incy)` when
+///   `transa` is `no_transpose` or `conj_no_transpose`, or
+///   `1 + (n - 1) * abs(incy)` otherwise. On return, contains the result of the
+///   operation.
+/// * `incy` (`isize`): Specifies the increment for indexing vector `y`. Must be
+///   different from 0.
+///
+/// ## Returns
+/// `void`
+///
+/// ## Errors
+/// * `linalg.blas.Error.InvalidArgument`: If `m`, `n`, `kl` or `ku` are less
+///   than 0, if `lda` is less than `kl + ku + 1`, or if `incx` or `incy` is 0.
+pub fn gbmv(layout: Layout, transa: linalg.Transpose, m: isize, n: isize, kl: isize, ku: isize, alpha: anytype, a: anytype, lda: isize, x: anytype, incx: isize, beta: anytype, y: anytype, incy: isize) !void {
+    const Al: type = @TypeOf(alpha);
+    comptime var A: type = @TypeOf(a);
+    comptime var X: type = @TypeOf(x);
+    const Be: type = @TypeOf(beta);
+    comptime var Y: type = @TypeOf(y);
+
+    comptime if (!meta.isNumeric(Al) or !meta.isNumeric(Be) or
+        !meta.isManyItemPointer(A) or !meta.isManyItemPointer(X) or
+        !meta.isManyItemPointer(Y) or meta.isConstPointer(Y))
+        @compileError("zsl.linalg.blas.gbmv: alpha and beta must be numerics, a and x must be many-item pointers to numerics, and y must be a mutable many-item pointer to numerics, got \n\talpha: " ++ @typeName(Al) ++ "\n\ta: " ++ @typeName(A) ++ "\n\tx: " ++ @typeName(X) ++ "\n\tbeta: " ++ @typeName(Be) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
+
+    A = meta.Child(A);
+    X = meta.Child(X);
+    Y = meta.Child(Y);
+
+    if (comptime options.link_cblas != null and Al == A and Al == X and Al == Y and Al == Be) {
+        switch (comptime meta.numericType(A)) {
+            .float => {
+                if (comptime A == f32) {
+                    return linalg.cblas.sgbmv(
+                        layout.toInt(c_int),
+                        transa.toInt(c_int),
+                        numeric.cast(c_int, m),
+                        numeric.cast(c_int, n),
+                        numeric.cast(c_int, kl),
+                        numeric.cast(c_int, ku),
+                        alpha,
+                        a,
+                        numeric.cast(c_int, lda),
+                        x,
+                        numeric.cast(c_int, incx),
+                        beta,
+                        y,
+                        numeric.cast(c_int, incy),
+                    );
+                } else if (comptime A == f64) {
+                    return linalg.cblas.dgbmv(
+                        layout.toInt(c_int),
+                        transa.toInt(c_int),
+                        numeric.cast(c_int, m),
+                        numeric.cast(c_int, n),
+                        numeric.cast(c_int, kl),
+                        numeric.cast(c_int, ku),
+                        alpha,
+                        a,
+                        numeric.cast(c_int, lda),
+                        x,
+                        numeric.cast(c_int, incx),
+                        beta,
+                        y,
+                        numeric.cast(c_int, incy),
+                    );
+                }
+            },
+            .cfloat => {
+                if (comptime meta.Scalar(A) == f32) {
+                    return linalg.cblas.cgbmv(
+                        layout.toInt(c_int),
+                        transa.toInt(c_int),
+                        numeric.cast(c_int, m),
+                        numeric.cast(c_int, n),
+                        numeric.cast(c_int, kl),
+                        numeric.cast(c_int, ku),
+                        &alpha,
+                        a,
+                        numeric.cast(c_int, lda),
+                        x,
+                        numeric.cast(c_int, incx),
+                        &beta,
+                        y,
+                        numeric.cast(c_int, incy),
+                    );
+                } else if (comptime meta.Scalar(A) == f64) {
+                    return linalg.cblas.zgbmv(
+                        layout.toInt(c_int),
+                        transa.toInt(c_int),
+                        numeric.cast(c_int, m),
+                        numeric.cast(c_int, n),
+                        numeric.cast(c_int, kl),
+                        numeric.cast(c_int, ku),
+                        &alpha,
+                        a,
+                        numeric.cast(c_int, lda),
+                        x,
+                        numeric.cast(c_int, incx),
+                        &beta,
+                        y,
+                        numeric.cast(c_int, incy),
+                    );
+                }
+            },
+            else => {},
+        }
+    }
+
+    if (layout == .col_major) {
+        return k_gbmv(transa, m, n, kl, ku, alpha, a, lda, x, incx, beta, y, incy);
     } else {
-        return k_gbmv(
-            transa.invert(),
-            n,
-            m,
-            ku,
-            kl,
-            alpha,
-            a,
-            lda,
-            x,
-            incx,
-            beta,
-            y,
-            incy,
-            ctx,
-        );
+        return k_gbmv(transa.invert(), n, m, ku, kl, alpha, a, lda, x, incx, beta, y, incy);
     }
 }
 
-fn k_gbmv(
-    transa: Transpose,
-    m: i32,
-    n: i32,
-    kl: i32,
-    ku: i32,
-    alpha: anytype,
-    a: anytype,
-    lda: i32,
-    x: anytype,
-    incx: i32,
-    beta: anytype,
-    y: anytype,
-    incy: i32,
-    ctx: anytype,
-) !void {
-    const Al: type = @TypeOf(alpha);
-    const A: type = types.Child(@TypeOf(a));
-    const X: type = types.Child(@TypeOf(x));
-    const C1: type = types.Coerce(Al, X);
-    const C2: type = types.Coerce(A, X);
-    const Be: type = @TypeOf(beta);
-    const Y: type = types.Child(@TypeOf(y));
-    const CC: type = types.Coerce(Al, types.Coerce(A, types.Coerce(X, types.Coerce(Be, Y))));
+fn k_gbmv(transa: linalg.Transpose, m: isize, n: isize, kl: isize, ku: isize, alpha: anytype, a: anytype, lda: isize, x: anytype, incx: isize, beta: anytype, y: anytype, incy: isize) !void {
+    const A: type = meta.Child(@TypeOf(a));
+    const X: type = meta.Child(@TypeOf(x));
 
     if (m < 0 or n < 0 or kl < 0 or ku < 0 or lda < (kl + ku + 1) or incx == 0 or incy == 0)
-        return blas.Error.InvalidArgument;
+        return linalg.blas.Error.InvalidArgument;
 
     // Quick return if possible.
-    if (m == 0 or n == 0 or
-        (ops.eq(alpha, 0, ctx) catch unreachable and ops.eq(beta, 1, ctx) catch unreachable))
+    if (m == 0 or n == 0 or (numeric.eq(alpha, 0) and numeric.eq(beta, 1)))
         return;
 
     const noconj: bool = transa == .no_trans or transa == .trans;
 
     // Set lenx and leny, the lengths of the vectors x and y, and set up the
     // start points in x and y.
-    var lenx: i32 = 0;
-    var leny: i32 = 0;
+    var lenx: isize = undefined;
+    var leny: isize = undefined;
     if (transa == .no_trans or transa == .conj_no_trans) {
         lenx = n;
         leny = m;
@@ -112,270 +214,247 @@ fn k_gbmv(
         leny = n;
     }
 
-    var kx: i32 = if (incx < 0) (-lenx + 1) * incx else 0;
-    var ky: i32 = if (incy < 0) (-leny + 1) * incy else 0;
+    var kx: isize = if (incx < 0) (-lenx + 1) * incx else 0;
+    var ky: isize = if (incy < 0) (-leny + 1) * incy else 0;
 
-    if (comptime !types.isArbitraryPrecision(CC)) {
-        // First form y = beta * y.
-        if (ops.ne(beta, 1, ctx) catch unreachable) {
-            if (incy == 1) {
-                if (ops.eq(beta, 0, ctx) catch unreachable) {
-                    for (0..scast(u32, leny)) |i| {
-                        ops.set( // y[i] = 0
-                            &y[i],
-                            0,
-                            ctx,
-                        ) catch unreachable;
-                    }
-                } else {
-                    for (0..scast(u32, leny)) |i| {
-                        ops.mul_( // y[i] *= beta
-                            &y[i],
-                            y[i],
-                            beta,
-                            ctx,
-                        ) catch unreachable;
-                    }
+    // First form y = beta * y.
+    if (numeric.ne(beta, 1)) {
+        if (incy == 1) {
+            if (numeric.eq(beta, 0)) {
+                var i: usize = 0;
+                while (i < leny) : (i += 1) {
+                    // y[i] = 0
+                    numeric.set(&y[i], 0);
                 }
             } else {
-                var iy: i32 = ky;
-                if (ops.eq(beta, 0, ctx) catch unreachable) {
-                    for (0..scast(u32, leny)) |_| {
-                        ops.set( // y[iy] = 0
-                            &y[scast(u32, iy)],
-                            0,
-                            ctx,
-                        ) catch unreachable;
-
-                        iy += incy;
-                    }
-                } else {
-                    for (0..scast(u32, leny)) |_| {
-                        ops.mul_( // y[iy] *= beta
-                            &y[scast(u32, iy)],
-                            y[scast(u32, iy)],
-                            beta,
-                            ctx,
-                        ) catch unreachable;
-
-                        iy += incy;
-                    }
-                }
-            }
-        }
-
-        if (ops.eq(alpha, 0, ctx) catch unreachable) return;
-
-        if (transa == .no_trans or transa == .conj_no_trans) {
-            // Form  y = alpha * A * x + y  or  y = alpha * conj(A) * x + y.
-            var jx: i32 = kx;
-            if (incy == 1) {
-                var j: i32 = 0;
-                while (j < n) : (j += 1) {
-                    const temp: C1 = ops.mul( // temp = alpha * x[jx]
-                        alpha,
-                        x[scast(u32, jx)],
-                        ctx,
-                    ) catch unreachable;
-
-                    const k: i32 = ku - j;
-                    if (noconj) {
-                        var i: i32 = int.max(0, j - ku);
-                        while (i < int.min(m, j + kl + 1)) : (i += 1) {
-                            ops.add_( // y[i] += temp * a[k + i + j * lda]
-                                &y[scast(u32, i)],
-                                y[scast(u32, i)],
-                                ops.mul(
-                                    temp,
-                                    a[scast(u32, k + i + j * lda)],
-                                    ctx,
-                                ) catch unreachable,
-                                ctx,
-                            ) catch unreachable;
-                        }
-                    } else {
-                        var i: i32 = int.max(0, j - ku);
-                        while (i < int.min(m, j + kl + 1)) : (i += 1) {
-                            ops.add_( // y[i] += temp * conj(a[k + i + j * lda])
-                                &y[scast(u32, i)],
-                                y[scast(u32, i)],
-                                ops.mul(
-                                    temp,
-                                    ops.conj(a[scast(u32, k + i + j * lda)], ctx) catch unreachable,
-                                    ctx,
-                                ) catch unreachable,
-                                ctx,
-                            ) catch unreachable;
-                        }
-                    }
-
-                    jx += incx;
-                }
-            } else {
-                var j: i32 = 0;
-                while (j < n) : (j += 1) {
-                    const temp: C1 = ops.mul( // temp = alpha * x[jx]
-                        alpha,
-                        x[scast(u32, jx)],
-                        ctx,
-                    ) catch unreachable;
-
-                    const k: i32 = ku - j;
-                    if (noconj) {
-                        var iy: i32 = ky;
-                        var i: i32 = int.max(0, j - ku);
-                        while (i < int.min(m, j + kl + 1)) : (i += 1) {
-                            ops.add_( // y[iy] += temp * a[k + i + j * lda]
-                                &y[scast(u32, iy)],
-                                y[scast(u32, iy)],
-                                ops.mul(
-                                    temp,
-                                    a[scast(u32, k + i + j * lda)],
-                                    ctx,
-                                ) catch unreachable,
-                                ctx,
-                            ) catch unreachable;
-
-                            iy += incy;
-                        }
-                    } else {
-                        var iy: i32 = ky;
-                        var i: i32 = int.max(0, j - ku);
-                        while (i < int.min(m, j + kl + 1)) : (i += 1) {
-                            ops.add_( // y[iy] += temp * a[k + i + j * lda]
-                                &y[scast(u32, iy)],
-                                y[scast(u32, iy)],
-                                ops.mul(
-                                    temp,
-                                    ops.conj(a[scast(u32, k + i + j * lda)], ctx) catch unreachable,
-                                    ctx,
-                                ) catch unreachable,
-                                ctx,
-                            ) catch unreachable;
-
-                            iy += incy;
-                        }
-                    }
-
-                    jx += incx;
-
-                    if (j >= ku) ky += incy;
+                var i: usize = 0;
+                while (i < leny) : (i += 1) {
+                    // y[i] *= beta
+                    numeric.mul_(&y[i], y[i], beta);
                 }
             }
         } else {
-            // Form  y = alpha * A^T * x + y  or  y = alpha * A^H * x + y.
-            var jy: i32 = ky;
-            if (incx == 1) {
-                var j: i32 = 0;
-                while (j < n) : (j += 1) {
-                    var temp: C2 = constants.zero(C2, ctx) catch unreachable;
+            var iy: isize = ky;
+            if (numeric.eq(beta, 0)) {
+                var i: usize = 0;
+                while (i < leny) : (i += 1) {
+                    // y[iy] = 0
+                    numeric.set(&y[numeric.cast(usize, iy)], 0);
 
-                    const k: i32 = ku - j;
-                    if (noconj) {
-                        var i: i32 = int.max(0, j - ku);
-                        while (i < int.min(m, j + kl + 1)) : (i += 1) {
-                            ops.add_( // temp += a[k + i + j * lda] * x[i]
-                                &temp,
-                                temp,
-                                ops.mul(
-                                    a[scast(u32, k + i + j * lda)],
-                                    x[scast(u32, i)],
-                                    ctx,
-                                ) catch unreachable,
-                                ctx,
-                            ) catch unreachable;
-                        }
-                    } else {
-                        var i: i32 = int.max(0, j - ku);
-                        while (i < int.min(m, j + kl + 1)) : (i += 1) {
-                            ops.add_( // temp += a[k + i + j * lda] * x[i]
-                                &temp,
-                                temp,
-                                ops.mul(
-                                    ops.conj(a[scast(u32, k + i + j * lda)], ctx) catch unreachable,
-                                    x[scast(u32, i)],
-                                    ctx,
-                                ) catch unreachable,
-                                ctx,
-                            ) catch unreachable;
-                        }
-                    }
-
-                    ops.add_( // y[jy] += alpha * temp
-                        &y[scast(u32, jy)],
-                        y[scast(u32, jy)],
-                        ops.mul(
-                            alpha,
-                            temp,
-                            ctx,
-                        ) catch unreachable,
-                        ctx,
-                    ) catch unreachable;
-
-                    jy += incy;
+                    iy += incy;
                 }
             } else {
-                var j: i32 = 0;
-                while (j < n) : (j += 1) {
-                    var temp: C2 = constants.zero(C2, ctx) catch unreachable;
+                var i: usize = 0;
+                while (i < leny) : (i += 1) {
+                    // y[iy] *= beta
+                    numeric.mul_(&y[numeric.cast(usize, iy)], y[numeric.cast(usize, iy)], beta);
 
-                    const k: i32 = ku - j;
-                    if (noconj) {
-                        var ix: i32 = kx;
-                        var i: i32 = int.max(0, j - ku);
-                        while (i < int.min(m, j + kl + 1)) : (i += 1) {
-                            ops.add_( // temp += a[k + i + j * lda] * x[ix]
-                                &temp,
-                                temp,
-                                ops.mul(
-                                    a[scast(u32, k + i + j * lda)],
-                                    x[scast(u32, ix)],
-                                    ctx,
-                                ) catch unreachable,
-                                ctx,
-                            ) catch unreachable;
-
-                            ix += incx;
-                        }
-                    } else {
-                        var ix: i32 = kx;
-                        var i: i32 = int.max(0, j - ku);
-                        while (i < int.min(m, j + kl + 1)) : (i += 1) {
-                            ops.add_( // temp += a[k + i + j * lda] * x[ix]
-                                &temp,
-                                temp,
-                                ops.mul(
-                                    ops.conj(a[scast(u32, k + i + j * lda)], ctx) catch unreachable,
-                                    x[scast(u32, ix)],
-                                    ctx,
-                                ) catch unreachable,
-                                ctx,
-                            ) catch unreachable;
-
-                            ix += incx;
-                        }
-                    }
-
-                    ops.add_( // y[jy] += alpha * temp
-                        &y[scast(u32, jy)],
-                        y[scast(u32, jy)],
-                        ops.mul(
-                            alpha,
-                            temp,
-                            ctx,
-                        ) catch unreachable,
-                        ctx,
-                    ) catch unreachable;
-
-                    jy += incy;
-
-                    if (j >= ku) kx += incx;
+                    iy += incy;
                 }
             }
         }
+    }
+
+    if (numeric.eq(alpha, 0))
+        return;
+
+    if (transa == .no_trans or transa == .conj_no_trans) {
+        // Form  y = alpha * A * x + y  or  y = alpha * conj(A) * x + y.
+        var jx: isize = kx;
+        if (incy == 1) {
+            var j: isize = 0;
+            while (j < n) : (j += 1) {
+                // temp = alpha * x[jx]
+                const temp = numeric.mul(
+                    alpha,
+                    x[numeric.cast(usize, jx)],
+                );
+
+                const k: isize = ku - j;
+                if (noconj) {
+                    var i: isize = int.max(0, j - ku);
+                    while (i < int.min(m, j + kl + 1)) : (i += 1) {
+                        // y[i] += temp * a[k + i + j * lda]
+                        numeric.add_(
+                            &y[numeric.cast(usize, i)],
+                            y[numeric.cast(usize, i)],
+                            numeric.mul(
+                                temp,
+                                a[numeric.cast(usize, k + i + j * lda)],
+                            ),
+                        );
+                    }
+                } else {
+                    var i: isize = int.max(0, j - ku);
+                    while (i < int.min(m, j + kl + 1)) : (i += 1) {
+                        // y[i] += temp * conj(a[k + i + j * lda])
+                        numeric.add_(
+                            &y[numeric.cast(usize, i)],
+                            y[numeric.cast(usize, i)],
+                            numeric.mul(
+                                temp,
+                                numeric.conj(a[numeric.cast(usize, k + i + j * lda)]),
+                            ),
+                        );
+                    }
+                }
+
+                jx += incx;
+            }
+        } else {
+            var j: isize = 0;
+            while (j < n) : (j += 1) {
+                // temp = alpha * x[jx]
+                const temp = numeric.mul(
+                    alpha,
+                    x[numeric.cast(usize, jx)],
+                );
+
+                const k: isize = ku - j;
+                if (noconj) {
+                    var iy: isize = ky;
+                    var i: isize = int.max(0, j - ku);
+                    while (i < int.min(m, j + kl + 1)) : (i += 1) {
+                        // y[iy] += temp * a[k + i + j * lda]
+                        numeric.add_(
+                            &y[numeric.cast(usize, iy)],
+                            y[numeric.cast(usize, iy)],
+                            numeric.mul(
+                                temp,
+                                a[numeric.cast(usize, k + i + j * lda)],
+                            ),
+                        );
+                        iy += incy;
+                    }
+                } else {
+                    var iy: isize = ky;
+                    var i: isize = int.max(0, j - ku);
+                    while (i < int.min(m, j + kl + 1)) : (i += 1) {
+                        // y[iy] += temp * a[k + i + j * lda]
+                        numeric.add_(
+                            &y[numeric.cast(usize, iy)],
+                            y[numeric.cast(usize, iy)],
+                            numeric.mul(
+                                temp,
+                                numeric.conj(a[numeric.cast(usize, k + i + j * lda)]),
+                            ),
+                        );
+
+                        iy += incy;
+                    }
+                }
+
+                jx += incx;
+
+                if (j >= ku)
+                    ky += incy;
+            }
+        }
     } else {
-        // Arbitrary precision types not supported yet
-        @compileError("zml.linalg.blas.gbmv not implemented for arbitrary precision types yet");
+        // Form  y = alpha * Aᵀ * x + y  or  y = alpha * Aᴴ * x + y.
+        var jy: isize = ky;
+        if (incx == 1) {
+            var j: isize = 0;
+            while (j < n) : (j += 1) {
+                var temp = numeric.zero(meta.Accumulator(numeric.Mul(A, X)));
+
+                const k: isize = ku - j;
+                if (noconj) {
+                    var i: isize = int.max(0, j - ku);
+                    while (i < int.min(m, j + kl + 1)) : (i += 1) {
+                        // temp += a[k + i + j * lda] * x[i]
+                        numeric.add_(
+                            &temp,
+                            temp,
+                            numeric.mul(
+                                a[numeric.cast(usize, k + i + j * lda)],
+                                x[numeric.cast(usize, i)],
+                            ),
+                        );
+                    }
+                } else {
+                    var i: isize = int.max(0, j - ku);
+                    while (i < int.min(m, j + kl + 1)) : (i += 1) {
+                        // temp += conj(a[k + i + j * lda]) * x[i]
+                        numeric.add_(
+                            &temp,
+                            temp,
+                            numeric.mul(
+                                numeric.conj(a[numeric.cast(usize, k + i + j * lda)]),
+                                x[numeric.cast(usize, i)],
+                            ),
+                        );
+                    }
+                }
+
+                // y[jy] += alpha * temp
+                numeric.add_(
+                    &y[numeric.cast(usize, jy)],
+                    y[numeric.cast(usize, jy)],
+                    numeric.mul(
+                        alpha,
+                        temp,
+                    ),
+                );
+
+                jy += incy;
+            }
+        } else {
+            var j: isize = 0;
+            while (j < n) : (j += 1) {
+                var temp = numeric.zero(meta.Accumulator(numeric.Mul(A, X)));
+
+                const k: isize = ku - j;
+                if (noconj) {
+                    var ix: isize = kx;
+                    var i: isize = int.max(0, j - ku);
+                    while (i < int.min(m, j + kl + 1)) : (i += 1) {
+                        // temp += a[k + i + j * lda] * x[ix]
+                        numeric.add_(
+                            &temp,
+                            temp,
+                            numeric.mul(
+                                a[numeric.cast(usize, k + i + j * lda)],
+                                x[numeric.cast(usize, ix)],
+                            ),
+                        );
+
+                        ix += incx;
+                    }
+                } else {
+                    var ix: isize = kx;
+                    var i: isize = int.max(0, j - ku);
+                    while (i < int.min(m, j + kl + 1)) : (i += 1) {
+                        // temp += conj(a[k + i + j * lda]) * x[ix]
+                        numeric.add_(
+                            &temp,
+                            temp,
+                            numeric.mul(
+                                numeric.conj(a[numeric.cast(usize, k + i + j * lda)]),
+                                x[numeric.cast(usize, ix)],
+                            ),
+                        );
+
+                        ix += incx;
+                    }
+                }
+
+                // y[jy] += alpha * temp
+                numeric.add_(
+                    &y[numeric.cast(usize, jy)],
+                    y[numeric.cast(usize, jy)],
+                    numeric.mul(
+                        alpha,
+                        temp,
+                    ),
+                );
+
+                jy += incy;
+
+                if (j >= ku)
+                    kx += incx;
+            }
+        }
     }
 
     return;

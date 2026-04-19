@@ -32,7 +32,7 @@ pub fn Complex(comptime N: type) type {
         pub const is_signed = true;
         pub const is_custom = meta.isCustomType(N);
 
-        // Scalar type
+        pub const Accumulator = Complex(meta.Accumulator(N));
         pub const Scalar = N;
 
         // Constants

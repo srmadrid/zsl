@@ -6,7 +6,193 @@ const Scalar = types.Scalar;
 const ops = @import("../../ops.zig");
 const blas = @import("../blas.zig");
 
+/// Computes the parameters for a modified Givens rotation.
+///
+/// Given the Cartesian coordinates `(x1, y1)` of an input vector, this  routine
+/// computes the components of a modified Givens transformation matrix `H` that
+/// zeros the `y`-component of the resulting vector:
+///
+/// ```zig
+///     [ x1 ]     [ x1 √d1 ]
+///     [  0 ] = H [ y1 √d2 ]
+/// ```
+///
+/// The parameter `z` is defined such that if `|a| > |b|`, `z` is `s`; otherwise
+/// if `c` is not 0 `z` is `1/c`; otherwise `z` is `1`.
+///
+/// Parameters
+/// ----------
+/// `d1` (mutable one-item pointer to `bool`, `int`, `float`, `integer`,
+/// `rational`, `real` or `expression`): Provides the scaling factor for the
+/// `x`-coordinate of the input vector. On return it provides the first diagonal
+/// element of the updated matrix.
+///
+/// `d2` (mutable one-item pointer to `bool`, `int`, `float`, `integer`,
+/// `rational`, `real` or `expression`): Provides the scaling factor for the
+/// `y`-coordinate of the input vector. On return it provides the second diagonal
+/// element of the updated matrix.
+///
+/// `x1` (mutable one-item pointer to `bool`, `int`, `float`, `integer`,
+/// `rational`, `real` or `expression`): Provides the `x`-coordinate of the
+/// input vector. On return it provides the `x`-coordinate of the rotated vector
+/// before scaling.
+///
+/// `y1` (`bool`, `int`, `float`, `integer`, `rational`, `real` or
+/// `expression`): Provides the `y`-coordinate of the input vector.
+///
+/// `param` (mutable many-item pointer to `bool`, `int`, `float`, `integer`,
+/// `rational`, `real` or `expression`): Array, size 5. On return the elements
+/// of the `param` array are:
+///
+/// - param[0] contains a switch, flag.
+/// - param[1-4] contain `h11`, `h21`, `h12`, and `h22`, respectively, the
+/// components of the array `H`.
+///
+/// Depending on the values of flag, the components of `H` are set as follows:
+///
+/// - `flag = -1`:
+///
+/// ```zig
+///         [ h11 h12 ]
+///     H = [ h21 h22 ]
+/// ```
+///
+/// - `flag = 0`:
+///
+/// ```zig
+///          [   1 h12 ]
+///     H =  [ h21   1 ]
+/// ```
+///
+/// - `flag = 1`:
+///
+/// ```zig
+///          [ h11   1 ]
+///     H =  [  -1 h22 ]
+/// ```
+///
+/// - `flag = 2`:
+///
+/// ```zig
+///          [ 1 0 ]
+///     H =  [ 0 1 ]
+/// ```
+///
+/// In the last three cases, the matrix entries of 1, -1, and 0 are assumed
+/// based on the value of flag and are not required to be set in the `param`
+/// vector.
+///
+/// Signature
+/// ---------
+/// ```zig
+/// fn rotmg(d1: *D1, d2: *D2, x1: *X1, y1: Y1, param: [*]P, ctx: anytype) !void
+///
+/// Returns
+/// -------
+/// `void`: The result is stored in `a`, `b`, `c` and `s`.
+///
+/// Errors
+/// ------
+/// `linalg.blas.Error.InvalidArgument`: If `n` is less than or equal to 0.
+///
+/// Notes
+/// -----
+/// If the `link_cblas` option is not `null`, the function will try to call the
+/// corresponding CBLAS function, if available. In that case, no errors will be
+/// raised even if the arguments are invalid.
 pub fn rotmg(
+    d1: anytype,
+    d2: anytype,
+    x1: anytype,
+    y1: anytype,
+    param: anytype,
+    ctx: anytype,
+) !void {
+    comptime var D1: type = @TypeOf(d1);
+    comptime var D2: type = @TypeOf(d2);
+    comptime var X1: type = @TypeOf(x1);
+    const Y1: type = @TypeOf(y1);
+    comptime var P: type = @TypeOf(param);
+
+    comptime if (!types.isPointer(D1) or types.isConstPointer(D1))
+        @compileError("zml.linalg.blas.rotmg requires d1 to be a mutable one-item pointer, got " ++ @typeName(D1));
+
+    D1 = types.Child(D1);
+
+    comptime if (!types.isNumeric(D1))
+        @compileError("zml.linalg.blas.rotmg requires d1's child type to be numeric, got " ++ @typeName(D1));
+
+    comptime if (types.isComplex(D1))
+        @compileError("zml.linalg.blas.rotmg does not support d1 being complex, got " ++ @typeName(D1));
+
+    comptime if (!types.isPointer(D2) or types.isConstPointer(D2))
+        @compileError("zml.linalg.blas.rotmg requires d2 to be a mutable one-item pointer, got " ++ @typeName(D2));
+
+    D2 = types.Child(D2);
+
+    comptime if (!types.isNumeric(D2))
+        @compileError("zml.linalg.blas.rotmg requires d2's child type to be numeric, got " ++ @typeName(D2));
+
+    comptime if (types.isComplex(D2))
+        @compileError("zml.linalg.blas.rotmg does not support d2 being complex, got " ++ @typeName(D2));
+
+    comptime if (!types.isPointer(X1) or types.isConstPointer(X1))
+        @compileError("zml.linalg.blas.rotmg requires x1 to be a mutable one-item pointer, got " ++ @typeName(X1));
+
+    X1 = types.Child(X1);
+
+    comptime if (!types.isNumeric(X1))
+        @compileError("zml.linalg.blas.rotmg requires x1's child type to be numeric, got " ++ @typeName(X1));
+
+    comptime if (types.isComplex(X1))
+        @compileError("zml.linalg.blas.rotmg does not support x1 being complex, got " ++ @typeName(X1));
+
+    comptime if (!types.isNumeric(Y1))
+        @compileError("zml.linalg.blas.rotmg requires y1 to be numeric, got " ++ @typeName(Y1));
+
+    comptime if (!types.isManyPointer(P) or types.isConstPointer(P))
+        @compileError("zml.linalg.blas.rotmg requires param to be a mutable many-item pointer, got " ++ @typeName(P));
+
+    P = types.Child(P);
+
+    comptime if (!types.isNumeric(P))
+        @compileError("zml.linalg.blas.rotmg requires param's child type to be numeric, got " ++ @typeName(P));
+
+    comptime if (types.isComplex(P))
+        @compileError("zml.linalg.blas.rotmg does not support param being complex, got " ++ @typeName(P));
+
+    comptime if (D1 == bool and D2 == bool and X1 == bool and Y1 == bool and P == bool)
+        @compileError("zml.linalg.blas.rotmg does not support d1, d2, x1, y1 and param all being bool");
+
+    comptime if (types.isArbitraryPrecision(D1) or
+        types.isArbitraryPrecision(D2) or
+        types.isArbitraryPrecision(X1) or
+        types.isArbitraryPrecision(Y1) or
+        types.isArbitraryPrecision(P))
+    {
+        // When implemented, expand if
+        @compileError("zml.linalg.blas.rotmg not implemented for arbitrary precision types yet");
+    } else {
+        types.validateContext(@TypeOf(ctx), .{});
+    };
+
+    if (comptime D1 == D2 and D1 == X1 and D1 == P and types.canCoerce(Y1, D1) and options.link_cblas != null) {
+        switch (comptime types.numericType(D1)) {
+            .float => {
+                if (comptime D1 == f32) {
+                    return ci.cblas_srotmg(d1, d2, x1, scast(D1, y1), param);
+                } else if (comptime D1 == f64) {
+                    return ci.cblas_drotmg(d1, d2, x1, scast(D1, y1), param);
+                }
+            },
+            else => {},
+        }
+    }
+
+    return _rotmg(d1, d2, x1, y1, param, ctx);
+}
+
+fn _rotmg(
     d1: anytype,
     d2: anytype,
     x1: anytype,

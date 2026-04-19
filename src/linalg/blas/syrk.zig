@@ -12,7 +12,173 @@ const Order = types.Order;
 const Transpose = linalg.Transpose;
 const Uplo = types.Uplo;
 
+/// Performs a symmetric rank-`k` update.
+///
+/// The `syrk` routine performs a rank-`k` matrix-matrix operation for a
+/// symmetric matrix `C` using a general matrix `A`. The operation is defined
+/// as:
+///
+/// ```zig
+///     C = alpha * A * A^T + beta * C,
+/// ```
+///
+/// or
+///
+/// ```zig
+///     C = alpha * A^T * A + beta * C,
+/// ```
+///
+/// where `alpha` and `beta` are scalars, `C` is an `n`-by-`n` symmetric matrix,
+/// `A` is an `n`-by-`k` matrix in the first case and a `k`-by-`n` matrix in the
+/// second case.
+///
+/// Signature
+/// ---------
+/// ```zig
+/// fn syrk(order: Order, uplo: Uplo, trans: Transpose, n: i32, k: i32, alpha: Al, a: [*]const A, lda: i32, beta: Be, c: [*]C, ldc: i32, ctx: anytype) !void
+/// ```
+///
+/// Parameters
+/// ----------
+/// `order` (`Order`): Specifies whether two-dimensional array storage is
+/// row-major or column-major.
+///
+/// `uplo` (`Uplo`): Specifies whether the upper or lower triangular part of the
+/// symmetric matrix `A` is used:
+/// - If `uplo = upper`, then the upper triangular part of `A` is used.
+/// - If `uplo = lower`, then the lower triangular part of `A` is used.
+///
+/// `trans` (`Transpose`): Specifies the operation:
+/// - If `trans = no_trans`, then `C = alpha * A * A^T + beta * C`.
+/// - If `trans = trans`, then `C = alpha * A^T * A + beta * C`.
+///
+/// `n` (`i32`): Specifies the order of the matrix `C`. Must be greater than
+/// or equal to 0.
+///
+/// `alpha` (`bool`, `int`, `float`, `cfloat`, `integer`, `rational`, `real`,
+/// `complex` or `expression`): Specifies the scalar `alpha`.
+///
+/// `a` (many-item pointer to `int`, `float`, `cfloat`, `integer`, `rational`,
+/// `real`, `complex` or `expression`): Array, size at least:
+/// |                     | `transa = no_trans` | `transa = trans` |
+/// |---------------------|---------------------|------------------|
+/// | `order = col_major` | `lda * k`           | `lda * n`        |
+/// | `order = row_major` | `lda * n`           | `lda * k`        |
+///
+/// `lda` (`i32`): Specifies the leading dimension of `a` as declared in the
+/// calling (sub)program. Must be greater than or equal to:
+/// |                     | `transa = no_trans` | `transa = trans` |
+/// |---------------------|---------------------|------------------|
+/// | `order = col_major` | `max(1, n)`         | `max(1, k)`      |
+/// | `order = row_major` | `max(1, k)`         | `max(1, n)`      |
+///
+/// `beta` (`bool`, `int`, `float`, `cfloat`, `integer`, `rational`, `real`,
+/// `complex` or `expression`): Specifies the scalar `beta`.
+///
+/// `c` (mutable many-item pointer to `int`, `float`, `cfloat`, `integer`,
+/// `rational`, `real`, `complex` or `expression`): Array, size at least
+/// `ldc * n`.
+///
+/// `ldc` (`i32`): Specifies the leading dimension of `c` as declared in the
+/// calling (sub)program. Must be greater than or equal to `max(1, n)`.
+///
+/// Returns
+/// -------
+/// `void`: The result is stored in `c`.
+///
+/// Errors
+/// ------
+/// `linalg.blas.Error.InvalidArgument`: If `n` is less than 0, if `lda` is less
+/// than `max(1, k)` or `max(1, n)`, or if `ldc` is less than `max(1, n)`.
+///
+/// Notes
+/// -----
+/// If the `link_cblas` option is not `null`, the function will try to call the
+/// corresponding CBLAS function, if available. In that case, no errors will be
+/// raised even if the arguments are invalid.
 pub fn syrk(
+    order: Layout,
+    uplo: Uplo,
+    trans: Transpose,
+    n: i32,
+    k: i32,
+    alpha: anytype,
+    a: anytype,
+    lda: i32,
+    beta: anytype,
+    c: anytype,
+    ldc: i32,
+    ctx: anytype,
+) !void {
+    const Al: type = @TypeOf(alpha);
+    comptime var A: type = @TypeOf(a);
+    const Be: type = @TypeOf(beta);
+    comptime var C: type = @TypeOf(c);
+
+    comptime if (!types.isNumeric(Al))
+        @compileError("zml.linalg.blas.syrk requires alpha to be numeric, got " ++ @typeName(Al));
+
+    comptime if (!types.isManyPointer(A))
+        @compileError("zml.linalg.blas.syrk requires a to be a many-item pointer, got " ++ @typeName(A));
+
+    A = types.Child(A);
+
+    comptime if (!types.isNumeric(A))
+        @compileError("zml.linalg.blas.syrk requires a's child type to numeric, got " ++ @typeName(A));
+
+    comptime if (!types.isNumeric(Be))
+        @compileError("zml.linalg.blas.syrk requires beta to be numeric, got " ++ @typeName(Be));
+
+    comptime if (!types.isManyPointer(C) or types.isConstPointer(C))
+        @compileError("zml.linalg.blas.syrk requires c to be a mutable many-item pointer, got " ++ @typeName(C));
+
+    C = types.Child(C);
+
+    comptime if (!types.isNumeric(C))
+        @compileError("zml.linalg.blas.syrk requires c's child type to be numeric, got " ++ @typeName(C));
+
+    comptime if (Al == bool and A == bool and Be == bool and C == bool)
+        @compileError("zml.linalg.blas.syrk does not support alpha, a, b, beta and c all being bool");
+
+    comptime if (types.isArbitraryPrecision(Al) or
+        types.isArbitraryPrecision(A) or
+        types.isArbitraryPrecision(Be) or
+        types.isArbitraryPrecision(C))
+    {
+        // When implemented, expand if
+        @compileError("zml.linalg.blas.syrk not implemented for arbitrary precision types yet");
+    } else {
+        types.validateContext(@TypeOf(ctx), .{});
+    };
+
+    if (comptime A == C and types.canCoerce(Al, A) and types.canCoerce(Be, A) and options.link_cblas != null) {
+        switch (comptime types.numericType(A)) {
+            .float => {
+                if (comptime A == f32) {
+                    return ci.cblas_ssyrk(order.toCUInt(), uplo.toCUInt(), trans.toCUInt(), scast(c_int, n), scast(c_int, k), scast(A, alpha), a, scast(c_int, lda), scast(A, beta), c, scast(c_int, ldc));
+                } else if (comptime A == f64) {
+                    return ci.cblas_dsyrk(order.toCUInt(), uplo.toCUInt(), trans.toCUInt(), scast(c_int, n), scast(c_int, k), scast(A, alpha), a, scast(c_int, lda), scast(A, beta), c, scast(c_int, ldc));
+                }
+            },
+            .cfloat => {
+                if (comptime Scalar(A) == f32) {
+                    const alpha_casted: A = scast(A, alpha);
+                    const beta_casted: A = scast(A, beta);
+                    return ci.cblas_csyrk(order.toCUInt(), uplo.toCUInt(), trans.toCUInt(), scast(c_int, n), scast(c_int, k), &alpha_casted, a, scast(c_int, lda), &beta_casted, c, scast(c_int, ldc));
+                } else if (comptime Scalar(A) == f64) {
+                    const alpha_casted: A = scast(A, alpha);
+                    const beta_casted: A = scast(A, beta);
+                    return ci.cblas_zsyrk(order.toCUInt(), uplo.toCUInt(), trans.toCUInt(), scast(c_int, n), scast(c_int, k), &alpha_casted, a, scast(c_int, lda), &beta_casted, c, scast(c_int, ldc));
+                }
+            },
+            else => {},
+        }
+    }
+
+    return _syrk(order, uplo, trans, n, k, alpha, a, lda, beta, c, ldc, ctx);
+}
+
+fn _syrk(
     order: Order,
     uplo: Uplo,
     trans: Transpose,

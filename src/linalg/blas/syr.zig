@@ -11,7 +11,133 @@ const blas = @import("../blas.zig");
 const Order = types.Order;
 const Uplo = types.Uplo;
 
+/// Performs a rank-1 update of a symmetric matrix.
+///
+/// The `syr` routine performs a matrix-vector operation defined as:
+///
+/// ```zig
+///     A = alpha * x * x^T + A,
+/// ```
+///
+/// where `alpha` is a real scalar, `x` is an `n`-element vector, and `A` is an
+/// `n`-by-`n` symmetric matrix.
+///
+/// Signature
+/// ---------
+/// ```zig
+/// fn syr(order: Order, uplo: Uplo, n: i32, alpha: Al, x: [*]const X, incx: i32, a: [*]A, lda: i32, ctx: anytype) !void
+/// ```
+///
+/// Parameters
+/// ----------
+/// `order` (`Order`): Specifies whether two-dimensional array storage is
+/// row-major or column-major.
+///
+/// `uplo` (`Uplo`): Specifies whether the upper or lower triangular part of the
+/// symmetric matrix `A` is used:
+/// - If `uplo = upper`, then the upper triangular part of the matrix `A` is
+/// used.
+/// - If `uplo = lower`, then the lower triangular part of the matrix `A` is
+/// used.
+///
+/// `n` (`i32`): Specifies the order of the matrix `A`. Must be greater than
+/// or equal to 0.
+///
+/// `alpha` (`bool`, `int`, `float`, `integer`, `rational`, `real` or
+/// `expression`): Specifies the scalar `alpha`.
+///
+/// `x` (many-item pointer to `int`, `float`, `cfloat`, `integer`, `rational`,
+/// `real`, `complex` or `expression`): Array, size at least
+/// `1 + (n - 1) * abs(incx)`.
+///
+/// `incx` (`i32`): Specifies the increment for indexing vector `x`. Must be
+/// different from 0.
+///
+/// `a` (mutable many-item pointer to `int`, `float`, `cfloat`, `integer`,
+/// `rational`, `real`, `complex` or `expression`): Array, size at least
+/// `lda * n`.
+///
+/// `lda` (`i32`): Specifies the leading dimension of `a` as declared in the
+/// calling (sub)program. Must be greater than or equal to `max(1, n)`.
+///
+/// Returns
+/// -------
+/// `void`: The result is stored in `a`.
+///
+/// Errors
+/// ------
+/// `linalg.blas.Error.InvalidArgument`: If `n` is less than 0, if `lda` is less
+/// than `max(1, n)`, or if `incx` or `incy` are 0.
+///
+/// Notes
+/// -----
+/// If the `link_cblas` option is not `null`, the function will try to call the
+/// corresponding CBLAS function, if available. In that case, no errors will be
+/// raised even if the arguments are invalid.
 pub fn syr(
+    order: Layout,
+    uplo: Uplo,
+    n: i32,
+    alpha: anytype,
+    x: anytype,
+    incx: i32,
+    a: anytype,
+    lda: i32,
+    ctx: anytype,
+) !void {
+    const Al: type = @TypeOf(alpha);
+    comptime var X: type = @TypeOf(x);
+    comptime var A: type = @TypeOf(a);
+
+    comptime if (!types.isNumeric(Al))
+        @compileError("zml.linalg.blas.syr requires alpha to be numeric, got " ++ @typeName(Al));
+
+    comptime if (!types.isManyPointer(X))
+        @compileError("zml.linalg.blas.syr requires x to be a many-item pointer, got " ++ @typeName(X));
+
+    X = types.Child(X);
+
+    comptime if (!types.isNumeric(X))
+        @compileError("zml.linalg.blas.syr requires x's child type to be numeric, got " ++ @typeName(X));
+
+    comptime if (!types.isManyPointer(A) or types.isConstPointer(A))
+        @compileError("zml.linalg.blas.syr requires a to be a mutable many-item pointer, got " ++ @typeName(A));
+
+    A = types.Child(A);
+
+    comptime if (!types.isNumeric(A))
+        @compileError("zml.linalg.blas.syr requires a's child type to numeric, got " ++ @typeName(A));
+
+    comptime if (Al == bool and X == bool and A == bool)
+        @compileError("zml.linalg.blas.syr does not support alpha, a, x, beta and y all being bool");
+
+    comptime if (types.isArbitraryPrecision(Al) or
+        types.isArbitraryPrecision(X) or
+        types.isArbitraryPrecision(A))
+    {
+        // When implemented, expand if
+        @compileError("zml.linalg.blas.syr not implemented for arbitrary precision types yet");
+    } else {
+        types.validateContext(@TypeOf(ctx), .{});
+    };
+
+    if (comptime A == X and types.canCoerce(Al, A) and options.link_cblas != null) {
+        switch (comptime types.numericType(A)) {
+            .float => {
+                if (comptime A == f32) {
+                    return ci.cblas_ssyr(order.toCUInt(), uplo.toCUInt(), scast(c_int, n), scast(A, alpha), x, scast(c_int, incx), a, scast(c_int, lda));
+                } else if (comptime A == f64) {
+                    return ci.cblas_dsyr(order.toCUInt(), uplo.toCUInt(), scast(c_int, n), scast(A, alpha), x, scast(c_int, incx), a, scast(c_int, lda));
+                }
+            },
+            else => {},
+        }
+    }
+
+    return _syr(order, uplo, n, alpha, x, incx, a, lda, ctx);
+}
+
+fn _syr(
     order: Order,
     uplo: Uplo,
     n: i32,

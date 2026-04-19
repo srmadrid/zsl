@@ -31,6 +31,13 @@ pub fn Dyadic(mantissa_bits: u16, exponent_bits: u16) type {
         pub const is_real_type = true;
         pub const is_signed = true;
 
+        pub const Accumulator = blk: {
+            if (mantissa_bits <= 16)
+                break :blk Dyadic(32, exponent_bits)
+            else
+                break :blk Dyadic(mantissa_bits, exponent_bits);
+        };
+
         pub const Mantissa = @Int(.unsigned, mantissa_bits);
         const WideMantissa = @Int(.unsigned, 2 * mantissa_bits);
         pub const Exponent = @Int(.signed, exponent_bits);

@@ -11,7 +11,170 @@ const blas = @import("../blas.zig");
 const Order = types.Order;
 const Uplo = types.Uplo;
 
+/// Computes a matrix-vector product using a Hermitian band matrix.
+///
+/// The `hbmv` routine performs a matrix-vector operation defined as:
+///
+/// ```zig
+///     y = alpha * A * x + beta * y,
+/// ```
+///
+/// where `alpha` and `beta` are scalars, `x` and `y` are `n`-element vectors,
+/// `A` is an `n`-by-`n` Hermitian band matrix with `k` super-diagonals.
+///
+/// Signature
+/// ---------
+/// ```zig
+/// fn hbmv(order: Order, uplo: Uplo, n: i32, k: i32, alpha: Al, a: [*]const A, lda: i32, x: [*]const X, incx: i32, beta: Be, y: [*]Y, incy: i32, ctx: anytype) !void
+/// ```
+///
+/// Parameters
+/// ----------
+/// `order` (`Order`): Specifies whether two-dimensional array storage is
+/// row-major or column-major.
+///
+/// `uplo` (`Uplo`): Specifies whether the upper or lower triangular part of the
+/// Hermitian band matrix `A` is used:
+/// - If `uplo = upper`, then the upper triangular part of the matrix `A` is
+/// used.
+/// - If `uplo = lower`, then the lower triangular part of the matrix `A` is
+/// used.
+///
+/// `n` (`i32`): Specifies the order of the matrix `A`. Must be greater than
+/// or equal to 0.
+///
+/// `k` (`i32`): Specifies the number of super-diagonals or sub-diagonals of
+/// the matrix `A`. Must be greater than or equal to 0.
+///
+/// `alpha` (`bool`, `int`, `float`, `cfloat`, `integer`, `rational`, `real`,
+/// `complex` or `expression`): Specifies the scalar `alpha`.
+///
+/// `a` (many-item pointer to `int`, `float`, `cfloat`, `integer`, `rational`,
+/// `real`, `complex` or `expression`): Array, size at least `lda * n`.
+///
+/// `lda` (`i32`): Specifies the leading dimension of `a` as declared in the
+/// calling (sub)program. Must be greater than or equal to `k + 1`.
+///
+/// `x` (many-item pointer to `int`, `float`, `cfloat`, `integer`, `rational`,
+/// `real`, `complex` or `expression`): Array, size at least
+/// `1 + (n - 1) * abs(incx)`.
+///
+/// `incx` (`i32`): Specifies the increment for indexing vector `x`. Must be
+/// different from 0.
+///
+/// `beta` (`bool`, `int`, `float`, `cfloat`, `integer`, `rational`, `real`,
+/// `complex` or `expression`): Specifies the scalar `beta`. When `beta` is
+/// 0, then `y` need not be set on input.
+///
+/// `y` (mutable many-item pointer to `int`, `float`, `cfloat`, `integer`,
+/// `rational`, `real`, `complex` or `expression`): Array, size at least
+/// `1 + (n - 1) * abs(incy)`. On return, contains the result of the
+/// operation.
+///
+/// `incy` (`i32`): Specifies the increment for indexing vector `y`. Must be
+/// different from 0.
+///
+/// Returns
+/// -------
+/// `void`: The result is stored in `y`.
+///
+/// Errors
+/// ------
+/// `linalg.blas.Error.InvalidArgument`: If `n` or `k` are less than 0, if `lda`
+/// is less than `k + 1`, or if `incx` or `incy` is 0.
+///
+/// Notes
+/// -----
+/// If the `link_cblas` option is not `null`, the function will try to call the
+/// corresponding CBLAS function, if available. In that case, no errors will be
+/// raised even if the arguments are invalid.
 pub fn hbmv(
+    order: Layout,
+    uplo: Uplo,
+    n: i32,
+    k: i32,
+    alpha: anytype,
+    a: anytype,
+    lda: i32,
+    x: anytype,
+    incx: i32,
+    beta: anytype,
+    y: anytype,
+    incy: i32,
+    ctx: anytype,
+) !void {
+    const Al: type = @TypeOf(alpha);
+    comptime var A: type = @TypeOf(a);
+    comptime var X: type = @TypeOf(x);
+    const Be: type = @TypeOf(beta);
+    comptime var Y: type = @TypeOf(y);
+
+    comptime if (!types.isNumeric(Al))
+        @compileError("zml.linalg.blas.hbmv requires alpha to be numeric, got " ++ @typeName(Al));
+
+    comptime if (!types.isManyPointer(A))
+        @compileError("zml.linalg.blas.hbmv requires a to be a many-item pointer, got " ++ @typeName(A));
+
+    A = types.Child(A);
+
+    comptime if (!types.isNumeric(A))
+        @compileError("zml.linalg.blas.hbmv requires a's child type to numeric, got " ++ @typeName(A));
+
+    comptime if (!types.isManyPointer(X))
+        @compileError("zml.linalg.blas.hbmv requires x to be a many-item pointer, got " ++ @typeName(X));
+
+    X = types.Child(X);
+
+    comptime if (!types.isNumeric(X))
+        @compileError("zml.linalg.blas.hbmv requires x's child type to be numeric, got " ++ @typeName(X));
+
+    comptime if (!types.isNumeric(Be))
+        @compileError("zml.linalg.blas.hbmv requires beta to be numeric, got " ++ @typeName(Be));
+
+    comptime if (!types.isManyPointer(Y) or types.isConstPointer(Y))
+        @compileError("zml.linalg.blas.hbmv requires y to be a mutable many-item pointer, got " ++ @typeName(Y));
+
+    Y = types.Child(Y);
+
+    comptime if (!types.isNumeric(Y))
+        @compileError("zml.linalg.blas.hbmv requires y's child type to be numeric, got " ++ @typeName(Y));
+
+    comptime if (Al == bool and A == bool and X == bool and Be == bool and Y == bool)
+        @compileError("zml.linalg.blas.hbmv does not support alpha, a, x, beta and y all being bool");
+
+    comptime if (types.isArbitraryPrecision(Al) or
+        types.isArbitraryPrecision(A) or
+        types.isArbitraryPrecision(X) or
+        types.isArbitraryPrecision(Be) or
+        types.isArbitraryPrecision(Y))
+    {
+        // When implemented, expand if
+        @compileError("zml.linalg.blas.hbmv not implemented for arbitrary precision types yet");
+    } else {
+        types.validateContext(@TypeOf(ctx), .{});
+    };
+
+    if (comptime A == X and A == Y and types.canCoerce(Al, A) and types.canCoerce(Be, A) and options.link_cblas != null) {
+        switch (comptime types.numericType(A)) {
+            .cfloat => {
+                if (comptime Scalar(A) == f32) {
+                    const alpha_casted: A = scast(A, alpha);
+                    const beta_casted: A = scast(A, beta);
+                    return ci.cblas_chbmv(order.toCUInt(), uplo.toCUInt(), scast(c_int, n), scast(c_int, k), &alpha_casted, a, scast(c_int, lda), x, scast(c_int, incx), &beta_casted, y, scast(c_int, incy));
+                } else if (comptime Scalar(A) == f64) {
+                    const alpha_casted: A = scast(A, alpha);
+                    const beta_casted: A = scast(A, beta);
+                    return ci.cblas_zhbmv(order.toCUInt(), uplo.toCUInt(), scast(c_int, n), scast(c_int, k), &alpha_casted, a, scast(c_int, lda), x, scast(c_int, incx), &beta_casted, y, scast(c_int, incy));
+                }
+            },
+            else => {},
+        }
+    }
+
+    return _hbmv(order, uplo, n, k, alpha, a, lda, x, incx, beta, y, incy, ctx);
+}
+
+fn _hbmv(
     order: Order,
     uplo: Uplo,
     n: i32,

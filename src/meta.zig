@@ -483,6 +483,41 @@ pub const isComplex = type_checks.isComplex;
 pub const isSigned = type_checks.isSigned;
 pub const isUnsigned = type_checks.isUnsigned;
 
+/// Determines the safe accumulator type for a given numeric type to prevent
+/// overflow or catastrophic precision loss during loop summation.
+///
+/// ## Arguments
+/// * `N` (`type`): The base type being accumulated.
+///
+/// ## Returns
+/// `type`: The widened or stable type suitable for loop accumulation.
+pub fn Accumulator(comptime N: type) type {
+    comptime if (!isNumeric(N))
+        @compileError("zsl.numeric.Accumulator: N must be numeric, got \n\tT: " ++ @typeName(N) ++ "\n");
+
+    switch (comptime numericType(N)) {
+        .bool => return usize,
+        .int => {
+            const info = @typeInfo(N).int;
+            return if (comptime info.bits < 64)
+                (if (comptime info.signedness == .signed) i64 else u64)
+            else
+                N;
+        },
+        .float => {
+            return if (comptime @typeInfo(N).float.bits <= 16) f32 else N;
+        },
+        .dyadic => N.Accumulator,
+        .complex => N.Accumulator,
+        .custom => {
+            if (comptime !@hasDecl(N, "Accumulator"))
+                @compileError("zsl.meta.Accumulator: custom numeric type " ++ @typeName(N) ++ " must have an `Accumulator` declaration");
+
+            return N.Accumulator;
+        },
+    }
+}
+
 /// Returns the input type as is, without any modifications.
 ///
 /// ## Arguments

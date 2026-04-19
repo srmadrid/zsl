@@ -11,7 +11,96 @@ const constants = @import("../../constants.zig");
 
 const blas = @import("../blas.zig");
 
+/// Computes the Euclidean norm of a vector.
+///
+/// The `nrm2` routine performs a vector reduction operation defined as:
+///
+/// ```zig
+///     ||x||,
+/// ```
+///
+/// where `x` is a vector.
+///
+/// Signature
+/// ---------
+/// ```zig
+/// fn nrm2(n: i32, x: [*]const X, incx: i32, ctx: anytype) !EnsureFloat(Scalar(X))
+/// ```
+///
+/// Parameters
+/// ----------
+/// `n` (`i32`): Specifies the number of elements in vector `x`. Must be
+/// greater than 0.
+///
+/// `x` (many-item pointer to, `int`, `float`, `cfloat`, `integer`, `rational`,
+/// `real`, `complex` or `expression`): Array, size at least
+/// `1 + (n - 1) * abs(incx)`.
+///
+/// `incx` (`i32`): Specifies the increment for indexing vector `x`. Must be
+/// greater than 0.
+///
+/// Returns
+/// -------
+/// `EnsureFloat(Scalar(Child(@TypeOf(x))))`: The Euclidean norm of the vector.
+///
+/// Errors
+/// ------
+/// `linalg.blas.Error.InvalidArgument`: If `n` is less than or equal to 0.
+///
+/// Notes
+/// -----
+/// If the `link_cblas` option is not `null`, the function will try to call the
+/// corresponding CBLAS function, if available. In that case, no errors will be
+/// raised even if the arguments are invalid.
 pub fn nrm2(
+    n: i32,
+    x: anytype,
+    incx: i32,
+    ctx: anytype,
+) !EnsureFloat(Scalar(Child(@TypeOf(x)))) {
+    comptime var X: type = @TypeOf(x);
+
+    comptime if (!types.isManyPointer(X))
+        @compileError("zml.linalg.blas.nrm2 requires x to be a many-item pointer, got " ++ @typeName(X));
+
+    X = types.Child(X);
+
+    comptime if (!types.isNumeric(X))
+        @compileError("zml.linalg.blas.nrm2 requires x's child type to be numeric, got " ++ @typeName(X));
+
+    comptime if (X == bool)
+        @compileError("zml.linalg.blas.nrm2 does not support x being bool");
+
+    comptime if (types.isArbitraryPrecision(X)) {
+        @compileError("zml.linalg.blas.nrm2 not implemented for arbitrary precision types yet");
+    } else {
+        types.validateContext(@TypeOf(ctx), .{});
+    };
+
+    if (comptime options.link_cblas != null) {
+        switch (comptime types.numericType(X)) {
+            .float => {
+                if (comptime X == f32) {
+                    return ci.cblas_snrm2(scast(c_int, n), x, scast(c_int, incx));
+                } else if (comptime X == f64) {
+                    return ci.cblas_dnrm2(scast(c_int, n), x, scast(c_int, incx));
+                }
+            },
+            .cfloat => {
+                if (comptime Scalar(X) == f32) {
+                    return ci.cblas_scnrm2(scast(c_int, n), x, scast(c_int, incx));
+                } else if (comptime Scalar(X) == f64) {
+                    return ci.cblas_dznrm2(scast(c_int, n), x, scast(c_int, incx));
+                }
+            },
+            else => {},
+        }
+    }
+
+    return _nrm2(n, x, incx, ctx);
+}
+
+fn _nrm2(
     n: i32,
     x: anytype,
     incx: i32,

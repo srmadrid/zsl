@@ -40,15 +40,13 @@ pub fn build(b: *std.Build) void {
 
     exe.root_module.addImport("zsl", module);
 
-    // if (opt_link_cblas != null or opt_link_lapacke != null) {
-    //     exe.linkLibC();
-    // }
-    // if (opt_link_cblas != null) {
-    //     exe.root_module.linkSystemLibrary(opt_link_cblas.?, .{});
-    // }
-    // if (opt_link_lapacke != null) {
-    //     exe.root_module.linkSystemLibrary(opt_link_lapacke.?, .{});
-    // }
+    if (opt_link_cblas != null) {
+        exe.root_module.linkSystemLibrary(opt_link_cblas.?, .{});
+    }
+
+    if (opt_link_lapacke != null) {
+        exe.root_module.linkSystemLibrary(opt_link_lapacke.?, .{});
+    }
 
     b.installArtifact(exe);
 
@@ -89,15 +87,13 @@ pub fn build(b: *std.Build) void {
 
     lib_unit_tests.root_module.addImport("zsl", module);
 
-    // if (opt_link_cblas != null or opt_link_lapacke != null) {
-    //     lib_unit_tests.linkLibC();
-    // }
-    // if (opt_link_cblas != null) {
-    //     lib_unit_tests.root_module.linkSystemLibrary(opt_link_cblas.?, .{});
-    // }
-    // if (opt_link_lapacke != null) {
-    //     lib_unit_tests.root_module.linkSystemLibrary(opt_link_lapacke.?, .{});
-    // }
+    if (opt_link_cblas != null) {
+        lib_unit_tests.root_module.linkSystemLibrary(opt_link_cblas.?, .{});
+    }
+
+    if (opt_link_lapacke != null) {
+        lib_unit_tests.root_module.linkSystemLibrary(opt_link_lapacke.?, .{});
+    }
 
     const run_lib_unit_tests = b.addRunArtifact(lib_unit_tests);
     const test_step = b.step("test", "Run unit tests");

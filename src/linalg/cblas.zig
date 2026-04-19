@@ -1,55 +1,3 @@
-const cblas = @This();
-
-const types = @import("../types.zig");
-
-pub const Layout = enum(c_int) {
-    row_major = 101,
-    col_major = 102,
-
-    fn toZsl(self: cblas.Layout) types.Layout {
-        return switch (self) {
-            .row_major => .row_major,
-            .col_major => .col_major,
-        };
-    }
-};
-
-pub const Transpose = enum(c_int) {
-    no_trans = 111,
-    trans = 112,
-    conj_trans = 113,
-    conj_no_trans = 114,
-};
-
-pub const Uplo = enum(c_int) {
-    upper = 121,
-    lower = 122,
-
-    fn toZsl(self: Uplo) types.Uplo {
-        return switch (self) {
-            .upper => .upper,
-            .lower => .lower,
-        };
-    }
-};
-
-pub const Diag = enum(c_int) {
-    non_unit = 131,
-    unit = 132,
-
-    fn toZsl(self: Diag) types.Diag {
-        return switch (self) {
-            .non_unit => .non_unit,
-            .unit => .unit,
-        };
-    }
-};
-
-pub const Side = enum(c_int) {
-    left = 141,
-    right = 142,
-};
-
 // Level 1
 extern fn cblas_sasum(n: i64, x: [*c]const f32, incx: i64) f32;
 extern fn cblas_dasum(n: i64, x: [*c]const f64, incx: i64) f64;
@@ -170,226 +118,226 @@ pub const icamin = cblas_icamin;
 pub const izamin = cblas_izamin;
 
 // Level 2
-extern fn cblas_sgbmv(layout: Layout, transa: Transpose, m: i64, n: i64, kl: i64, ku: i64, alpha: f32, a: [*c]const f32, lda: i64, x: [*c]const f32, incx: i64, beta: f32, y: [*c]f32, incy: i64) void;
-extern fn cblas_dgbmv(layout: Layout, transa: Transpose, m: i64, n: i64, kl: i64, ku: i64, alpha: f64, a: [*c]const f64, lda: i64, x: [*c]const f64, incx: i64, beta: f64, y: [*c]f64, incy: i64) void;
-extern fn cblas_cgbmv(layout: Layout, transa: Transpose, m: i64, n: i64, kl: i64, ku: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, x: *const anyopaque, incx: i64, beta: *const anyopaque, y: *anyopaque, incy: i64) void;
-extern fn cblas_zgbmv(layout: Layout, transa: Transpose, m: i64, n: i64, kl: i64, ku: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, x: *const anyopaque, incx: i64, beta: *const anyopaque, y: *anyopaque, incy: i64) void;
+extern fn cblas_sgbmv(layout: c_int, transa: c_int, m: i64, n: i64, kl: i64, ku: i64, alpha: f32, a: [*c]const f32, lda: i64, x: [*c]const f32, incx: i64, beta: f32, y: [*c]f32, incy: i64) void;
+extern fn cblas_dgbmv(layout: c_int, transa: c_int, m: i64, n: i64, kl: i64, ku: i64, alpha: f64, a: [*c]const f64, lda: i64, x: [*c]const f64, incx: i64, beta: f64, y: [*c]f64, incy: i64) void;
+extern fn cblas_cgbmv(layout: c_int, transa: c_int, m: i64, n: i64, kl: i64, ku: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, x: *const anyopaque, incx: i64, beta: *const anyopaque, y: *anyopaque, incy: i64) void;
+extern fn cblas_zgbmv(layout: c_int, transa: c_int, m: i64, n: i64, kl: i64, ku: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, x: *const anyopaque, incx: i64, beta: *const anyopaque, y: *anyopaque, incy: i64) void;
 pub const sgbmv = cblas_sgbmv;
 pub const dgbmv = cblas_dgbmv;
 pub const cgbmv = cblas_cgbmv;
 pub const zgbmv = cblas_zgbmv;
 
-extern fn cblas_sgemv(layout: Layout, transa: Transpose, m: i64, n: i64, alpha: f32, a: [*c]const f32, lda: i64, x: [*c]const f32, incx: i64, beta: f32, y: [*c]f32, incy: i64) void;
-extern fn cblas_dgemv(layout: Layout, transa: Transpose, m: i64, n: i64, alpha: f64, a: [*c]const f64, lda: i64, x: [*c]const f64, incx: i64, beta: f64, y: [*c]f64, incy: i64) void;
-extern fn cblas_cgemv(layout: Layout, transa: Transpose, m: i64, n: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, x: *const anyopaque, incx: i64, beta: *const anyopaque, y: *anyopaque, incy: i64) void;
-extern fn cblas_zgemv(layout: Layout, transa: Transpose, m: i64, n: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, x: *const anyopaque, incx: i64, beta: *const anyopaque, y: *anyopaque, incy: i64) void;
+extern fn cblas_sgemv(layout: c_int, transa: c_int, m: i64, n: i64, alpha: f32, a: [*c]const f32, lda: i64, x: [*c]const f32, incx: i64, beta: f32, y: [*c]f32, incy: i64) void;
+extern fn cblas_dgemv(layout: c_int, transa: c_int, m: i64, n: i64, alpha: f64, a: [*c]const f64, lda: i64, x: [*c]const f64, incx: i64, beta: f64, y: [*c]f64, incy: i64) void;
+extern fn cblas_cgemv(layout: c_int, transa: c_int, m: i64, n: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, x: *const anyopaque, incx: i64, beta: *const anyopaque, y: *anyopaque, incy: i64) void;
+extern fn cblas_zgemv(layout: c_int, transa: c_int, m: i64, n: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, x: *const anyopaque, incx: i64, beta: *const anyopaque, y: *anyopaque, incy: i64) void;
 pub const sgemv = cblas_sgemv;
 pub const dgemv = cblas_dgemv;
 pub const cgemv = cblas_cgemv;
 pub const zgemv = cblas_zgemv;
 
-extern fn cblas_sger(layout: Layout, m: i64, n: i64, alpha: f32, x: [*c]const f32, incx: i64, y: [*c]const f32, incy: i64, a: [*c]f32, lda: i64) void;
-extern fn cblas_dger(layout: Layout, m: i64, n: i64, alpha: f64, x: [*c]const f64, incx: i64, y: [*c]const f64, incy: i64, a: [*c]f64, lda: i64) void;
-extern fn cblas_cgeru(layout: Layout, m: i64, n: i64, alpha: *const anyopaque, x: *const anyopaque, incx: i64, y: *const anyopaque, incy: i64, a: *anyopaque, lda: i64) void;
-extern fn cblas_zgeru(layout: Layout, m: i64, n: i64, alpha: *const anyopaque, x: *const anyopaque, incx: i64, y: *const anyopaque, incy: i64, a: *anyopaque, lda: i64) void;
-extern fn cblas_cgerc(layout: Layout, m: i64, n: i64, alpha: *const anyopaque, x: *const anyopaque, incx: i64, y: *const anyopaque, incy: i64, a: *anyopaque, lda: i64) void;
-extern fn cblas_zgerc(layout: Layout, m: i64, n: i64, alpha: *const anyopaque, x: *const anyopaque, incx: i64, y: *const anyopaque, incy: i64, a: *anyopaque, lda: i64) void;
+extern fn cblas_sger(layout: c_int, m: i64, n: i64, alpha: f32, x: [*c]const f32, incx: i64, y: [*c]const f32, incy: i64, a: [*c]f32, lda: i64) void;
+extern fn cblas_dger(layout: c_int, m: i64, n: i64, alpha: f64, x: [*c]const f64, incx: i64, y: [*c]const f64, incy: i64, a: [*c]f64, lda: i64) void;
+extern fn cblas_cgerc(layout: c_int, m: i64, n: i64, alpha: *const anyopaque, x: *const anyopaque, incx: i64, y: *const anyopaque, incy: i64, a: *anyopaque, lda: i64) void;
+extern fn cblas_zgerc(layout: c_int, m: i64, n: i64, alpha: *const anyopaque, x: *const anyopaque, incx: i64, y: *const anyopaque, incy: i64, a: *anyopaque, lda: i64) void;
+extern fn cblas_cgeru(layout: c_int, m: i64, n: i64, alpha: *const anyopaque, x: *const anyopaque, incx: i64, y: *const anyopaque, incy: i64, a: *anyopaque, lda: i64) void;
+extern fn cblas_zgeru(layout: c_int, m: i64, n: i64, alpha: *const anyopaque, x: *const anyopaque, incx: i64, y: *const anyopaque, incy: i64, a: *anyopaque, lda: i64) void;
 pub const sger = cblas_sger;
 pub const dger = cblas_dger;
-pub const cgeru = cblas_cgeru;
-pub const zgeru = cblas_zgeru;
 pub const cgerc = cblas_cgerc;
 pub const zgerc = cblas_zgerc;
+pub const cgeru = cblas_cgeru;
+pub const zgeru = cblas_zgeru;
 
-extern fn cblas_chbmv(layout: Layout, uplo: Uplo, n: i64, k: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, x: *const anyopaque, incx: i64, beta: *const anyopaque, y: *anyopaque, incy: i64) void;
-extern fn cblas_zhbmv(layout: Layout, uplo: Uplo, n: i64, k: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, x: *const anyopaque, incx: i64, beta: *const anyopaque, y: *anyopaque, incy: i64) void;
+extern fn cblas_chbmv(layout: c_int, uplo: c_int, n: i64, k: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, x: *const anyopaque, incx: i64, beta: *const anyopaque, y: *anyopaque, incy: i64) void;
+extern fn cblas_zhbmv(layout: c_int, uplo: c_int, n: i64, k: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, x: *const anyopaque, incx: i64, beta: *const anyopaque, y: *anyopaque, incy: i64) void;
 pub const chbmv = cblas_chbmv;
 pub const zhbmv = cblas_zhbmv;
 
-extern fn cblas_chemv(layout: Layout, uplo: Uplo, n: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, x: *const anyopaque, incx: i64, beta: *const anyopaque, y: *anyopaque, incy: i64) void;
-extern fn cblas_zhemv(layout: Layout, uplo: Uplo, n: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, x: *const anyopaque, incx: i64, beta: *const anyopaque, y: *anyopaque, incy: i64) void;
+extern fn cblas_chemv(layout: c_int, uplo: c_int, n: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, x: *const anyopaque, incx: i64, beta: *const anyopaque, y: *anyopaque, incy: i64) void;
+extern fn cblas_zhemv(layout: c_int, uplo: c_int, n: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, x: *const anyopaque, incx: i64, beta: *const anyopaque, y: *anyopaque, incy: i64) void;
 pub const chemv = cblas_chemv;
 pub const zhemv = cblas_zhemv;
 
-extern fn cblas_cher(layout: Layout, uplo: Uplo, n: i64, alpha: f32, x: *const anyopaque, incx: i64, a: *anyopaque, lda: i64) void;
-extern fn cblas_zher(layout: Layout, uplo: Uplo, n: i64, alpha: f64, x: *const anyopaque, incx: i64, a: *anyopaque, lda: i64) void;
+extern fn cblas_cher(layout: c_int, uplo: c_int, n: i64, alpha: f32, x: *const anyopaque, incx: i64, a: *anyopaque, lda: i64) void;
+extern fn cblas_zher(layout: c_int, uplo: c_int, n: i64, alpha: f64, x: *const anyopaque, incx: i64, a: *anyopaque, lda: i64) void;
 pub const cher = cblas_cher;
 pub const zher = cblas_zher;
 
-extern fn cblas_cher2(layout: Layout, uplo: Uplo, n: i64, alpha: *const anyopaque, x: *const anyopaque, incx: i64, y: *const anyopaque, incy: i64, a: *anyopaque, lda: i64) void;
-extern fn cblas_zher2(layout: Layout, uplo: Uplo, n: i64, alpha: *const anyopaque, x: *const anyopaque, incx: i64, y: *const anyopaque, incy: i64, a: *anyopaque, lda: i64) void;
+extern fn cblas_cher2(layout: c_int, uplo: c_int, n: i64, alpha: *const anyopaque, x: *const anyopaque, incx: i64, y: *const anyopaque, incy: i64, a: *anyopaque, lda: i64) void;
+extern fn cblas_zher2(layout: c_int, uplo: c_int, n: i64, alpha: *const anyopaque, x: *const anyopaque, incx: i64, y: *const anyopaque, incy: i64, a: *anyopaque, lda: i64) void;
 pub const cher2 = cblas_cher2;
 pub const zher2 = cblas_zher2;
 
-extern fn cblas_chpmv(layout: Layout, uplo: Uplo, n: i64, alpha: *const anyopaque, ap: *const anyopaque, x: *const anyopaque, incx: i64, beta: *const anyopaque, y: *anyopaque, incy: i64) void;
-extern fn cblas_zhpmv(layout: Layout, uplo: Uplo, n: i64, alpha: *const anyopaque, ap: *const anyopaque, x: *const anyopaque, incx: i64, beta: *const anyopaque, y: *anyopaque, incy: i64) void;
+extern fn cblas_chpmv(layout: c_int, uplo: c_int, n: i64, alpha: *const anyopaque, ap: *const anyopaque, x: *const anyopaque, incx: i64, beta: *const anyopaque, y: *anyopaque, incy: i64) void;
+extern fn cblas_zhpmv(layout: c_int, uplo: c_int, n: i64, alpha: *const anyopaque, ap: *const anyopaque, x: *const anyopaque, incx: i64, beta: *const anyopaque, y: *anyopaque, incy: i64) void;
 pub const chpmv = cblas_chpmv;
 pub const zhpmv = cblas_zhpmv;
 
-extern fn cblas_chpr(layout: Layout, uplo: Uplo, n: i64, alpha: f32, x: *const anyopaque, incx: i64, ap: *anyopaque) void;
-extern fn cblas_zhpr(layout: Layout, uplo: Uplo, n: i64, alpha: f64, x: *const anyopaque, incx: i64, ap: *anyopaque) void;
+extern fn cblas_chpr(layout: c_int, uplo: c_int, n: i64, alpha: f32, x: *const anyopaque, incx: i64, ap: *anyopaque) void;
+extern fn cblas_zhpr(layout: c_int, uplo: c_int, n: i64, alpha: f64, x: *const anyopaque, incx: i64, ap: *anyopaque) void;
 pub const chpr = cblas_chpr;
 pub const zhpr = cblas_zhpr;
 
-extern fn cblas_chpr2(layout: Layout, uplo: Uplo, n: i64, alpha: *const anyopaque, x: *const anyopaque, incx: i64, y: *const anyopaque, incy: i64, ap: *anyopaque) void;
-extern fn cblas_zhpr2(layout: Layout, uplo: Uplo, n: i64, alpha: *const anyopaque, x: *const anyopaque, incx: i64, y: *const anyopaque, incy: i64, ap: *anyopaque) void;
+extern fn cblas_chpr2(layout: c_int, uplo: c_int, n: i64, alpha: *const anyopaque, x: *const anyopaque, incx: i64, y: *const anyopaque, incy: i64, ap: *anyopaque) void;
+extern fn cblas_zhpr2(layout: c_int, uplo: c_int, n: i64, alpha: *const anyopaque, x: *const anyopaque, incx: i64, y: *const anyopaque, incy: i64, ap: *anyopaque) void;
 pub const chpr2 = cblas_chpr2;
 pub const zhpr2 = cblas_zhpr2;
 
-extern fn cblas_ssbmv(layout: Layout, uplo: Uplo, n: i64, k: i64, alpha: f32, a: [*c]const f32, lda: i64, x: [*c]const f32, incx: i64, beta: f32, y: [*c]f32, incy: i64) void;
-extern fn cblas_dsbmv(layout: Layout, uplo: Uplo, n: i64, k: i64, alpha: f64, a: [*c]const f64, lda: i64, x: [*c]const f64, incx: i64, beta: f64, y: [*c]f64, incy: i64) void;
+extern fn cblas_ssbmv(layout: c_int, uplo: c_int, n: i64, k: i64, alpha: f32, a: [*c]const f32, lda: i64, x: [*c]const f32, incx: i64, beta: f32, y: [*c]f32, incy: i64) void;
+extern fn cblas_dsbmv(layout: c_int, uplo: c_int, n: i64, k: i64, alpha: f64, a: [*c]const f64, lda: i64, x: [*c]const f64, incx: i64, beta: f64, y: [*c]f64, incy: i64) void;
 pub const ssbmv = cblas_ssbmv;
 pub const dsbmv = cblas_dsbmv;
 
-extern fn cblas_sspmv(layout: Layout, uplo: Uplo, n: i64, alpha: f32, ap: [*c]const f32, x: [*c]const f32, incx: i64, beta: f32, y: [*c]f32, incy: i64) void;
-extern fn cblas_dspmv(layout: Layout, uplo: Uplo, n: i64, alpha: f64, ap: [*c]const f64, x: [*c]const f64, incx: i64, beta: f64, y: [*c]f64, incy: i64) void;
+extern fn cblas_sspmv(layout: c_int, uplo: c_int, n: i64, alpha: f32, ap: [*c]const f32, x: [*c]const f32, incx: i64, beta: f32, y: [*c]f32, incy: i64) void;
+extern fn cblas_dspmv(layout: c_int, uplo: c_int, n: i64, alpha: f64, ap: [*c]const f64, x: [*c]const f64, incx: i64, beta: f64, y: [*c]f64, incy: i64) void;
 pub const sspmv = cblas_sspmv;
 pub const dspmv = cblas_dspmv;
 
-extern fn cblas_sspr(layout: Layout, uplo: Uplo, n: i64, alpha: f32, x: [*c]const f32, incx: i64, ap: [*c]f32) void;
-extern fn cblas_dspr(layout: Layout, uplo: Uplo, n: i64, alpha: f64, x: [*c]const f64, incx: i64, ap: [*c]f64) void;
+extern fn cblas_sspr(layout: c_int, uplo: c_int, n: i64, alpha: f32, x: [*c]const f32, incx: i64, ap: [*c]f32) void;
+extern fn cblas_dspr(layout: c_int, uplo: c_int, n: i64, alpha: f64, x: [*c]const f64, incx: i64, ap: [*c]f64) void;
 pub const sspr = cblas_sspr;
 pub const dspr = cblas_dspr;
 
-extern fn cblas_sspr2(layout: Layout, uplo: Uplo, n: i64, alpha: f32, x: [*c]const f32, incx: i64, y: [*c]const f32, incy: i64, ap: [*c]f32) void;
-extern fn cblas_dspr2(layout: Layout, uplo: Uplo, n: i64, alpha: f64, x: [*c]const f64, incx: i64, y: [*c]const f64, incy: i64, ap: [*c]f64) void;
+extern fn cblas_sspr2(layout: c_int, uplo: c_int, n: i64, alpha: f32, x: [*c]const f32, incx: i64, y: [*c]const f32, incy: i64, ap: [*c]f32) void;
+extern fn cblas_dspr2(layout: c_int, uplo: c_int, n: i64, alpha: f64, x: [*c]const f64, incx: i64, y: [*c]const f64, incy: i64, ap: [*c]f64) void;
 pub const sspr2 = cblas_sspr2;
 pub const dspr2 = cblas_dspr2;
 
-extern fn cblas_ssymv(layout: Layout, uplo: Uplo, n: i64, alpha: f32, a: [*c]const f32, lda: i64, x: [*c]const f32, incx: i64, beta: f32, y: [*c]f32, incy: i64) void;
-extern fn cblas_dsymv(layout: Layout, uplo: Uplo, n: i64, alpha: f64, a: [*c]const f64, lda: i64, x: [*c]const f64, incx: i64, beta: f64, y: [*c]f64, incy: i64) void;
+extern fn cblas_ssymv(layout: c_int, uplo: c_int, n: i64, alpha: f32, a: [*c]const f32, lda: i64, x: [*c]const f32, incx: i64, beta: f32, y: [*c]f32, incy: i64) void;
+extern fn cblas_dsymv(layout: c_int, uplo: c_int, n: i64, alpha: f64, a: [*c]const f64, lda: i64, x: [*c]const f64, incx: i64, beta: f64, y: [*c]f64, incy: i64) void;
 pub const ssymv = cblas_ssymv;
 pub const dsymv = cblas_dsymv;
 
-extern fn cblas_ssyr(layout: Layout, uplo: Uplo, n: i64, alpha: f32, x: [*c]const f32, incx: i64, a: [*c]f32, lda: i64) void;
-extern fn cblas_dsyr(layout: Layout, uplo: Uplo, n: i64, alpha: f64, x: [*c]const f64, incx: i64, a: [*c]f64, lda: i64) void;
+extern fn cblas_ssyr(layout: c_int, uplo: c_int, n: i64, alpha: f32, x: [*c]const f32, incx: i64, a: [*c]f32, lda: i64) void;
+extern fn cblas_dsyr(layout: c_int, uplo: c_int, n: i64, alpha: f64, x: [*c]const f64, incx: i64, a: [*c]f64, lda: i64) void;
 pub const ssyr = cblas_ssyr;
 pub const dsyr = cblas_dsyr;
 
-extern fn cblas_ssyr2(layout: Layout, uplo: Uplo, n: i64, alpha: f32, x: [*c]const f32, incx: i64, y: [*c]const f32, incy: i64, a: [*c]f32, lda: i64) void;
-extern fn cblas_dsyr2(layout: Layout, uplo: Uplo, n: i64, alpha: f64, x: [*c]const f64, incx: i64, y: [*c]const f64, incy: i64, a: [*c]f64, lda: i64) void;
+extern fn cblas_ssyr2(layout: c_int, uplo: c_int, n: i64, alpha: f32, x: [*c]const f32, incx: i64, y: [*c]const f32, incy: i64, a: [*c]f32, lda: i64) void;
+extern fn cblas_dsyr2(layout: c_int, uplo: c_int, n: i64, alpha: f64, x: [*c]const f64, incx: i64, y: [*c]const f64, incy: i64, a: [*c]f64, lda: i64) void;
 pub const ssyr2 = cblas_ssyr2;
 pub const dsyr2 = cblas_dsyr2;
 
-extern fn cblas_stbmv(layout: Layout, uplo: Uplo, transa: Transpose, diag: Diag, n: i64, k: i64, a: [*c]const f32, lda: i64, x: [*c]f32, incx: i64) void;
-extern fn cblas_dtbmv(layout: Layout, uplo: Uplo, transa: Transpose, diag: Diag, n: i64, k: i64, a: [*c]const f64, lda: i64, x: [*c]f64, incx: i64) void;
-extern fn cblas_ctbmv(layout: Layout, uplo: Uplo, transa: Transpose, diag: Diag, n: i64, k: i64, a: *const anyopaque, lda: i64, x: *anyopaque, incx: i64) void;
-extern fn cblas_ztbmv(layout: Layout, uplo: Uplo, transa: Transpose, diag: Diag, n: i64, k: i64, a: *const anyopaque, lda: i64, x: *anyopaque, incx: i64) void;
+extern fn cblas_stbmv(layout: c_int, uplo: c_int, transa: c_int, diag: c_int, n: i64, k: i64, a: [*c]const f32, lda: i64, x: [*c]f32, incx: i64) void;
+extern fn cblas_dtbmv(layout: c_int, uplo: c_int, transa: c_int, diag: c_int, n: i64, k: i64, a: [*c]const f64, lda: i64, x: [*c]f64, incx: i64) void;
+extern fn cblas_ctbmv(layout: c_int, uplo: c_int, transa: c_int, diag: c_int, n: i64, k: i64, a: *const anyopaque, lda: i64, x: *anyopaque, incx: i64) void;
+extern fn cblas_ztbmv(layout: c_int, uplo: c_int, transa: c_int, diag: c_int, n: i64, k: i64, a: *const anyopaque, lda: i64, x: *anyopaque, incx: i64) void;
 pub const stbmv = cblas_stbmv;
 pub const dtbmv = cblas_dtbmv;
 pub const ctbmv = cblas_ctbmv;
 pub const ztbmv = cblas_ztbmv;
 
-extern fn cblas_stbsv(layout: Layout, uplo: Uplo, transa: Transpose, diag: Diag, n: i64, k: i64, a: [*c]const f32, lda: i64, x: [*c]f32, incx: i64) void;
-extern fn cblas_dtbsv(layout: Layout, uplo: Uplo, transa: Transpose, diag: Diag, n: i64, k: i64, a: [*c]const f64, lda: i64, x: [*c]f64, incx: i64) void;
-extern fn cblas_ctbsv(layout: Layout, uplo: Uplo, transa: Transpose, diag: Diag, n: i64, k: i64, a: *const anyopaque, lda: i64, x: *anyopaque, incx: i64) void;
-extern fn cblas_ztbsv(layout: Layout, uplo: Uplo, transa: Transpose, diag: Diag, n: i64, k: i64, a: *const anyopaque, lda: i64, x: *anyopaque, incx: i64) void;
+extern fn cblas_stbsv(layout: c_int, uplo: c_int, transa: c_int, diag: c_int, n: i64, k: i64, a: [*c]const f32, lda: i64, x: [*c]f32, incx: i64) void;
+extern fn cblas_dtbsv(layout: c_int, uplo: c_int, transa: c_int, diag: c_int, n: i64, k: i64, a: [*c]const f64, lda: i64, x: [*c]f64, incx: i64) void;
+extern fn cblas_ctbsv(layout: c_int, uplo: c_int, transa: c_int, diag: c_int, n: i64, k: i64, a: *const anyopaque, lda: i64, x: *anyopaque, incx: i64) void;
+extern fn cblas_ztbsv(layout: c_int, uplo: c_int, transa: c_int, diag: c_int, n: i64, k: i64, a: *const anyopaque, lda: i64, x: *anyopaque, incx: i64) void;
 pub const stbsv = cblas_stbsv;
 pub const dtbsv = cblas_dtbsv;
 pub const ctbsv = cblas_ctbsv;
 pub const ztbsv = cblas_ztbsv;
 
-extern fn cblas_stpmv(layout: Layout, uplo: Uplo, transa: Transpose, diag: Diag, n: i64, ap: [*c]const f32, x: [*c]f32, incx: i64) void;
-extern fn cblas_dtpmv(layout: Layout, uplo: Uplo, transa: Transpose, diag: Diag, n: i64, ap: [*c]const f64, x: [*c]f64, incx: i64) void;
-extern fn cblas_ctpmv(layout: Layout, uplo: Uplo, transa: Transpose, diag: Diag, n: i64, ap: *const anyopaque, x: *anyopaque, incx: i64) void;
-extern fn cblas_ztpmv(layout: Layout, uplo: Uplo, transa: Transpose, diag: Diag, n: i64, ap: *const anyopaque, x: *anyopaque, incx: i64) void;
+extern fn cblas_stpmv(layout: c_int, uplo: c_int, transa: c_int, diag: c_int, n: i64, ap: [*c]const f32, x: [*c]f32, incx: i64) void;
+extern fn cblas_dtpmv(layout: c_int, uplo: c_int, transa: c_int, diag: c_int, n: i64, ap: [*c]const f64, x: [*c]f64, incx: i64) void;
+extern fn cblas_ctpmv(layout: c_int, uplo: c_int, transa: c_int, diag: c_int, n: i64, ap: *const anyopaque, x: *anyopaque, incx: i64) void;
+extern fn cblas_ztpmv(layout: c_int, uplo: c_int, transa: c_int, diag: c_int, n: i64, ap: *const anyopaque, x: *anyopaque, incx: i64) void;
 pub const stpmv = cblas_stpmv;
 pub const dtpmv = cblas_dtpmv;
 pub const ctpmv = cblas_ctpmv;
 pub const ztpmv = cblas_ztpmv;
 
-extern fn cblas_stpsv(layout: Layout, uplo: Uplo, transa: Transpose, diag: Diag, n: i64, ap: [*c]const f32, x: [*c]f32, incx: i64) void;
-extern fn cblas_dtpsv(layout: Layout, uplo: Uplo, transa: Transpose, diag: Diag, n: i64, ap: [*c]const f64, x: [*c]f64, incx: i64) void;
-extern fn cblas_ctpsv(layout: Layout, uplo: Uplo, transa: Transpose, diag: Diag, n: i64, ap: *const anyopaque, x: *anyopaque, incx: i64) void;
-extern fn cblas_ztpsv(layout: Layout, uplo: Uplo, transa: Transpose, diag: Diag, n: i64, ap: *const anyopaque, x: *anyopaque, incx: i64) void;
+extern fn cblas_stpsv(layout: c_int, uplo: c_int, transa: c_int, diag: c_int, n: i64, ap: [*c]const f32, x: [*c]f32, incx: i64) void;
+extern fn cblas_dtpsv(layout: c_int, uplo: c_int, transa: c_int, diag: c_int, n: i64, ap: [*c]const f64, x: [*c]f64, incx: i64) void;
+extern fn cblas_ctpsv(layout: c_int, uplo: c_int, transa: c_int, diag: c_int, n: i64, ap: *const anyopaque, x: *anyopaque, incx: i64) void;
+extern fn cblas_ztpsv(layout: c_int, uplo: c_int, transa: c_int, diag: c_int, n: i64, ap: *const anyopaque, x: *anyopaque, incx: i64) void;
 pub const stpsv = cblas_stpsv;
 pub const dtpsv = cblas_dtpsv;
 pub const ctpsv = cblas_ctpsv;
 pub const ztpsv = cblas_ztpsv;
 
-extern fn cblas_strmv(layout: Layout, uplo: Uplo, transa: Transpose, diag: Diag, n: i64, a: [*c]const f32, lda: i64, x: [*c]f32, incx: i64) void;
-extern fn cblas_dtrmv(layout: Layout, uplo: Uplo, transa: Transpose, diag: Diag, n: i64, a: [*c]const f64, lda: i64, x: [*c]f64, incx: i64) void;
-extern fn cblas_ctrmv(layout: Layout, uplo: Uplo, transa: Transpose, diag: Diag, n: i64, a: *const anyopaque, lda: i64, x: *anyopaque, incx: i64) void;
-extern fn cblas_ztrmv(layout: Layout, uplo: Uplo, transa: Transpose, diag: Diag, n: i64, a: *const anyopaque, lda: i64, x: *anyopaque, incx: i64) void;
+extern fn cblas_strmv(layout: c_int, uplo: c_int, transa: c_int, diag: c_int, n: i64, a: [*c]const f32, lda: i64, x: [*c]f32, incx: i64) void;
+extern fn cblas_dtrmv(layout: c_int, uplo: c_int, transa: c_int, diag: c_int, n: i64, a: [*c]const f64, lda: i64, x: [*c]f64, incx: i64) void;
+extern fn cblas_ctrmv(layout: c_int, uplo: c_int, transa: c_int, diag: c_int, n: i64, a: *const anyopaque, lda: i64, x: *anyopaque, incx: i64) void;
+extern fn cblas_ztrmv(layout: c_int, uplo: c_int, transa: c_int, diag: c_int, n: i64, a: *const anyopaque, lda: i64, x: *anyopaque, incx: i64) void;
 pub const strmv = cblas_strmv;
 pub const dtrmv = cblas_dtrmv;
 pub const ctrmv = cblas_ctrmv;
 pub const ztrmv = cblas_ztrmv;
 
-extern fn cblas_strsv(layout: Layout, uplo: Uplo, transa: Transpose, diag: Diag, n: i64, a: [*c]const f32, lda: i64, x: [*c]f32, incx: i64) void;
-extern fn cblas_dtrsv(layout: Layout, uplo: Uplo, transa: Transpose, diag: Diag, n: i64, a: [*c]const f64, lda: i64, x: [*c]f64, incx: i64) void;
-extern fn cblas_ctrsv(layout: Layout, uplo: Uplo, transa: Transpose, diag: Diag, n: i64, a: *const anyopaque, lda: i64, x: *anyopaque, incx: i64) void;
-extern fn cblas_ztrsv(layout: Layout, uplo: Uplo, transa: Transpose, diag: Diag, n: i64, a: *const anyopaque, lda: i64, x: *anyopaque, incx: i64) void;
+extern fn cblas_strsv(layout: c_int, uplo: c_int, transa: c_int, diag: c_int, n: i64, a: [*c]const f32, lda: i64, x: [*c]f32, incx: i64) void;
+extern fn cblas_dtrsv(layout: c_int, uplo: c_int, transa: c_int, diag: c_int, n: i64, a: [*c]const f64, lda: i64, x: [*c]f64, incx: i64) void;
+extern fn cblas_ctrsv(layout: c_int, uplo: c_int, transa: c_int, diag: c_int, n: i64, a: *const anyopaque, lda: i64, x: *anyopaque, incx: i64) void;
+extern fn cblas_ztrsv(layout: c_int, uplo: c_int, transa: c_int, diag: c_int, n: i64, a: *const anyopaque, lda: i64, x: *anyopaque, incx: i64) void;
 pub const strsv = cblas_strsv;
 pub const dtrsv = cblas_dtrsv;
 pub const ctrsv = cblas_ctrsv;
 pub const ztrsv = cblas_ztrsv;
 
 // Level 3
-extern fn cblas_sgemm(layout: Layout, transa: Transpose, transb: Transpose, m: i64, n: i64, k: i64, alpha: f32, a: [*c]const f32, lda: i64, b: [*c]const f32, ldb: i64, beta: f32, c: [*c]f32, ldc: i64) void;
-extern fn cblas_dgemm(layout: Layout, transa: Transpose, transb: Transpose, m: i64, n: i64, k: i64, alpha: f64, a: [*c]const f64, lda: i64, b: [*c]const f64, ldb: i64, beta: f64, c: [*c]f64, ldc: i64) void;
-extern fn cblas_cgemm(layout: Layout, transa: Transpose, transb: Transpose, m: i64, n: i64, k: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, b: *const anyopaque, ldb: i64, beta: *const anyopaque, c: *anyopaque, ldc: i64) void;
-extern fn cblas_zgemm(layout: Layout, transa: Transpose, transb: Transpose, m: i64, n: i64, k: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, b: *const anyopaque, ldb: i64, beta: *const anyopaque, c: *anyopaque, ldc: i64) void;
+extern fn cblas_sgemm(layout: c_int, transa: c_int, transb: c_int, m: i64, n: i64, k: i64, alpha: f32, a: [*c]const f32, lda: i64, b: [*c]const f32, ldb: i64, beta: f32, c: [*c]f32, ldc: i64) void;
+extern fn cblas_dgemm(layout: c_int, transa: c_int, transb: c_int, m: i64, n: i64, k: i64, alpha: f64, a: [*c]const f64, lda: i64, b: [*c]const f64, ldb: i64, beta: f64, c: [*c]f64, ldc: i64) void;
+extern fn cblas_cgemm(layout: c_int, transa: c_int, transb: c_int, m: i64, n: i64, k: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, b: *const anyopaque, ldb: i64, beta: *const anyopaque, c: *anyopaque, ldc: i64) void;
+extern fn cblas_zgemm(layout: c_int, transa: c_int, transb: c_int, m: i64, n: i64, k: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, b: *const anyopaque, ldb: i64, beta: *const anyopaque, c: *anyopaque, ldc: i64) void;
 pub const sgemm = cblas_sgemm;
 pub const dgemm = cblas_dgemm;
 pub const cgemm = cblas_cgemm;
 pub const zgemm = cblas_zgemm;
 
-extern fn cblas_chemm(layout: Layout, side: Side, uplo: Uplo, m: i64, n: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, b: *const anyopaque, ldb: i64, beta: *const anyopaque, c: *anyopaque, ldc: i64) void;
-extern fn cblas_zhemm(layout: Layout, side: Side, uplo: Uplo, m: i64, n: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, b: *const anyopaque, ldb: i64, beta: *const anyopaque, c: *anyopaque, ldc: i64) void;
+extern fn cblas_chemm(layout: c_int, side: c_int, uplo: c_int, m: i64, n: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, b: *const anyopaque, ldb: i64, beta: *const anyopaque, c: *anyopaque, ldc: i64) void;
+extern fn cblas_zhemm(layout: c_int, side: c_int, uplo: c_int, m: i64, n: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, b: *const anyopaque, ldb: i64, beta: *const anyopaque, c: *anyopaque, ldc: i64) void;
 pub const chemm = cblas_chemm;
 pub const zhemm = cblas_zhemm;
 
-extern fn cblas_cherk(layout: Layout, uplo: Uplo, trans: Transpose, n: i64, k: i64, alpha: f32, a: *const anyopaque, lda: i64, beta: f32, c: *anyopaque, ldc: i64) void;
-extern fn cblas_zherk(layout: Layout, uplo: Uplo, trans: Transpose, n: i64, k: i64, alpha: f64, a: *const anyopaque, lda: i64, beta: f64, c: *anyopaque, ldc: i64) void;
+extern fn cblas_cherk(layout: c_int, uplo: c_int, trans: c_int, n: i64, k: i64, alpha: f32, a: *const anyopaque, lda: i64, beta: f32, c: *anyopaque, ldc: i64) void;
+extern fn cblas_zherk(layout: c_int, uplo: c_int, trans: c_int, n: i64, k: i64, alpha: f64, a: *const anyopaque, lda: i64, beta: f64, c: *anyopaque, ldc: i64) void;
 pub const cherk = cblas_cherk;
 pub const zherk = cblas_zherk;
 
-extern fn cblas_cher2k(layout: Layout, uplo: Uplo, trans: Transpose, n: i64, k: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, b: *const anyopaque, ldb: i64, beta: f32, c: *anyopaque, ldc: i64) void;
-extern fn cblas_zher2k(layout: Layout, uplo: Uplo, trans: Transpose, n: i64, k: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, b: *const anyopaque, ldb: i64, beta: f64, c: *anyopaque, ldc: i64) void;
+extern fn cblas_cher2k(layout: c_int, uplo: c_int, trans: c_int, n: i64, k: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, b: *const anyopaque, ldb: i64, beta: f32, c: *anyopaque, ldc: i64) void;
+extern fn cblas_zher2k(layout: c_int, uplo: c_int, trans: c_int, n: i64, k: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, b: *const anyopaque, ldb: i64, beta: f64, c: *anyopaque, ldc: i64) void;
 pub const cher2k = cblas_cher2k;
 pub const zher2k = cblas_zher2k;
 
-extern fn cblas_ssymm(layout: Layout, side: Side, uplo: Uplo, m: i64, n: i64, alpha: f32, a: [*c]const f32, lda: i64, b: [*c]const f32, ldb: i64, beta: f32, c: [*c]f32, ldc: i64) void;
-extern fn cblas_dsymm(layout: Layout, side: Side, uplo: Uplo, m: i64, n: i64, alpha: f64, a: [*c]const f64, lda: i64, b: [*c]const f64, ldb: i64, beta: f64, c: [*c]f64, ldc: i64) void;
-extern fn cblas_csymm(layout: Layout, side: Side, uplo: Uplo, m: i64, n: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, b: *const anyopaque, ldb: i64, beta: *const anyopaque, c: *anyopaque, ldc: i64) void;
-extern fn cblas_zsymm(layout: Layout, side: Side, uplo: Uplo, m: i64, n: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, b: *const anyopaque, ldb: i64, beta: *const anyopaque, c: *anyopaque, ldc: i64) void;
+extern fn cblas_ssymm(layout: c_int, side: c_int, uplo: c_int, m: i64, n: i64, alpha: f32, a: [*c]const f32, lda: i64, b: [*c]const f32, ldb: i64, beta: f32, c: [*c]f32, ldc: i64) void;
+extern fn cblas_dsymm(layout: c_int, side: c_int, uplo: c_int, m: i64, n: i64, alpha: f64, a: [*c]const f64, lda: i64, b: [*c]const f64, ldb: i64, beta: f64, c: [*c]f64, ldc: i64) void;
+extern fn cblas_csymm(layout: c_int, side: c_int, uplo: c_int, m: i64, n: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, b: *const anyopaque, ldb: i64, beta: *const anyopaque, c: *anyopaque, ldc: i64) void;
+extern fn cblas_zsymm(layout: c_int, side: c_int, uplo: c_int, m: i64, n: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, b: *const anyopaque, ldb: i64, beta: *const anyopaque, c: *anyopaque, ldc: i64) void;
 pub const ssymm = cblas_ssymm;
 pub const dsymm = cblas_dsymm;
 pub const csymm = cblas_csymm;
 pub const zsymm = cblas_zsymm;
 
-extern fn cblas_ssyrk(layout: Layout, uplo: Uplo, trans: Transpose, n: i64, k: i64, alpha: f32, a: [*c]const f32, lda: i64, beta: f32, c: [*c]f32, ldc: i64) void;
-extern fn cblas_dsyrk(layout: Layout, uplo: Uplo, trans: Transpose, n: i64, k: i64, alpha: f64, a: [*c]const f64, lda: i64, beta: f64, c: [*c]f64, ldc: i64) void;
-extern fn cblas_csyrk(layout: Layout, uplo: Uplo, trans: Transpose, n: i64, k: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, beta: *const anyopaque, c: *anyopaque, ldc: i64) void;
-extern fn cblas_zsyrk(layout: Layout, uplo: Uplo, trans: Transpose, n: i64, k: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, beta: *const anyopaque, c: *anyopaque, ldc: i64) void;
+extern fn cblas_ssyrk(layout: c_int, uplo: c_int, trans: c_int, n: i64, k: i64, alpha: f32, a: [*c]const f32, lda: i64, beta: f32, c: [*c]f32, ldc: i64) void;
+extern fn cblas_dsyrk(layout: c_int, uplo: c_int, trans: c_int, n: i64, k: i64, alpha: f64, a: [*c]const f64, lda: i64, beta: f64, c: [*c]f64, ldc: i64) void;
+extern fn cblas_csyrk(layout: c_int, uplo: c_int, trans: c_int, n: i64, k: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, beta: *const anyopaque, c: *anyopaque, ldc: i64) void;
+extern fn cblas_zsyrk(layout: c_int, uplo: c_int, trans: c_int, n: i64, k: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, beta: *const anyopaque, c: *anyopaque, ldc: i64) void;
 pub const ssyrk = cblas_ssyrk;
 pub const dsyrk = cblas_dsyrk;
 pub const csyrk = cblas_csyrk;
 pub const zsyrk = cblas_zsyrk;
 
-extern fn cblas_ssyr2k(layout: Layout, uplo: Uplo, trans: Transpose, n: i64, k: i64, alpha: f32, a: [*c]const f32, lda: i64, b: [*c]const f32, ldb: i64, beta: f32, c: [*c]f32, ldc: i64) void;
-extern fn cblas_dsyr2k(layout: Layout, uplo: Uplo, trans: Transpose, n: i64, k: i64, alpha: f64, a: [*c]const f64, lda: i64, b: [*c]const f64, ldb: i64, beta: f64, c: [*c]f64, ldc: i64) void;
-extern fn cblas_csyr2k(layout: Layout, uplo: Uplo, trans: Transpose, n: i64, k: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, b: *const anyopaque, ldb: i64, beta: *const anyopaque, c: *anyopaque, ldc: i64) void;
-extern fn cblas_zsyr2k(layout: Layout, uplo: Uplo, trans: Transpose, n: i64, k: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, b: *const anyopaque, ldb: i64, beta: *const anyopaque, c: *anyopaque, ldc: i64) void;
+extern fn cblas_ssyr2k(layout: c_int, uplo: c_int, trans: c_int, n: i64, k: i64, alpha: f32, a: [*c]const f32, lda: i64, b: [*c]const f32, ldb: i64, beta: f32, c: [*c]f32, ldc: i64) void;
+extern fn cblas_dsyr2k(layout: c_int, uplo: c_int, trans: c_int, n: i64, k: i64, alpha: f64, a: [*c]const f64, lda: i64, b: [*c]const f64, ldb: i64, beta: f64, c: [*c]f64, ldc: i64) void;
+extern fn cblas_csyr2k(layout: c_int, uplo: c_int, trans: c_int, n: i64, k: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, b: *const anyopaque, ldb: i64, beta: *const anyopaque, c: *anyopaque, ldc: i64) void;
+extern fn cblas_zsyr2k(layout: c_int, uplo: c_int, trans: c_int, n: i64, k: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, b: *const anyopaque, ldb: i64, beta: *const anyopaque, c: *anyopaque, ldc: i64) void;
 pub const ssyr2k = cblas_ssyr2k;
 pub const dsyr2k = cblas_dsyr2k;
 pub const csyr2k = cblas_csyr2k;
 pub const zsyr2k = cblas_zsyr2k;
 
-extern fn cblas_strmm(layout: Layout, side: Side, uplo: Uplo, transa: Transpose, diag: Diag, m: i64, n: i64, alpha: f32, a: [*c]const f32, lda: i64, b: [*c]f32, ldb: i64) void;
-extern fn cblas_dtrmm(layout: Layout, side: Side, uplo: Uplo, transa: Transpose, diag: Diag, m: i64, n: i64, alpha: f64, a: [*c]const f64, lda: i64, b: [*c]f64, ldb: i64) void;
-extern fn cblas_ctrmm(layout: Layout, side: Side, uplo: Uplo, transa: Transpose, diag: Diag, m: i64, n: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, b: *anyopaque, ldb: i64) void;
-extern fn cblas_ztrmm(layout: Layout, side: Side, uplo: Uplo, transa: Transpose, diag: Diag, m: i64, n: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, b: *anyopaque, ldb: i64) void;
+extern fn cblas_strmm(layout: c_int, side: c_int, uplo: c_int, transa: c_int, diag: c_int, m: i64, n: i64, alpha: f32, a: [*c]const f32, lda: i64, b: [*c]f32, ldb: i64) void;
+extern fn cblas_dtrmm(layout: c_int, side: c_int, uplo: c_int, transa: c_int, diag: c_int, m: i64, n: i64, alpha: f64, a: [*c]const f64, lda: i64, b: [*c]f64, ldb: i64) void;
+extern fn cblas_ctrmm(layout: c_int, side: c_int, uplo: c_int, transa: c_int, diag: c_int, m: i64, n: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, b: *anyopaque, ldb: i64) void;
+extern fn cblas_ztrmm(layout: c_int, side: c_int, uplo: c_int, transa: c_int, diag: c_int, m: i64, n: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, b: *anyopaque, ldb: i64) void;
 pub const strmm = cblas_strmm;
 pub const dtrmm = cblas_dtrmm;
 pub const ctrmm = cblas_ctrmm;
 pub const ztrmm = cblas_ztrmm;
 
-extern fn cblas_strsm(layout: Layout, side: Side, uplo: Uplo, transa: Transpose, diag: Diag, m: i64, n: i64, alpha: f32, a: [*c]const f32, lda: i64, b: [*c]f32, ldb: i64) void;
-extern fn cblas_dtrsm(layout: Layout, side: Side, uplo: Uplo, transa: Transpose, diag: Diag, m: i64, n: i64, alpha: f64, a: [*c]const f64, lda: i64, b: [*c]f64, ldb: i64) void;
-extern fn cblas_ctrsm(layout: Layout, side: Side, uplo: Uplo, transa: Transpose, diag: Diag, m: i64, n: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, b: *anyopaque, ldb: i64) void;
-extern fn cblas_ztrsm(layout: Layout, side: Side, uplo: Uplo, transa: Transpose, diag: Diag, m: i64, n: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, b: *anyopaque, ldb: i64) void;
+extern fn cblas_strsm(layout: c_int, side: c_int, uplo: c_int, transa: c_int, diag: c_int, m: i64, n: i64, alpha: f32, a: [*c]const f32, lda: i64, b: [*c]f32, ldb: i64) void;
+extern fn cblas_dtrsm(layout: c_int, side: c_int, uplo: c_int, transa: c_int, diag: c_int, m: i64, n: i64, alpha: f64, a: [*c]const f64, lda: i64, b: [*c]f64, ldb: i64) void;
+extern fn cblas_ctrsm(layout: c_int, side: c_int, uplo: c_int, transa: c_int, diag: c_int, m: i64, n: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, b: *anyopaque, ldb: i64) void;
+extern fn cblas_ztrsm(layout: c_int, side: c_int, uplo: c_int, transa: c_int, diag: c_int, m: i64, n: i64, alpha: *const anyopaque, a: *const anyopaque, lda: i64, b: *anyopaque, ldb: i64) void;
 pub const strsm = cblas_strsm;
 pub const dtrsm = cblas_dtrsm;
 pub const ctrsm = cblas_ctrsm;

@@ -7,7 +7,144 @@ const ops = @import("../../ops.zig");
 const float = @import("../../float.zig");
 const blas = @import("../blas.zig");
 
+/// Computes the parameters for a Givens rotation.
+///
+/// Given the Cartesian coordinates `(a, b)` of a point, this routine returns
+/// the parameters `c`, `s`, `r`, and `z` associated with the Givens rotation.
+/// The parameters `c` and `s` define a unitary matrix such that:
+///
+/// ```zig
+///     [ c s ] [ a ]   [ r ]
+///     [-s c ] [ b ] = [ 0 ]
+/// ```
+///
+/// The parameter `z` is defined such that if `|a| > |b|`, `z` is `s`; otherwise
+/// if `c` is not 0 `z` is `1/c`; otherwise `z` is `1`.
+///
+/// Signature
+/// ---------
+/// ```zig
+/// fn rotg(a: *A, b: *B, c: *C, s: *S, ctx: anytype) !void
+/// ```
+///
+/// Parameters
+/// ----------
+/// `a` (mutable one-item pointer to `bool`, `int`, `float`, `cfloat`,
+/// `integer`, `rational`, `real`, `complex` or `expression`): Provides the
+/// `x`-coordinate of the point `p`. On return, it contains the parameter `r`
+/// associated with the Givens rotation.
+///
+/// `b` (mutable one-item pointer to `bool`, `int`, `float`, `cfloat`,
+/// `integer`, `rational`, `real`, `complex` or `expression`): Provides the
+/// `y`-coordinate of the point `p`. On return, it contains the parameter `z`
+/// associated with the Givens rotation.
+///
+/// `c` (mutable one-item pointer to `bool`, `int`, `float`, `cfloat`,
+/// `integer`, `rational`, `real`, `complex` or `expression`): On return, it
+/// contains the parameter `c` associated with the Givens rotation.
+///
+/// `s` (mutable one-item pointer to `bool`, `int`, `float`, `cfloat`,
+/// `integer`, `rational`, `real`, `complex` or `expression`): On return, it
+/// contains the parameter `s` associated with the Givens rotation.
+///
+/// Returns
+/// -------
+/// `void`: The result is stored in `a`, `b`, `c` and `s`.
+///
+/// Errors
+/// ------
+/// `linalg.blas.Error.InvalidArgument`: If `n` is less than or equal to 0.
+///
+/// Notes
+/// -----
+/// If the `link_cblas` option is not `null`, the function will try to call the
+/// corresponding CBLAS function, if available. In that case, no errors will be
+/// raised even if the arguments are invalid.
 pub fn rotg(
+    a: anytype,
+    b: anytype,
+    c: anytype,
+    s: anytype,
+    ctx: anytype,
+) !void {
+    comptime var A: type = @TypeOf(a);
+    comptime var B: type = @TypeOf(b);
+    comptime var C: type = @TypeOf(c);
+    comptime var S: type = @TypeOf(s);
+
+    comptime if (!types.isPointer(A) or types.isConstPointer(A))
+        @compileError("zml.linalg.blas.rotg requires a to be a mutable one-item pointer, got " ++ @typeName(A));
+
+    A = types.Child(A);
+
+    comptime if (!types.isNumeric(A))
+        @compileError("zml.linalg.blas.rotg requires a's child type to be numeric, got " ++ @typeName(A));
+
+    comptime if (!types.isPointer(B) or types.isConstPointer(B))
+        @compileError("zml.linalg.blas.rotg requires b to be a mutable one-item pointer, got " ++ @typeName(B));
+
+    B = types.Child(B);
+
+    comptime if (!types.isNumeric(B))
+        @compileError("zml.linalg.blas.rotg requires b's child type to be numeric, got " ++ @typeName(B));
+
+    comptime if (!types.isPointer(C) or types.isConstPointer(C))
+        @compileError("zml.linalg.blas.rotg requires c to be a mutable one-item pointer, got " ++ @typeName(C));
+
+    C = types.Child(C);
+
+    comptime if (!types.isNumeric(C))
+        @compileError("zml.linalg.blas.rotg requires c to be numeric, got " ++ @typeName(C));
+
+    comptime if (types.isComplex(C))
+        @compileError("zml.linalg.blas.rotg does not support c being complex, got " ++ @typeName(C));
+
+    comptime if (!types.isPointer(S) or types.isConstPointer(S))
+        @compileError("zml.linalg.blas.rotg requires s to be a mutable one-item pointer, got " ++ @typeName(S));
+
+    S = types.Child(S);
+
+    comptime if (!types.isNumeric(S))
+        @compileError("zml.linalg.blas.rotg requires s to be numeric, got " ++ @typeName(S));
+
+    comptime if (A == bool and B == bool and C == bool and S == bool)
+        @compileError("zml.linalg.blas.rotg does not support a, b, c and s all being bool");
+
+    comptime if (types.isArbitraryPrecision(A) or
+        types.isArbitraryPrecision(B) or
+        types.isArbitraryPrecision(C) or
+        types.isArbitraryPrecision(S))
+    {
+        // When implemented, expand if
+        @compileError("zml.linalg.blas.rotg not implemented for arbitrary precision types yet");
+    } else {
+        types.validateContext(@TypeOf(ctx), .{});
+    };
+
+    if (comptime A == B and A == C and A == S and options.link_cblas != null) {
+        switch (comptime types.numericType(A)) {
+            .float => {
+                if (comptime A == f32) {
+                    return ci.cblas_srotg(a, b, c, s);
+                } else if (comptime A == f64) {
+                    return ci.cblas_drotg(a, b, c, s);
+                }
+            },
+            .cfloat => {
+                if (comptime Scalar(A) == f32) {
+                    return ci.cblas_crotg(a, b, c, s);
+                } else if (comptime Scalar(A) == f64) {
+                    return ci.cblas_zrotg(a, b, c, s);
+                }
+            },
+            else => {},
+        }
+    }
+
+    return _rotg(a, b, c, s, ctx);
+}
+
+fn _rotg(
     a: anytype,
     b: anytype,
     c: anytype,

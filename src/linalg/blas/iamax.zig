@@ -8,7 +8,95 @@ const float = @import("../../float.zig");
 
 const blas = @import("../blas.zig");
 
+/// Finds the index of the element with maximum absolute value.
+///
+/// Given a vector `x`, the `iamax` routine returns the position of the vector
+/// element `x[i]` that has the largest absolute value for real vectors, or the
+/// largest sum `|x[i].re| + |x[i].im|` for complex vectors.
+///
+/// If more than one vector element is found with the same largest absolute
+/// value, the index of the first one encountered is returned.
+///
+/// Signature
+/// ---------
+/// ```zig
+/// fn iamax(n: i32, x: [*]const X, incx: i32, ctx: anytype) !u32
+/// ```
+///
+/// Parameters
+/// ----------
+/// `n` (`i32`): Specifies the number of elements in vector `x`. Must be
+/// greater than 0.
+///
+/// `x` (many-item pointer to `int`, `float`, `cfloat`, `integer`, `rational`,
+/// `real`, `complex` or `expression`): Array, size at least
+/// `1 + (n - 1) * abs(incx)`.
+///
+/// `incx` (`i32`): Specifies the increment for indexing vector `x`. Must be
+/// greater than 0.
+///
+/// Returns
+/// -------
+/// `u32`: The index of the element with the maximum absolute value in `x`.
+///
+/// Errors
+/// ------
+/// `linalg.blas.Error.InvalidArgument`: If `n` or `incx` is less than or equal
+/// to 0.
+///
+/// Notes
+/// -----
+/// If the `link_cblas` option is not `null`, the function will try to call the
+/// corresponding CBLAS function, if available. In that case, no errors will be
+/// raised even if the arguments are invalid.
 pub fn iamax(
+    n: i32,
+    x: anytype,
+    incx: i32,
+    ctx: anytype,
+) !u32 {
+    comptime var X: type = @TypeOf(x);
+
+    comptime if (!types.isManyPointer(X))
+        @compileError("zml.linalg.blas.iamax requires x to be a many-item pointer, got " ++ @typeName(X));
+
+    X = types.Child(X);
+
+    comptime if (!types.isNumeric(X) or X == bool)
+        @compileError("zml.linalg.blas.iamax requires x's child type to be a non bool numeric, got " ++ @typeName(X));
+
+    comptime if (types.isArbitraryPrecision(X)) {
+        // When implemented, expand if
+        // Might need but only when arbitrary p complex
+        @compileError("zml.linalg.blas.iamax not implemented for arbitrary precision types yet");
+    } else {
+        types.validateContext(@TypeOf(ctx), .{});
+    };
+
+    if (comptime options.link_cblas != null) {
+        switch (comptime types.numericType(X)) {
+            .float => {
+                if (comptime X == f32) {
+                    return types.scast(u32, ci.cblas_isamax(scast(c_int, n), x, scast(c_int, incx)));
+                } else if (comptime X == f64) {
+                    return types.scast(u32, ci.cblas_idamax(scast(c_int, n), x, scast(c_int, incx)));
+                }
+            },
+            .cfloat => {
+                if (comptime Scalar(X) == f32) {
+                    return types.scast(u32, ci.cblas_icamax(scast(c_int, n), x, scast(c_int, incx)));
+                } else if (comptime Scalar(X) == f64) {
+                    return types.scast(u32, ci.cblas_izamax(scast(c_int, n), x, scast(c_int, incx)));
+                }
+            },
+            else => {},
+        }
+    }
+
+    return _iamax(n, x, incx, ctx);
+}
+
+fn _iamax(
     n: i32,
     x: anytype,
     incx: i32,

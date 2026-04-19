@@ -13,7 +13,158 @@ const Diag = types.Diag;
 const Order = types.Order;
 const Transpose = linalg.Transpose;
 
+/// Computes a matrix-vector product using a triangular matrix.
+///
+/// The `trmv` routine performs a matrix-vector operation defined as:
+///
+/// ```zig
+///     x = A * x,
+/// ```
+///
+/// or
+///
+/// ```zig
+///     x = conj(A) * x,
+/// ```
+///
+/// or
+///
+/// ```zig
+///     x = A^T * x,
+/// ```
+///
+/// or
+///
+/// ```zig
+///     x = A^H * x,
+/// ```
+///
+/// `x` is an `n`-element vector, `A` is an `n`-by-`n` unit, or non-unit, upper
+/// or lower triangular matrix.
+///
+/// Signature
+/// ---------
+/// ```zig
+/// fn trmv(order: Order, uplo: Uplo, transa: Transpose, diag: Diag, n: i32, a: [*]const A, lda: i32, x: [*]X, incx: i32, ctx: anytype) !void
+/// ```
+///
+/// Parameters
+/// ----------
+/// `order` (`Order`): Specifies whether two-dimensional array storage is
+/// row-major or column-major.
+///
+/// `uplo` (`Uplo`): Specifies whether the matrix `A` is an upper or lower
+/// triangular matrix:
+/// - If `uplo = upper`, then the matrix is upper triangular.
+/// - If `uplo = lower`, then the matrix is lower triangular.
+///
+/// `transa` (`Transpose`): Specifies the operation to be performed:
+/// - If `transa = no_trans`, then the operation is `x = A * x`.
+/// - If `transa = trans`, then the operation is `x = A^T * x`.
+/// - If `transa = conj_no_trans`, then the operation is `x = conj(A) * x`.
+/// - If `transa = conj_trans`, then the operation is `x = A^H * x`.
+///
+/// `diag` (`Diag`): Specifies whether the matrix `A` is unit triangular:
+/// - If `diag = unit`, then the matrix is unit triangular.
+/// - If `diag = non_unit`, then the matrix is non-unit triangular.
+///
+/// `n` (`i32`): Specifies the order of the matrix `A`. Must be greater than
+/// or equal to 0.
+///
+/// `a` (many-item pointer to `int`, `float`, `cfloat`, `integer`, `rational`,
+/// `real`, `complex` or `expression`): Array, size at least `lda * n`.
+///
+/// `lda` (`i32`): Specifies the leading dimension of `a` as declared in the
+/// calling (sub)program. Must be greater than or equal to `max(1, n)`.
+///
+/// `x` (mutable many-item pointer to `int`, `float`, `cfloat`, `integer`,
+/// `rational`, `real`, `complex` or `expression`): Array, size at least
+/// `1 + (n - 1) * abs(incx)`.
+///
+/// `incx` (`i32`): Specifies the increment for indexing vector `x`. Must be
+/// different from 0.
+///
+/// Returns
+/// -------
+/// `void`: The result is stored in `x`.
+///
+/// Errors
+/// ------
+/// `linalg.blas.Error.InvalidArgument`: If `n` is less than 0, if `lda` is less
+/// than `max(1, n)`, or if `incx` is 0.
+///
+/// Notes
+/// -----
+/// If the `link_cblas` option is not `null`, the function will try to call the
+/// corresponding CBLAS function, if available. In that case, no errors will be
+/// raised even if the arguments are invalid.
 pub fn trmv(
+    order: Layout,
+    uplo: Uplo,
+    transa: Transpose,
+    diag: Diag,
+    n: i32,
+    a: anytype,
+    lda: i32,
+    x: anytype,
+    incx: i32,
+    ctx: anytype,
+) !void {
+    comptime var A: type = @TypeOf(a);
+    comptime var X: type = @TypeOf(x);
+
+    comptime if (!types.isManyPointer(A))
+        @compileError("zml.linalg.blas.trmv requires a to be a many-item pointer, got " ++ @typeName(A));
+
+    A = types.Child(A);
+
+    comptime if (!types.isNumeric(A))
+        @compileError("zml.linalg.blas.trmv requires a's child type to numeric, got " ++ @typeName(A));
+
+    comptime if (!types.isManyPointer(X) or types.isConstPointer(X))
+        @compileError("zml.linalg.blas.trmv requires x to be a mutable many-item pointer, got " ++ @typeName(X));
+
+    X = types.Child(X);
+
+    comptime if (!types.isNumeric(X))
+        @compileError("zml.linalg.blas.trmv requires x's child type to be numeric, got " ++ @typeName(X));
+
+    comptime if (A == bool and X == bool)
+        @compileError("zml.linalg.blas.trmv does not support a and x both being bool");
+
+    comptime if (types.isArbitraryPrecision(A) or
+        types.isArbitraryPrecision(X))
+    {
+        // When implemented, expand if
+        @compileError("zml.linalg.blas.trmv not implemented for arbitrary precision types yet");
+    } else {
+        types.validateContext(@TypeOf(ctx), .{});
+    };
+
+    if (comptime A == X and options.link_cblas != null) {
+        switch (comptime types.numericType(A)) {
+            .float => {
+                if (comptime A == f32) {
+                    return ci.cblas_strmv(order.toCUInt(), uplo.toCUInt(), transa.toCUInt(), diag.toCUInt(), scast(c_int, n), a, scast(c_int, lda), x, scast(c_int, incx));
+                } else if (comptime A == f64) {
+                    return ci.cblas_dtrmv(order.toCUInt(), uplo.toCUInt(), transa.toCUInt(), diag.toCUInt(), scast(c_int, n), a, scast(c_int, lda), x, scast(c_int, incx));
+                }
+            },
+            .cfloat => {
+                if (comptime Scalar(A) == f32) {
+                    return ci.cblas_ctrmv(order.toCUInt(), uplo.toCUInt(), transa.toCUInt(), diag.toCUInt(), scast(c_int, n), a, scast(c_int, lda), x, scast(c_int, incx));
+                } else if (comptime Scalar(A) == f64) {
+                    return ci.cblas_ztrmv(order.toCUInt(), uplo.toCUInt(), transa.toCUInt(), diag.toCUInt(), scast(c_int, n), a, scast(c_int, lda), x, scast(c_int, incx));
+                }
+            },
+            else => {},
+        }
+    }
+
+    return _trmv(order, uplo, transa, diag, n, a, lda, x, incx, ctx);
+}
+
+fn _trmv(
     order: Order,
     uplo: Uplo,
     transa: Transpose,

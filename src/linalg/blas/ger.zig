@@ -10,7 +10,150 @@ const linalg = @import("../../linalg.zig");
 const blas = @import("../blas.zig");
 const Order = types.Order;
 
+/// Performs a rank-1 update of a general matrix.
+///
+/// The `ger` routine performs a matrix-vector operation defined as:
+///
+/// ```zig
+///     A = alpha * x * y^T + A,
+/// ```
+///
+/// where `alpha` is a scalar, `x` is an `m`-element vector, `y` is an
+/// `n`-element vector, and `A` is an `m`-by-`n` general matrix.
+///
+/// Signature
+/// ---------
+/// ```zig
+/// fn ger(order: Order, m: i32, n: i32, alpha: Al, x: [*]const X, incx: i32, y: [*]const Y, incy: i32, a: [*]A, lda: i32, ctx: anytype) !void
+/// ```
+///
+/// Parameters
+/// ----------
+/// `order` (`Order`): Specifies whether two-dimensional array storage is
+/// row-major or column-major.
+///
+/// `m` (`i32`): Specifies the number of rows of the matrix `A`. Must be
+/// greater than or equal to 0.
+///
+/// `n` (`i32`): Specifies the number of columns of the matrix `A`. Must be
+/// greater than or equal to 0.
+///
+/// `alpha` (`bool`, `int`, `float`, `cfloat`, `integer`, `rational`, `real`,
+/// `complex` or `expression`): Specifies the scalar `alpha`.
+///
+/// `x` (many-item pointer to `int`, `float`, `cfloat`, `integer`, `rational`,
+/// `real`, `complex` or `expression`): Array, size at least
+/// `1 + (m - 1) * abs(incx)`.
+///
+/// `incx` (`i32`): Specifies the increment for indexing vector `x`. Must be
+/// different from 0.
+///
+/// `y` (many-item pointer to `int`, `float`, `cfloat`, `integer`, `rational`,
+/// `real`, `complex` or `expression`): Array, size at least
+/// `1 + (n - 1) * abs(incy)`.
+///
+/// `incy` (`i32`): Specifies the increment for indexing vector `y`. Must be
+/// different from 0.
+///
+/// `a` (mutable many-item pointer to `int`, `float`, `cfloat`, `integer`,
+/// `rational`, `real`, `complex` or `expression`): Array, size at least
+/// `lda * k`, where `k` is `n` when `order` is `col_major`, or `m` when `order`
+/// is `row_major`. On return, contains the result of the operation.
+///
+/// `lda` (`i32`): Specifies the leading dimension of `a` as declared in the
+/// calling (sub)program. Must be greater than or equal to `max(1, m)` when
+/// `order` is `col_major`, or `max(1, n)` when `order` is `row_major`.
+///
+/// Returns
+/// -------
+/// `void`: The result is stored in `a`.
+///
+/// Errors
+/// ------
+/// `linalg.blas.Error.InvalidArgument`: If `m` or `n` are less than 0, if `lda`
+/// is less than `max(1, m)` or `max(1, n)`, or if `incx` or `incy` are 0.
+///
+/// Notes
+/// -----
+/// If the `link_cblas` option is not `null`, the function will try to call the
+/// corresponding CBLAS function, if available. In that case, no errors will be
+/// raised even if the arguments are invalid.
 pub fn ger(
+    order: Layout,
+    m: i32,
+    n: i32,
+    alpha: anytype,
+    x: anytype,
+    incx: i32,
+    y: anytype,
+    incy: i32,
+    a: anytype,
+    lda: i32,
+    ctx: anytype,
+) !void {
+    const Al: type = @TypeOf(alpha);
+    comptime var X: type = @TypeOf(x);
+    comptime var Y: type = @TypeOf(y);
+    comptime var A: type = @TypeOf(a);
+
+    comptime if (!types.isNumeric(Al))
+        @compileError("zml.linalg.blas.ger requires alpha to be numeric, got " ++ @typeName(Al));
+
+    comptime if (!types.isManyPointer(X))
+        @compileError("zml.linalg.blas.ger requires x to be a many-item pointer, got " ++ @typeName(X));
+
+    X = types.Child(X);
+
+    comptime if (!types.isNumeric(X))
+        @compileError("zml.linalg.blas.ger requires x's child type to be numeric, got " ++ @typeName(X));
+
+    comptime if (!types.isManyPointer(Y))
+        @compileError("zml.linalg.blas.ger requires y to be a many-item pointer, got " ++ @typeName(Y));
+
+    Y = types.Child(Y);
+
+    comptime if (!types.isNumeric(Y))
+        @compileError("zml.linalg.blas.ger requires y's child type to be numeric, got " ++ @typeName(Y));
+
+    comptime if (!types.isManyPointer(A) or types.isConstPointer(A))
+        @compileError("zml.linalg.blas.ger requires a to be a mutable many-item pointer, got " ++ @typeName(A));
+
+    A = types.Child(A);
+
+    comptime if (!types.isNumeric(A))
+        @compileError("zml.linalg.blas.ger requires a's child type to numeric, got " ++ @typeName(A));
+
+    comptime if (Al == bool and X == bool and Y == bool and A == bool)
+        @compileError("zml.linalg.blas.ger does not support alpha, a, x, beta and y all being bool");
+
+    comptime if (types.isArbitraryPrecision(Al) or
+        types.isArbitraryPrecision(X) or
+        types.isArbitraryPrecision(Y) or
+        types.isArbitraryPrecision(A))
+    {
+        // When implemented, expand if
+        @compileError("zml.linalg.blas.ger not implemented for arbitrary precision types yet");
+    } else {
+        types.validateContext(@TypeOf(ctx), .{});
+    };
+
+    if (comptime A == X and A == Y and types.canCoerce(Al, A) and options.link_cblas != null) {
+        switch (comptime types.numericType(A)) {
+            .float => {
+                if (comptime A == f32) {
+                    return ci.cblas_sger(order.toCUInt(), scast(c_int, m), scast(c_int, n), scast(A, alpha), x, scast(c_int, incx), y, scast(c_int, incy), a, scast(c_int, lda));
+                } else if (comptime A == f64) {
+                    return ci.cblas_dger(order.toCUInt(), scast(c_int, m), scast(c_int, n), scast(A, alpha), x, scast(c_int, incx), y, scast(c_int, incy), a, scast(c_int, lda));
+                }
+            },
+            else => {},
+        }
+    }
+
+    return _ger(order, m, n, alpha, x, incx, y, incy, a, lda, ctx);
+}
+
+fn _ger(
     order: Order,
     m: i32,
     n: i32,
