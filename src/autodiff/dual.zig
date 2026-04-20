@@ -6,7 +6,10 @@ const numeric = @import("../numeric.zig");
 const autodiff = @import("../autodiff.zig");
 
 pub fn isDual(comptime T: type) bool {
-    return @hasDecl(T, "is_dual") and T.is_dual;
+    switch (comptime @typeInfo(T)) {
+        .@"struct" => return @hasDecl(T, "is_dual") and T.is_dual,
+        else => return false,
+    }
 }
 
 /// Represents a dual number `x + yϵ`, where `ϵ² = 0`.
@@ -130,6 +133,10 @@ pub fn Dual(comptime N: type) type {
                 .val = numeric.cast(N, x),
                 .eps = numeric.zero(N),
             };
+        }
+
+        pub fn toFloat(self: autodiff.Dual(N), comptime Float: type) Float {
+            return numeric.cast(Float, self.val);
         }
 
         pub fn toCfloat(self: Dual(N), comptime Cfloat: type) Cfloat {

@@ -18,27 +18,26 @@ const linalg = @import("../../linalg.zig");
 /// or
 ///
 /// ```zig
-///     y = alpha * Aᵀ * x + beta * y,
+/// y = alpha * Aᵀ * x + beta * y,
 /// ```
 ///
 /// or
 ///
 /// ```zig
-///     y = alpha * conj(A) * x + beta * y,
+/// y = alpha * conj(A) * x + beta * y,
 /// ```
 ///
 /// or
 ///
 /// ```zig
-///     y = alpha * Aᴴ * x + beta * y,
+/// y = alpha * Aᴴ * x + beta * y,
 /// ```
 ///
 /// where `alpha` and `beta` are scalars, `x` and `y` are vectors, and `A` is an
 /// `m`-by-`n` band matrix with `kl` sub-diagonals and `ku` super-diagonals.
 ///
 /// If the `link_cblas` option is not `null`, the function will try to call the
-/// corresponding CBLAS function, if available. In that case, no errors will be
-/// raised even if the arguments are invalid.
+/// corresponding CBLAS function, if available.
 ///
 /// ## Signature
 /// ```zig
@@ -94,89 +93,31 @@ pub fn gbmv(layout: Layout, transa: linalg.Transpose, m: isize, n: isize, kl: is
     comptime var Y: type = @TypeOf(y);
 
     comptime if (!meta.isNumeric(Al) or !meta.isNumeric(Be) or
-        !meta.isManyItemPointer(A) or !meta.isManyItemPointer(X) or
-        !meta.isManyItemPointer(Y) or meta.isConstPointer(Y))
+        !meta.isManyItemPointer(A) or !meta.isNumeric(meta.Child(A)) or
+        !meta.isManyItemPointer(X) or !meta.isNumeric(meta.Child(X)) or
+        !meta.isManyItemPointer(Y) or meta.isConstPointer(Y) or !meta.isNumeric(meta.Child(Y)))
         @compileError("zsl.linalg.blas.gbmv: alpha and beta must be numerics, a and x must be many-item pointers to numerics, and y must be a mutable many-item pointer to numerics, got \n\talpha: " ++ @typeName(Al) ++ "\n\ta: " ++ @typeName(A) ++ "\n\tx: " ++ @typeName(X) ++ "\n\tbeta: " ++ @typeName(Be) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
     A = meta.Child(A);
     X = meta.Child(X);
     Y = meta.Child(Y);
 
+    if (m < 0 or n < 0 or kl < 0 or ku < 0 or lda < (kl + ku + 1) or incx == 0 or incy == 0)
+        return linalg.blas.Error.InvalidArgument;
+
     if (comptime options.link_cblas != null and Al == A and Al == X and Al == Y and Al == Be) {
         switch (comptime meta.numericType(A)) {
             .float => {
-                if (comptime A == f32) {
-                    return linalg.cblas.sgbmv(
-                        layout.toInt(c_int),
-                        transa.toInt(c_int),
-                        numeric.cast(c_int, m),
-                        numeric.cast(c_int, n),
-                        numeric.cast(c_int, kl),
-                        numeric.cast(c_int, ku),
-                        alpha,
-                        a,
-                        numeric.cast(c_int, lda),
-                        x,
-                        numeric.cast(c_int, incx),
-                        beta,
-                        y,
-                        numeric.cast(c_int, incy),
-                    );
-                } else if (comptime A == f64) {
-                    return linalg.cblas.dgbmv(
-                        layout.toInt(c_int),
-                        transa.toInt(c_int),
-                        numeric.cast(c_int, m),
-                        numeric.cast(c_int, n),
-                        numeric.cast(c_int, kl),
-                        numeric.cast(c_int, ku),
-                        alpha,
-                        a,
-                        numeric.cast(c_int, lda),
-                        x,
-                        numeric.cast(c_int, incx),
-                        beta,
-                        y,
-                        numeric.cast(c_int, incy),
-                    );
-                }
+                if (comptime A == f32)
+                    return linalg.cblas.sgbmv(layout.toInt(c_int), transa.toInt(c_int), m, n, kl, ku, alpha, a, lda, x, incx, beta, y, incy)
+                else if (comptime A == f64)
+                    return linalg.cblas.dgbmv(layout.toInt(c_int), transa.toInt(c_int), m, n, kl, ku, alpha, a, lda, x, incx, beta, y, incy);
             },
-            .cfloat => {
-                if (comptime meta.Scalar(A) == f32) {
-                    return linalg.cblas.cgbmv(
-                        layout.toInt(c_int),
-                        transa.toInt(c_int),
-                        numeric.cast(c_int, m),
-                        numeric.cast(c_int, n),
-                        numeric.cast(c_int, kl),
-                        numeric.cast(c_int, ku),
-                        &alpha,
-                        a,
-                        numeric.cast(c_int, lda),
-                        x,
-                        numeric.cast(c_int, incx),
-                        &beta,
-                        y,
-                        numeric.cast(c_int, incy),
-                    );
-                } else if (comptime meta.Scalar(A) == f64) {
-                    return linalg.cblas.zgbmv(
-                        layout.toInt(c_int),
-                        transa.toInt(c_int),
-                        numeric.cast(c_int, m),
-                        numeric.cast(c_int, n),
-                        numeric.cast(c_int, kl),
-                        numeric.cast(c_int, ku),
-                        &alpha,
-                        a,
-                        numeric.cast(c_int, lda),
-                        x,
-                        numeric.cast(c_int, incx),
-                        &beta,
-                        y,
-                        numeric.cast(c_int, incy),
-                    );
-                }
+            .complex => {
+                if (comptime meta.Scalar(A) == f32)
+                    return linalg.cblas.cgbmv(layout.toInt(c_int), transa.toInt(c_int), m, n, kl, ku, &alpha, a, lda, x, incx, &beta, y, incy)
+                else if (comptime meta.Scalar(A) == f64)
+                    return linalg.cblas.zgbmv(layout.toInt(c_int), transa.toInt(c_int), m, n, kl, ku, &alpha, a, lda, x, incx, &beta, y, incy);
             },
             else => {},
         }
@@ -192,9 +133,6 @@ pub fn gbmv(layout: Layout, transa: linalg.Transpose, m: isize, n: isize, kl: is
 fn k_gbmv(transa: linalg.Transpose, m: isize, n: isize, kl: isize, ku: isize, alpha: anytype, a: anytype, lda: isize, x: anytype, incx: isize, beta: anytype, y: anytype, incy: isize) !void {
     const A: type = meta.Child(@TypeOf(a));
     const X: type = meta.Child(@TypeOf(x));
-
-    if (m < 0 or n < 0 or kl < 0 or ku < 0 or lda < (kl + ku + 1) or incx == 0 or incy == 0)
-        return linalg.blas.Error.InvalidArgument;
 
     // Quick return if possible.
     if (m == 0 or n == 0 or (numeric.eq(alpha, 0) and numeric.eq(beta, 1)))

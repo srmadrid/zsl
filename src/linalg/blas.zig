@@ -1,6 +1,6 @@
 // Level 1
-// pub const asum_sub = @import("blas/asum_sub.zig").asum_sub;
-// pub const asum = @import("blas/asum.zig").asum;
+pub const Asum = @import("blas/asum.zig").Asum;
+pub const asum = @import("blas/asum.zig").asum;
 // pub const axpy = @import("blas/axpy.zig").axpy;
 // pub const copy = @import("blas/copy.zig").copy;
 // pub const dot_sub = @import("blas/dot_sub.zig").dot_sub;
