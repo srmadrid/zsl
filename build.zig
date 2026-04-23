@@ -14,8 +14,10 @@ pub fn build(b: *std.Build) void {
 
     const opt_int_mode = b.option(IntMode, "int_mode", "Integer operation mode") orelse IntMode.wrap;
     options.addOption(IntMode, "int_mode", opt_int_mode);
-    const opt_max_dimensions = b.option(u32, "max_dimensions", "Maximum number of dimensions for `Array`s") orelse 8;
-    options.addOption(u32, "max_dimensions", opt_max_dimensions);
+    const opt_max_threads = b.option(usize, "max_threads", "Maximum number of threads") orelse 64;
+    options.addOption(usize, "max_threads", opt_max_threads);
+    const opt_max_dimensions = b.option(usize, "max_dimensions", "Maximum number of dimensions for `Array`s") orelse 8;
+    options.addOption(usize, "max_dimensions", opt_max_dimensions);
     const opt_link_cblas = b.option([]const u8, "link_cblas", "Link CBLAS implementation");
     options.addOption(?[]const u8, "link_cblas", opt_link_cblas);
     const opt_link_lapacke = b.option([]const u8, "link_lapacke", "Link LAPACKE implementation");

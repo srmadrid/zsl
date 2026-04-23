@@ -1,8 +1,5 @@
 const std = @import("std");
 const zsl = @import("zsl");
-// const ci = @cImport({
-//     @cInclude("lapacke.h");
-// });
 
 pub fn main(init: std.process.Init) !void {
     @setEvalBranchQuota(10000);
@@ -13,43 +10,23 @@ pub fn main(init: std.process.Init) !void {
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    // var prng = std.Random.DefaultPrng.init(@bitCast(std.Io.Clock.real.now(io).toSeconds()));
-    // const rand = prng.random();
-
     const benchmark = true;
 
-    var m: isize = 12 * (if (benchmark) 1000 else 1);
+    var m: isize = 25 * (if (benchmark) 1000 else 1);
     _ = &m;
-    var n: isize = 14 * (if (benchmark) 1000 else 1);
+    var n: isize = 25 * (if (benchmark) 1000 else 1);
     _ = &n;
-
-    // var A = try randomMatrix(zsl.matrix.general.Dense(f64, .col_major), allocator, rand, m, n);
-    // defer A.deinit(allocator);
-    // if (!benchmark) printMatrix("A", A);
-
-    // var B = try randomMatrix(zsl.matrix.symmetric.Dense(f64, .upper, .col_major), allocator, rand, m, n);
-    // defer B.deinit(allocator);
-    // if (!benchmark) printMatrix("B", B);
-
-    // var C: zsl.matrix.general.Dense(f64, .col_major) = try .init(allocator, m, n);
-    // defer C.deinit(allocator);
 
     const a = try allocator.alloc(f64, zsl.numeric.cast(usize, m * n));
     defer allocator.free(a);
-
-    // const x = try allocator.alloc(f64, zsl.numeric.cast(usize, n));
-    // defer allocator.free(x);
-
-    // const y = try allocator.alloc(f64, zsl.numeric.cast(usize, m));
-    // defer allocator.free(y);
+    const b = try allocator.alloc(f64, zsl.numeric.cast(usize, m * n));
+    defer allocator.free(b);
 
     const start_time = std.Io.Clock.real.now(io);
-    const sum = try zsl.linalg.blas.asum(m * n, a.ptr, 1);
+    std.mem.doNotOptimizeAway(try zsl.linalg.blas.asum(m * n, a.ptr, 1, .{ .max_threads = 1 }));
+    // std.mem.doNotOptimizeAway(try zsl.linalg.blas.axpy(m * n, @as(f64, 1), a.ptr, 1, b.ptr, 1));
     const end_time = std.Io.Clock.real.now(io);
 
-    // if (!benchmark) printMatrix("C", C);
-
-    std.debug.print("sum = {}\n", .{sum});
     std.debug.print(
         "zsl.linalg.blas.asum took {d} seconds on matrices of size {} x {}\n",
         .{

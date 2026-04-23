@@ -1,143 +1,219 @@
 const std = @import("std");
+const options = @import("options");
 
-const types = @import("../../types.zig");
-const scast = types.scast;
-const ops = @import("../../ops.zig");
+const meta = @import("../../meta.zig");
 
-const blas = @import("../blas.zig");
+const numeric = @import("../../numeric.zig");
 
-/// Copies a vector to another vector.
-///
-/// The `copy` routine performs a vector-vector operation defined as:
+const int = @import("../../int.zig");
+
+const linalg = @import("../../linalg.zig");
+
+/// Copies a vector to another vector:
 ///
 /// ```zig
-///     y = x,
+/// y = x,
 /// ```
 ///
 /// where `x` and `y` are vectors.
 ///
-/// Signature
-/// ---------
-/// ```zig
-/// fn copy(n: i32, x: [*]const X, incx: i32, y: [*]Y, incy: i32, ctx: anytype) !void
-///
-/// Parameters
-/// ----------
-/// `n` (`i32`): Specifies the number of elements in vectors `x` and `y`. Must
-/// be greater than 0.
-///
-/// `x` (many-item pointer to `bool`, `int`, `float`, `cfloat`, `integer`,
-/// `rational`, `real`, `complex` or `expression`): Array, size at least
-/// `1 + (n - 1) * abs(incx)`.
-///
-/// `incx` (`i32`): Specifies the increment for the elements of `x`.
-///
-/// `y` (mutable many-item pointer to `bool`, `int`, `float`, `cfloat`,
-/// `integer`, `rational`, `real`, `complex` or `expression`): Array, size at
-/// least `1 + (n - 1) * abs(incy)`. On return contains the updated vector `y`.
-///
-/// `incy` (`i32`): Specifies the increment for the elements of `y`.
-///
-/// Returns
-/// -------
-/// `void`: The result is stored in `y`.
-///
-/// Errors
-/// ------
-/// `linalg.blas.Error.InvalidArgument`: If `n` is less than or equal to 0.
-///
-/// Notes
-/// -----
 /// If the `link_cblas` option is not `null`, the function will try to call the
-/// corresponding CBLAS function, if available. In that case, no errors will be
-/// raised even if the arguments are invalid.
+/// corresponding CBLAS function.
+///
+/// ## Signature
+/// ```zig
+/// linalg.blas.copy(n: isize, x: [*]const X, incx: isize, y: [*]Y, incy: isize) !void
+///
+/// ## Arguments
+/// * `n` (`isize`): Specifies the number of elements in vectors `x` and `y`.
+///   Must be greater than 0.
+/// * `x` (`anytype`): Array, size at least `1 + (n - 1) * abs(incx)`.
+/// * `incx` (`isize`): Specifies the increment for indexing vector `x`. Must be
+///   different from 0.
+/// * `y` (`anytype`): Array, size at least `1 + (n - 1) * abs(incy)`. On return
+///   contains the updated vector `y`.
+/// * `incy` (`isize`): Specifies the increment for indexing vector `y`. Must be
+///   different from 0.
+/// * `opts`: Optional parameters:
+///   * `num_threads` (`usize = 0`): Number of threads to spawn:
+///     * `0`: automatic. The thread count is derived from `n` and
+///       `parallel_threshold`:
+///       ```zig
+///       threads = max(1, min(std.Thread.getCpuCount(), options.max_threads, n / parallel_threshold))
+///       ```
+///     * `1`: force serial execution. `parallel_threshold` is ignored.
+///     * `N >= 2`: use exactly `N` threads, clamped by
+///       `std.Thread.getCpuCount()` and`options.max_threads` as a hard safety
+///       ceiling. `parallel_threshold` is ignored.
+///   * `parallel_threshold` (`usize = 8_388_608 / @sizeOf(meta.Child(X))`):
+///     Minimum number of elements required to trigger multithreaded execution.
+///
+/// ## Returns
+/// `void`
+///
+/// ## Errors
+/// * `linalg.blas.Error.InvalidArgument`: If `n` is less than or equal to 0, or
+///   `incx` or `incy` is equal to 0.
 pub fn copy(
-    n: i32,
+    n: isize,
     x: anytype,
-    incx: i32,
+    incx: isize,
     y: anytype,
-    incy: i32,
-    ctx: anytype,
+    incy: isize,
+    opts: struct {
+        num_threads: usize = 0,
+        parallel_threshold: usize = 8_388_608 / @sizeOf(meta.Child(@TypeOf(x))),
+    },
 ) !void {
     comptime var X: type = @TypeOf(x);
     comptime var Y: type = @TypeOf(y);
 
-    comptime if (!types.isManyPointer(X))
-        @compileError("zml.linalg.blas.copy requires x to be a many-item pointer, got " ++ @typeName(X));
+    comptime if (!meta.isManyItemPointer(X) or !meta.isNumeric(meta.Child(X)) or
+        !meta.isManyItemPointer(Y) or meta.isConstPointer(Y) or !meta.isNumeric(meta.Child(Y)))
+        @compileError("zsl.linalg.blas.copy: x must be a many-item pointer to numerics, and y must be a mutable many-item pointer to numerics, got \n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    X = types.Child(X);
+    X = meta.Child(X);
+    Y = meta.Child(Y);
 
-    comptime if (!types.isNumeric(X))
-        @compileError("zml.linalg.blas.copy requires x's child type to be numeric, got " ++ @typeName(X));
+    if (n <= 0 or incx == 0 or incy == 0)
+        return linalg.blas.Error.InvalidArgument;
 
-    comptime if (!types.isManyPointer(Y) or types.isConstPointer(Y))
-        @compileError("zml.linalg.blas.copy requires y to be a mutable many-item pointer, got " ++ @typeName(Y));
-
-    Y = types.Child(Y);
-
-    comptime if (!types.isNumeric(Y))
-        @compileError("zml.linalg.blas.copy requires y's child type to be numeric, got " ++ @typeName(Y));
-
-    comptime if (types.isArbitraryPrecision(X)) {
-        if (types.isArbitraryPrecision(Y)) {
-            @compileError("zml.linalg.blas.copy not implemented for arbitrary precision types yet");
-        } else {
-            @compileError("zml.linalg.blas.copy not implemented for arbitrary precision types yet");
-        }
-    } else {
-        if (types.isArbitraryPrecision(Y)) {
-            @compileError("zml.linalg.blas.copy not implemented for arbitrary precision types yet");
-        } else {
-            types.validateContext(@TypeOf(ctx), .{});
-        }
-    };
-
-    if (comptime X == Y and options.link_cblas != null) {
-        switch (comptime types.numericType(X)) {
+    if (comptime options.link_cblas != null and X == Y) {
+        switch (comptime meta.numericType(X)) {
             .float => {
-                if (comptime X == f32) {
-                    return ci.cblas_scopy(scast(c_int, n), x, scast(c_int, incx), y, scast(c_int, incy));
-                } else if (comptime X == f64) {
-                    return ci.cblas_dcopy(scast(c_int, n), x, scast(c_int, incx), y, scast(c_int, incy));
-                }
+                if (comptime X == f32)
+                    return linalg.cblas.scopy(n, x, incx, y, incy)
+                else if (comptime X == f64)
+                    return linalg.cblas.dcopy(n, x, incx, y, incy);
             },
-            .cfloat => {
-                if (comptime Scalar(X) == f32) {
-                    return ci.cblas_ccopy(scast(c_int, n), x, scast(c_int, incx), y, scast(c_int, incy));
-                } else if (comptime Scalar(X) == f64) {
-                    return ci.cblas_zcopy(scast(c_int, n), x, scast(c_int, incx), y, scast(c_int, incy));
-                }
+            .complex => {
+                if (comptime meta.Scalar(X) == f32)
+                    return linalg.cblas.ccopy(n, x, incx, y, incy)
+                else if (comptime meta.Scalar(X) == f64)
+                    return linalg.cblas.zcopy(n, x, incx, y, incy);
             },
             else => {},
         }
     }
 
-    return _copy(n, x, incx, y, incy, ctx);
+    if (opts.num_threads == 1)
+        return k_copy(n, x, incx, y, incy);
+
+    var num_threads: usize = if (opts.num_threads == 0) blk: {
+        if (opts.parallel_threshold == 0)
+            break :blk options.max_threads;
+
+        break :blk int.max(1, numeric.cast(usize, n) / opts.parallel_threshold);
+    } else opts.num_threads;
+
+    num_threads = int.min(num_threads, options.max_threads);
+
+    if (num_threads <= 1)
+        return k_copy(n, x, incx, y, incy);
+
+    num_threads = int.min(num_threads, std.Thread.getCpuCount() catch 1);
+
+    if (num_threads <= 1)
+        return k_copy(n, x, incx, y, incy);
+
+    var threads: [options.max_threads]std.Thread = undefined;
+
+    const chunk_size = int.div(n, numeric.cast(isize, num_threads));
+    var spawn_err: ?anyerror = null;
+    var spawned_count: usize = 0;
+    var i: usize = 0;
+    while (i < num_threads) : (i += 1) {
+        const chunk_start = numeric.cast(isize, i) * chunk_size;
+        const chunk_end = if (i == num_threads - 1) n else chunk_start + chunk_size;
+
+        if (std.Thread.spawn(.{}, k_copy, .{
+            chunk_end - chunk_start,
+            x + numeric.cast(usize, if (incx > 0)
+                chunk_start * incx
+            else
+                (-n + chunk_end) * incx),
+            incx,
+            y + numeric.cast(usize, if (incy > 0)
+                chunk_start * incy
+            else
+                (-n + chunk_end) * incy),
+            incy,
+        })) |th| {
+            threads[i] = th;
+            spawned_count += 1;
+        } else |err| {
+            spawn_err = err;
+            break;
+        }
+    }
+
+    var t: usize = 0;
+    while (t < spawned_count) : (t += 1) {
+        threads[t].join();
+    }
+
+    if (spawn_err) |err|
+        return err;
 }
 
-fn _copy(
-    n: i32,
-    x: anytype,
-    incx: i32,
-    y: anytype,
-    incy: i32,
-    ctx: anytype,
-) !void {
-    if (n < 0) return blas.Error.InvalidArgument;
+fn k_copy(n: isize, x: anytype, incx: isize, y: anytype, incy: isize) void {
+    const X: type = meta.Child(@TypeOf(x));
+    const Y: type = meta.Child(@TypeOf(y));
 
-    if (n == 0) return;
+    if (n == 0)
+        return;
 
-    var ix: i32 = if (incx < 0) (-n + 1) * incx else 0;
-    var iy: i32 = if (incy < 0) (-n + 1) * incy else 0;
-    var i: u32 = 0;
-    while (i < n) : (i += 1) {
-        try ops.set( // y[iy] = x[ix]
-            &y[scast(u32, iy)],
-            x[scast(u32, ix)],
-            ctx,
-        );
+    const len = numeric.cast(usize, n);
+    const unroll = 2 * (int.min(
+        std.simd.suggestVectorLength(X) orelse 2,
+        std.simd.suggestVectorLength(Y) orelse 2,
+    ));
 
-        ix += incx;
-        iy += incy;
+    if (incx == 1 and incy == 1) {
+        var i: usize = 0;
+        while (i < (len / unroll) * unroll) : (i += unroll) {
+            inline for (0..unroll) |u| {
+                // y[i + u] = x[i + u]
+                numeric.set(
+                    &y[i + u],
+                    x[i + u],
+                );
+            }
+        }
+
+        while (i < len) : (i += 1) {
+            // y[i] = x[i]
+            numeric.set(
+                &y[i],
+                x[i],
+            );
+        }
+    } else {
+        var ix: isize = if (incx < 0) (-n + 1) * incx else 0;
+        var iy: isize = if (incy < 0) (-n + 1) * incy else 0;
+        var i: usize = 0;
+        while (i < (len / unroll) * unroll) : (i += unroll) {
+            inline for (0..unroll) |u| {
+                // y[iy + u * incy] = x[ix + u * incx]
+                numeric.set(
+                    &y[numeric.cast(usize, iy + numeric.cast(isize, u) * incy)],
+                    x[numeric.cast(usize, ix + numeric.cast(isize, u) * incx)],
+                );
+            }
+
+            ix += numeric.cast(isize, unroll) * incx;
+            iy += numeric.cast(isize, unroll) * incy;
+        }
+
+        while (i < len) : (i += 1) {
+            // y[iy] = x[ix]
+            numeric.set(
+                &y[numeric.cast(usize, iy)],
+                x[numeric.cast(usize, ix)],
+            );
+
+            ix += numeric.cast(isize, unroll) * incx;
+            iy += numeric.cast(isize, unroll) * incy;
+        }
     }
 }

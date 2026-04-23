@@ -9,13 +9,10 @@ const int = @import("../../int.zig");
 
 const linalg = @import("../../linalg.zig");
 
-/// Threshold for n to execute multithreded version (guess, calculate actual value)
-const multithreading_threshold = 250_000;
-
-/// Max threads to use (guess, calculate actual value)
-const max_threads = 64;
-
 pub fn Asum(X: type) type {
+    comptime if (!meta.isManyItemPointer(X) or !meta.isNumeric(meta.Child(X)))
+        @compileError("zsl.linalg.blas.asum: x must be a many-item pointer to numerics, got \n\tx: " ++ @typeName(X) ++ "\n");
+
     return meta.Scalar(meta.Child(X));
 }
 
@@ -30,11 +27,11 @@ pub fn Asum(X: type) type {
 /// where `x` is a vector with `n` elements.
 ///
 /// If the `link_cblas` option is not `null`, the function will try to call the
-/// corresponding CBLAS function, if available.
+/// corresponding CBLAS function.
 ///
 /// ## Signature
 /// ```zig
-/// linalg.blas.asum(n: isize, x: [*]const X, incx: isize, ctx: anytype) !Asum(X)
+/// linalg.blas.asum(n: isize, x: [*]const X, incx: isize, opts: Opts) !linalg.blas.Asum([*]const X)
 /// ```
 ///
 /// ## Arguments
@@ -43,6 +40,19 @@ pub fn Asum(X: type) type {
 /// * `x` (`anytype`): Array, size at least `1 + (n - 1) * abs(incx)`.
 /// * `incx` (`isize`): Specifies the increment for indexing vector `x`. Must be
 ///   different from 0.
+/// * `opts`: Optional parameters:
+///   * `num_threads` (`usize = 0`): Number of threads to spawn:
+///     * `0`: automatic. The thread count is derived from `n` and
+///       `parallel_threshold`:
+///       ```zig
+///       threads = max(1, min(std.Thread.getCpuCount(), options.max_threads, n / parallel_threshold))
+///       ```
+///     * `1`: force serial execution. `parallel_threshold` is ignored.
+///     * `N >= 2`: use exactly `N` threads, clamped by
+///       `std.Thread.getCpuCount()` and`options.max_threads` as a hard safety
+///       ceiling. `parallel_threshold` is ignored.
+///   * `parallel_threshold` (`usize = 8_388_608 / @sizeOf(meta.Child(X))`):
+///     Minimum number of elements required to trigger multithreaded execution.
 ///
 /// ## Returns
 /// `Asum(@TypeOf(x))`: The sum of magnitudes of real and imaginary parts of all
@@ -51,42 +61,63 @@ pub fn Asum(X: type) type {
 /// ## Errors
 /// * `linalg.blas.Error.InvalidArgument`: If `n` is less than or equal to 0, or
 ///   `incx` is equal to 0.
-pub fn asum(n: isize, x: anytype, incx: isize) !linalg.blas.Asum(@TypeOf(x)) {
-    comptime var X: type = @TypeOf(x);
-
-    comptime if (!meta.isManyItemPointer(X) or !meta.isNumeric(meta.Child(X)))
-        @compileError("zsl.linalg.blas.asum: x must be a many-item pointer to numerics, got \n\tx: " ++ @typeName(X) ++ "\n");
-
-    X = meta.Child(X);
+pub fn asum(
+    n: isize,
+    x: anytype,
+    incx: isize,
+    opts: struct {
+        num_threads: usize = 0,
+        parallel_threshold: usize = 8_388_608 / @sizeOf(meta.Child(@TypeOf(x))),
+    },
+) !linalg.blas.Asum(@TypeOf(x)) {
+    const X: type = @TypeOf(x);
 
     if (n <= 0 or incx == 0)
         return linalg.blas.Error.InvalidArgument;
 
     if ((comptime options.link_cblas != null) and incx > 0) {
-        switch (comptime meta.numericType(X)) {
+        switch (comptime meta.numericType(meta.Child(X))) {
             .float => {
-                if (comptime X == f32) return linalg.cblas.sasum(n, x, incx) else if (comptime X == f64) return linalg.cblas.dasum(n, x, incx);
+                if (comptime meta.Child(X) == f32)
+                    return linalg.cblas.sasum(n, x, incx)
+                else if (comptime meta.Child(X) == f64)
+                    return linalg.cblas.dasum(n, x, incx);
             },
             .complex => {
-                if (comptime meta.Scalar(X) == f32) return linalg.cblas.scasum(n, x, incx) else if (comptime meta.Scalar(X) == f64) return linalg.cblas.dzasum(n, x, incx);
+                if (comptime meta.Scalar(meta.Child(X)) == f32)
+                    return linalg.cblas.scasum(n, x, incx)
+                else if (comptime meta.Scalar(meta.Child(X)) == f64)
+                    return linalg.cblas.dzasum(n, x, incx);
             },
             else => {},
         }
     }
 
-    if (n < multithreading_threshold)
-        return k_asum(n, x, incx);
+    if (opts.num_threads == 1)
+        return numeric.cast(linalg.blas.Asum(X), k_asum(n, x, incx));
 
-    const num_threads = int.min(std.Thread.getCpuCount() catch 1, max_threads);
+    var num_threads: usize = if (opts.num_threads == 0) blk: {
+        if (opts.parallel_threshold == 0)
+            break :blk options.max_threads;
+
+        break :blk int.max(1, numeric.cast(usize, n) / opts.parallel_threshold);
+    } else opts.num_threads;
+
+    num_threads = int.min(num_threads, options.max_threads);
 
     if (num_threads <= 1)
-        return k_asum(n, x, incx);
+        return numeric.cast(linalg.blas.Asum(X), k_asum(n, x, incx));
 
-    var threads: [max_threads]std.Thread = undefined;
-    var sums: [max_threads]meta.Accumulator(linalg.blas.Asum(X)) = .{numeric.zero(meta.Accumulator(linalg.blas.Asum(X)))} ** max_threads;
+    num_threads = int.min(num_threads, std.Thread.getCpuCount() catch 1);
+
+    if (num_threads <= 1)
+        return numeric.cast(linalg.blas.Asum(X), k_asum(n, x, incx));
+
+    var threads: [options.max_threads]std.Thread = undefined;
+    var sums: [options.max_threads]meta.Accumulator(linalg.blas.Asum(X)) = .{numeric.zero(meta.Accumulator(linalg.blas.Asum(X)))} ** options.max_threads;
 
     const Worker = struct {
-        fn execute(out: *meta.Accumulator(linalg.blas.Asum(X)), worker_n: isize, worker_x: @TypeOf(x), worker_incx: isize) void {
+        fn execute(out: *meta.Accumulator(linalg.blas.Asum(X)), worker_n: isize, worker_x: X, worker_incx: isize) void {
             out.* = k_asum(worker_n, worker_x, worker_incx);
         }
     };
@@ -129,11 +160,11 @@ pub fn asum(n: isize, x: anytype, incx: isize) !linalg.blas.Asum(@TypeOf(x)) {
     return numeric.cast(linalg.blas.Asum(X), sum);
 }
 
-pub fn k_asum(n: isize, x: anytype, incx: isize) linalg.blas.Asum(@TypeOf(x)) {
-    const X: type = meta.Child(@TypeOf(x));
+pub fn k_asum(n: isize, x: anytype, incx: isize) meta.Accumulator(linalg.blas.Asum(@TypeOf(x))) {
+    const X: type = @TypeOf(x);
 
     const len = numeric.cast(usize, n);
-    const unroll = 2 * (std.simd.suggestVectorLength(X) orelse 2);
+    const unroll = 2 * (std.simd.suggestVectorLength(meta.Child(X)) orelse 2);
 
     var sums: [unroll]meta.Accumulator(linalg.blas.Asum(X)) = .{numeric.zero(meta.Accumulator(linalg.blas.Asum(X)))} ** unroll;
 
@@ -161,7 +192,6 @@ pub fn k_asum(n: isize, x: anytype, incx: isize) linalg.blas.Asum(@TypeOf(x)) {
     } else {
         var ix: isize = if (incx < 0) (-n + 1) * incx else 0;
         var i: usize = 0;
-
         while (i < (len / unroll) * unroll) : (i += unroll) {
             inline for (0..unroll) |u| {
                 // sums[u] += abs1(x[ix + u * incx])
@@ -182,6 +212,7 @@ pub fn k_asum(n: isize, x: anytype, incx: isize) linalg.blas.Asum(@TypeOf(x)) {
                 sums[0],
                 numeric.abs1(x[numeric.cast(usize, ix)]),
             );
+
             ix += incx;
         }
     }
@@ -192,5 +223,5 @@ pub fn k_asum(n: isize, x: anytype, incx: isize) linalg.blas.Asum(@TypeOf(x)) {
         numeric.add_(&sum, sum, sums[u]);
     }
 
-    return numeric.cast(linalg.blas.Asum(X), sum);
+    return sum;
 }

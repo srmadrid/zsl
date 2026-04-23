@@ -1,20 +1,18 @@
 // Level 1
 pub const Asum = @import("blas/asum.zig").Asum;
 pub const asum = @import("blas/asum.zig").asum;
-// pub const axpy = @import("blas/axpy.zig").axpy;
-// pub const copy = @import("blas/copy.zig").copy;
-// pub const dot_sub = @import("blas/dot_sub.zig").dot_sub;
-// pub const dot = @import("blas/dot.zig").dot;
-// pub const dotc_sub = @import("blas/dotc_sub.zig").dotc_sub;
-// pub const dotc = @import("blas/dotc.zig").dotc;
-// pub const dotu_sub = @import("blas/dotu_sub.zig").dotu_sub;
-// pub const dotu = @import("blas/dotu.zig").dotu;
+pub const axpy = @import("blas/axpy.zig").axpy;
+pub const copy = @import("blas/copy.zig").copy;
+pub const Dot = @import("blas/dot.zig").Dot;
+pub const dot = @import("blas/dot.zig").dot;
+pub const Dotc = @import("blas/dotc.zig").Dotc;
+pub const dotc = @import("blas/dotc.zig").dotc;
 // pub const nrm2 = @import("blas/nrm2.zig").nrm2;
 // pub const rot = @import("blas/rot.zig").rot;
 // pub const rotg = @import("blas/rotg.zig").rotg;
 // pub const rotm = @import("blas/rotm.zig").rotm;
 // pub const rotmg = @import("blas/rotmg.zig").rotmg;
-// pub const scal = @import("blas/scal.zig").scal;
+pub const scal = @import("blas/scal.zig").scal;
 // pub const swap = @import("blas/swap.zig").swap;
 // pub const iamax = @import("blas/iamax.zig").iamax;
 // pub const iamin = @import("blas/iamin.zig").iamin;

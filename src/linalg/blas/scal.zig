@@ -1,148 +1,209 @@
 const std = @import("std");
+const options = @import("options");
 
-const types = @import("../../types.zig");
-const scast = types.scast;
-const ops = @import("../../ops.zig");
+const meta = @import("../../meta.zig");
 
-const blas = @import("../blas.zig");
+const numeric = @import("../../numeric.zig");
 
-/// Computes the product of a vector by a scalar.
-///
-/// The `scal` routine performs a vector operation defined as:
+const int = @import("../../int.zig");
+
+const linalg = @import("../../linalg.zig");
+
+/// Computes the product of a vector by a scalar:
 ///
 /// ```zig
-///     x = alpha * x,
+/// x = alpha * x,
 /// ```
 ///
-/// where `alpha` is a scalar, and `x` is an `n`-element vector.
+/// where `alpha` is a scalar, and `x` is a vector with `n` elements.
 ///
-/// Signature
-/// ---------
-/// ```zig
-/// fn scal(n: i32, alpha: Al, x: [*]X, incx: i32, ctx: anytype) !void
-/// ```
-///
-/// Parameters
-/// ----------
-/// `n` (`i32`): Specifies the number of elements in vector `x`. Must be
-/// greater than 0.
-///
-/// `alpha` (`bool`, `int`, `float`, `cfloat`, `integer`, `rational`, `real`,
-/// `complex` or `expression`): Specifies the scalar `alpha`.
-///
-/// `x` (mutable many-item pointer to `bool`, `int`, `float`, `cfloat`,
-/// `integer`, `rational`, `real`, `complex` or `expression`): Array, size at
-/// least `1 + (n - 1) * abs(incx)`. On return contains the updated vector `x`.
-///
-/// `incx` (`i32`): Specifies the increment for the elements of `x`.
-///
-/// Returns
-/// -------
-/// `void`: The result is stored in `x`.
-///
-/// Errors
-/// ------
-/// `linalg.blas.Error.InvalidArgument`: If `n` is less than or equal to 0.
-///
-/// Notes
-/// -----
 /// If the `link_cblas` option is not `null`, the function will try to call the
-/// corresponding CBLAS function, if available. In that case, no errors will be
-/// raised even if the arguments are invalid.
+/// corresponding CBLAS function.
+///
+/// ## Signature
+/// ```zig
+/// linalg.blas.scal(n: isize, alpha: Al, x: [*]X, incx: isize) !void
+/// ```
+///
+/// ## Arguments
+/// * `n` (`isize`): Specifies the number of elements in vectors `x` and `y`.
+///   Must be greater than 0.
+/// * `alpha` (`anytype`): Specifies the scalar `alpha`.
+/// * `x` (`anytype`): Array, size at least `1 + (n - 1) * abs(incx)`.
+/// * `incx` (`isize`): Specifies the increment for indexing vector `x`. Must be
+///   different from 0.
+/// * `opts`: Optional parameters:
+///   * `num_threads` (`usize = 0`): Number of threads to spawn:
+///     * `0`: automatic. The thread count is derived from `n` and
+///       `parallel_threshold`:
+///       ```zig
+///       threads = max(1, min(std.Thread.getCpuCount(), options.max_threads, n / parallel_threshold))
+///       ```
+///     * `1`: force serial execution. `parallel_threshold` is ignored.
+///     * `N >= 2`: use exactly `N` threads, clamped by
+///       `std.Thread.getCpuCount()` and`options.max_threads` as a hard safety
+///       ceiling. `parallel_threshold` is ignored.
+///   * `parallel_threshold` (`usize = 8_388_608 / @sizeOf(meta.Child(X))`):
+///     Minimum number of elements required to trigger multithreaded execution.
+///
+/// ## Returns
+/// `void`
+///
+/// ## Errors
+/// * `linalg.blas.Error.InvalidArgument`: If `n` is less than or equal to 0, or
+///   `incx` is equal to 0.
 pub fn scal(
-    n: i32,
+    n: isize,
     alpha: anytype,
     x: anytype,
-    incx: i32,
-    ctx: anytype,
+    incx: isize,
+    opts: struct {
+        num_threads: usize = 0,
+        parallel_threshold: usize = 8_388_608 / @sizeOf(meta.Child(@TypeOf(x))),
+    },
 ) !void {
     const Al: type = @TypeOf(alpha);
     comptime var X: type = @TypeOf(x);
 
-    comptime if (!types.isNumeric(Al))
-        @compileError("zml.linalg.blas.scal requires alpha to be a numeric type, got " ++ @typeName(Al));
+    comptime if (!meta.isNumeric(Al) or
+        !meta.isManyItemPointer(X) or meta.isConstPointer(X) or !meta.isNumeric(meta.Child(X)))
+        @compileError("zsl.linalg.blas.scal: alpha must be a numeric, and x must be a mutable many-item pointer to numerics, got \n\talpha: " ++ @typeName(Al) ++ "\n\tx: " ++ @typeName(X) ++ "\n");
 
-    comptime if (!types.isManyPointer(X) or types.isConstPointer(X))
-        @compileError("zml.linalg.blas.scal requires x to be a mutable many-item pointer, got " ++ @typeName(X));
+    X = meta.Child(X);
 
-    X = types.Child(X);
+    if (n <= 0 or incx == 0)
+        return linalg.blas.Error.InvalidArgument;
 
-    comptime if (!types.isNumeric(X))
-        @compileError("zml.linalg.blas.scal requires x's child type to be numeric, got " ++ @typeName(X));
-
-    comptime if (Al == bool and X == bool)
-        @compileError("zml.linalg.blas.scal does not support alpha and x both being bool");
-
-    comptime if (types.isArbitraryPrecision(Al) or types.isArbitraryPrecision(X)) {
-        // When implemented, expand if
-        @compileError("zml.linalg.blas.scal not implemented for arbitrary precision types yet");
-    } else {
-        types.validateContext(@TypeOf(ctx), .{});
-    };
-
-    if (comptime types.canCoerce(Al, X) and options.link_cblas != null) {
-        switch (comptime types.numericType(X)) {
+    if (comptime options.link_cblas != null and Al == X) {
+        switch (comptime meta.numericType(Al)) {
             .float => {
-                if (comptime X == f32) {
-                    return ci.cblas_sscal(scast(c_int, n), scast(X, alpha), x, scast(c_int, incx));
-                } else if (comptime X == f64) {
-                    return ci.cblas_dscal(scast(c_int, n), scast(X, alpha), x, scast(c_int, incx));
-                }
+                if (comptime Al == f32)
+                    return linalg.cblas.sscal(n, alpha, x, incx)
+                else if (comptime Al == f64)
+                    return linalg.cblas.dscal(n, alpha, x, incx);
             },
-            .cfloat => {
-                if (comptime types.isComplex(Al)) {
-                    if (comptime Scalar(X) == f32) {
-                        const alpha_casted: X = scast(X, alpha);
-                        return ci.cblas_cscal(scast(c_int, n), &alpha_casted, x, scast(c_int, incx));
-                    } else if (comptime Scalar(X) == f64) {
-                        const alpha_casted: X = scast(X, alpha);
-                        return ci.cblas_zscal(scast(c_int, n), &alpha_casted, x, scast(c_int, incx));
-                    }
-                } else {
-                    if (comptime Scalar(X) == f32) {
-                        return ci.cblas_csscal(scast(c_int, n), scast(Scalar(X), alpha), x, scast(c_int, incx));
-                    } else if (comptime Scalar(X) == f64) {
-                        return ci.cblas_zdscal(scast(c_int, n), scast(Scalar(X), alpha), x, scast(c_int, incx));
-                    }
-                }
+            .complex => {
+                if (comptime meta.Scalar(Al) == f32)
+                    return linalg.cblas.cscal(n, alpha, x, incx)
+                else if (comptime meta.Scalar(Al) == f64)
+                    return linalg.cblas.zscal(n, alpha, x, incx);
             },
             else => {},
         }
     }
 
-    return _scal(n, alpha, x, incx, ctx);
+    if (opts.num_threads == 1)
+        return k_scal(n, alpha, x, incx);
+
+    var num_threads: usize = if (opts.num_threads == 0) blk: {
+        if (opts.parallel_threshold == 0)
+            break :blk options.max_threads;
+
+        break :blk int.max(1, numeric.cast(usize, n) / opts.parallel_threshold);
+    } else opts.num_threads;
+
+    num_threads = int.min(num_threads, options.max_threads);
+
+    if (num_threads <= 1)
+        return k_scal(n, alpha, x, incx);
+
+    num_threads = int.min(num_threads, std.Thread.getCpuCount() catch 1);
+
+    if (num_threads <= 1)
+        return k_scal(n, alpha, x, incx);
+
+    var threads: [options.max_threads]std.Thread = undefined;
+
+    const chunk_size = int.div(n, numeric.cast(isize, num_threads));
+    var spawn_err: ?anyerror = null;
+    var spawned_count: usize = 0;
+    var i: usize = 0;
+    while (i < num_threads) : (i += 1) {
+        const chunk_start = numeric.cast(isize, i) * chunk_size;
+        const chunk_end = if (i == num_threads - 1) n else chunk_start + chunk_size;
+
+        if (std.Thread.spawn(.{}, k_scal, .{
+            chunk_end - chunk_start,
+            alpha,
+            x + numeric.cast(usize, if (incx > 0)
+                chunk_start * incx
+            else
+                (-n + chunk_end) * incx),
+            incx,
+        })) |th| {
+            threads[i] = th;
+            spawned_count += 1;
+        } else |err| {
+            spawn_err = err;
+            break;
+        }
+    }
+
+    var t: usize = 0;
+    while (t < spawned_count) : (t += 1) {
+        threads[t].join();
+    }
+
+    if (spawn_err) |err|
+        return err;
 }
 
-fn _scal(
-    n: i32,
-    alpha: anytype,
-    x: anytype,
-    incx: i32,
-    ctx: anytype,
-) !void {
+fn k_scal(n: isize, alpha: anytype, x: anytype, incx: isize) void {
     const Al: type = @TypeOf(alpha);
-    const X: type = types.Child(@TypeOf(x));
-    const C: type = types.Coerce(Al, X);
+    const X: type = meta.Child(@TypeOf(x));
 
-    if (n < 0 or incx <= 0) return blas.Error.InvalidArgument;
+    if (n == 0)
+        return;
 
-    if (n == 0) return;
+    const len = numeric.cast(usize, n);
+    const unroll = 2 * (std.simd.suggestVectorLength(numeric.Mul(Al, X)) orelse 2);
 
-    if (ops.eq(alpha, 1, .{}) catch unreachable) return;
+    if (incx == 1) {
+        var i: usize = 0;
+        while (i < (len / unroll) * unroll) : (i += unroll) {
+            inline for (0..unroll) |u| {
+                // x[i + u] *= alpha
+                numeric.mul_(
+                    &x[i + u],
+                    alpha,
+                    x[i + u],
+                );
+            }
+        }
 
-    if (comptime types.isArbitraryPrecision(C)) {
-        @compileError("zml.linalg.blas.scal not implemented for arbitrary precision types yet");
-    } else {
-        var ix: i32 = 0;
-        for (0..scast(u32, n)) |_| {
-            ops.mul_( // x[ix] *= alpha
-                &x[scast(u32, ix)],
-                x[scast(u32, ix)],
+        while (i < len) : (i += 1) {
+            // x[i] *= alpha
+            numeric.mul_(
+                &x[i],
                 alpha,
-                ctx,
-            ) catch unreachable;
+                x[i],
+            );
+        }
+    } else {
+        var ix: isize = if (incx < 0) (-n + 1) * incx else 0;
+        var i: usize = 0;
+        while (i < (len / unroll) * unroll) : (i += unroll) {
+            inline for (0..unroll) |u| {
+                // x[ix + u * incx] *= alpha
+                numeric.mul_(
+                    &x[numeric.cast(usize, ix + numeric.cast(isize, u) * incx)],
+                    alpha,
+                    x[numeric.cast(usize, ix + numeric.cast(isize, u) * incx)],
+                );
+            }
 
-            ix += incx;
+            ix += numeric.cast(isize, unroll) * incx;
+        }
+
+        while (i < len) : (i += 1) {
+            // x[ix] *= alpha
+            numeric.mul_(
+                &x[numeric.cast(usize, ix)],
+                alpha,
+                x[numeric.cast(usize, ix)],
+            );
+
+            ix += numeric.cast(isize, unroll) * incx;
         }
     }
 }

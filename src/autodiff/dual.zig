@@ -28,7 +28,7 @@ pub fn Dual(comptime N: type) type {
         pub const is_complex = meta.isComplex(N);
 
         pub const Accumulator = Dual(meta.Accumulator(N));
-        pub const Scalar = N;
+        pub const Scalar = Dual(meta.Scalar(N));
 
         pub const empty: autodiff.Dual(N) = .{
             .val = undefined,

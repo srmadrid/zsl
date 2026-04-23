@@ -1,131 +1,245 @@
 const std = @import("std");
+const options = @import("options");
 
-const types = @import("../../types.zig");
-const Child = types.Child;
-const Coerce = types.Coerce;
-const ops = @import("../../ops.zig");
+const meta = @import("../../meta.zig");
 
-const blas = @import("../blas.zig");
+const numeric = @import("../../numeric.zig");
 
-/// Computes a dot product of a conjugated vector with another vector.
-///
-/// The `dotc` routine performs a vector-vector operation defined as:
+const int = @import("../../int.zig");
+
+const linalg = @import("../../linalg.zig");
+
+pub fn Dotc(X: type, Y: type) type {
+    comptime if (!meta.isManyItemPointer(X) or !meta.isNumeric(meta.Child(X)))
+        @compileError("zsl.linalg.blas.dotc: x and y must be many-item pointers to numerics, got \n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
+
+    return numeric.Mul(numeric.Conj(meta.Child(X)), meta.Child(Y));
+}
+
+/// Computes a vector dot product with the first vector conjugated:
 ///
 /// ```zig
-///     conj(x[0]) * y[0] + conj(x[1]) * y[1] + ... + conj(x[n - 1]) * y[n - 1],
+/// conj(x[0]) * y[0] + conj(x[1]) * y[1] + ... + conj(x[n - 1]) * y[n - 1],
 /// ```
 ///
 /// where `x` and `y` are vectors.
 ///
-/// Signature
-/// ---------
-/// ```zig
-/// fn dotc(n: i32, x: [*]const X, incx: i32, y: [*]const Y, incy: i32, ctx: anytype) !Coerce(X, Y)
-///
-/// Parameters
-/// ----------
-/// `n` (`i32`): Specifies the number of elements in vectors `x` and `y`. Must
-/// be greater than 0.
-///
-/// `x` (many-item pointer to `bool`, `int`, `float`, `cfloat` `integer`,
-/// `rational`, `real`, `complex` or `expression`): Array, size at least
-/// `1 + (n - 1) * abs(incx)`.
-///
-/// `incx` (`i32`): Specifies the increment for the elements of `x`.
-///
-/// `y` (many-item pointer to `bool`, `int`, `float`, `cfloat` `integer`,
-/// `rational`, `real`, `complex` or `expression`): Array, size at least
-/// `1 + (n - 1) * abs(incy)`.
-///
-/// `incy` (`i32`): Specifies the increment for the elements of `y`.
-///
-/// Returns
-/// -------
-/// `Coerce(Child(@TypeOf(x)), Child(@TypeOf(y)))`: The result of the dot
-/// product.
-///
-/// Errors
-/// ------
-/// `linalg.blas.Error.InvalidArgument`: If `n` is less than or equal to 0.
-///
-/// Notes
-/// -----
 /// If the `link_cblas` option is not `null`, the function will try to call the
-/// corresponding CBLAS function, if available. In that case, no errors will be
-/// raised even if the arguments are invalid.
+/// corresponding CBLAS function.
+///
+/// ## Signature
+/// ```zig
+/// linalg.blas.dotc(n: isize, x: [*]const X, incx: isize, y: [*]const Y, incy: isize) !linalg.blas.Dotc([*]const X, [*]const Y)
+///
+/// ## Arguments
+/// * `n` (`isize`): Specifies the number of elements in vectors `x` and `y`.
+///   Must be greater than 0.
+/// * `x` (`anytype`): Array, size at least `1 + (n - 1) * abs(incx)`.
+/// * `incx` (`isize`): Specifies the increment for indexing vector `x`. Must be
+///   different from 0.
+/// * `y` (`anytype`): Array, size at least `1 + (n - 1) * abs(incy)`.
+/// * `incy` (`isize`): Specifies the increment for indexing vector `y`. Must be
+///   different from 0.
+/// * `opts`: Optional parameters:
+///   * `num_threads` (`usize = 0`): Number of threads to spawn:
+///     * `0`: automatic. The thread count is derived from `n` and
+///       `parallel_threshold`:
+///       ```zig
+///       threads = max(1, min(std.Thread.getCpuCount(), options.max_threads, n / parallel_threshold))
+///       ```
+///     * `1`: force serial execution. `parallel_threshold` is ignored.
+///     * `N >= 2`: use exactly `N` threads, clamped by
+///       `std.Thread.getCpuCount()` and`options.max_threads` as a hard safety
+///       ceiling. `parallel_threshold` is ignored.
+///   * `parallel_threshold` (`usize = 8_388_608 / @sizeOf(meta.Child(X))`):
+///     Minimum number of elements required to trigger multithreaded execution.
+///
+/// ## Returns
+/// `Dotc(@TypeOf(x), @TypeOf(y))`: The dot product of `x` conjugated and `y`.
+///
+/// ## Errors
+/// * `linalg.blas.Error.InvalidArgument`: If `n` is less than or equal to 0, or
+///   `incx` or `incy` is equal to 0.
 pub fn dotc(
-    n: i32,
+    n: isize,
     x: anytype,
-    incx: i32,
+    incx: isize,
     y: anytype,
-    incy: i32,
-    ctx: anytype,
-) !Coerce(Child(@TypeOf(x)), Child(@TypeOf(y))) {
-    comptime var X: type = @TypeOf(x);
-    comptime var Y: type = @TypeOf(y);
+    incy: isize,
+    opts: struct {
+        num_threads: usize = 0,
+        parallel_threshold: usize = 8_388_608 / @sizeOf(meta.Child(@TypeOf(x))),
+    },
+) !linalg.blas.Dotc(@TypeOf(x), @TypeOf(y)) {
+    const X: type = @TypeOf(x);
+    const Y: type = @TypeOf(y);
 
-    comptime if (!types.isManyPointer(X))
-        @compileError("zml.linalg.blas.dotc requires x to be a many-item pointer, got " ++ @typeName(X));
+    if (n <= 0 or incx == 0 or incy == 0)
+        return linalg.blas.Error.InvalidArgument;
 
-    X = types.Child(X);
+    if ((comptime options.link_cblas != null) and meta.Child(X) == meta.Child(Y)) {
+        switch (comptime meta.numericType(meta.Child(X))) {
+            .float => {
+                if (comptime meta.Child(X) == f32)
+                    return linalg.cblas.sdot(n, x, incx, y, incy)
+                else if (comptime meta.Child(X) == f64)
+                    return linalg.cblas.ddot(n, x, incx, y, incy);
+            },
+            .complex => {
+                var result: linalg.blas.Dot(X, Y) = undefined;
+                if (comptime meta.Scalar(meta.Child(X)) == f32)
+                    linalg.cblas.cdotc_sub(n, x, incx, y, incy, &result)
+                else if (comptime meta.Scalar(meta.Child(X)) == f64)
+                    linalg.cblas.zdotc_sub(n, x, incx, y, incy, &result);
 
-    comptime if (!types.isNumeric(X))
-        @compileError("zml.linalg.blas.dotc requires x's child type to be numeric, got " ++ @typeName(X));
-
-    comptime if (!types.isManyPointer(Y))
-        @compileError("zml.linalg.blas.dotc requires y to be a many-item pointer, got " ++ @typeName(Y));
-
-    Y = types.Child(Y);
-    const C: type = Coerce(X, Y);
-
-    comptime if (!types.isNumeric(Y))
-        @compileError("zml.linalg.blas.dotc requires y's child type to be numeric, got " ++ @typeName(Y));
-
-    comptime if (X == bool and Y == bool)
-        @compileError("zml.linalg.blas.dotc does not support x and y both being bool");
-
-    comptime if (types.isArbitraryPrecision(C)) {
-        @compileError("zml.linalg.blas.dotc not implemented for arbitrary precision types yet");
-    } else {
-        types.validateContext(@TypeOf(ctx), .{});
-    };
-
-    if (comptime X == Y and options.link_cblas != null) {
-        switch (comptime types.numericType(X)) {
-            .cfloat => {
-                if (comptime Scalar(X) == f32) {
-                    var temp: cf32 = undefined;
-                    ci.cblas_cdotc_sub(scast(c_int, n), x, scast(c_int, incx), y, scast(c_int, incy), &temp);
-                    return temp;
-                } else if (comptime Scalar(X) == f64) {
-                    var temp: cf64 = undefined;
-                    ci.cblas_zdotc_sub(scast(c_int, n), x, scast(c_int, incx), y, scast(c_int, incy), &temp);
-                    return temp;
-                }
+                return result;
             },
             else => {},
         }
     }
 
-    return _dotc(n, x, incx, y, incy, ctx);
+    if (opts.num_threads == 1)
+        return numeric.cast(linalg.blas.Dotc(X, Y), k_dotc(n, x, incx, y, incy));
+
+    var num_threads: usize = if (opts.num_threads == 0) blk: {
+        if (opts.parallel_threshold == 0)
+            break :blk options.max_threads;
+
+        break :blk int.max(1, numeric.cast(usize, n) / opts.parallel_threshold);
+    } else opts.num_threads;
+
+    num_threads = int.min(num_threads, options.max_threads);
+
+    if (num_threads <= 1)
+        return numeric.cast(linalg.blas.Dotc(X, Y), k_dotc(n, x, incx, y, incy));
+
+    num_threads = int.min(num_threads, std.Thread.getCpuCount() catch 1);
+
+    if (num_threads <= 1)
+        return numeric.cast(linalg.blas.Dotc(X, Y), k_dotc(n, x, incx, y, incy));
+
+    var threads: [options.max_threads]std.Thread = undefined;
+    var sums: [options.max_threads]meta.Accumulator(linalg.blas.Dotc(X, Y)) = .{numeric.zero(meta.Accumulator(linalg.blas.Dotc(X, Y)))} ** options.max_threads;
+
+    const Worker = struct {
+        fn execute(out: *meta.Accumulator(linalg.blas.Dotc(X, Y)), worker_n: isize, worker_x: X, worker_incx: isize, worker_y: Y, worker_incy: isize) void {
+            out.* = k_dotc(worker_n, worker_x, worker_incx, worker_y, worker_incy);
+        }
+    };
+
+    const chunk_size = int.div(n, numeric.cast(isize, num_threads));
+    var spawn_err: ?anyerror = null;
+    var spawned_count: usize = 0;
+    var i: usize = 0;
+    while (i < num_threads) : (i += 1) {
+        const chunk_start = numeric.cast(isize, i) * chunk_size;
+        const chunk_end = if (i == num_threads - 1) n else chunk_start + chunk_size;
+
+        if (std.Thread.spawn(.{}, Worker.execute, .{
+            &sums[i],
+            chunk_end - chunk_start,
+            x + numeric.cast(usize, if (incx > 0)
+                chunk_start * incx
+            else
+                (-n + chunk_end) * incx),
+            incx,
+            y + numeric.cast(usize, if (incy > 0)
+                chunk_start * incy
+            else
+                (-n + chunk_end) * incy),
+            incy,
+        })) |th| {
+            threads[i] = th;
+            spawned_count += 1;
+        } else |err| {
+            spawn_err = err;
+            break;
+        }
+    }
+
+    var sum = numeric.zero(meta.Accumulator(linalg.blas.Dotc(X, Y)));
+    var t: usize = 0;
+    while (t < spawned_count) : (t += 1) {
+        threads[t].join();
+        numeric.add_(&sum, sum, sums[t]);
+    }
+
+    if (spawn_err) |err|
+        return err;
+
+    return numeric.cast(linalg.blas.Dotc(X, Y), sum);
 }
 
-fn _dotc(
-    n: i32,
-    x: anytype,
-    incx: i32,
-    y: anytype,
-    incy: i32,
-    ctx: anytype,
-) !Coerce(Child(@TypeOf(x)), Child(@TypeOf(y))) {
-    const X: type = types.Child(@TypeOf(x));
-    const Y: type = types.Child(@TypeOf(y));
-    const C: type = types.Coerce(X, Y);
+pub fn k_dotc(n: isize, x: anytype, incx: isize, y: anytype, incy: isize) meta.Accumulator(linalg.blas.Dotc(@TypeOf(x), @TypeOf(y))) {
+    const X: type = @TypeOf(x);
+    const Y: type = @TypeOf(y);
 
-    var sum: C = try ops.init(C, ctx);
-    errdefer ops.deinit(&sum, ctx);
+    const len = numeric.cast(usize, n);
+    const unroll = 2 * (std.simd.suggestVectorLength(numeric.Mul(numeric.Conj(meta.Child(X)), meta.Child(Y))) orelse 2);
 
-    try @import("dotc_sub.zig").dotc_sub(n, x, incx, y, incy, &sum, ctx);
+    var sums: [unroll]meta.Accumulator(linalg.blas.Dotc(X, Y)) = .{numeric.zero(meta.Accumulator(linalg.blas.Dotc(X, Y)))} ** unroll;
+
+    if (incx == 1 and incy == 1) {
+        var i: usize = 0;
+        while (i < (len / unroll) * unroll) : (i += unroll) {
+            inline for (0..unroll) |u| {
+                // sums[u] += conj(x[i + u]) * y[i + u]
+                numeric.fma_(
+                    &sums[u],
+                    numeric.conj(x[i + u]),
+                    y[i + u],
+                    sums[u],
+                );
+            }
+        }
+
+        while (i < len) : (i += 1) {
+            // sums[0] += conj(x[i]) * y[i]
+            numeric.fma_(
+                &sums[0],
+                numeric.conj(x[i]),
+                y[i],
+                sums[0],
+            );
+        }
+    } else {
+        var ix: isize = if (incx < 0) (-n + 1) * incx else 0;
+        var iy: isize = if (incy < 0) (-n + 1) * incy else 0;
+        var i: usize = 0;
+        while (i < (len / unroll) * unroll) : (i += unroll) {
+            inline for (0..unroll) |u| {
+                // sums[u] += conj(x[ix + u * incx]) * y[iy + u * incy]
+                numeric.fma_(
+                    &sums[u],
+                    numeric.conj(x[numeric.cast(usize, ix + numeric.cast(isize, u) * incx)]),
+                    y[numeric.cast(usize, iy + numeric.cast(isize, u) * incy)],
+                    sums[u],
+                );
+            }
+
+            ix += numeric.cast(isize, unroll) * incx;
+            iy += numeric.cast(isize, unroll) * incy;
+        }
+
+        while (i < len) : (i += 1) {
+            // sums[0] += conj(x[ix]) * y[ix]
+            numeric.fma_(
+                &sums[0],
+                numeric.conj(x[numeric.cast(usize, ix)]),
+                y[numeric.cast(usize, iy)],
+                sums[0],
+            );
+
+            ix += incx;
+            iy += incy;
+        }
+    }
+
+    var sum = numeric.zero(meta.Accumulator(linalg.blas.Dotc(X, Y)));
+    inline for (0..unroll) |u| {
+        // sum += sums[u]
+        numeric.add_(&sum, sum, sums[u]);
+    }
 
     return sum;
 }
