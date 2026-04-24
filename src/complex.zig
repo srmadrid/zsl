@@ -33,6 +33,7 @@ pub fn Complex(comptime N: type) type {
         pub const is_custom = meta.isCustomType(N);
 
         pub const Accumulator = Complex(meta.Accumulator(N));
+        pub const Real = N;
         pub const Scalar = N;
 
         // Constants

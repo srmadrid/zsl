@@ -1,223 +1,302 @@
 const std = @import("std");
+const options = @import("options");
 
-const types = @import("../../types.zig");
-const scast = types.scast;
-const Scalar = types.Scalar;
-const Child = types.Child;
-const EnsureFloat = types.EnsureFloat;
-const float = @import("../../float.zig");
-const ops = @import("../../ops.zig");
-const constants = @import("../../constants.zig");
+const meta = @import("../../meta.zig");
 
-const blas = @import("../blas.zig");
+const numeric = @import("../../numeric.zig");
 
-/// Computes the Euclidean norm of a vector.
-///
-/// The `nrm2` routine performs a vector reduction operation defined as:
+const int = @import("../../int.zig");
+
+const linalg = @import("../../linalg.zig");
+
+pub fn Nrm2(X: type) type {
+    comptime if (!meta.isManyItemPointer(X) or !meta.isNumeric(meta.Child(X)))
+        @compileError("zsl.linalg.blas.nrm2: x must be a many-item pointer to numerics, got \n\tx: " ++ @typeName(X) ++ "\n");
+
+    return numeric.Sqrt(numeric.Abs2(meta.Child(X)));
+}
+
+/// Computes the Euclidean norm of a vector:
 ///
 /// ```zig
-///     ||x||,
+/// sqrt(|x[0]|^2 + |x[1]|^2 + ... + |x[n - 1]|^2),
 /// ```
 ///
-/// where `x` is a vector.
+/// where `x` is a vector with `n` elements.
 ///
-/// Signature
-/// ---------
-/// ```zig
-/// fn nrm2(n: i32, x: [*]const X, incx: i32, ctx: anytype) !EnsureFloat(Scalar(X))
-/// ```
-///
-/// Parameters
-/// ----------
-/// `n` (`i32`): Specifies the number of elements in vector `x`. Must be
-/// greater than 0.
-///
-/// `x` (many-item pointer to, `int`, `float`, `cfloat`, `integer`, `rational`,
-/// `real`, `complex` or `expression`): Array, size at least
-/// `1 + (n - 1) * abs(incx)`.
-///
-/// `incx` (`i32`): Specifies the increment for indexing vector `x`. Must be
-/// greater than 0.
-///
-/// Returns
-/// -------
-/// `EnsureFloat(Scalar(Child(@TypeOf(x))))`: The Euclidean norm of the vector.
-///
-/// Errors
-/// ------
-/// `linalg.blas.Error.InvalidArgument`: If `n` is less than or equal to 0.
-///
-/// Notes
-/// -----
 /// If the `link_cblas` option is not `null`, the function will try to call the
-/// corresponding CBLAS function, if available. In that case, no errors will be
-/// raised even if the arguments are invalid.
+/// corresponding CBLAS function.
+///
+/// ## Signature
+/// ```zig
+/// linalg.blas.nrm2(n: isize, x: [*]const X, incx: isize) !linalg.blas.Nrm2([*]const X)
+/// ```
+///
+/// ## Arguments
+/// * `n` (`isize`): Specifies the number of elements in vector `x`. Must be
+///   greater than 0.
+/// * `x` (`anytype`): Array, size at least `1 + (n - 1) * abs(incx)`.
+/// * `incx` (`isize`): Specifies the increment for indexing vector `x`. Must
+///   be different from 0.
+/// * `opts`: Optional parameters:
+///   * `num_threads` (`usize = 0`): Number of threads to spawn:
+///     * `0`: automatic. The thread count is derived from `n` and
+///       `parallel_threshold`:
+///       ```zig
+///       threads = max(1, min(std.Thread.getCpuCount(), options.max_threads, n / parallel_threshold))
+///       ```
+///     * `1`: force serial execution. `parallel_threshold` is ignored.
+///     * `N >= 2`: use exactly `N` threads, clamped by
+///       `std.Thread.getCpuCount()` and `options.max_threads` as a hard
+///       safety ceiling. `parallel_threshold` is ignored.
+///   * `parallel_threshold` (`usize = 8_388_608 / @sizeOf(meta.Child(X))`):
+///     Minimum number of elements required to trigger multithreaded
+///     execution.
+///
+/// ## Returns
+/// `Nrm2(@TypeOf(x))`: The Euclidean norm of `x`.
+///
+/// ## Errors
+/// * `linalg.blas.Error.InvalidArgument`: If `n` is less than or equal to 0,
+///   or `incx` is equal to 0.
 pub fn nrm2(
-    n: i32,
+    n: isize,
     x: anytype,
-    incx: i32,
-    ctx: anytype,
-) !EnsureFloat(Scalar(Child(@TypeOf(x)))) {
-    comptime var X: type = @TypeOf(x);
+    incx: isize,
+    opts: struct {
+        num_threads: usize = 0,
+        parallel_threshold: usize = 8_388_608 / @sizeOf(meta.Child(@TypeOf(x))),
+    },
+) !linalg.blas.Nrm2(@TypeOf(x)) {
+    const X: type = @TypeOf(x);
 
-    comptime if (!types.isManyPointer(X))
-        @compileError("zml.linalg.blas.nrm2 requires x to be a many-item pointer, got " ++ @typeName(X));
+    if (n <= 0 or incx == 0)
+        return linalg.blas.Error.InvalidArgument;
 
-    X = types.Child(X);
-
-    comptime if (!types.isNumeric(X))
-        @compileError("zml.linalg.blas.nrm2 requires x's child type to be numeric, got " ++ @typeName(X));
-
-    comptime if (X == bool)
-        @compileError("zml.linalg.blas.nrm2 does not support x being bool");
-
-    comptime if (types.isArbitraryPrecision(X)) {
-        @compileError("zml.linalg.blas.nrm2 not implemented for arbitrary precision types yet");
-    } else {
-        types.validateContext(@TypeOf(ctx), .{});
-    };
-
-    if (comptime options.link_cblas != null) {
-        switch (comptime types.numericType(X)) {
+    if ((comptime options.link_cblas != null) and incx > 0) {
+        switch (comptime meta.numericType(meta.Child(X))) {
             .float => {
-                if (comptime X == f32) {
-                    return ci.cblas_snrm2(scast(c_int, n), x, scast(c_int, incx));
-                } else if (comptime X == f64) {
-                    return ci.cblas_dnrm2(scast(c_int, n), x, scast(c_int, incx));
-                }
+                if (comptime meta.Child(X) == f32)
+                    return linalg.cblas.snrm2(n, x, incx)
+                else if (comptime meta.Child(X) == f64)
+                    return linalg.cblas.dnrm2(n, x, incx);
             },
-            .cfloat => {
-                if (comptime Scalar(X) == f32) {
-                    return ci.cblas_scnrm2(scast(c_int, n), x, scast(c_int, incx));
-                } else if (comptime Scalar(X) == f64) {
-                    return ci.cblas_dznrm2(scast(c_int, n), x, scast(c_int, incx));
-                }
+            .complex => {
+                if (comptime meta.Scalar(meta.Child(X)) == f32)
+                    return linalg.cblas.scnrm2(n, x, incx)
+                else if (comptime meta.Scalar(meta.Child(X)) == f64)
+                    return linalg.cblas.dznrm2(n, x, incx);
             },
             else => {},
         }
     }
 
-    return _nrm2(n, x, incx, ctx);
+    if (opts.num_threads == 1)
+        return numeric.cast(linalg.blas.Nrm2(X), numeric.sqrt(k_nrm2_ssq(n, x, incx)));
+
+    var num_threads: usize = if (opts.num_threads == 0) blk: {
+        if (opts.parallel_threshold == 0)
+            break :blk options.max_threads;
+
+        break :blk int.max(1, numeric.cast(usize, n) / opts.parallel_threshold);
+    } else opts.num_threads;
+
+    num_threads = int.min(num_threads, options.max_threads);
+
+    if (num_threads <= 1)
+        return numeric.cast(linalg.blas.Nrm2(X), numeric.sqrt(k_nrm2_ssq(n, x, incx)));
+
+    num_threads = int.min(num_threads, std.Thread.getCpuCount() catch 1);
+
+    if (num_threads <= 1)
+        return numeric.cast(linalg.blas.Nrm2(X), numeric.sqrt(k_nrm2_ssq(n, x, incx)));
+
+    var threads: [options.max_threads]std.Thread = undefined;
+    var sums: [options.max_threads]meta.Accumulator(linalg.blas.Nrm2(X)) = .{numeric.zero(meta.Accumulator(linalg.blas.Nrm2(X)))} ** options.max_threads;
+
+    const Worker = struct {
+        fn execute(out: *meta.Accumulator(linalg.blas.Nrm2(X)), worker_n: isize, worker_x: X, worker_incx: isize) void {
+            out.* = k_nrm2_ssq(worker_n, worker_x, worker_incx);
+        }
+    };
+
+    const chunk_size = int.div(n, numeric.cast(isize, num_threads));
+    var spawn_err: ?anyerror = null;
+    var spawned_count: usize = 0;
+    var i: usize = 0;
+    while (i < num_threads) : (i += 1) {
+        const chunk_start = numeric.cast(isize, i) * chunk_size;
+        const chunk_end = if (i == num_threads - 1) n else chunk_start + chunk_size;
+
+        if (std.Thread.spawn(.{}, Worker.execute, .{
+            &sums[i],
+            chunk_end - chunk_start,
+            x + numeric.cast(usize, if (incx > 0)
+                chunk_start * incx
+            else
+                (-n + chunk_end) * incx),
+            incx,
+        })) |th| {
+            threads[i] = th;
+            spawned_count += 1;
+        } else |err| {
+            spawn_err = err;
+            break;
+        }
+    }
+
+    var ssq = numeric.zero(meta.Accumulator(linalg.blas.Nrm2(X)));
+    var t: usize = 0;
+    while (t < spawned_count) : (t += 1) {
+        threads[t].join();
+        numeric.add_(&ssq, ssq, sums[t]);
+    }
+
+    if (spawn_err) |err|
+        return err;
+
+    return numeric.cast(linalg.blas.Nrm2(X), numeric.sqrt(ssq));
 }
 
-fn _nrm2(
-    n: i32,
-    x: anytype,
-    incx: i32,
-    ctx: anytype,
-) !EnsureFloat(Scalar(Child(@TypeOf(x)))) {
-    const X: type = Child(@TypeOf(x));
+pub fn k_nrm2_ssq(n: isize, x: anytype, incx: isize) meta.Accumulator(linalg.blas.Nrm2(@TypeOf(x))) {
+    const X: type = @TypeOf(x);
 
-    if (n < 0) return blas.Error.InvalidArgument;
+    const len = numeric.cast(usize, n);
+    const unroll = 2 * (std.simd.suggestVectorLength(meta.Accumulator(linalg.blas.Nrm2(X))) orelse 2);
 
-    if (n == 0)
-        return try constants.zero(EnsureFloat(Scalar(X)), ctx);
+    var sums: [unroll]meta.Accumulator(linalg.blas.Nrm2(X)) = .{numeric.zero(meta.Accumulator(linalg.blas.Nrm2(X)))} ** unroll;
 
-    if (comptime types.isArbitraryPrecision(X)) {
-        // Orientative implementation for arbitrary precision types
-        var sum: EnsureFloat(Scalar(X)) = try ops.init(EnsureFloat(Scalar(X)), ctx);
-        errdefer ops.deinit(&sum, ctx);
-        var temp: EnsureFloat(Scalar(X)) = try ops.init(EnsureFloat(Scalar(X)), ctx);
-        defer ops.deinit(&temp, ctx);
+    if (incx == 1) {
+        var i: usize = 0;
+        while (i < (len / unroll) * unroll) : (i += unroll) {
+            inline for (0..unroll) |u| {
+                if (comptime meta.isComplex(meta.Child(X))) {
+                    // sums[u] += re(x[i + u])^2
+                    numeric.fma_(
+                        &sums[u],
+                        numeric.re(x[i + u]),
+                        numeric.re(x[i + u]),
+                        sums[u],
+                    );
 
-        var ix: i32 = if (incx < 0) (-n + 1) * incx else 0;
-        for (0..scast(u32, n)) |_| {
-            if (comptime types.isComplex(X)) {
-                try ops.abs2_(&temp, x[scast(u32, ix)], ctx);
+                    // sums[u] += im(x[i + u])^2
+                    numeric.fma_(
+                        &sums[u],
+                        numeric.im(x[i + u]),
+                        numeric.im(x[i + u]),
+                        sums[u],
+                    );
+                } else {
+                    // sums[u] += x[i + u]^2
+                    numeric.fma_(
+                        &sums[u],
+                        x[i + u],
+                        x[i + u],
+                        sums[u],
+                    );
+                }
+            }
+        }
+
+        while (i < len) : (i += 1) {
+            if (comptime meta.isComplex(meta.Child(X))) {
+                // sums[0] += re(x[i])^2
+                numeric.fma_(
+                    &sums[0],
+                    numeric.re(x[i]),
+                    numeric.re(x[i]),
+                    sums[0],
+                );
+
+                // sums[0] += im(x[i])^2
+                numeric.fma_(
+                    &sums[0],
+                    numeric.im(x[i]),
+                    numeric.im(x[i]),
+                    sums[0],
+                );
             } else {
-                try ops.pow_(&temp, x[scast(u32, ix)], 2, ctx);
+                // sums[0] += x[i]^2
+                numeric.fma_(
+                    &sums[0],
+                    x[i],
+                    x[i],
+                    sums[0],
+                );
+            }
+        }
+    } else {
+        var ix: isize = if (incx < 0) (-n + 1) * incx else 0;
+        var i: usize = 0;
+        while (i < (len / unroll) * unroll) : (i += unroll) {
+            inline for (0..unroll) |u| {
+                const idx = numeric.cast(usize, ix + numeric.cast(isize, u) * incx);
+                if (comptime meta.isComplex(meta.Child(X))) {
+                    // sums[0] += re(x[idx])^2
+                    numeric.fma_(
+                        &sums[0],
+                        numeric.re(x[idx]),
+                        numeric.re(x[idx]),
+                        sums[0],
+                    );
+
+                    // sums[0] += im(x[idx])^2
+                    numeric.fma_(
+                        &sums[0],
+                        numeric.im(x[idx]),
+                        numeric.im(x[idx]),
+                        sums[0],
+                    );
+                } else {
+                    // sums[0] += x[idx]^2
+                    numeric.fma_(
+                        &sums[0],
+                        x[idx],
+                        x[idx],
+                        sums[0],
+                    );
+                }
             }
 
-            try ops.add_(&sum, sum, temp, ctx);
+            ix += numeric.cast(isize, unroll) * incx;
+        }
+
+        while (i < len) : (i += 1) {
+            const idx = numeric.cast(usize, ix);
+            if (comptime meta.isComplex(meta.Child(X))) {
+                // sums[0] += re(x[idx])^2
+                numeric.fma_(
+                    &sums[0],
+                    numeric.re(x[idx]),
+                    numeric.re(x[idx]),
+                    sums[0],
+                );
+
+                // sums[0] += im(x[idx])^2
+                numeric.fma_(
+                    &sums[0],
+                    numeric.im(x[idx]),
+                    numeric.im(x[idx]),
+                    sums[0],
+                );
+            } else {
+                // sums[0] += x[idx]^2
+                numeric.fma_(
+                    &sums[0],
+                    x[idx],
+                    x[idx],
+                    sums[0],
+                );
+            }
 
             ix += incx;
         }
-
-        try ops.sqrt_(&sum, sum, ctx);
-        //return sum;
-
-        @compileError("zml.linalg.blas.nrm2 not implemented for arbitrary precision types yet");
-    } else {
-        const huge: EnsureFloat(Scalar(X)) = std.math.floatMax(EnsureFloat(Scalar(X)));
-        const tsml: EnsureFloat(Scalar(X)) = float.pow(2, float.ceil((std.math.floatExponentMin(EnsureFloat(Scalar(X))) - 1) * @as(EnsureFloat(Scalar(X)), 0.5)));
-        const tbig: EnsureFloat(Scalar(X)) = float.pow(2, float.floor((std.math.floatExponentMax(EnsureFloat(Scalar(X))) - @bitSizeOf(EnsureFloat(Scalar(X))) + 1) * @as(EnsureFloat(Scalar(X)), 0.5)));
-        const ssml: EnsureFloat(Scalar(X)) = float.pow(2, -float.floor((std.math.floatExponentMin(EnsureFloat(Scalar(X))) - @bitSizeOf(EnsureFloat(Scalar(X)))) * @as(EnsureFloat(Scalar(X)), 0.5)));
-        const sbig: EnsureFloat(Scalar(X)) = float.pow(2, -float.ceil((std.math.floatExponentMax(EnsureFloat(Scalar(X))) + @bitSizeOf(EnsureFloat(Scalar(X))) - 1) * @as(EnsureFloat(Scalar(X)), 0.5)));
-
-        var scl: EnsureFloat(Scalar(X)) = 1;
-        var sumsq: EnsureFloat(Scalar(X)) = 0;
-
-        var abig: EnsureFloat(Scalar(X)) = 0;
-        var amed: EnsureFloat(Scalar(X)) = 0;
-        var asml: EnsureFloat(Scalar(X)) = 0;
-
-        var notbig: bool = true;
-
-        if (comptime types.numericType(X) == .cfloat) {
-            var ix: i32 = if (incx < 0) (-n + 1) * incx else 0;
-            for (0..scast(u32, n)) |_| {
-                var ax: EnsureFloat(Scalar(X)) = float.abs(x[scast(u32, ix)].re);
-                if (ax > tbig) {
-                    abig += (ax * sbig) * (ax * sbig);
-                    notbig = false;
-                } else if (ax < tsml) {
-                    if (notbig) asml += (ax * ssml) * (ax * ssml);
-                } else {
-                    amed += ax * ax;
-                }
-
-                ax = float.abs(x[scast(u32, ix)].im);
-                if (ax > tbig) {
-                    abig += (ax * sbig) * (ax * sbig);
-                    notbig = false;
-                } else if (ax < tsml) {
-                    if (notbig) asml += (ax * ssml) * (ax * ssml);
-                } else {
-                    amed += ax * ax;
-                }
-
-                ix += incx;
-            }
-        } else {
-            var ix: i32 = if (incx < 0) (-n + 1) * incx else 0;
-            for (0..scast(u32, n)) |_| {
-                const ax: EnsureFloat(Scalar(X)) = float.abs(x[scast(u32, ix)]);
-                if (ax > tbig) {
-                    abig += (ax * sbig) * (ax * sbig);
-                    notbig = false;
-                } else if (ax < tsml) {
-                    if (notbig) asml += (ax * ssml) * (ax * ssml);
-                } else {
-                    amed += ax * ax;
-                }
-
-                ix += incx;
-            }
-        }
-
-        if (abig > 0) {
-            if (amed > 0 or amed > huge or amed != amed) {
-                abig += (amed * sbig) * (amed * sbig);
-            }
-            scl = 1 / sbig;
-            sumsq = abig;
-        } else if (asml > 0) {
-            if (amed > 0 or amed > huge or amed != amed) {
-                const sqrt_amed = float.sqrt(amed);
-                const sqrt_asml = float.sqrt(asml) / ssml;
-                const ymin = if (sqrt_asml > sqrt_amed) sqrt_amed else sqrt_asml;
-                const ymax = if (sqrt_asml > sqrt_amed) sqrt_asml else sqrt_amed;
-                scl = 1;
-                sumsq = (ymax * ymax) * (1 + (ymin / ymax) * (ymin / ymax));
-            } else {
-                scl = 1 / ssml;
-                sumsq = asml;
-            }
-        } else {
-            scl = 1;
-            sumsq = amed;
-        }
-
-        return scl * float.sqrt(sumsq);
     }
+
+    var ssq = numeric.zero(meta.Accumulator(linalg.blas.Nrm2(X)));
+    inline for (0..unroll) |u| {
+        numeric.add_(&ssq, ssq, sums[u]);
+    }
+
+    return ssq;
 }

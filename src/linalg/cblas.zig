@@ -99,10 +99,10 @@ pub const dswap = cblas_dswap;
 pub const cswap = cblas_cswap;
 pub const zswap = cblas_zswap;
 
-extern fn cblas_isamax(n: isize, x: [*c]const f32, incx: isize) isize;
-extern fn cblas_idamax(n: isize, x: [*c]const f64, incx: isize) isize;
-extern fn cblas_icamax(n: isize, x: *const anyopaque, incx: isize) isize;
-extern fn cblas_izamax(n: isize, x: *const anyopaque, incx: isize) isize;
+extern fn cblas_isamax(n: isize, x: [*c]const f32, incx: isize) usize;
+extern fn cblas_idamax(n: isize, x: [*c]const f64, incx: isize) usize;
+extern fn cblas_icamax(n: isize, x: *const anyopaque, incx: isize) usize;
+extern fn cblas_izamax(n: isize, x: *const anyopaque, incx: isize) usize;
 pub const isamax = cblas_isamax;
 pub const idamax = cblas_idamax;
 pub const icamax = cblas_icamax;

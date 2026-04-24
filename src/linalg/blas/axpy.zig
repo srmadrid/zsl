@@ -26,7 +26,7 @@ const linalg = @import("../../linalg.zig");
 /// linalg.blas.axpy(n: isize, alpha: Al, x: [*]const X, incx: isize, y: [*]Y, incy: isize) !void
 /// ```
 ///
-/// ## Argument
+/// ## Arguments
 /// * `n` (`isize`): Specifies the number of elements in vectors `x` and `y`.
 ///   Must be greater than 0.
 /// * `alpha` (`anytype`): Specifies the scalar `alpha`.

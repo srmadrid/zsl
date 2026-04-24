@@ -1,153 +1,202 @@
 const std = @import("std");
+const options = @import("options");
 
-const types = @import("../../types.zig");
-const scast = types.scast;
-const Scalar = types.Scalar;
-const ops = @import("../../ops.zig");
-const float = @import("../../float.zig");
+const meta = @import("../../meta.zig");
 
-const blas = @import("../blas.zig");
+const numeric = @import("../../numeric.zig");
 
-/// Finds the index of the element with the smallest absolute value.
+const int = @import("../../int.zig");
+
+const linalg = @import("../../linalg.zig");
+
+/// Finds the (0-based) index of the element with the smallest magnitude:
 ///
-/// Given a vector `x`, the `iamin` routine returns the position of the vector
-/// element `x[i]` that has the smallest absolute value for real vectors, or the
-/// smallest sum `|x[i].re| + |x[i].im|` for complex vectors.
-///
-/// If more than one vector element is found with the same smallest absolute
-/// value, the index of the first one encountered is returned.
-///
-/// Signature
-/// ---------
 /// ```zig
-/// fn iamin(n: i32, x: [*]const X, incx: i32, ctx: anytype) !u32
+/// argmin_i abs1(x[i]),   for i in 0..n
 /// ```
 ///
-/// Parameters
-/// ----------
-/// `n` (`i32`): Specifies the number of elements in vector `x`. Must be
-/// greater than 0.
+/// If multiple elements share the minimum value, the smallest index is
+/// returned.
 ///
-/// `x` (many-item pointer to `int`, `float`, `cfloat`, `integer`, `rational`,
-/// `real`, `complex` or `expression`): Array, size at least
-/// `1 + (n - 1) * abs(incx)`.
+/// If the `link_cblas` option is not `null`, the function will try to call
+/// the corresponding CBLAS function.
 ///
-/// `incx` (`i32`): Specifies the increment for indexing vector `x`. Must be
-/// greater than 0.
+/// ## Signature
+/// ```zig
+/// linalg.blas.iamin(n: isize, x: [*]const X, incx: isize) !usize
+/// ```
 ///
-/// Returns
-/// -------
-/// `u32`: The index of the element with the smallest absolute value in `x`.
+/// ## Arguments
+/// * `n` (`isize`): Number of elements in `x`. Must be greater than 0.
+/// * `x` (`anytype`): Array, size at least `1 + (n - 1) * abs(incx)`.
+/// * `incx` (`isize`): Indexing increment. Must be different from 0.
+/// * `opts`: Optional parameters:
+///   * `num_threads` (`usize = 0`): Number of threads to spawn:
+///     * `0`: automatic. The thread count is derived from `n` and
+///       `parallel_threshold`:
+///       ```zig
+///       threads = max(1, min(std.Thread.getCpuCount(), options.max_threads, n / parallel_threshold))
+///       ```
+///     * `1`: force serial execution. `parallel_threshold` is ignored.
+///     * `N >= 2`: use exactly `N` threads, clamped by
+///       `std.Thread.getCpuCount()` and `options.max_threads` as a hard
+///       safety ceiling. `parallel_threshold` is ignored.
+///   * `parallel_threshold` (`usize = 2_097_152 / @sizeOf(meta.Child(X))`):
+///     Minimum number of elements required to trigger multithreaded
+///     execution.
 ///
-/// Errors
-/// ------
-/// `linalg.blas.Error.InvalidArgument`: If `n` or `incx` is less than or equal
-/// to 0.
+/// ## Returns
+/// `usize`: The 0-based index of the first element with the smallest magnitude.
 ///
-/// Notes
-/// -----
-/// If the `link_cblas` option is not `null`, the function will try to call the
-/// corresponding CBLAS function, if available. In that case, no errors will be
-/// raised even if the arguments are invalid.
+/// ## Errors
+/// * `linalg.blas.Error.InvalidArgument`: If `n` is less than or equal to 0,
+///   or `incx` is equal to 0.
 pub fn iamin(
-    n: i32,
+    n: isize,
     x: anytype,
-    incx: i32,
-    ctx: anytype,
-) !u32 {
-    comptime var X: type = @TypeOf(x);
+    incx: isize,
+    opts: struct {
+        num_threads: usize = 0,
+        parallel_threshold: usize = 2_097_152 / @sizeOf(meta.Child(@TypeOf(x))),
+    },
+) !usize {
+    const X: type = @TypeOf(x);
 
-    comptime if (!types.isManyPointer(X))
-        @compileError("zml.linalg.blas.iamin requires x to be a many-item pointer, got " ++ @typeName(X));
+    if (n <= 0 or incx == 0)
+        return linalg.blas.Error.InvalidArgument;
 
-    X = types.Child(X);
-
-    comptime if (!types.isNumeric(X) or X == bool)
-        @compileError("zml.linalg.blas.iamin requires x's child type to be a non bool numeric, got " ++ @typeName(X));
-
-    comptime if (types.isArbitraryPrecision(X)) {
-        // When implemented, expand if
-        // Might need but only when arbitrary p complex
-        @compileError("zml.linalg.blas.iamin not implemented for arbitrary precision types yet");
-    } else {
-        types.validateContext(@TypeOf(ctx), .{});
-    };
-
-    if (comptime options.link_cblas != null) {
-        switch (comptime types.numericType(X)) {
+    if ((comptime options.link_cblas != null) and incx > 0) {
+        switch (comptime meta.numericType(meta.Child(X))) {
             .float => {
-                if (comptime X == f32) {
-                    return types.scast(u32, ci.cblas_isamin(scast(c_int, n), x, scast(c_int, incx)));
-                } else if (comptime X == f64) {
-                    return types.scast(u32, ci.cblas_idamin(scast(c_int, n), x, scast(c_int, incx)));
-                }
+                if (comptime meta.Child(X) == f32)
+                    return linalg.cblas.isamin(n, x, incx)
+                else if (comptime meta.Child(X) == f64)
+                    return linalg.cblas.idamin(n, x, incx);
             },
-            .cfloat => {
-                if (comptime Scalar(X) == f32) {
-                    return types.scast(u32, ci.cblas_icamin(scast(c_int, n), x, scast(c_int, incx)));
-                } else if (comptime Scalar(X) == f64) {
-                    return types.scast(u32, ci.cblas_izamin(scast(c_int, n), x, scast(c_int, incx)));
-                }
+            .complex => {
+                if (comptime meta.Scalar(meta.Child(X)) == f32)
+                    return linalg.cblas.icamin(n, x, incx)
+                else if (comptime meta.Scalar(meta.Child(X)) == f64)
+                    return linalg.cblas.izamin(n, x, incx);
             },
             else => {},
         }
     }
 
-    return _iamin(n, x, incx, ctx);
+    if (opts.num_threads == 1)
+        return k_iamin(n, x, incx).index;
+
+    var num_threads: usize = if (opts.num_threads == 0) blk: {
+        if (opts.parallel_threshold == 0)
+            break :blk options.max_threads;
+
+        break :blk int.max(1, numeric.cast(usize, n) / opts.parallel_threshold);
+    } else opts.num_threads;
+
+    num_threads = int.min(num_threads, options.max_threads);
+
+    if (num_threads <= 1)
+        return k_iamin(n, x, incx).index;
+
+    num_threads = int.min(num_threads, std.Thread.getCpuCount() catch 1);
+
+    if (num_threads <= 1)
+        return k_iamin(n, x, incx).index;
+
+    var threads: [options.max_threads]std.Thread = undefined;
+    var results: [options.max_threads]IaminResult(numeric.Abs1(meta.Child(X))) = .{IaminResult(numeric.Abs1(meta.Child(X))){ .value = numeric.zero(numeric.Abs1(meta.Child(X))), .index = 0 }} ** options.max_threads;
+    var chunk_bases: [options.max_threads]usize = .{0} ** options.max_threads;
+
+    const Worker = struct {
+        fn execute(out: *IaminResult(numeric.Abs1(meta.Child(X))), worker_n: isize, worker_x: X, worker_incx: isize) void {
+            out.* = k_iamin(worker_n, worker_x, worker_incx);
+        }
+    };
+
+    const chunk_size = int.div(n, numeric.cast(isize, num_threads));
+    var spawn_err: ?anyerror = null;
+    var spawned_count: usize = 0;
+    var i: usize = 0;
+    while (i < num_threads) : (i += 1) {
+        const chunk_start = numeric.cast(isize, i) * chunk_size;
+        const chunk_end = if (i == num_threads - 1) n else chunk_start + chunk_size;
+
+        chunk_bases[i] = numeric.cast(usize, chunk_start);
+
+        if (std.Thread.spawn(.{}, Worker.execute, .{
+            &results[i],
+            chunk_end - chunk_start,
+            x + numeric.cast(usize, if (incx > 0)
+                chunk_start * incx
+            else
+                (-n + chunk_end) * incx),
+            incx,
+        })) |th| {
+            threads[i] = th;
+            spawned_count += 1;
+        } else |err| {
+            spawn_err = err;
+            break;
+        }
+    }
+
+    var best: IaminResult(numeric.Abs1(meta.Child(X))) = .{ .value = numeric.zero(numeric.Abs1(meta.Child(X))), .index = 0 };
+    var best_found = false;
+    var t: usize = 0;
+    while (t < spawned_count) : (t += 1) {
+        threads[t].join();
+        if (!best_found or numeric.lt(results[t].value, best.value)) {
+            best = .{ .value = results[t].value, .index = chunk_bases[t] + results[t].index };
+            best_found = true;
+        }
+    }
+
+    if (spawn_err) |err|
+        return err;
+
+    return best.index;
 }
 
-fn _iamin(
-    n: i32,
-    x: anytype,
-    incx: i32,
-    ctx: anytype,
-) !u32 {
-    const X: type = types.Child(@TypeOf(x));
+pub fn IaminResult(N: type) type {
+    return struct {
+        value: N,
+        index: usize,
+    };
+}
 
-    if (n <= 0 or incx <= 0) return blas.Error.InvalidArgument;
+pub fn k_iamin(n: isize, x: anytype, incx: isize) IaminResult(numeric.Abs1(meta.Child(@TypeOf(x)))) {
+    const len = numeric.cast(usize, n);
 
-    if (n == 1) return 0;
+    var best_value = if (incx == 1)
+        numeric.abs1(x[0])
+    else
+        numeric.abs1(x[numeric.cast(usize, if (incx < 0) (-n + 1) * incx else 0)]);
+    var best_index: usize = 0;
 
-    var imin: u32 = 0;
-
-    if (comptime !types.isArbitraryPrecision(X)) {
-        if (comptime !types.isComplex(X)) {
-            var min: X = ops.abs(x[0], ctx) catch unreachable;
-            var ix: i32 = if (incx < 0) (-n + 2) * incx else incx;
-            for (1..scast(u32, n)) |i| {
-                const absx: X = ops.abs(x[scast(u32, ix)], ctx) catch unreachable;
-                if (ops.lt(absx, min, ctx) catch unreachable) {
-                    min = absx;
-                    imin = scast(u32, i);
-                }
-
-                ix += incx;
-            }
-        } else {
-            var min: Scalar(X) = ops.add(
-                ops.abs(x[0].re, ctx) catch unreachable,
-                ops.abs(x[0].im, ctx) catch unreachable,
-                ctx,
-            ) catch unreachable;
-            var ix: i32 = if (incx < 0) (-n + 2) * incx else incx;
-            for (1..scast(u32, n)) |i| {
-                const absx: Scalar(X) = ops.add(
-                    ops.abs(x[scast(u32, ix)].re, ctx) catch unreachable,
-                    ops.abs(x[scast(u32, ix)].im, ctx) catch unreachable,
-                    ctx,
-                ) catch unreachable;
-                if (ops.lt(absx, min, ctx) catch unreachable) {
-                    min = absx;
-                    imin = scast(u32, i);
-                }
-
-                ix += incx;
+    if (incx == 1) {
+        var i: usize = 1;
+        while (i < len) : (i += 1) {
+            const temp = numeric.abs1(x[i]);
+            if (numeric.lt(temp, best_value)) {
+                best_value = temp;
+                best_index = i;
             }
         }
     } else {
-        // On abs, copy = false
-        @compileError("zml.linalg.blas.iamin not implemented for arbitrary precision types yet");
+        var ix: isize = if (incx < 0) (-n + 1) * incx else 0;
+
+        ix += incx;
+
+        var i: usize = 1;
+        while (i < len) : (i += 1) {
+            const temp = numeric.abs1(x[numeric.cast(usize, ix)]);
+            if (numeric.lt(temp, best_value)) {
+                best_value = temp;
+                best_index = i;
+            }
+            ix += incx;
+        }
     }
 
-    return imin;
+    return .{ .value = best_value, .index = best_index };
 }

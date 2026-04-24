@@ -176,7 +176,7 @@ pub fn k_dot(n: isize, x: anytype, incx: isize, y: anytype, incy: isize) meta.Ac
     const Y: type = @TypeOf(y);
 
     const len = numeric.cast(usize, n);
-    const unroll = 2 * (std.simd.suggestVectorLength(numeric.Mul(meta.Child(X), meta.Child(Y))) orelse 2);
+    const unroll = 2 * (std.simd.suggestVectorLength(meta.Accumulator(linalg.blas.Dot(X, Y))) orelse 2);
 
     var sums: [unroll]meta.Accumulator(linalg.blas.Dot(X, Y)) = .{numeric.zero(meta.Accumulator(linalg.blas.Dot(X, Y)))} ** unroll;
 

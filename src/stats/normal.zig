@@ -54,62 +54,28 @@ pub fn Normal(comptime N: type) type {
         /// `N`: A random value normally distributed with mean `mu` and standard
         /// deviation `sigma`.
         pub fn sample(self: Self, prng: std.Random) N {
-            switch (comptime meta.numericType(N)) {
-                .bool, .int => unreachable,
-                .float, .dyadic => {
-                    var u: N = undefined;
-                    var v: N = undefined;
-                    var s: N = undefined;
+            var u: meta.Real(N) = undefined;
+            var v: meta.Real(N) = undefined;
+            var s: meta.Real(N) = undefined;
 
-                    while (true) {
-                        u = numeric.sub(numeric.mul(numeric.two(N), utils.standardUniform(N, prng)), numeric.one(N));
-                        v = numeric.sub(numeric.mul(numeric.two(N), utils.standardUniform(N, prng)), numeric.one(N));
-                        s = numeric.add(numeric.mul(u, u), numeric.mul(v, v));
+            while (true) {
+                u = numeric.sub(numeric.mul(numeric.two(meta.Real(N)), utils.standardUniform(meta.Real(N), prng)), numeric.one(meta.Real(N)));
+                v = numeric.sub(numeric.mul(numeric.two(meta.Real(N)), utils.standardUniform(meta.Real(N), prng)), numeric.one(meta.Real(N)));
+                s = numeric.add(numeric.mul(u, u), numeric.mul(v, v));
 
-                        if (numeric.gt(s, numeric.zero(N)) and numeric.lt(s, numeric.one(N)))
-                            break;
-                    }
-
-                    return numeric.add(
-                        self.mu,
-                        numeric.mul(
-                            self.sigma,
-                            numeric.mul(
-                                u,
-                                numeric.sqrt(numeric.mul(
-                                    numeric.neg(numeric.two(N)),
-                                    numeric.div(
-                                        numeric.ln(s),
-                                        s,
-                                    ),
-                                )),
-                            ),
-                        ),
-                    );
-                },
-                .complex => {
-                    var u: meta.Scalar(N) = undefined;
-                    var v: meta.Scalar(N) = undefined;
-                    var s: meta.Scalar(N) = undefined;
-
-                    while (true) {
-                        u = numeric.sub(numeric.mul(numeric.two(meta.Scalar(N)), utils.standardUniform(meta.Scalar(N), prng)), numeric.one(meta.Scalar(N)));
-                        v = numeric.sub(numeric.mul(numeric.two(meta.Scalar(N)), utils.standardUniform(meta.Scalar(N), prng)), numeric.one(meta.Scalar(N)));
-                        s = numeric.add(numeric.mul(u, u), numeric.mul(v, v));
-
-                        if (numeric.gt(s, numeric.zero(meta.Scalar(N))) and numeric.lt(s, numeric.one(meta.Scalar(N))))
-                            break;
-                    }
-
-                    const tmp = numeric.sqrt(numeric.mul(numeric.neg(numeric.two(meta.Scalar(N))), numeric.div(numeric.ln(s), s)));
-
-                    return .{
-                        .re = numeric.add(self.mu.re, numeric.mul(self.sigma.re, numeric.mul(u, tmp))),
-                        .im = numeric.add(self.mu.im, numeric.mul(self.sigma.im, numeric.mul(v, tmp))),
-                    };
-                },
-                .custom => @compileError("zsl.stats.Normal(N).sample: not implemented for custom types yet"),
+                if (numeric.gt(s, numeric.zero(meta.Real(N))) and numeric.lt(s, numeric.one(meta.Real(N))))
+                    break;
             }
+
+            const temp = numeric.sqrt(numeric.mul(numeric.neg(numeric.two(meta.Real(N))), numeric.div(numeric.ln(s), s)));
+
+            if (comptime !meta.isComplex(N))
+                return numeric.add(self.mu, numeric.mul(self.sigma, numeric.mul(u, temp)))
+            else
+                return .{
+                    .re = numeric.add(self.mu.re, numeric.mul(self.sigma.re, numeric.mul(u, temp))),
+                    .im = numeric.add(self.mu.im, numeric.mul(self.sigma.im, numeric.mul(v, temp))),
+                };
         }
     };
 }

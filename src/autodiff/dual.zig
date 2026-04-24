@@ -28,7 +28,8 @@ pub fn Dual(comptime N: type) type {
         pub const is_complex = meta.isComplex(N);
 
         pub const Accumulator = Dual(meta.Accumulator(N));
-        pub const Scalar = Dual(meta.Scalar(N));
+        pub const Real = Dual(meta.Real(N));
+        pub const Scalar = N;
 
         pub const empty: autodiff.Dual(N) = .{
             .val = undefined,
@@ -186,7 +187,7 @@ pub fn Abs1(comptime X: type) type {
     comptime if (!meta.isNumeric(X) or !isDual(X))
         @compileError("zsl.autodiff.dual.abs1: x must be a dual, got\n\tx: " ++ @typeName(X) ++ "\n");
 
-    return Dual(numeric.Abs(meta.Scalar(X)));
+    return Dual(numeric.Abs1(meta.Scalar(X)));
 }
 
 pub fn abs1(x: anytype) autodiff.dual.Abs1(@TypeOf(x)) {
@@ -215,7 +216,7 @@ pub fn Abs2(comptime X: type) type {
     comptime if (!meta.isNumeric(X) or !isDual(X))
         @compileError("zsl.autodiff.dual.abs2: x must be a dual, got\n\tx: " ++ @typeName(X) ++ "\n");
 
-    return Dual(numeric.Abs(meta.Scalar(X)));
+    return Dual(numeric.Abs2(meta.Scalar(X)));
 }
 
 pub fn abs2(x: anytype) autodiff.dual.Abs2(@TypeOf(x)) {

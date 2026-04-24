@@ -13,7 +13,7 @@ pub fn Asum(X: type) type {
     comptime if (!meta.isManyItemPointer(X) or !meta.isNumeric(meta.Child(X)))
         @compileError("zsl.linalg.blas.asum: x must be a many-item pointer to numerics, got \n\tx: " ++ @typeName(X) ++ "\n");
 
-    return meta.Scalar(meta.Child(X));
+    return numeric.Abs1(meta.Child(X));
 }
 
 /// Computes the sum of magnitudes of the elements of a real vector, or the sum
@@ -164,7 +164,7 @@ pub fn k_asum(n: isize, x: anytype, incx: isize) meta.Accumulator(linalg.blas.As
     const X: type = @TypeOf(x);
 
     const len = numeric.cast(usize, n);
-    const unroll = 2 * (std.simd.suggestVectorLength(meta.Child(X)) orelse 2);
+    const unroll = 2 * (std.simd.suggestVectorLength(meta.Accumulator(linalg.blas.Asum(X))) orelse 2);
 
     var sums: [unroll]meta.Accumulator(linalg.blas.Asum(X)) = .{numeric.zero(meta.Accumulator(linalg.blas.Asum(X)))} ** unroll;
 

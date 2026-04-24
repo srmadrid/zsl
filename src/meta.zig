@@ -576,6 +576,33 @@ pub fn Scalar(comptime T: type) type {
     }
 }
 
+pub fn Real(comptime N: type) type {
+    if (comptime !isNumeric(N))
+        @compileError("zsl.meta.Real: " ++ @typeName(N) ++ " is not a numeric type");
+
+    switch (comptime numericType(N)) {
+        .bool => return N,
+        .int => return N,
+        .float => return N,
+        .dyadic => return N,
+        .complex => switch (comptime N) {
+            std.math.Complex(f16) => return f16,
+            std.math.Complex(f32) => return f32,
+            std.math.Complex(f64) => return f64,
+            std.math.Complex(f80) => return f80,
+            std.math.Complex(f128) => return f128,
+            std.math.Complex(comptime_float) => return comptime_float,
+            else => return N.Real,
+        },
+        .custom => {
+            if (comptime !@hasDecl(N, "Real"))
+                @compileError("zsl.meta.Real: custom numeric type " ++ @typeName(N) ++ " must have a `Real` declaration");
+
+            return N.Real;
+        },
+    }
+}
+
 /// Returns the underlying numeric type of a given numeric type, vector, matrix
 /// or array.
 ///

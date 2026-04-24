@@ -23,6 +23,7 @@ const linalg = @import("../../linalg.zig");
 /// ## Signature
 /// ```zig
 /// linalg.blas.copy(n: isize, x: [*]const X, incx: isize, y: [*]Y, incy: isize) !void
+/// ```
 ///
 /// ## Arguments
 /// * `n` (`isize`): Specifies the number of elements in vectors `x` and `y`.

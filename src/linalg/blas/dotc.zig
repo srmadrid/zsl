@@ -30,6 +30,7 @@ pub fn Dotc(X: type, Y: type) type {
 /// ## Signature
 /// ```zig
 /// linalg.blas.dotc(n: isize, x: [*]const X, incx: isize, y: [*]const Y, incy: isize) !linalg.blas.Dotc([*]const X, [*]const Y)
+/// ```
 ///
 /// ## Arguments
 /// * `n` (`isize`): Specifies the number of elements in vectors `x` and `y`.
@@ -175,7 +176,7 @@ pub fn k_dotc(n: isize, x: anytype, incx: isize, y: anytype, incy: isize) meta.A
     const Y: type = @TypeOf(y);
 
     const len = numeric.cast(usize, n);
-    const unroll = 2 * (std.simd.suggestVectorLength(numeric.Mul(numeric.Conj(meta.Child(X)), meta.Child(Y))) orelse 2);
+    const unroll = 2 * (std.simd.suggestVectorLength(meta.Accumulator(linalg.blas.Dotc(X, Y))) orelse 2);
 
     var sums: [unroll]meta.Accumulator(linalg.blas.Dotc(X, Y)) = .{numeric.zero(meta.Accumulator(linalg.blas.Dotc(X, Y)))} ** unroll;
 

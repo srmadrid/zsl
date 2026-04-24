@@ -60,8 +60,8 @@ pub fn Uniform(N: type) type {
                     return numeric.add(self.min, numeric.mul(u, numeric.sub(self.max, self.min)));
                 },
                 .complex => {
-                    const u_re = utils.standardUniform(meta.Scalar(N), prng);
-                    const u_im = utils.standardUniform(meta.Scalar(N), prng);
+                    const u_re = utils.standardUniform(meta.Real(N), prng);
+                    const u_im = utils.standardUniform(meta.Real(N), prng);
                     return .{
                         .re = numeric.add(self.min.re, numeric.mul(u_re, numeric.sub(self.max.re, self.min.re))),
                         .im = numeric.add(self.min.im, numeric.mul(u_im, numeric.sub(self.max.im, self.min.im))),

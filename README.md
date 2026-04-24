@@ -2,23 +2,22 @@
 
 A generic numerical and symbolic mathematics library for Zig.
 
-## Warning
+> ⚠️ Zsl is in the early stages of development. APIs change frequently, results may be incorrect, and many features are missing or partial. Use with care, and please [open an issue](https://github.com/srmadrid/zsl/issues) if you hit a bug or have a suggestion.
 
-This library is in the early stages of development and might return incorrect results. Breaking changes are to be expected every commit, and only the most basic functionality is currently implemented.
+## Why zsl?
+
+Zsl lets you write numerical code once and run it over whatever numeric type your problem actually needs, e.g., `f32`, `f64`, dyadic rationals, complex numbers, or any custom numeric type, without incurring any unnecessary runtime cost.
 
 ## Current Features
 
-- Core:
-  - Math:
-    - Accurate math functions for all floating point types
-  - Types:
-    - Rationals
-    - Dyadic rationals
-    - Complexes
+- Numeric types:
+  - Dyadic rationals
+  - Complex numbers
 - Vectors (`vector`):
   - Two storage formats:
     - `Dense`
     - `Sparse`
+  - Vector addition/subtraction and scalar multiplication/division
 - Matrices (`matrix`):
   - Diverse storage formats:
     - General (`general`):
@@ -35,7 +34,7 @@ This library is in the early stages of development and might return incorrect re
       - `Sparse` (CSR, CSC)
     - `Diagonal`
     - `Permutation`
-  - Matrix addition/subtraction and scalar multiplication/division
+  - Matrix addition/subtraction/multiplication and scalar multiplication/division
   - Views
 - N-dimensional arrays (`array`):
   - Two storage formats:
@@ -53,7 +52,7 @@ This library is in the early stages of development and might return incorrect re
     - QR (no pivoting (`qr`), column pivoting (`qrp`))
   - BLAS routines (`blas`)
   - Select LAPACK routines (`lapack`)
-- Automatic Differentiation (`autodiff`): currently only used for testing generic numeric type support
+- Automatic Differentiation (`autodiff`):
   - Dual numbers
 - Symbolic System:
   - Nothing implemented yet
@@ -73,8 +72,10 @@ const zsl = b.dependency("zsl", .{});
 exe.root_module.addImport("zsl", zsl.module("zsl"));
 ```
 
-## Notes
-
-This library is in the early stages of development and is not yet ready for use. Breaking changes are to be expected every commit, and only the most basic functionality is currently implemented (see [Current Features](#current-features) for more information). If you decide to use this library, please be aware that you may encounter bugs and incomplete features. If you find a bug, please report it via an issue on GitHub.
-
-Any feature requests or suggestions are welcome. Please open an issue on GitHub to discuss any ideas you have.
+## Contributing
+ 
+Contributions are very welcome. Feel free to open an issue or pr.
+ 
+## License
+ 
+zsl is released under the MIT License. See [LICENSE](LICENSE) for the full text.
