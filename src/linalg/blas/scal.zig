@@ -29,9 +29,9 @@ const linalg = @import("../../linalg.zig");
 /// * `n` (`isize`): Specifies the number of elements in vectors `x` and `y`.
 ///   Must be greater than 0.
 /// * `alpha` (`anytype`): Specifies the scalar `alpha`.
-/// * `x` (`anytype`): Array, size at least `1 + (n - 1) * abs(incx)`.
-/// * `incx` (`isize`): Specifies the increment for indexing vector `x`. Must be
-///   different from 0.
+/// * `x` (`anytype`): Many-item pointer, size at least
+///   `1 + (n - 1) * abs(incx)`.
+/// * `incx` (`isize`): Indexing increment for `x`. Must be different from 0.
 /// * `opts`: Optional parameters:
 ///   * `num_threads` (`usize = 0`): Number of threads to spawn:
 ///     * `0`: automatic. The thread count is derived from `n` and
@@ -84,9 +84,9 @@ pub fn scal(
             },
             .complex => {
                 if (comptime meta.Scalar(Al) == f32)
-                    return linalg.cblas.cscal(n, alpha, x, incx)
+                    return linalg.cblas.cscal(n, &alpha, x, incx)
                 else if (comptime meta.Scalar(Al) == f64)
-                    return linalg.cblas.zscal(n, alpha, x, incx);
+                    return linalg.cblas.zscal(n, &alpha, x, incx);
             },
             else => {},
         }

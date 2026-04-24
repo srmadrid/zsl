@@ -2,39 +2,319 @@ const std = @import("std");
 const zsl = @import("zsl");
 
 pub fn main(init: std.process.Init) !void {
-    @setEvalBranchQuota(10000);
-
     const io = init.io;
+    var gpa: std.heap.DebugAllocator(.{}) = .{ .backing_allocator = init.gpa };
+    defer _ = gpa.deinit();
+    const allocator = gpa.allocator();
+    const benchmark = true;
 
+    var m: isize = 1_000_000 * (if (benchmark) 1 else 1);
+    _ = &m;
+    var n: isize = 1_500_000 * (if (benchmark) 1 else 1);
+    _ = &n;
+    var kl: isize = 500;
+    _ = &kl;
+    var ku: isize = 350;
+    _ = &ku;
+
+    const lda = kl + ku + 1;
+    const a = try allocator.alloc(f64, zsl.numeric.cast(usize, lda * n));
+    defer allocator.free(a);
+    const x = try allocator.alloc(f64, zsl.numeric.cast(usize, n));
+    defer allocator.free(x);
+    const y = try allocator.alloc(f64, zsl.numeric.cast(usize, m));
+    defer allocator.free(y);
+    for (a, 0..) |*v, i| v.* = @as(f64, @floatFromInt(i % 100)) / 100.0;
+    for (x, 0..) |*v, i| v.* = @as(f64, @floatFromInt(i % 33)) / 100.0;
+    for (y) |*v| v.* = 0;
+
+    const start_time = std.Io.Clock.real.now(io);
+    try zsl.linalg.blas.gbmv(
+        .col_major,
+        .no_trans,
+        m,
+        n,
+        kl,
+        ku,
+        @as(f64, 2.0),
+        a.ptr,
+        lda,
+        x.ptr,
+        1,
+        @as(f64, 1.0),
+        y.ptr,
+        1,
+    );
+    const end_time = std.Io.Clock.real.now(io);
+
+    std.debug.print(
+        "zsl.linalg.blas.gbmv ({} x {}, kl={}, ku={}) took {d} seconds\n",
+        .{
+            m,                                                                                                                           n, kl, ku,
+            (zsl.numeric.cast(f128, end_time.toNanoseconds()) - zsl.numeric.cast(f128, start_time.toNanoseconds())) / std.time.ns_per_s,
+        },
+    );
+}
+
+pub fn blas_lv1_threshold_calibration(init: std.process.Init) !void {
+    @setEvalBranchQuota(10000);
+    const io = init.io;
     var gpa: std.heap.DebugAllocator(.{}) = .{ .backing_allocator = init.gpa };
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
-    const benchmark = true;
-
-    var m: isize = 25 * (if (benchmark) 1000 else 1);
-    _ = &m;
-    var n: isize = 25 * (if (benchmark) 1000 else 1);
-    _ = &n;
-
-    const a = try allocator.alloc(f64, zsl.numeric.cast(usize, m * n));
+    const max_n: isize = 268_435_457;
+    const alpha: f64 = 2.0;
+    const a = try allocator.alloc(f64, zsl.numeric.cast(usize, max_n));
+    const b = try allocator.alloc(f64, zsl.numeric.cast(usize, max_n));
     defer allocator.free(a);
-    const b = try allocator.alloc(f64, zsl.numeric.cast(usize, m * n));
     defer allocator.free(b);
+    for (a, b, 0..) |*a_val, *b_val, i| {
+        a_val.* = @as(f64, @floatFromInt(i % 100)) / 100.0;
+        b_val.* = @as(f64, @floatFromInt(i % 33)) / 33.0;
+    }
 
-    const start_time = std.Io.Clock.real.now(io);
-    std.mem.doNotOptimizeAway(try zsl.linalg.blas.asum(m * n, a.ptr, 1, .{ .max_threads = 1 }));
-    // std.mem.doNotOptimizeAway(try zsl.linalg.blas.axpy(m * n, @as(f64, 1), a.ptr, 1, b.ptr, 1));
-    const end_time = std.Io.Clock.real.now(io);
+    const thresholds = [_]usize{
+        16_384,
+        32_768,
+        65_536,
+        131_072,
+        262_144,
+        524_288,
+        1_048_576,
+        2_097_152,
+        4_194_304,
+        8_388_608,
+        16_777_216,
+    };
 
-    std.debug.print(
-        "zsl.linalg.blas.asum took {d} seconds on matrices of size {} x {}\n",
-        .{
-            (zsl.numeric.cast(f128, end_time.toNanoseconds()) - zsl.numeric.cast(f128, start_time.toNanoseconds())) / std.time.ns_per_s,
-            m,
-            n,
-        },
-    );
+    const options_max_threads = 64; // options.max_threads
+
+    const hw_threads: usize = std.Thread.getCpuCount() catch 1;
+    const effective_cap: usize = @min(hw_threads, options_max_threads);
+
+    // Count how many N values we'll iterate over, so we can allocate per-cell
+    // ratio storage for the summary pass.
+    var n_rows: usize = 0;
+    {
+        var x: isize = 128;
+        while (x <= max_n) : (x *= 2) n_rows += 1;
+    }
+
+    // ratios[k][row] = parallel_time / serial_time for threshold k at row `row`.
+    // thread_counts[k][row] = how many threads actually spawned there.
+    const ratios = try allocator.alloc([]f64, thresholds.len);
+    defer allocator.free(ratios);
+    const thread_counts = try allocator.alloc([]usize, thresholds.len);
+    defer allocator.free(thread_counts);
+    const row_ns = try allocator.alloc(isize, n_rows);
+    defer allocator.free(row_ns);
+    for (ratios, thread_counts) |*r, *t| {
+        r.* = try allocator.alloc(f64, n_rows);
+        t.* = try allocator.alloc(usize, n_rows);
+    }
+    defer for (ratios, thread_counts) |r, t| {
+        allocator.free(r);
+        allocator.free(t);
+    };
+
+    std.debug.print("\n=== ROT Threshold Calibration ===\n", .{});
+    std.debug.print("Hardware threads: {d}, options.max_threads: {d}, effective cap: {d}\n", .{ hw_threads, options_max_threads, effective_cap });
+    std.debug.print("Automatic-mode rule: threads = max(1, min(effective_cap, n / T))\n\n", .{});
+    std.debug.print("Cell format: 'R.RRx(Nt)' -> R = parallel_time/serial_time, N = threads spawned\n", .{});
+    std.debug.print("  R < 1.00 -> parallel wins            R > 1.00 -> parallel loses\n", .{});
+    std.debug.print("  (1t)     -> n/T < 2, stayed serial   higher T -> fewer threads on large N\n\n", .{});
+
+    // Header
+    std.debug.print("{s:>11} | {s:>12}", .{ "N", "Serial (ns)" });
+    for (thresholds) |th| {
+        var buf: [16]u8 = undefined;
+        std.debug.print(" | {s:>12}", .{fmtT(&buf, th)});
+    }
+    std.debug.print(" | {s:>22}\n", .{"Best for this N"});
+
+    const sep_len: usize = 11 + 3 + 12 + thresholds.len * 15 + 3 + 22;
+    var i: usize = 0;
+    while (i < sep_len) : (i += 1) std.debug.print("-", .{});
+    std.debug.print("\n", .{});
+
+    var row: usize = 0;
+    var current_n: isize = 128;
+    while (current_n <= max_n) : (current_n *= 2) {
+        row_ns[row] = current_n;
+
+        const iters: usize =
+            if (current_n < 1_000_000) 100 else if (current_n < 16_000_000) 50 else if (current_n < 256_000_000) 10 else 5;
+
+        // --- Serial baseline: force single-threaded with num_threads = 1. ---
+        std.mem.doNotOptimizeAway(
+            try zsl.linalg.blas.rot(current_n, a.ptr, 1, b.ptr, 1, zsl.numeric.cos(alpha), zsl.numeric.sin(alpha), .{ .num_threads = 1 }),
+        );
+        const s0 = std.Io.Clock.real.now(io);
+        for (0..iters) |_| {
+            std.mem.doNotOptimizeAway(
+                try zsl.linalg.blas.rot(current_n, a.ptr, 1, b.ptr, 1, zsl.numeric.cos(alpha), zsl.numeric.sin(alpha), .{ .num_threads = 1 }),
+            );
+        }
+        const s1 = std.Io.Clock.real.now(io);
+        const serial_ns = (zsl.numeric.cast(f128, s1.toNanoseconds()) - zsl.numeric.cast(f128, s0.toNanoseconds())) / @as(f128, iters);
+
+        std.debug.print("{d:>11} | {d:>12.0}", .{ current_n, @as(f64, @floatCast(serial_ns)) });
+
+        var best_ratio: f128 = 1.0;
+        var best_idx: ?usize = null;
+        var best_threads: usize = 1;
+
+        for (thresholds, 0..) |T, k| {
+            std.mem.doNotOptimizeAway(
+                try zsl.linalg.blas.rot(current_n, a.ptr, 1, b.ptr, 1, zsl.numeric.cos(alpha), zsl.numeric.sin(alpha), .{ .num_threads = 0, .parallel_threshold = T }),
+            );
+            const p0 = std.Io.Clock.real.now(io);
+            for (0..iters) |_| {
+                std.mem.doNotOptimizeAway(
+                    try zsl.linalg.blas.rot(current_n, a.ptr, 1, b.ptr, 1, zsl.numeric.cos(alpha), zsl.numeric.sin(alpha), .{ .num_threads = 0, .parallel_threshold = T }),
+                );
+            }
+            const p1 = std.Io.Clock.real.now(io);
+            const ns = (zsl.numeric.cast(f128, p1.toNanoseconds()) - zsl.numeric.cast(f128, p0.toNanoseconds())) / @as(f128, iters);
+            const ratio: f128 = ns / serial_ns;
+
+            const n_usize = zsl.numeric.cast(usize, current_n);
+            const threads = @max(@as(usize, 1), @min(n_usize / T, effective_cap));
+
+            ratios[k][row] = @as(f64, @floatCast(ratio));
+            thread_counts[k][row] = threads;
+
+            std.debug.print(" | {d:>6.2}x({d:>2}t)", .{
+                @as(f64, @floatCast(ratio)), threads,
+            });
+
+            if (ratio < best_ratio) {
+                best_ratio = ratio;
+                best_idx = k;
+                best_threads = threads;
+            }
+        }
+
+        if (best_idx) |k| {
+            var tbuf: [16]u8 = undefined;
+            var sbuf: [48]u8 = undefined;
+            const tl = fmtT(&tbuf, thresholds[k]);
+            const sum = std.fmt.bufPrint(&sbuf, "{s} @ {d}t ({d:.2}x)", .{ tl, best_threads, @as(f64, @floatCast(best_ratio)) }) catch "?";
+            std.debug.print(" | {s:>22}\n", .{sum});
+        } else {
+            std.debug.print(" | {s:>22}\n", .{"serial (no parallel won)"});
+        }
+
+        row += 1;
+    }
+
+    // --- Summary metrics ---------------------------------------------------
+    //
+    // Noise band: ratios within [1 - NOISE, 1 + NOISE] are treated as "tied
+    // with serial" — neither a win nor a regression. Calibrated from the
+    // small-N rows where every threshold is degenerately serial yet still
+    // shows ~5% wobble.
+    const NOISE: f64 = 0.05;
+    // Regression threshold: ratios above this are counted as real losses.
+    const REGRESSION: f64 = 1.10;
+
+    std.debug.print("\n=== Summary (noise band = ±{d:.0}%, regression = >{d:.0}%) ===\n\n", .{
+        NOISE * 100, (REGRESSION - 1.0) * 100,
+    });
+
+    std.debug.print("{s:>10} | {s:>9} | {s:>9} | {s:>9} | {s:>12} | {s:>9} | {s:>14}\n", .{
+        "Threshold", "Geomean*", "Best", "Worst", "Worst @ N", "Reg. N", "First win @ N",
+    });
+    var j: usize = 0;
+    while (j < 10 + 3 + 9 + 3 + 9 + 3 + 9 + 3 + 12 + 3 + 9 + 3 + 14) : (j += 1) std.debug.print("-", .{});
+    std.debug.print("\n", .{});
+
+    for (thresholds, 0..) |T, k| {
+        var buf: [16]u8 = undefined;
+        const label = fmtT(&buf, T);
+
+        var log_sum: f64 = 0;
+        var spawn_count: usize = 0;
+        var best: f64 = std.math.inf(f64);
+        var worst: f64 = -std.math.inf(f64);
+        var worst_n: isize = 0;
+        var regression_count: usize = 0;
+        var first_win_n: ?isize = null;
+
+        for (0..n_rows) |r| {
+            const ratio = ratios[k][r];
+            const threads = thread_counts[k][r];
+
+            // Only consider rows where this threshold actually caused a spawn.
+            // Serial-degenerate rows carry no information about the threshold.
+            if (threads <= 1) continue;
+
+            spawn_count += 1;
+            log_sum += @log(ratio);
+            if (ratio < best) best = ratio;
+            if (ratio > worst) {
+                worst = ratio;
+                worst_n = row_ns[r];
+            }
+            if (ratio > REGRESSION) regression_count += 1;
+            if (first_win_n == null and ratio < 1.0 - NOISE) first_win_n = row_ns[r];
+        }
+
+        if (spawn_count == 0) {
+            std.debug.print("{s:>10} | {s:>71}\n", .{ label, "never spawned" });
+            continue;
+        }
+
+        const geo = @exp(log_sum / @as(f64, @floatFromInt(spawn_count)));
+
+        var nbuf: [24]u8 = undefined;
+        const worst_n_str = fmtN(&nbuf, worst_n);
+        var nbuf2: [24]u8 = undefined;
+        const first_win_str = if (first_win_n) |n_| fmtN(&nbuf2, n_) else "never";
+
+        std.debug.print("{s:>10} | {d:>8.3}x | {d:>8.2}x | {d:>8.2}x | {s:>12} | {d:>4}/{d:<4} | {s:>14}\n", .{
+            label, geo, best, worst, worst_n_str, regression_count, spawn_count, first_win_str,
+        });
+    }
+
+    std.debug.print("\nColumn guide:\n", .{});
+    std.debug.print("  Geomean*      — geo mean of ratios over rows where T actually spawned.\n", .{});
+    std.debug.print("                  Biased: each T is averaged over a different set of rows,\n", .{});
+    std.debug.print("                  so low-T numbers include small-N disasters that high-T\n", .{});
+    std.debug.print("                  values skip. Use as a rough sort, not a verdict.\n", .{});
+    std.debug.print("  Best          — best ratio observed (lowest is good).\n", .{});
+    std.debug.print("  Worst         — worst ratio observed. This is the number a default has\n", .{});
+    std.debug.print("                  to live with. A default that shows 1.50x here will hurt\n", .{});
+    std.debug.print("                  real users whose N falls in its bad zone.\n", .{});
+    std.debug.print("  Worst @ N     — N value where the worst ratio occurred.\n", .{});
+    std.debug.print("  Reg. N        — (# rows with ratio > regression) / (# rows with spawn).\n", .{});
+    std.debug.print("                  Fraction of spawn cases that were actual slowdowns.\n", .{});
+    std.debug.print("  First win @ N — smallest N where T beat serial by more than the noise\n", .{});
+    std.debug.print("                  band. Lower = more aggressive threshold pays off sooner.\n\n", .{});
+
+    std.debug.print("How to choose a default:\n", .{});
+    std.debug.print("  1. Rule out any T with Worst > ~1.15x — it's an unforced error.\n", .{});
+    std.debug.print("  2. Among survivors, prefer lowest 'First win @ N' (earlier speedups).\n", .{});
+    std.debug.print("  3. Break ties with Geomean*. Small differences at the bandwidth floor\n", .{});
+    std.debug.print("     don't matter.\n", .{});
+}
+
+fn fmtT(buf: []u8, x: usize) []const u8 {
+    if (x >= 1024 * 1024)
+        return std.fmt.bufPrint(buf, "T={d}Mi", .{x / (1024 * 1024)}) catch "?";
+    if (x >= 1024)
+        return std.fmt.bufPrint(buf, "T={d}Ki", .{x / 1024}) catch "?";
+    return std.fmt.bufPrint(buf, "T={d}", .{x}) catch "?";
+}
+
+fn fmtN(buf: []u8, x: isize) []const u8 {
+    const ux: usize = @intCast(x);
+    if (ux >= 1024 * 1024)
+        return std.fmt.bufPrint(buf, "{d}Mi", .{ux / (1024 * 1024)}) catch "?";
+    if (ux >= 1024)
+        return std.fmt.bufPrint(buf, "{d}Ki", .{ux / 1024}) catch "?";
+    return std.fmt.bufPrint(buf, "{d}", .{ux}) catch "?";
 }
 
 // fn avg(values: []const f64) f64 {

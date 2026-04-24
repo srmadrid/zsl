@@ -10,7 +10,8 @@ const int = @import("../../int.zig");
 const linalg = @import("../../linalg.zig");
 
 pub fn Dot(X: type, Y: type) type {
-    comptime if (!meta.isManyItemPointer(X) or !meta.isNumeric(meta.Child(X)))
+    comptime if (!meta.isManyItemPointer(X) or !meta.isNumeric(meta.Child(X)) or
+        !meta.isManyItemPointer(Y) or !meta.isNumeric(meta.Child(Y)))
         @compileError("zsl.linalg.blas.dot: x and y must be many-item pointers to numerics, got \n\tx: " ++ @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
     return numeric.Mul(meta.Child(X), meta.Child(Y));
@@ -35,12 +36,12 @@ pub fn Dot(X: type, Y: type) type {
 /// ## Arguments
 /// * `n` (`isize`): Specifies the number of elements in vectors `x` and `y`.
 ///   Must be greater than 0.
-/// * `x` (`anytype`): Array, size at least `1 + (n - 1) * abs(incx)`.
-/// * `incx` (`isize`): Specifies the increment for indexing vector `x`. Must be
-///   different from 0.
-/// * `y` (`anytype`): Array, size at least `1 + (n - 1) * abs(incy)`.
-/// * `incy` (`isize`): Specifies the increment for indexing vector `y`. Must be
-///   different from 0.
+/// * `x` (`anytype`): Many-item pointer, size at least
+///   `1 + (n - 1) * abs(incx)`.
+/// * `incx` (`isize`): Indexing increment for `x`. Must be different from 0.
+/// * `y` (`anytype`): Many-item pointer, size at least
+///   `1 + (n - 1) * abs(incy)`.
+/// * `incy` (`isize`): Indexing increment for `y`. Must be different from 0.
 /// * `opts`: Optional parameters:
 ///   * `num_threads` (`usize = 0`): Number of threads to spawn:
 ///     * `0`: automatic. The thread count is derived from `n` and
@@ -171,7 +172,7 @@ pub fn dot(
     return numeric.cast(linalg.blas.Dot(X, Y), sum);
 }
 
-pub fn k_dot(n: isize, x: anytype, incx: isize, y: anytype, incy: isize) meta.Accumulator(linalg.blas.Dot(@TypeOf(x), @TypeOf(y))) {
+fn k_dot(n: isize, x: anytype, incx: isize, y: anytype, incy: isize) meta.Accumulator(linalg.blas.Dot(@TypeOf(x), @TypeOf(y))) {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
 

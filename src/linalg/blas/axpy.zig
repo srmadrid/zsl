@@ -30,13 +30,12 @@ const linalg = @import("../../linalg.zig");
 /// * `n` (`isize`): Specifies the number of elements in vectors `x` and `y`.
 ///   Must be greater than 0.
 /// * `alpha` (`anytype`): Specifies the scalar `alpha`.
-/// * `x` (`anytype`): Array, size at least `1 + (n - 1) * abs(incx)`.
-/// * `incx` (`isize`): Specifies the increment for indexing vector `x`. Must be
-///   different from 0.
-/// * `y` (`anytype`): Array, size at least `1 + (n - 1) * abs(incy)`. On return
-///   contains the updated vector `y`.
-/// * `incy` (`isize`): Specifies the increment for indexing vector `y`. Must be
-///   different from 0.
+/// * `x` (`anytype`): Many-item pointer, size at least
+///   `1 + (n - 1) * abs(incx)`.
+/// * `incx` (`isize`): Indexing increment for `x`. Must be different from 0.
+/// * `y` (`anytype`): Mutable many-item pointer, size at least
+///   `1 + (n - 1) * abs(incy)`. On return contains the updated vector `y`.
+/// * `incy` (`isize`): Indexing increment for `y`. Must be different from 0.
 /// * `opts`: Optional parameters:
 ///   * `num_threads` (`usize = 0`): Number of threads to spawn:
 ///     * `0`: automatic. The thread count is derived from `n` and
@@ -172,7 +171,7 @@ fn k_axpy(n: isize, alpha: anytype, x: anytype, incx: isize, y: anytype, incy: i
         return;
 
     const len = numeric.cast(usize, n);
-    const unroll = 2 * (std.simd.suggestVectorLength(numeric.Add(Y, numeric.Mul(Al, X))) orelse 2);
+    const unroll = 2 * (std.simd.suggestVectorLength(numeric.Fma(Al, X, Y)) orelse 2);
 
     if (incx == 1 and incy == 1) {
         var i: usize = 0;

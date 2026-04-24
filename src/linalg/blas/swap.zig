@@ -22,14 +22,13 @@ const linalg = @import("../../linalg.zig");
 /// ## Arguments
 /// * `n` (`isize`): Specifies the number of elements in vectors `x` and `y`.
 ///   Must be greater than 0.
-/// * `x` (`anytype`): Array, size at least `1 + (n - 1) * abs(incx)`. On return
-///   contains the updated vector `x`.
-/// * `incx` (`isize`): Specifies the increment for indexing vector `x`. Must be
-///   different from 0.
-/// * `y` (`anytype`): Array, size at least `1 + (n - 1) * abs(incy)`. On return
+/// * `x` (`anytype`): Mutable many-item pointer, size at least
+///   `1 + (n - 1) * abs(incx)`. On return contains the updated vector `x`.
+/// * `incx` (`isize`): Indexing increment for `x`. Must be different from 0.
+/// * `y` (`anytype`): Mutable many-item pointer, size at least
+///   `1 + (n - 1) * abs(incy)`. On return
 ///   contains the updated vector `y`.
-/// * `incy` (`isize`): Specifies the increment for indexing vector `y`. Must be
-///   different from 0.
+/// * `incy` (`isize`): Indexing increment for `y`. Must be different from 0.
 /// * `opts`: Optional parameters:
 ///   * `num_threads` (`usize = 0`): Number of threads to spawn:
 ///     * `0`: automatic. The thread count is derived from `n` and

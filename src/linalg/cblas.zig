@@ -53,10 +53,14 @@ extern fn cblas_srot(n: isize, x: [*c]f32, incx: isize, y: [*c]f32, incy: isize,
 extern fn cblas_drot(n: isize, x: [*c]f64, incx: isize, y: [*c]f64, incy: isize, c: f64, s: f64) void;
 extern fn cblas_csrot(n: isize, x: *anyopaque, incx: isize, y: *anyopaque, incy: isize, c: f32, s: f32) void;
 extern fn cblas_zdrot(n: isize, x: *anyopaque, incx: isize, y: *anyopaque, incy: isize, c: f64, s: f64) void;
+extern fn cblas_crot(n: isize, x: *anyopaque, incx: isize, y: *anyopaque, incy: isize, c: f32, s: *const anyopaque) void;
+extern fn cblas_zrot(n: isize, x: *anyopaque, incx: isize, y: *anyopaque, incy: isize, c: f64, s: *const anyopaque) void;
 pub const srot = cblas_srot;
 pub const drot = cblas_drot;
 pub const csrot = cblas_csrot;
 pub const zdrot = cblas_zdrot;
+pub const crot = cblas_crot;
+pub const zrot = cblas_zrot;
 
 extern fn cblas_srotg(a: *f32, b: *f32, c: *f32, s: *f32) void;
 extern fn cblas_drotg(a: *f64, b: *f64, c: *f64, s: *f64) void;

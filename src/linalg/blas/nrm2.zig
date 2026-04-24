@@ -35,9 +35,9 @@ pub fn Nrm2(X: type) type {
 /// ## Arguments
 /// * `n` (`isize`): Specifies the number of elements in vector `x`. Must be
 ///   greater than 0.
-/// * `x` (`anytype`): Array, size at least `1 + (n - 1) * abs(incx)`.
-/// * `incx` (`isize`): Specifies the increment for indexing vector `x`. Must
-///   be different from 0.
+/// * `x` (`anytype`): Many-item pointer, size at least
+///   `1 + (n - 1) * abs(incx)`.
+/// * `incx` (`isize`): Indexing increment for `x`. Must be different from 0.
 /// * `opts`: Optional parameters:
 ///   * `num_threads` (`usize = 0`): Number of threads to spawn:
 ///     * `0`: automatic. The thread count is derived from `n` and
@@ -158,7 +158,7 @@ pub fn nrm2(
     return numeric.cast(linalg.blas.Nrm2(X), numeric.sqrt(ssq));
 }
 
-pub fn k_nrm2_ssq(n: isize, x: anytype, incx: isize) meta.Accumulator(linalg.blas.Nrm2(@TypeOf(x))) {
+fn k_nrm2_ssq(n: isize, x: anytype, incx: isize) meta.Accumulator(linalg.blas.Nrm2(@TypeOf(x))) {
     const X: type = @TypeOf(x);
 
     const len = numeric.cast(usize, n);

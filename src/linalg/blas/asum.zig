@@ -37,9 +37,9 @@ pub fn Asum(X: type) type {
 /// ## Arguments
 /// * `n` (`isize`): Specifies the number of elements in vector `x`. Must be
 ///   greater than 0.
-/// * `x` (`anytype`): Array, size at least `1 + (n - 1) * abs(incx)`.
-/// * `incx` (`isize`): Specifies the increment for indexing vector `x`. Must be
-///   different from 0.
+/// * `x` (`anytype`): Many-item pointer, size at least
+///   `1 + (n - 1) * abs(incx)`.
+/// * `incx` (`isize`): Indexing increment for `x`. Must be different from 0.
 /// * `opts`: Optional parameters:
 ///   * `num_threads` (`usize = 0`): Number of threads to spawn:
 ///     * `0`: automatic. The thread count is derived from `n` and
@@ -160,7 +160,7 @@ pub fn asum(
     return numeric.cast(linalg.blas.Asum(X), sum);
 }
 
-pub fn k_asum(n: isize, x: anytype, incx: isize) meta.Accumulator(linalg.blas.Asum(@TypeOf(x))) {
+fn k_asum(n: isize, x: anytype, incx: isize) meta.Accumulator(linalg.blas.Asum(@TypeOf(x))) {
     const X: type = @TypeOf(x);
 
     const len = numeric.cast(usize, n);

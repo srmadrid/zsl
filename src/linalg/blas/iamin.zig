@@ -28,8 +28,9 @@ const linalg = @import("../../linalg.zig");
 ///
 /// ## Arguments
 /// * `n` (`isize`): Number of elements in `x`. Must be greater than 0.
-/// * `x` (`anytype`): Array, size at least `1 + (n - 1) * abs(incx)`.
-/// * `incx` (`isize`): Indexing increment. Must be different from 0.
+/// * `x` (`anytype`): Many-item pointer, size at least
+///   `1 + (n - 1) * abs(incx)`.
+/// * `incx` (`isize`): Indexing increment for `x`. Must be different from 0.
 /// * `opts`: Optional parameters:
 ///   * `num_threads` (`usize = 0`): Number of threads to spawn:
 ///     * `0`: automatic. The thread count is derived from `n` and
@@ -61,6 +62,9 @@ pub fn iamin(
     },
 ) !usize {
     const X: type = @TypeOf(x);
+
+    comptime if (!meta.isManyItemPointer(X) or meta.isConstPointer(X) or !meta.isNumeric(meta.Child(X)))
+        @compileError("zsl.linalg.blas.iamin: x must be a mutable many-item pointer to numerics, got \n\tx: " ++ @typeName(X) ++ "\n");
 
     if (n <= 0 or incx == 0)
         return linalg.blas.Error.InvalidArgument;
@@ -164,7 +168,7 @@ pub fn IaminResult(N: type) type {
     };
 }
 
-pub fn k_iamin(n: isize, x: anytype, incx: isize) IaminResult(numeric.Abs1(meta.Child(@TypeOf(x)))) {
+fn k_iamin(n: isize, x: anytype, incx: isize) IaminResult(numeric.Abs1(meta.Child(@TypeOf(x)))) {
     const len = numeric.cast(usize, n);
 
     var best_value = if (incx == 1)
