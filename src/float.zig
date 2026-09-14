@@ -53,6 +53,13 @@ pub fn smallest(comptime Float: type) Float {
     return std.math.floatMin(Float);
 }
 
+pub fn eps(comptime Float: type) Float {
+    comptime if (!meta.isNumeric(Float) or meta.numericType(Float) != .float)
+        @compileError("zsl.float.eps: Float must be a float type, got \n\tFloat = " ++ @typeName(Float) ++ "\n");
+
+    return std.math.floatEps(Float);
+}
+
 pub fn pi(comptime Float: type) Float {
     comptime if (!meta.isNumeric(Float) or meta.numericType(Float) != .float)
         @compileError("zsl.float.pi: Float must be a float type, got \n\nFloat = " ++ @typeName(Float) ++ "\n");

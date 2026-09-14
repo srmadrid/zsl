@@ -982,6 +982,12 @@ pub fn Dyadic(mantissa_bits: u16, exponent_bits: u16) type {
 
 pub const Coerce = @import("dyadic/coerce.zig").Coerce;
 
+pub const highest = @import("dyadic/highest.zig").highest;
+pub const lowest = @import("dyadic/lowest.zig").lowest;
+pub const smallest = @import("dyadic/smallest.zig").smallest;
+pub const eps = @import("dyadic/eps.zig").eps;
+pub const inf = @import("dyadic/inf.zig").inf;
+pub const nan = @import("dyadic/nan.zig").nan;
 pub const pi = @import("dyadic/pi.zig").pi;
 pub const tau = @import("dyadic/tau.zig").tau;
 pub const e = @import("dyadic/e.zig").e;
