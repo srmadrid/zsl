@@ -85,25 +85,6 @@ pub fn build(b: *std.Build) void {
     const run_step = b.step("run", "Run the executable");
     run_step.dependOn(&run_cmd.step);
 
-    // Compile only CBLAS
-    const cblas_lib = b.addLibrary(.{
-        .linkage = .dynamic,
-        .name = "blas",
-        .root_module = b.createModule(.{
-            .root_source_file = b.path("src/cblas.zig"),
-            .target = target,
-            .optimize = optimize,
-            .link_libc = true,
-        }),
-    });
-
-    cblas_lib.root_module.addImport("zsl", module);
-
-    const cblas_install = b.addInstallArtifact(cblas_lib, .{});
-
-    const cblas_step = b.step("cblas", "Compile CBLAS library");
-    cblas_step.dependOn(&cblas_install.step);
-
     // Tests
     const opt_verbose_tests = b.option(bool, "verbose_tests", "Enable verbose output for tests") orelse false;
     options.addOption(bool, "verbose_tests", opt_verbose_tests);

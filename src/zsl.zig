@@ -1,17 +1,13 @@
 pub const meta = @import("meta.zig");
 
-pub const int = @import("int.zig");
-pub const float = @import("float.zig");
-pub const dyadic = @import("dyadic.zig");
-pub const Dyadic = dyadic.Dyadic;
-pub const complex = @import("complex.zig");
-pub const Complex = complex.Complex;
-pub const cf16 = complex.cf16;
-pub const cf32 = complex.cf32;
-pub const cf64 = complex.cf64;
-pub const cf80 = complex.cf80;
-pub const cf128 = complex.cf128;
-pub const comptime_complex = complex.comptime_complex;
+pub const Dyadic = @import("numeric/dyadic.zig").Dyadic;
+pub const Complex = @import("numeric/complex.zig").Complex;
+pub const cf16 = @import("numeric/complex.zig").cf16;
+pub const cf32 = @import("numeric/complex.zig").cf32;
+pub const cf64 = @import("numeric/complex.zig").cf64;
+pub const cf80 = @import("numeric/complex.zig").cf80;
+pub const cf128 = @import("numeric/complex.zig").cf128;
+pub const comptime_complex = @import("numeric/complex.zig").comptime_complex;
 
 // Domain namespaces
 pub const numeric = @import("numeric.zig");
@@ -23,7 +19,13 @@ pub const poly = @import("poly.zig");
 // Module namespaces
 pub const stats = @import("stats.zig");
 pub const linalg = @import("linalg.zig");
+// numdiff
 pub const autodiff = @import("autodiff.zig");
+// numint
+// signal
+// optim
+// root
+// interp
 
 // Miscellaneous
 pub const thread = @import("thread.zig");
