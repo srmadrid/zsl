@@ -1,11 +1,5 @@
-const meta = @import("../meta.zig");
-
-const int = @import("../int.zig");
-const float = @import("../float.zig");
-const dyadic = @import("../dyadic.zig");
-const complex = @import("../complex.zig");
-
-const numeric = @import("../numeric.zig");
+const meta = @import("../../meta.zig");
+const numeric = @import("../../numeric.zig");
 
 pub fn Ln(X: type) type {
     comptime if (!meta.isNumeric(X))
@@ -57,9 +51,9 @@ pub fn ln(x: anytype) numeric.Ln(@TypeOf(x)) {
     switch (comptime meta.numericType(X)) {
         .bool => unreachable,
         .int => unreachable,
-        .float => return float.ln(x),
-        .dyadic => return dyadic.ln(x),
-        .complex => return complex.ln(x),
+        .float => return @import("../float/ln.zig").ln(x),
+        .dyadic => @compileError("zsl.numeric.ln: not implemented for " ++ @typeName(X) ++ " yet."),
+        .complex => return @import("ln/complex.zig").ln(x),
         .custom => {
             const Impl: type = comptime meta.anyHasMethod(
                 &.{ R, X },

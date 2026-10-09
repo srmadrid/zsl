@@ -1,9 +1,7 @@
 const std = @import("std");
 
-const meta = @import("../meta.zig");
-const numeric = @import("../numeric.zig");
-
-const float = @import("../float.zig");
+const meta = @import("../../meta.zig");
+const numeric = @import("../../numeric.zig");
 
 const lgamma_data = @import("lgamma_data.zig");
 const erf_data = @import("erf_data.zig");
@@ -93,12 +91,12 @@ pub fn lgamma_r128(x: f128, signgamp: *i32) f128 {
         if (std.math.signbit(x))
             signgamp.* = -1;
 
-        return 1.0 / float.abs(x);
+        return 1.0 / numeric.abs(x);
     }
 
     if (x < 0) {
         const q: f128 = -x;
-        var p: f128 = float.floor(q);
+        var p: f128 = @import("floor.zig").floor(q);
         if (p == q)
             return (1 / (p - p));
 
@@ -114,19 +112,19 @@ pub fn lgamma_r128(x: f128, signgamp: *i32) f128 {
             z = p - q;
         }
 
-        z = q * float.sin(float.pi(f128) * z);
+        z = q * @import("sin.zig").sin(numeric.pi(f128) * z);
         if (z == 0.0)
-            return -float.ln(q);
+            return -@import("ln.zig").ln(q);
 
         var s: i32 = undefined;
         const w: f128 = lgamma_r128(q, &s);
-        z = float.ln(float.pi(f128) / z) - w;
+        z = @import("ln.zig").ln(numeric.pi(f128) / z) - w;
         return z;
     }
 
     if (x < 13.5) {
         var p: f128 = 0;
-        const nx: f128 = float.floor(x + 0.5);
+        const nx: f128 = @import("floor.zig").floor(x + 0.5);
         const nn: i32 = numeric.cast(i32, nx);
         switch (nn) {
             0 => {
@@ -154,7 +152,7 @@ pub fn lgamma_r128(x: f128, signgamp: *i32) f128 {
                     const z: f128 = x - 1;
                     p = z * erf_data.neval(z, &lgamma_data.RN2_128, 9) / erf_data.deval(z, &lgamma_data.RD2_128, 9);
                 }
-                p = p - float.ln(x);
+                p = p - @import("ln.zig").ln(x);
             },
             1 => {
                 if (x < 0.875) {
@@ -174,7 +172,7 @@ pub fn lgamma_r128(x: f128, signgamp: *i32) f128 {
                         const z: f128 = x - 1;
                         p = z * erf_data.neval(z, &lgamma_data.RN2_128, 9) / erf_data.deval(z, &lgamma_data.RD2_128, 9);
                     }
-                    p = p - float.ln(x);
+                    p = p - @import("ln.zig").ln(x);
                 } else if (x < 1) {
                     const z: f128 = x - 1;
                     p = z * erf_data.neval(z, &lgamma_data.RNr9_128, 8) / erf_data.deval(z, &lgamma_data.RDr9_128, 8);
@@ -305,10 +303,10 @@ pub fn lgamma_r128(x: f128, signgamp: *i32) f128 {
         return numeric.cast(f128, signgamp.*) * std.math.inf(f128);
 
     if (x > 0x1p112)
-        return x * (float.ln(x) - 1);
+        return x * (@import("ln.zig").ln(x) - 1);
 
     var q: f128 = lgamma_data.ls2pi_128 - x;
-    q = (x - 0.5) * float.ln(x) + q;
+    q = (x - 0.5) * @import("ln.zig").ln(x) + q;
     if (x > 1.0e18)
         return q;
 

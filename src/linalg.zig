@@ -1,3 +1,4 @@
+// Standard interfaces
 pub const cblas = @import("linalg/cblas.zig");
 pub const blas = @import("linalg/blas.zig");
 pub const lapacke = @import("linalg/lapacke.zig");

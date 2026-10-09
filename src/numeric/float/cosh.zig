@@ -1,9 +1,7 @@
 const std = @import("std");
 
-const meta = @import("../meta.zig");
-const numeric = @import("../numeric.zig");
-
-const float = @import("../float.zig");
+const meta = @import("../../meta.zig");
+const numeric = @import("../../numeric.zig");
 
 const dbl64 = @import("dbl64.zig");
 const ldbl128 = @import("ldbl128.zig");
@@ -75,24 +73,24 @@ fn cosh32(x: f32) f32 {
         if (ix < 0x39800000) // cosh(tiny) = 1
             return 1.0;
 
-        const t: f32 = float.expm1(float.abs(x));
+        const t: f32 = @import("expm1.zig").expm1(numeric.abs(x));
         const w: f32 = 1.0 + t;
         return 1.0 + (t * t) / (2.0 * w);
     }
 
     // |x| in [0.5 * ln(2), 9], return (exp(|x|) + 1/exp(|x|))/2
     if (ix < 0x41100000) {
-        const t: f32 = float.exp(float.abs(x));
+        const t: f32 = @import("exp.zig").exp(numeric.abs(x));
         return 0.5 * t + 0.5 / t;
     }
 
     // |x| in [9, log(maxfloat)] return 0.5 * exp(|x|)
     if (ix < 0x42b17217)
-        return 0.5 * float.exp(float.abs(x));
+        return 0.5 * @import("exp.zig").exp(numeric.abs(x));
 
     if (ix <= 0x42b2d4fc) {
         // |x| in [logf(maxfloat), overflowthresold]
-        var exp_x: f32 = float.exp(float.abs(x) - 162.88958740);
+        var exp_x: f32 = @import("exp.zig").exp(numeric.abs(x) - 162.88958740);
         const hx: u32 = @bitCast(exp_x);
         var expt: i32 = @bitCast((hx >> 23) -% (0x7f +% 127) +% 235);
         exp_x = @bitCast((hx & 0x7fffff) | ((0x7f +% 127) << 23));
@@ -129,23 +127,23 @@ fn cosh64(x: f64) f64 {
         if (ix < 0x3c800000) // cosh(tiny) = 1
             return 1.0;
 
-        const t: f64 = float.expm1(float.abs(x));
+        const t: f64 = @import("expm1.zig").expm1(numeric.abs(x));
         const w: f64 = 1.0 + t;
         return 1.0 + (t * t) / (2.0 * w);
     }
 
     // |x| in [0.5 * ln(2), 22], return (exp(|x|) + 1/exp(|x|)/2
     if (ix < 0x40360000) {
-        const t: f64 = float.exp(float.abs(x));
+        const t: f64 = @import("exp.zig").exp(numeric.abs(x));
         return 0.5 * t + 0.5 / t;
     }
 
     // |x| in [22, log(maxdouble)] return 0.5 * exp(|x|)
     if (ix < 0x40862e42)
-        return 0.5 * float.exp(float.abs(x));
+        return 0.5 * @import("exp.zig").exp(numeric.abs(x));
 
     if (ix <= 0x408633ce) { // |x| in [log(maxdouble), overflowthresold]
-        var exp_x: f64 = float.exp(float.abs(x) - 1246.97177782734161156);
+        var exp_x: f64 = @import("exp.zig").exp(numeric.abs(x) - 1246.97177782734161156);
         const hx: u32 = @bitCast(dbl64.getHighPart(exp_x));
         var expt: i32 = @bitCast((hx >> 20) -% (0x3ff +% 1023) +% 1799);
         dbl64.setHighPart(&exp_x, (hx & 0xfffff) | ((0x3ff +% 1023) << 20));
@@ -199,24 +197,24 @@ fn cosh128(x: f128) f128 {
         if (ex < 0x3fb80000) // coshl(tiny) = 1
             return 1.0;
 
-        const t: f128 = float.expm1(u.toFloat());
+        const t: f128 = @import("expm1.zig").expm1(u.toFloat());
         const w: f128 = 1.0 + t;
         return 1.0 + (t * t) / (w + w);
     }
 
     // |x| in [0.5 * ln(2), 40], return (exp(|x|) + 1/exp(|x|)/2
     if (ex < 0x40044000) {
-        const t: f128 = float.exp(u.toFloat());
+        const t: f128 = @import("exp.zig").exp(u.toFloat());
         return 0.5 * t + 0.5 / t;
     }
 
     // |x| in [22, ln(maxdouble)] return 0.5 * exp(|x|)
     if (ex <= 0x400c62e3) // 11356.375
-        return 0.5 * float.exp(u.toFloat());
+        return 0.5 * @import("exp.zig").exp(u.toFloat());
 
     // |x| in [log(maxdouble), overflowthresold]
     if (u.toFloat() <= 1.1357216553474703894801348310092223067821e4) {
-        const w: f128 = float.exp(0.5 * u.toFloat());
+        const w: f128 = @import("exp.zig").exp(0.5 * u.toFloat());
         const t: f128 = 0.5 * w;
         return t * w;
     }

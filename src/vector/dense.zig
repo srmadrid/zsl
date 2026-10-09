@@ -1,15 +1,13 @@
 const std = @import("std");
 
 const meta = @import("../meta.zig");
-const numeric = @import("../numeric.zig");
 
+const numeric = @import("../numeric.zig");
 const vector = @import("../vector.zig");
 const matrix = @import("../matrix.zig");
 const array = @import("../array.zig");
 
-const int = @import("../int.zig");
-
-const vecutils = @import("utils.zig");
+const utils = @import("utils.zig");
 
 /// Dense vector type, represented as a contiguous array of elements of type
 /// `N` and a stride.
@@ -79,7 +77,7 @@ pub fn Dense(N: type) type {
 
             return .{
                 .data = buffer.ptr,
-                .len = int.div(buffer.len, numeric.cast(usize, int.abs(inc))),
+                .len = numeric.div(buffer.len, numeric.cast(usize, numeric.abs(inc))),
                 .inc = inc,
                 .flags = .{ .owns_data = false },
             };
@@ -166,7 +164,7 @@ pub fn Dense(N: type) type {
         /// `void`
         pub fn deinit(self: *vector.Dense(N), allocator: std.mem.Allocator) void {
             if (self.flags.owns_data) {
-                allocator.free(self.data[0 .. self.len * numeric.cast(usize, int.abs(self.inc))]);
+                allocator.free(self.data[0 .. self.len * numeric.cast(usize, numeric.abs(self.inc))]);
             }
 
             self.* = undefined;
@@ -338,7 +336,7 @@ pub fn Dense(N: type) type {
 
                     try writer.print("zsl.vector.Dense({s}) ({d}):\n\n", .{ @typeName(N), len });
 
-                    return vecutils.format(self, num_fmt, len, writer);
+                    return utils.format(self, num_fmt, len, writer);
                 }
             };
         }

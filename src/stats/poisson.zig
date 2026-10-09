@@ -21,9 +21,6 @@ pub fn Poisson(comptime Int: type, comptime Real: type) type {
         // Type signatures
         pub const is_distribution = true;
 
-        // Numeric type
-        pub const Numeric = Int;
-
         /// Initializes a new Poisson distribution.
         ///
         /// ## Arguments

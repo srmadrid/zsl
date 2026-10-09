@@ -5,7 +5,7 @@ const numeric = @import("../numeric.zig");
 
 const vector = @import("../vector.zig");
 
-const vecutils = @import("utils.zig");
+const utils = @import("utils.zig");
 
 /// Sparse vector type, represented as a contiguous array of non-zero elements
 /// of type `N` along with their corresponding indices, in ascending order.
@@ -384,7 +384,7 @@ pub fn Sparse(N: type) type {
 
                     try writer.print("zsl.vector.Sparse({s}) ({d}):\n\n", .{ @typeName(N), len });
 
-                    return vecutils.format(self, num_fmt, len, writer);
+                    return utils.format(self, num_fmt, len, writer);
                 }
             };
         }

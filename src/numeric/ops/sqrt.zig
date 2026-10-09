@@ -1,11 +1,5 @@
-const meta = @import("../meta.zig");
-
-const int = @import("../int.zig");
-const float = @import("../float.zig");
-const dyadic = @import("../dyadic.zig");
-const complex = @import("../complex.zig");
-
-const numeric = @import("../numeric.zig");
+const meta = @import("../../meta.zig");
+const numeric = @import("../../numeric.zig");
 
 pub fn Sqrt(X: type) type {
     comptime if (!meta.isNumeric(X))
@@ -57,9 +51,9 @@ pub fn sqrt(x: anytype) numeric.Sqrt(@TypeOf(x)) {
     switch (comptime meta.numericType(X)) {
         .bool => unreachable,
         .int => unreachable,
-        .float => return float.sqrt(x),
-        .dyadic => return dyadic.sqrt(x),
-        .complex => return complex.sqrt(x),
+        .float => return @import("../float/sqrt.zig").sqrt(x),
+        .dyadic => return @import("sqrt/dyadic.zig").sqrt(x),
+        .complex => return @import("sqrt/complex.zig").sqrt(x),
         .custom => {
             const Impl: type = comptime meta.anyHasMethod(
                 &.{ R, X },

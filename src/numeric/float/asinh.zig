@@ -1,7 +1,5 @@
-const meta = @import("../meta.zig");
-const numeric = @import("../numeric.zig");
-
-const float = @import("../float.zig");
+const meta = @import("../../meta.zig");
+const numeric = @import("../../numeric.zig");
 
 const dbl64 = @import("dbl64.zig");
 const ldbl128 = @import("ldbl128.zig");
@@ -74,13 +72,13 @@ fn asinh32(x: f32) f32 {
 
     var w: f32 = undefined;
     if (ix > 0x4d800000) { // |x| > 2**28
-        w = float.ln(float.abs(x)) + 6.9314718246e-1;
+        w = @import("ln.zig").ln(numeric.abs(x)) + 6.9314718246e-1;
     } else if (ix > 0x40000000) { // 2**28 > |x| > 2.0
-        const t: f32 = float.abs(x);
-        w = float.ln(2.0 * t + 1.0 / (float.sqrt(x * x + 1.0) + t));
+        const t: f32 = numeric.abs(x);
+        w = @import("ln.zig").ln(2.0 * t + 1.0 / (@import("sqrt.zig").sqrt(x * x + 1.0) + t));
     } else { // 2.0 > |x| > 2**-28
         const t: f32 = x * x;
-        w = float.log1p(float.abs(x) + t / (1.0 + float.sqrt(1.0 + t)));
+        w = @import("log1p.zig").log1p(numeric.abs(x) + t / (1.0 + @import("sqrt.zig").sqrt(1.0 + t)));
     }
 
     return if (hx > 0) w else -w;
@@ -110,13 +108,13 @@ fn asinh64(x: f64) f64 {
 
     var w: f64 = undefined;
     if (ix > 0x41b00000) { // |x| > 2**28
-        w = float.ln(float.abs(x)) + 6.93147180559945286227e-1;
+        w = @import("ln.zig").ln(numeric.abs(x)) + 6.93147180559945286227e-1;
     } else if (ix > 0x40000000) { // 2**28 > |x| > 2.0
-        const t: f64 = float.abs(x);
-        w = float.ln(2.0 * t + 1.0 / (float.sqrt(x * x + 1.0) + t));
+        const t: f64 = numeric.abs(x);
+        w = @import("ln.zig").ln(2.0 * t + 1.0 / (@import("sqrt.zig").sqrt(x * x + 1.0) + t));
     } else { // 2.0 > |x| > 2**-28
         const t: f64 = x * x;
-        w = float.log1p(float.abs(x) + t / (1.0 + float.sqrt(1.0 + t)));
+        w = @import("log1p.zig").log1p(numeric.abs(x) + t / (1.0 + @import("sqrt.zig").sqrt(1.0 + t)));
     }
 
     return if (hx > 0) w else -w;
@@ -148,13 +146,13 @@ fn asinh128(x: f128) f128 {
     u.mswhi = @bitCast(ix);
     var w: f128 = undefined;
     if (ix > 0x40350000) { // |x| > 2**54
-        w = float.ln(u.toFloat()) + 6.931471805599453094172321214581765681e-1;
+        w = @import("ln.zig").ln(u.toFloat()) + 6.931471805599453094172321214581765681e-1;
     } else if (ix > 0x40000000) { // 2**54 > |x| > 2.0
         const t: f128 = u.toFloat();
-        w = float.ln(2.0 * t + 1.0 / (float.sqrt(x * x + 1.0) + t));
+        w = @import("ln.zig").ln(2.0 * t + 1.0 / (@import("sqrt.zig").sqrt(x * x + 1.0) + t));
     } else { // 2.0 > |x| > 2**-56
         const t: f128 = x * x;
-        w = float.log1p(u.toFloat() + t / (1.0 + float.sqrt(1.0 + t)));
+        w = @import("log1p.zig").log1p(u.toFloat() + t / (1.0 + @import("sqrt.zig").sqrt(1.0 + t)));
     }
 
     return if (sign > 0) w else -w;

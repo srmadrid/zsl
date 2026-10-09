@@ -1,9 +1,7 @@
 const std = @import("std");
 
-const meta = @import("../meta.zig");
-const numeric = @import("../numeric.zig");
-
-const float = @import("../float.zig");
+const meta = @import("../../meta.zig");
+const numeric = @import("../../numeric.zig");
 
 const dbl64 = @import("dbl64.zig");
 const ldbl128 = @import("ldbl128.zig");
@@ -80,7 +78,7 @@ fn sinh32(x: f32) f32 {
         if (ix < 0x39800000) // |x| < 2**-12
             return x;
 
-        const t: f32 = float.expm1(float.abs(x));
+        const t: f32 = @import("expm1.zig").expm1(numeric.abs(x));
         if (ix < 0x3f800000)
             return h * (2.0 * t - t * t / (t + 1.0));
 
@@ -88,11 +86,11 @@ fn sinh32(x: f32) f32 {
     }
 
     if (ix < 0x42b17217) // |x| in [9, logf(maxfloat)] return 0.5 * exp(|x|)
-        return h * float.exp(float.abs(x));
+        return h * @import("exp.zig").exp(numeric.abs(x));
 
     if (ix <= 0x42b2d4fc) {
         // |x| in [logf(maxfloat), overflowthresold]
-        var exp_x: f32 = float.exp(float.abs(x) - 162.88958740);
+        var exp_x: f32 = @import("exp.zig").exp(numeric.abs(x) - 162.88958740);
         const hx: u32 = @bitCast(exp_x);
         var expt: i32 = @bitCast((hx >> 23) -% (0x7f +% 127) +% 235);
         exp_x = @bitCast((hx & 0x7fffff) | ((0x7f +% 127) << 23));
@@ -133,7 +131,7 @@ fn sinh64(x: f64) f64 {
         if (ix < 0x3e300000) // |x| < 2**-28
             return x;
 
-        const t: f64 = float.expm1(float.abs(x));
+        const t: f64 = @import("expm1.zig").expm1(numeric.abs(x));
         if (ix < 0x3ff00000)
             return h * (2.0 * t - t * t / (t + 1.0));
 
@@ -141,10 +139,10 @@ fn sinh64(x: f64) f64 {
     }
 
     if (ix < 0x40862e42) // |x| in [22, log(maxdouble)] return 0.5 * exp(|x|)
-        return h * float.exp(float.abs(x));
+        return h * @import("exp.zig").exp(numeric.abs(x));
 
     if (ix <= 0x408633ce) { // |x| in [log(maxdouble), overflowthresold]
-        var exp_x: f64 = float.exp(float.abs(x) - 1246.97177782734161156);
+        var exp_x: f64 = @import("exp.zig").exp(numeric.abs(x) - 1246.97177782734161156);
         const hx: u32 = @bitCast(dbl64.getHighPart(exp_x));
         var expt: i32 = @bitCast((hx >> 20) -% (0x3ff +% 1023) +% 1799);
         dbl64.setHighPart(&exp_x, (hx & 0xfffff) | ((0x3ff +% 1023) << 20));
@@ -202,7 +200,7 @@ fn sinh128(x: f128) f128 {
         if (ix < 0x3fc60000) // |x| < 2**-57
             return x; // sinh(tiny) = tiny
 
-        const t: f128 = float.expm1(u.toFloat());
+        const t: f128 = @import("expm1.zig").expm1(u.toFloat());
         if (ix < 0x3fff0000)
             return h * (2.0 * t - t * t / (t + 1.0));
 
@@ -211,12 +209,12 @@ fn sinh128(x: f128) f128 {
 
     // |x| in [40, log(maxdouble)] return 0.5 * exp(|x|)
     if (ix <= 0x400c62e3) // 11356.375
-        return h * float.exp(u.toFloat());
+        return h * @import("exp.zig").exp(u.toFloat());
 
     // |x| in [log(maxdouble), overflowthreshold]
     // Overflow threshold is log(2 * maxdouble)
     if (u.toFloat() <= 1.1357216553474703894801348310092223067821e4) {
-        const w: f128 = float.exp(0.5 * u.toFloat());
+        const w: f128 = @import("exp.zig").exp(0.5 * u.toFloat());
         const t: f128 = h * w;
         return t * w;
     }

@@ -1,11 +1,5 @@
-const meta = @import("../meta.zig");
-
-const int = @import("../int.zig");
-const float = @import("../float.zig");
-const dyadic = @import("../dyadic.zig");
-const complex = @import("../complex.zig");
-
-const numeric = @import("../numeric.zig");
+const meta = @import("../../meta.zig");
+const numeric = @import("../../numeric.zig");
 
 pub fn Hypot(X: type, Y: type) type {
     comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y))
@@ -38,34 +32,10 @@ pub fn Hypot(X: type, Y: type) type {
     switch (comptime meta.numericType(X)) {
         .bool => switch (comptime meta.numericType(Y)) {
             .bool => @compileError("zsl.numeric.Hypot: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
-            .int => @compileError("zsl.numeric.Hypot: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
-            .float => return float.Hypot(X, Y),
-            .dyadic => return dyadic.Hypot(X, Y),
-            .complex => return complex.Hypot(X, Y),
+            .int, .float, .dyadic, .complex => return numeric.Coerce(X, Y),
             .custom => unreachable,
         },
-        .int => switch (comptime meta.numericType(Y)) {
-            .bool, .int => @compileError("zsl.numeric.Hypot: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
-            .float => return float.Hypot(X, Y),
-            .dyadic => return dyadic.Hypot(X, Y),
-            .complex => return complex.Hypot(X, Y),
-            .custom => unreachable,
-        },
-        .float => switch (comptime meta.numericType(Y)) {
-            .bool, .int, .float => return float.Hypot(X, Y),
-            .dyadic => return dyadic.Hypot(X, Y),
-            .complex => return complex.Hypot(X, Y),
-            .custom => unreachable,
-        },
-        .dyadic => switch (comptime meta.numericType(Y)) {
-            .bool, .int, .float, .dyadic => return dyadic.Hypot(X, Y),
-            .complex => return complex.Hypot(X, Y),
-            .custom => unreachable,
-        },
-        .complex => switch (comptime meta.numericType(Y)) {
-            .bool, .int, .float, .dyadic, .complex => return complex.Hypot(X, Y),
-            .custom => unreachable,
-        },
+        else => return numeric.Coerce(X, Y),
         .custom => unreachable,
     }
 }
@@ -138,31 +108,31 @@ pub fn hypot(x: anytype, y: anytype) numeric.Hypot(@TypeOf(x), @TypeOf(y)) {
         .bool => switch (comptime meta.numericType(Y)) {
             .bool => unreachable,
             .int => unreachable,
-            .float => return float.hypot(x, y),
-            .dyadic => return dyadic.hypot(x, y),
-            .complex => return complex.hypot(x, y),
+            .float => return @import("../float/hypot.zig").hypot(numeric.cast(R, x), numeric.cast(R, y)),
+            .dyadic => @compileError("zsl.numeric.pow: not implemented for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ " yet."),
+            .complex => @compileError("zsl.numeric.pow: not implemented for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ " yet."),
             .custom => unreachable,
         },
         .int => switch (comptime meta.numericType(Y)) {
             .bool, .int => unreachable,
-            .float => return float.hypot(x, y),
-            .dyadic => return dyadic.hypot(x, y),
-            .complex => return complex.hypot(x, y),
+            .float => return @import("../float/hypot.zig").hypot(numeric.cast(R, x), numeric.cast(R, y)),
+            .dyadic => @compileError("zsl.numeric.pow: not implemented for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ " yet."),
+            .complex => @compileError("zsl.numeric.pow: not implemented for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ " yet."),
             .custom => unreachable,
         },
         .float => switch (comptime meta.numericType(Y)) {
-            .bool, .int, .float => return float.hypot(x, y),
-            .dyadic => return dyadic.hypot(x, y),
-            .complex => return complex.hypot(x, y),
+            .bool, .int, .float => return @import("../float/hypot.zig").hypot(numeric.cast(R, x), numeric.cast(R, y)),
+            .dyadic => @compileError("zsl.numeric.pow: not implemented for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ " yet."),
+            .complex => @compileError("zsl.numeric.pow: not implemented for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ " yet."),
             .custom => unreachable,
         },
         .dyadic => switch (comptime meta.numericType(Y)) {
-            .bool, .int, .float, .dyadic => return dyadic.hypot(x, y),
-            .complex => return complex.hypot(x, y),
+            .bool, .int, .float, .dyadic => @compileError("zsl.numeric.pow: not implemented for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ " yet."),
+            .complex => @compileError("zsl.numeric.pow: not implemented for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ " yet."),
             .custom => unreachable,
         },
         .complex => switch (comptime meta.numericType(Y)) {
-            .bool, .int, .float, .dyadic, .complex => return complex.hypot(x, y),
+            .bool, .int, .float, .dyadic, .complex => @compileError("zsl.numeric.pow: not implemented for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ " yet."),
             .custom => unreachable,
         },
         .custom => unreachable,

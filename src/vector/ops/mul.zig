@@ -5,7 +5,7 @@ const meta = @import("../../meta.zig");
 const numeric = @import("../../numeric.zig");
 const vector = @import("../../vector.zig");
 
-const vecops = @import("../ops.zig");
+const ops = @import("../ops.zig");
 
 pub fn Mul(comptime X: type, comptime Y: type) type {
     comptime if ((!meta.isVector(X) and !meta.isNumeric(X)) or (!meta.isVector(Y) and !meta.isNumeric(Y)) or
@@ -13,7 +13,7 @@ pub fn Mul(comptime X: type, comptime Y: type) type {
         @compileError("zsl.vector.Mul: at least one of X or Y must be a vector type, the other must be a numeric type, got\n\tX = " ++
             @typeName(X) ++ "\n\tY = " ++ @typeName(Y) ++ "\n");
 
-    return vecops.Apply2(X, Y, numeric.mul);
+    return ops.Apply2(X, Y, numeric.mul);
 }
 
 /// Performs multiplication between a vector and a numeric.
@@ -33,7 +33,7 @@ pub fn Mul(comptime X: type, comptime Y: type) type {
 /// ## Returns
 /// `vector.Mul(@TypeOf(x), @TypeOf(y))`: The result of the multiplication.
 pub fn mul(x: anytype, y: anytype) vector.Mul(@TypeOf(x), @TypeOf(y)) {
-    return vecops.apply2Unchecked(x, y, numeric.mul);
+    return ops.apply2Unchecked(x, y, numeric.mul);
 }
 
 /// Performs multiplication between a vector and a numeric, dynamically
@@ -59,7 +59,7 @@ pub fn mul(x: anytype, y: anytype) vector.Mul(@TypeOf(x), @TypeOf(y)) {
 /// ## Errors
 /// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
 pub fn mulAlloc(allocator: std.mem.Allocator, x: anytype, y: anytype) !vector.Mul(@TypeOf(x), @TypeOf(y)) {
-    return vecops.apply2Alloc(allocator, x, y, numeric.mul);
+    return ops.apply2Alloc(allocator, x, y, numeric.mul);
 }
 
 /// Performs computation of the multiplication of a vectors and a numeric, `x`
@@ -96,7 +96,7 @@ pub fn mulInto(o: anytype, x: anytype, y: anytype) !void {
         @compileError("zsl.vector.mulInto: at least one of X or Y must be a vector type, the other must be a numeric type, got\n\tX = " ++
             @typeName(X) ++ "\n\tY = " ++ @typeName(Y) ++ "\n");
 
-    return vecops.apply2Into(o, x, y, numeric.mulInto);
+    return ops.apply2Into(o, x, y, numeric.mulInto);
 }
 
 /// Performs computation of the multiplication of a vectors and a numeric, `x`
@@ -126,5 +126,5 @@ pub fn mulIntoUnchecked(o: anytype, x: anytype, y: anytype) void {
         @compileError("zsl.vector.mulIntoUnchecked: at least one of X or Y must be a vector type, the other must be a numeric type, got\n\tX = " ++
             @typeName(X) ++ "\n\tY = " ++ @typeName(Y) ++ "\n");
 
-    return vecops.apply2IntoUnchecked(o, x, y, numeric.mulInto);
+    return ops.apply2IntoUnchecked(o, x, y, numeric.mulInto);
 }

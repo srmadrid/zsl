@@ -1,7 +1,5 @@
-const meta = @import("../meta.zig");
-const numeric = @import("../numeric.zig");
-
-const float = @import("../float.zig");
+const meta = @import("../../meta.zig");
+const numeric = @import("../../numeric.zig");
 
 const lgamma = @import("lgamma.zig");
 
@@ -113,12 +111,12 @@ fn gamma128(x: f128) f128 {
     if (((I0 & 0x7fffffffffffffff) | I1) == 0)
         return 1.0 / x;
 
-    if (I0 < 0 and @as(u64, @bitCast(I0)) < 0xffff000000000000 and float.rint(x) == x)
+    if (I0 < 0 and @as(u64, @bitCast(I0)) < 0xffff000000000000 and @import("rint.zig").rint(x) == x)
         return (x - x) / (x - x);
 
     if (I0 == 0xffff000000000000 and I1 == 0)
         return x - x;
     var signamp: i32 = undefined;
     const lg: f128 = lgamma.lgamma_r128(x, &signamp);
-    return numeric.cast(f128, signamp) * float.exp(lg);
+    return numeric.cast(f128, signamp) * @import("exp.zig").exp(lg);
 }

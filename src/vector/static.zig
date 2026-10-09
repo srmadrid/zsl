@@ -4,7 +4,7 @@ const meta = @import("../meta.zig");
 
 const vector = @import("../vector.zig");
 
-const vecutils = @import("utils.zig");
+const utils = @import("utils.zig");
 
 /// Static vector type, represented as a contiguous array of elements of type
 /// `N`.
@@ -183,7 +183,7 @@ pub fn Static(len_: comptime_int, N: type) type {
                 pub fn format(self: vector.Static(len, N).Formatter(num_fmt), writer: *std.Io.Writer) !void {
                     try writer.print("zsl.vector.Static({d}, {s}) ({d}):\n\n", .{ len, @typeName(N), len });
 
-                    return vecutils.format(self, num_fmt, len, writer);
+                    return utils.format(self, num_fmt, len, writer);
                 }
             };
         }

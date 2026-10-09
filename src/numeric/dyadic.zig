@@ -334,5 +334,3 @@ pub fn Dyadic(mantissa_bits: u16, exponent_bits: u16) type {
         }
     };
 }
-
-pub const sqrt = @import("dyadic/sqrt.zig").sqrt;

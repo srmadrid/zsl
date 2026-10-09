@@ -1,11 +1,5 @@
-const meta = @import("../meta.zig");
-
-const int = @import("../int.zig");
-const float = @import("../float.zig");
-const dyadic = @import("../dyadic.zig");
-const complex = @import("../complex.zig");
-
-const numeric = @import("../numeric.zig");
+const meta = @import("../../meta.zig");
+const numeric = @import("../../numeric.zig");
 
 pub fn Pow(X: type, Y: type) type {
     comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y))
@@ -38,34 +32,10 @@ pub fn Pow(X: type, Y: type) type {
     switch (comptime meta.numericType(X)) {
         .bool => switch (comptime meta.numericType(Y)) {
             .bool => @compileError("zsl.numeric.Pow: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
-            .int => return int.Pow(X, Y),
-            .float => return float.Pow(X, Y),
-            .dyadic => return dyadic.Pow(X, Y),
-            .complex => return complex.Pow(X, Y),
+            .int, .float, .dyadic, .complex => return numeric.Coerce(X, Y),
             .custom => unreachable,
         },
-        .int => switch (comptime meta.numericType(Y)) {
-            .bool, .int => return int.Pow(X, Y),
-            .float => return float.Pow(X, Y),
-            .dyadic => return dyadic.Pow(X, Y),
-            .complex => return complex.Pow(X, Y),
-            .custom => unreachable,
-        },
-        .float => switch (comptime meta.numericType(Y)) {
-            .bool, .int, .float => return float.Pow(X, Y),
-            .dyadic => return dyadic.Pow(X, Y),
-            .complex => return complex.Pow(X, Y),
-            .custom => unreachable,
-        },
-        .dyadic => switch (comptime meta.numericType(Y)) {
-            .bool, .int, .float, .dyadic => return dyadic.Pow(X, Y),
-            .complex => return complex.Pow(X, Y),
-            .custom => unreachable,
-        },
-        .complex => switch (comptime meta.numericType(Y)) {
-            .bool, .int, .float, .dyadic, .complex => return complex.Pow(X, Y),
-            .custom => unreachable,
-        },
+        else => return numeric.Coerce(X, Y),
         .custom => unreachable,
     }
 }
@@ -138,32 +108,33 @@ pub fn pow(x: anytype, y: anytype) numeric.Pow(@TypeOf(x), @TypeOf(y)) {
     switch (comptime meta.numericType(X)) {
         .bool => switch (comptime meta.numericType(Y)) {
             .bool => unreachable,
-            .int => return int.pow(x, y),
-            .float => return float.pow(x, y),
-            .dyadic => return dyadic.pow(x, y),
-            .complex => return complex.pow(x, y),
+            .int => return @import("pow/int.zig").pow(numeric.cast(R, x), numeric.cast(R, y)),
+            .float => return @import("../float/pow.zig").pow(numeric.cast(R, x), numeric.cast(R, y)),
+            .dyadic => @compileError("zsl.numeric.pow: not implemented for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ " yet."),
+            .complex => return @import("pow/complex.zig").pow_rc(numeric.cast(numeric.Re(R), x), numeric.cast(R, y)),
             .custom => unreachable,
         },
         .int => switch (comptime meta.numericType(Y)) {
-            .bool, .int => return int.pow(x, y),
-            .float => return float.pow(x, y),
-            .dyadic => return dyadic.pow(x, y),
-            .complex => return complex.pow(x, y),
+            .bool, .int => return @import("pow/int.zig").pow(numeric.cast(R, x), numeric.cast(R, y)),
+            .float => return @import("../float/pow.zig").pow(numeric.cast(R, x), numeric.cast(R, y)),
+            .dyadic => @compileError("zsl.numeric.pow: not implemented for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ " yet."),
+            .complex => return @import("pow/complex.zig").pow_rc(numeric.cast(numeric.Re(R), x), numeric.cast(R, y)),
             .custom => unreachable,
         },
         .float => switch (comptime meta.numericType(Y)) {
-            .bool, .int, .float => return float.pow(x, y),
-            .dyadic => return dyadic.pow(x, y),
-            .complex => return complex.pow(x, y),
+            .bool, .int, .float => return @import("../float/pow.zig").pow(numeric.cast(R, x), numeric.cast(R, y)),
+            .dyadic => @compileError("zsl.numeric.pow: not implemented for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ " yet."),
+            .complex => return @import("pow/complex.zig").pow_rc(numeric.cast(numeric.Re(R), x), numeric.cast(R, y)),
             .custom => unreachable,
         },
         .dyadic => switch (comptime meta.numericType(Y)) {
-            .bool, .int, .float, .dyadic => return dyadic.pow(x, y),
-            .complex => return complex.pow(x, y),
+            .bool, .int, .float, .dyadic => @compileError("zsl.numeric.pow: not implemented for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ " yet."),
+            .complex => return @import("pow/complex.zig").pow_rc(numeric.cast(numeric.Re(R), x), numeric.cast(R, y)),
             .custom => unreachable,
         },
         .complex => switch (comptime meta.numericType(Y)) {
-            .bool, .int, .float, .dyadic, .complex => return complex.pow(x, y),
+            .bool, .int, .float, .dyadic => return @import("pow/complex.zig").pow_cr(numeric.cast(R, x), numeric.cast(numeric.Re(R), y)),
+            .complex => return @import("pow/complex.zig").pow_cc(numeric.cast(R, x), numeric.cast(R, y)),
             .custom => unreachable,
         },
         .custom => unreachable,

@@ -30,6 +30,8 @@ pub const conj = @import("ops/conj.zig").conj;
 pub const conjInto = @import("ops/conj.zig").conjInto;
 pub const Sign = @import("ops/sign.zig").Sign;
 pub const sign = @import("ops/sign.zig").sign;
+// pub const Arg = @import("ops/arg.zig").Arg;
+// pub const arg = @import("ops/arg.zig").arg;
 // pub const copysign = num@import("ops/ops.zig").copysign;
 
 // Rounding functions

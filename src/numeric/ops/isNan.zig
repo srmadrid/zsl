@@ -11,7 +11,8 @@ pub fn isNan(x: anytype) bool {
         .int => return false,
         .float => return std.math.isNan(x),
         .dyadic => return x.exponent == numeric.highest(X.Exponent) and x.mantissa != 0,
-        .complex => return numeric.isNan(numeric.re(x)) or numeric.isNan(numeric.im(x)),
+        .complex => return (numeric.isNan(numeric.re(x)) or numeric.isNan(numeric.im(x))) and
+            !numeric.isInf(numeric.re(x)) and !numeric.isInf(numeric.im(x)),
         .custom => {
             const Impl: type = comptime meta.anyHasMethod(
                 &.{X},

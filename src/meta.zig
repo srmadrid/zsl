@@ -2,6 +2,7 @@
 
 const std = @import("std");
 
+const numeric = @import("numeric.zig");
 const matrix = @import("matrix.zig");
 
 pub const standard_integer_types: [10]type = .{
@@ -208,7 +209,7 @@ pub inline fn numericType(comptime N: type) NumericType {
             comptime if (@hasDecl(N, "Mantissa") and @hasDecl(N, "Exponent") and
                 @typeInfo(N.Mantissa) == .int and @typeInfo(N.Mantissa).int.signedness == .unsigned and
                 @typeInfo(N.Exponent) == .int and @typeInfo(N.Exponent).int.signedness == .signed and
-                N == @import("dyadic.zig").Dyadic(@typeInfo(N.Mantissa).int.bits, @typeInfo(N.Exponent).int.bits))
+                N == numeric.Dyadic(@typeInfo(N.Mantissa).int.bits, @typeInfo(N.Exponent).int.bits))
                 return .dyadic;
 
             comptime if (@hasField(N, "re") and @hasField(N, "im")) {

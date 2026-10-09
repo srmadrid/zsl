@@ -1,9 +1,7 @@
 const std = @import("std");
 
-const meta = @import("../meta.zig");
-const numeric = @import("../numeric.zig");
-
-const float = @import("../float.zig");
+const meta = @import("../../meta.zig");
+const numeric = @import("../../numeric.zig");
 
 const dbl64 = @import("dbl64.zig");
 const ldbl128 = @import("ldbl128.zig");
@@ -333,7 +331,7 @@ fn expm1_128(x: f128) f128 {
 
     // Express x = ln(2) (k + remainder), remainder not exceeding 1/2
     var xx: f128 = 6.93145751953125e-1 + 1.428606820309417232121458176568075500134e-6; // ln(2)
-    var px: f128 = float.floor(0.5 + x / xx);
+    var px: f128 = @import("floor.zig").floor(0.5 + x / xx);
     const k: i32 = numeric.cast(i32, px);
 
     // Remainder times ln(2)
@@ -374,7 +372,7 @@ fn expm1_128(x: f128) f128 {
         xxx = px * qx + (px - 0.5);
         xxx *= 2.0;
     } else {
-        px = float.ldexp(@as(f128, 1.0), k);
+        px = @import("ldexp.zig").ldexp(@as(f128, 1.0), k);
         xxx = px * qx + (px - 1.0);
     }
 

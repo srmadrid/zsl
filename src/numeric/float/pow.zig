@@ -1,22 +1,10 @@
 const std = @import("std");
 
-const meta = @import("../meta.zig");
-const numeric = @import("../numeric.zig");
-
-const float = @import("../float.zig");
+const meta = @import("../../meta.zig");
+const numeric = @import("../../numeric.zig");
 
 const dbl64 = @import("dbl64.zig");
 const ldbl128 = @import("ldbl128.zig");
-
-pub fn Pow(comptime X: type, comptime Y: type) type {
-    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y) or
-        !meta.numericType(X).le(.float) or !meta.numericType(Y).le(.float) or
-        (meta.numericType(X) != .float and meta.numericType(Y) != .float))
-        @compileError("zsl.float.Pow: at least one of X or Y must be a float type, the other must be a bool, an int or a float type, got\n\tX = " ++
-            @typeName(X) ++ "\n\tY = " ++ @typeName(Y) ++ "\n");
-
-    return float.Coerce(X, Y);
-}
 
 /// Performs exponentiation `xʸ` between two operands of float, int or bool
 /// types, where at least one operand must be of float type. The result type is
@@ -36,16 +24,16 @@ pub fn Pow(comptime X: type, comptime Y: type) type {
 /// ## Returns
 /// `float.Pow(@TypeOf(x), @TypeOf(y))`: The result of raising `x` to the power
 /// of `y`.
-pub fn pow(x: anytype, y: anytype) float.Pow(@TypeOf(x), @TypeOf(y)) {
-    switch (float.Pow(@TypeOf(x), @TypeOf(y))) {
+pub fn pow(x: anytype, y: @TypeOf(x)) @TypeOf(x) {
+    switch (@TypeOf(x)) {
         f16 => return numeric.cast(f16, pow32(numeric.cast(f32, x), numeric.cast(f32, y))),
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_powf.c
-            return pow32(numeric.cast(f32, x), numeric.cast(f32, y));
+            return pow32(x, y);
         },
         f64 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_pow.c
-            return pow64(numeric.cast(f64, x), numeric.cast(f64, y));
+            return pow64(x, y);
         },
         f80 => {
             // https://github.com/JuliaMath/openlibm/blob/master/ld80/e_powl.c
@@ -55,7 +43,7 @@ pub fn pow(x: anytype, y: anytype) float.Pow(@TypeOf(x), @TypeOf(y)) {
         },
         f128 => {
             // https://github.com/JuliaMath/openlibm/blob/master/ld128/e_logl.c
-            return pow128(numeric.cast(f128, x), numeric.cast(f128, y));
+            return pow128(x, y);
         },
         else => unreachable,
     }
@@ -124,9 +112,9 @@ fn pow32(x: f32, y: f32) f32 {
 
     if (hy == 0x3f000000) // y is 0.5
         if (hx >= 0) // x >= 0
-            return float.sqrt(x);
+            return @import("sqrt.zig").sqrt(x);
 
-    var ax: f32 = float.abs(x);
+    var ax: f32 = numeric.abs(x);
     if (ix == 0x7f800000 or ix == 0 or ix == 0x3f800000) { // x is ±inf, ±0, or ±1
         var z: f32 = ax;
 
@@ -306,7 +294,7 @@ fn pow32(x: f32, y: f32) f32 {
     j +%= n << 23;
 
     if ((j >> 23) <= 0) // Subnormal output
-        z = float.scalbn(z, n)
+        z = @import("scalbn.zig").scalbn(z, n)
     else
         z = @bitCast(j);
 
@@ -390,10 +378,10 @@ fn pow64(x: f64, y: f64) f64 {
 
         if (hy == 0x3fe00000) // y is 0.5
             if (hx >= 0) // x >= 0
-                return float.sqrt(x);
+                return @import("sqrt.zig").sqrt(x);
     }
 
-    var ax: f64 = float.abs(x);
+    var ax: f64 = numeric.abs(x);
     if (lx == 0) {
         if (ix == 0x7ff00000 or ix == 0 or ix == 0x3ff00000) { // x is ±inf, ±0, or ±1
             var z: f64 = ax;
@@ -580,7 +568,7 @@ fn pow64(x: f64, y: f64) f64 {
     j +%= n << 20;
 
     if ((j >> 20) <= 0) // Subnormal output
-        z = float.scalbn(z, n)
+        z = @import("scalbn.zig").scalbn(z, n)
     else
         dbl64.setHighPart(&z, @bitCast(j));
 
@@ -655,7 +643,7 @@ fn pow80(x: f80, y: f80) f80 {
         return 0.0;
     }
 
-    var w: f80 = float.floor(y);
+    var w: f80 = @import("floor.zig").floor(y);
 
     // Set iyflg to true if y is an integer
     var iyflg: bool = false;
@@ -665,9 +653,9 @@ fn pow80(x: f80, y: f80) f80 {
     // Test for odd integer y
     var yoddint: bool = false;
     if (iyflg) {
-        var ya: f80 = float.abs(y);
-        ya = float.floor(0.5 * ya);
-        const yb: f80 = 0.5 * float.abs(w);
+        var ya: f80 = numeric.abs(y);
+        ya = @import("floor.zig").floor(0.5 * ya);
+        const yb: f80 = 0.5 * numeric.abs(w);
 
         if (ya != yb)
             yoddint = true;
@@ -720,18 +708,18 @@ fn pow80(x: f80, y: f80) f80 {
 
     // Integer power of an integer
     if (iyflg) {
-        w = float.floor(x);
-        if (w == x and (float.abs(y) < 32768.0))
+        w = @import("floor.zig").floor(x);
+        if (w == x and (numeric.abs(y) < 32768.0))
             return powi80(x, numeric.cast(i32, y));
     }
 
     var xx: f80 = x;
     if (nflg)
-        xx = float.abs(x);
+        xx = numeric.abs(x);
 
     // Separate significand from exponent
     var i: i32 = undefined;
-    xx = float.frexp(xx, &i);
+    xx = @import("frexp.zig").frexp(xx, &i);
     var e: i32 = i;
 
     // Find significand in antilogarithm table A_80
@@ -771,7 +759,7 @@ fn pow80(x: f80, y: f80) f80 {
             (8.4000598057587009834666e0 + xx *
                 (5.2500282295834889175431e0 + xx *
                     1.0000000000000000000000e0))));
-    w -= float.ldexp(z, -1);
+    w -= @import("ldexp.zig").ldexp(z, -1);
 
     // Convert to base 2 logarithm:
     // multiply by log2(e)
@@ -782,7 +770,7 @@ fn pow80(x: f80, y: f80) f80 {
 
     // Compute exponent term of the base 2 logarithm
     w = numeric.cast(f80, -i);
-    w = float.ldexp(w, -5);
+    w = @import("ldexp.zig").ldexp(w, -5);
     w += numeric.cast(f80, e);
     // Now base 2 log of x is w + z
 
@@ -803,7 +791,7 @@ fn pow80(x: f80, y: f80) f80 {
 
     const h: f80 = fb + gb;
     const ha: f80 = reduc80(h);
-    w = float.ldexp(ga + ha, 5);
+    w = @import("ldexp.zig").ldexp(ga + ha, 5);
 
     // Test the power of 2 for overflow
     if (w > 32.0 * 16384.0)
@@ -844,15 +832,15 @@ fn pow80(x: f80, y: f80) f80 {
     w = A_80[numeric.cast(u32, e)];
     z *= w;
     z += w;
-    z = float.ldexp(z, i);
+    z = @import("ldexp.zig").ldexp(z, i);
 
     if (nflg) {
         // For negative x,
         // find out if the integer exponent
         // is odd or even
-        w = float.ldexp(y, -1);
-        w = float.floor(w);
-        w = float.ldexp(w, 1);
+        w = @import("ldexp.zig").ldexp(y, -1);
+        w = @import("floor.zig").floor(w);
+        w = @import("ldexp.zig").ldexp(w, 1);
         if (w != y)
             z = -z;
     }
@@ -912,9 +900,9 @@ fn pow128(x: f128, y: f128) f128 {
         if (iy >= 0x40700000) // 2^113
             yisint = 2 // even integer y
         else if (iy >= 0x3fff0000) { // 1.0
-            if (float.floor(y) == y) {
+            if (@import("floor.zig").floor(y) == y) {
                 const z: f128 = 0.5 * y;
-                if (float.floor(z) == z)
+                if (@import("floor.zig").floor(z) == z)
                     yisint = 2
                 else
                     yisint = 1;
@@ -944,11 +932,11 @@ fn pow128(x: f128, y: f128) f128 {
 
         if (hy == 0x3ffe0000) { // y is 0.5
             if (hx >= 0) // x >= 0
-                return float.sqrt(x);
+                return @import("sqrt.zig").sqrt(x);
         }
     }
 
-    var ax: f128 = float.abs(x);
+    var ax: f128 = numeric.abs(x);
 
     if ((p.mswlo | p.lswhi | p.lswlo) == 0) {
         if (ix == 0x7fff0000 or ix == 0 or ix == 0x3fff0000) {
@@ -1123,7 +1111,7 @@ fn pow128(x: f128, y: f128) f128 {
     k = (i >> 16) -% 0x3fff;
     n = 0;
     if (i > 0x3ffe0000) { // if |z| > 0.5, set n = [z + 0.5]
-        n = numeric.cast(i32, float.floor(z + 0.5));
+        n = numeric.cast(i32, @import("floor.zig").floor(z + 0.5));
         t = numeric.cast(f128, n);
         p_h -= t;
     }
@@ -1157,7 +1145,7 @@ fn pow128(x: f128, y: f128) f128 {
     j = @bitCast(o.mswhi);
     j +%= (n << 16);
     if ((j >> 16) <= 0) {
-        z = float.scalbn(z, n); // Subnormal output
+        z = @import("scalbn.zig").scalbn(z, n); // Subnormal output
     } else {
         o.mswhi = @bitCast(j);
         z = o.toFloat();
@@ -1167,9 +1155,9 @@ fn pow128(x: f128, y: f128) f128 {
 }
 
 fn reduc80(x: f80) f80 {
-    var t: f80 = float.ldexp(x, 5);
-    t = float.floor(t);
-    t = float.ldexp(t, -5);
+    var t: f80 = @import("ldexp.zig").ldexp(x, 5);
+    t = @import("floor.zig").floor(t);
+    t = @import("ldexp.zig").ldexp(t, -5);
     return t;
 }
 
@@ -1203,7 +1191,7 @@ fn powi80(x: f80, nn: i32) f80 {
     // Calculate approximate logarithm of answer
     var s: f80 = xx;
     var lx: i32 = undefined;
-    s = float.frexp(s, &lx);
+    s = @import("frexp.zig").frexp(s, &lx);
     const e: i32 = (lx -% 1) * n;
     if (e == 0 or e > 64 or e < -64) {
         s = (s - 7.0710678118654752e-1) / (s + 7.0710678118654752e-1);

@@ -1,10 +1,5 @@
-const meta = @import("../meta.zig");
-
-const float = @import("../float.zig");
-const dyadic = @import("../dyadic.zig");
-const complex = @import("../complex.zig");
-
-const numeric = @import("../numeric.zig");
+const meta = @import("../../meta.zig");
+const numeric = @import("../../numeric.zig");
 
 pub fn Acos(X: type) type {
     comptime if (!meta.isNumeric(X))
@@ -56,9 +51,9 @@ pub fn acos(x: anytype) numeric.Acos(@TypeOf(x)) {
     switch (comptime meta.numericType(X)) {
         .bool => unreachable,
         .int => unreachable,
-        .float => return float.acos(x),
-        .dyadic => return dyadic.acos(x),
-        .complex => return complex.acos(x),
+        .float => return @import("../float/acos.zig").acos(x),
+        .dyadic => @compileError("zsl.numeric.acos: not implemented for " ++ @typeName(X) ++ " yet."),
+        .complex => return @import("acos/complex.zig").acos(x),
         .custom => {
             const Impl: type = comptime meta.anyHasMethod(
                 &.{ R, X },

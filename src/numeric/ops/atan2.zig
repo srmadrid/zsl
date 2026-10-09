@@ -1,11 +1,5 @@
-const meta = @import("../meta.zig");
-
-const int = @import("../int.zig");
-const float = @import("../float.zig");
-const dyadic = @import("../dyadic.zig");
-const complex = @import("../complex.zig");
-
-const numeric = @import("../numeric.zig");
+const meta = @import("../../meta.zig");
+const numeric = @import("../../numeric.zig");
 
 pub fn Atan2(Y: type, X: type) type {
     comptime if (!meta.isNumeric(Y) or !meta.isNumeric(X))
@@ -35,37 +29,13 @@ pub fn Atan2(Y: type, X: type) type {
         return X.Atan2(Y, X);
     }
 
-    switch (comptime meta.numericType(Y)) {
-        .bool => switch (comptime meta.numericType(X)) {
-            .bool => @compileError("zsl.numeric.Atan2: not defined for " ++ @typeName(Y) ++ " and " ++ @typeName(X) ++ "."),
-            .int => @compileError("zsl.numeric.Atan2: not defined for " ++ @typeName(Y) ++ " and " ++ @typeName(X) ++ "."),
-            .float => return float.Atan2(Y, X),
-            .dyadic => return dyadic.Atan2(Y, X),
-            .complex => return complex.Atan2(Y, X),
+    switch (comptime meta.numericType(X)) {
+        .bool => switch (comptime meta.numericType(Y)) {
+            .bool => @compileError("zsl.numeric.Atan2: not defined for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ "."),
+            .int, .float, .dyadic, .complex => return numeric.Coerce(X, Y),
             .custom => unreachable,
         },
-        .int => switch (comptime meta.numericType(X)) {
-            .bool, .int => @compileError("zsl.numeric.Atan2: not defined for " ++ @typeName(Y) ++ " and " ++ @typeName(X) ++ "."),
-            .float => return float.Atan2(Y, X),
-            .dyadic => return dyadic.Atan2(Y, X),
-            .complex => return complex.Atan2(Y, X),
-            .custom => unreachable,
-        },
-        .float => switch (comptime meta.numericType(X)) {
-            .bool, .int, .float => return float.Atan2(Y, X),
-            .dyadic => return dyadic.Atan2(Y, X),
-            .complex => return complex.Atan2(Y, X),
-            .custom => unreachable,
-        },
-        .dyadic => switch (comptime meta.numericType(X)) {
-            .bool, .int, .float, .dyadic => return dyadic.Atan2(Y, X),
-            .complex => return complex.Atan2(Y, X),
-            .custom => unreachable,
-        },
-        .complex => switch (comptime meta.numericType(X)) {
-            .bool, .int, .float, .dyadic, .complex => return complex.Atan2(Y, X),
-            .custom => unreachable,
-        },
+        else => return numeric.Coerce(X, Y),
         .custom => unreachable,
     }
 }
@@ -139,31 +109,31 @@ pub fn atan2(y: anytype, x: anytype) numeric.Atan2(@TypeOf(y), @TypeOf(x)) {
         .bool => switch (comptime meta.numericType(X)) {
             .bool => unreachable,
             .int => unreachable,
-            .float => return float.atan2(y, x),
-            .dyadic => return dyadic.atan2(y, x),
-            .complex => return complex.atan2(y, x),
+            .float => return @import("../float/atan2.zig").atan2(numeric.cast(R, y), numeric.cast(R, x)),
+            .dyadic => @compileError("zsl.numeric.atan2: not implemented for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ " yet."),
+            .complex => @compileError("zsl.numeric.atan2: not implemented for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ " yet."),
             .custom => unreachable,
         },
         .int => switch (comptime meta.numericType(X)) {
             .bool, .int => unreachable,
-            .float => return float.atan2(y, x),
-            .dyadic => return dyadic.atan2(y, x),
-            .complex => return complex.atan2(y, x),
+            .float => return @import("../float/atan2.zig").atan2(numeric.cast(R, y), numeric.cast(R, x)),
+            .dyadic => @compileError("zsl.numeric.atan2: not implemented for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ " yet."),
+            .complex => @compileError("zsl.numeric.atan2: not implemented for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ " yet."),
             .custom => unreachable,
         },
         .float => switch (comptime meta.numericType(X)) {
-            .bool, .int, .float => return float.atan2(y, x),
-            .dyadic => return dyadic.atan2(y, x),
-            .complex => return complex.atan2(y, x),
+            .bool, .int, .float => return @import("../float/atan2.zig").atan2(numeric.cast(R, y), numeric.cast(R, x)),
+            .dyadic => @compileError("zsl.numeric.atan2: not implemented for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ " yet."),
+            .complex => @compileError("zsl.numeric.atan2: not implemented for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ " yet."),
             .custom => unreachable,
         },
         .dyadic => switch (comptime meta.numericType(X)) {
-            .bool, .int, .float, .dyadic => return dyadic.atan2(y, x),
-            .complex => return complex.atan2(y, x),
+            .bool, .int, .float, .dyadic => @compileError("zsl.numeric.atan2: not implemented for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ " yet."),
+            .complex => @compileError("zsl.numeric.atan2: not implemented for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ " yet."),
             .custom => unreachable,
         },
         .complex => switch (comptime meta.numericType(X)) {
-            .bool, .int, .float, .dyadic, .complex => return complex.atan2(y, x),
+            .bool, .int, .float, .dyadic, .complex => @compileError("zsl.numeric.atan2: not implemented for " ++ @typeName(X) ++ " and " ++ @typeName(Y) ++ " yet."),
             .custom => unreachable,
         },
         .custom => unreachable,

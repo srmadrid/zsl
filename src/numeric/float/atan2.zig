@@ -1,20 +1,8 @@
-const meta = @import("../meta.zig");
-const numeric = @import("../numeric.zig");
-
-const float = @import("../float.zig");
+const meta = @import("../../meta.zig");
+const numeric = @import("../../numeric.zig");
 
 const dbl64 = @import("dbl64.zig");
 const ldbl128 = @import("ldbl128.zig");
-
-pub fn Atan2(comptime X: type, comptime Y: type) type {
-    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y) or
-        !meta.numericType(X).le(.float) or !meta.numericType(Y).le(.float) or
-        (meta.numericType(X) != .float and meta.numericType(Y) != .float))
-        @compileError("zsl.float.Atan2: at least one of X or Y must be a float type, the other must be a bool, an int or a float type, got\n\tX = " ++
-            @typeName(X) ++ "\n\tY = " ++ @typeName(Y) ++ "\n");
-
-    return float.Coerce(X, Y);
-}
 
 /// Calculates the arctangent $\tan^{-1}\left(\frac{y}{x})$ of the coordinates
 /// given by two operands of float, int or bool types, where at least one
@@ -33,8 +21,8 @@ pub fn Atan2(comptime X: type, comptime Y: type) type {
 ///
 /// ## Returns
 /// `float.Atan2(@TypeOf(x), @TypeOf(y))`: The arctangent at `(x, y)`.
-pub fn atan2(y: anytype, x: anytype) float.Atan2(@TypeOf(x), @TypeOf(y)) {
-    switch (float.Atan2(@TypeOf(x), @TypeOf(y))) {
+pub fn atan2(y: anytype, x: @TypeOf(y)) @TypeOf(y) {
+    switch (@TypeOf(y)) {
         f16 => return numeric.cast(f16, atan2_32(numeric.cast(f32, x), numeric.cast(f32, y))),
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_atan2f.c
@@ -82,7 +70,7 @@ fn atan2_32(y: f32, x: f32) f32 {
         return x + y;
 
     if (hx == 0x3f800000)
-        return float.atan(y); // x = 1.0
+        return @import("atan.zig").atan(y); // x = 1.0
 
     var m: i32 = ((hy >> 31) & 1) | ((hx >> 30) & 2); // 2 * sign(x) + sign(y)
 
@@ -136,7 +124,7 @@ fn atan2_32(y: f32, x: f32) f32 {
     } else if (k < -26 and hx < 0) {
         z = 0.0; // 0 > |y|/x > -2**-26
     } else {
-        z = float.atan(float.abs(y / x)); // Safe to do y/x
+        z = @import("atan.zig").atan(numeric.abs(y / x)); // Safe to do y/x
     }
 
     return switch (m) {
@@ -171,7 +159,7 @@ fn atan2_64(y: f64, x: f64) f64 {
         return x + y;
 
     if (hx == 0x3ff00000 and lx == 0)
-        return float.atan(y); // x = 1.0
+        return @import("atan.zig").atan(y); // x = 1.0
 
     var m: i32 = ((hy >> 31) & 1) | ((hx >> 30) & 2); // 2 * sign(x) + sign(y)
 
@@ -225,7 +213,7 @@ fn atan2_64(y: f64, x: f64) f64 {
     } else if (k < -60 and hx < 0) {
         z = 0.0; // 0 > |y|/x > -2**-60
     } else {
-        z = float.atan(float.abs(y / x)); // Safe to do y/x
+        z = @import("atan.zig").atan(numeric.abs(y / x)); // Safe to do y/x
     }
 
     return switch (m) {
@@ -271,7 +259,7 @@ fn atan2_128(y: f128, x: f128) f128 {
         return x + y;
 
     if (expsignx == (16384 - 1) and (ux.mantissa_high | ux.mantissa_low) == 0) // x = 1.0
-        return float.atan(y);
+        return @import("atan.zig").atan(y);
 
     var m: i16 = ((expsigny >> 15) & 1) | ((expsignx >> 14) & 2); // 2 * sign(x) + sign(y)
 
@@ -325,7 +313,7 @@ fn atan2_128(y: f128, x: f128) f128 {
     } else if (k < -114 and signx != 0) {
         z = 0.0; // |y/x| tiny, x < 0
     } else {
-        z = float.atan(float.abs(y / x)); // Safe to do y/x
+        z = @import("atan.zig").atan(numeric.abs(y / x)); // Safe to do y/x
     }
 
     return switch (m) {

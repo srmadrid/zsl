@@ -1,4 +1,4 @@
-const meta = @import("../meta.zig");
+const meta = @import("../../meta.zig");
 
 pub fn trunc(x: anytype) @TypeOf(x) {
     const X: type = @TypeOf(x);

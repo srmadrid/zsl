@@ -1,9 +1,7 @@
 const std = @import("std");
 
-const meta = @import("../meta.zig");
-const numeric = @import("../numeric.zig");
-
-const float = @import("../float.zig");
+const meta = @import("../../meta.zig");
+const numeric = @import("../../numeric.zig");
 
 const rem_pio2 = @import("rem_pio2.zig");
 const rem_pio2_32 = rem_pio2.rem_pio2_32;
@@ -255,8 +253,8 @@ fn sincos64(x: f64, sinx: *f64, cosx: *f64) void {
 }
 
 fn sincos128(x: f128, sinx: *f128, cosx: *f128) void {
-    sinx.* = float.sin(x);
-    cosx.* = float.cos(x);
+    sinx.* = @import("sin.zig").sin(x);
+    cosx.* = @import("cos.zig").cos(x);
 }
 
 fn k_sincos32(x: f64, sinx: *f32, cosx: *f32) void {

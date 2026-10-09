@@ -1,9 +1,7 @@
 const std = @import("std");
 
-const meta = @import("../meta.zig");
-const numeric = @import("../numeric.zig");
-
-const float = @import("../float.zig");
+const meta = @import("../../meta.zig");
+const numeric = @import("../../numeric.zig");
 
 const dbl64 = @import("dbl64.zig");
 const ldbl128 = @import("ldbl128.zig");
@@ -255,7 +253,7 @@ fn ln80(x: f80) f80 {
 
     // Separate mantissa and exponent
     var e: i32 = undefined;
-    var xx: f80 = float.frexp(x, &e);
+    var xx: f80 = @import("frexp.zig").frexp(x, &e);
     var z: f80 = undefined;
     var y: f80 = undefined;
     if (e > 2 or e < -2) {
@@ -310,7 +308,7 @@ fn ln80(x: f80) f80 {
                             (1.5062909083469192043167e1 + xx *
                                 1.0000000000000000000000e0)))))));
     y += numeric.cast(f80, e) * 1.4286068203094172321215e-6;
-    z = y - float.ldexp(z, -1);
+    z = y - @import("ldexp.zig").ldexp(z, -1);
     z += xx;
     z += numeric.cast(f80, e) * 6.93145751953125e-1;
     return z;
@@ -349,7 +347,7 @@ fn ln128(x: f128) f128 {
         return x + x;
 
     var e: i32 = undefined;
-    u = .fromFloat(float.frexp(x, &e));
+    u = .fromFloat(@import("frexp.zig").frexp(x, &e));
     m = u.mswhi & 0xffff;
     m |= 0x10000;
 

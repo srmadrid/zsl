@@ -3,8 +3,6 @@ const std = @import("std");
 const meta = @import("../meta.zig");
 const numeric = @import("../numeric.zig");
 
-const int = @import("../int.zig");
-
 const poly = @import("../poly.zig");
 
 const polyutils = @import("utils.zig");
@@ -400,7 +398,7 @@ pub fn Dense(N: type) type {
             if (self.max_degree == 0)
                 return .initValue(allocator, 1, numeric.cast(N, 0));
 
-            var result: Dense(N) = try .init(allocator, int.max(1, self.max_degree -| 1));
+            var result: Dense(N) = try .init(allocator, numeric.max(1, self.max_degree -| 1));
 
             var i: usize = 1;
             while (i <= self.max_degree) : (i += 1) {

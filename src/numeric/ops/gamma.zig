@@ -1,11 +1,5 @@
-const meta = @import("../meta.zig");
-
-const int = @import("../int.zig");
-const float = @import("../float.zig");
-const dyadic = @import("../dyadic.zig");
-const complex = @import("../complex.zig");
-
-const numeric = @import("../numeric.zig");
+const meta = @import("../../meta.zig");
+const numeric = @import("../../numeric.zig");
 
 pub fn Gamma(X: type) type {
     comptime if (!meta.isNumeric(X))
@@ -62,9 +56,9 @@ pub fn gamma(x: anytype) numeric.Gamma(@TypeOf(x)) {
     switch (comptime meta.numericType(X)) {
         .bool => unreachable,
         .int => unreachable,
-        .float => return float.gamma(x),
-        .dyadic => return dyadic.gamma(x),
-        .complex => return complex.gamma(x),
+        .float => return @import("../float/gamma.zig").gamma(x),
+        .dyadic => @compileError("zsl.numeric.gamma: not implemented for " ++ @typeName(X) ++ " yet."),
+        .complex => @compileError("zsl.numeric.gamma: not implemented for " ++ @typeName(X) ++ " yet."),
         .custom => {
             const Impl: type = comptime meta.anyHasMethod(
                 &.{ R, X },

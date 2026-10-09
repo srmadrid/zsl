@@ -1,7 +1,5 @@
-const meta = @import("../meta.zig");
-const numeric = @import("../numeric.zig");
-
-const float = @import("../float.zig");
+const meta = @import("../../meta.zig");
+const numeric = @import("../../numeric.zig");
 
 const dbl64 = @import("dbl64.zig");
 const ldbl128 = @import("ldbl128.zig");
@@ -79,9 +77,9 @@ fn atanh32(x: f32) f32 {
     var t: f32 = undefined;
     if (ix < 0x3f000000) { // x < 0.5
         t = xx + xx;
-        t = 0.5 * float.log1p(t + t * xx / (1.0 - xx));
+        t = 0.5 * @import("log1p.zig").log1p(t + t * xx / (1.0 - xx));
     } else {
-        t = 0.5 * float.log1p((xx + xx) / (1.0 - xx));
+        t = 0.5 * @import("log1p.zig").log1p((xx + xx) / (1.0 - xx));
     }
 
     return if (hx < 0) -t else t;
@@ -118,8 +116,8 @@ fn atanh64(x: f64) f64 {
     var t: f64 = undefined;
     if (ix < 0x3fe00000) { // x < 0.5
         t = xx + xx;
-        t = 0.5 * float.log1p(t + t * xx / (1.0 - xx));
-    } else t = 0.5 * float.log1p((xx + xx) / (1.0 - xx));
+        t = 0.5 * @import("log1p.zig").log1p(t + t * xx / (1.0 - xx));
+    } else t = 0.5 * @import("log1p.zig").log1p((xx + xx) / (1.0 - xx));
 
     return if (hx < 0) -t else t;
 }
@@ -155,8 +153,8 @@ fn atanh128(x: f128) f128 {
     var t: f128 = undefined;
     if (ix < 0x3ffe0000) { // x < 0.5
         t = u.toFloat() + u.toFloat();
-        t = 0.5 * float.log1p(t + t * u.toFloat() / (1.0 - u.toFloat()));
-    } else t = 0.5 * float.log1p((u.toFloat() + u.toFloat()) / (1.0 - u.toFloat()));
+        t = 0.5 * @import("log1p.zig").log1p(t + t * u.toFloat() / (1.0 - u.toFloat()));
+    } else t = 0.5 * @import("log1p.zig").log1p((u.toFloat() + u.toFloat()) / (1.0 - u.toFloat()));
 
     return if (jx & 0x80000000 != 0) -t else t;
 }

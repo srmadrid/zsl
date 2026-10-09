@@ -1,7 +1,7 @@
 const std = @import("std");
-const meta = @import("../meta.zig");
-const int = @import("../int.zig");
-const float = @import("../float.zig");
+
+const meta = @import("../../meta.zig");
+const numeric = @import("../../numeric.zig");
 
 /// Returns a value with the magnitude of `x` and the sign of `y`.
 pub fn copysign(x: anytype, y: anytype) @TypeOf(x) {
@@ -19,9 +19,9 @@ pub fn copysign(x: anytype, y: anytype) @TypeOf(x) {
                         .unsigned => return x,
                         .signed => {
                             if (y < 0) {
-                                return -int.abs(x);
+                                return -numeric.abs(x);
                             } else {
-                                return int.abs(x);
+                                return numeric.abs(x);
                             }
                         },
                     }

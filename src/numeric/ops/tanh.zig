@@ -1,11 +1,5 @@
-const meta = @import("../meta.zig");
-
-const int = @import("../int.zig");
-const float = @import("../float.zig");
-const dyadic = @import("../dyadic.zig");
-const complex = @import("../complex.zig");
-
-const numeric = @import("../numeric.zig");
+const meta = @import("../../meta.zig");
+const numeric = @import("../../numeric.zig");
 
 pub fn Tanh(X: type) type {
     comptime if (!meta.isNumeric(X))
@@ -57,9 +51,9 @@ pub fn tanh(x: anytype) numeric.Tanh(@TypeOf(x)) {
     switch (comptime meta.numericType(X)) {
         .bool => unreachable,
         .int => unreachable,
-        .float => return float.tanh(x),
-        .dyadic => return dyadic.tanh(x),
-        .complex => return complex.tanh(x),
+        .float => return @import("../float/tanh.zig").tanh(x),
+        .dyadic => @compileError("zsl.numeric.tanh: not implemented for " ++ @typeName(X) ++ " yet."),
+        .complex => return @import("tanh/complex.zig").tanh(x),
         .custom => {
             const Impl: type = comptime meta.anyHasMethod(
                 &.{ R, X },

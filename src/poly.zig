@@ -1,35 +1,31 @@
 //! Namespace for polynomial types and operations.
 
-const static = @import("poly/static.zig");
-pub const Static = static.Static;
-const dense = @import("poly/dense.zig");
-pub const Dense = dense.Dense;
-const sparse = @import("poly/sparse.zig");
-pub const Sparse = sparse.Sparse;
+pub const Static = @import("poly/static.zig").Static;
+pub const Dense = @import("poly/dense.zig").Dense;
+pub const Sparse = @import("poly/sparse.zig").Sparse;
 
-// const polops = @import("poly/ops.zig");
-// pub const Add = polops.Add;
-// pub const add = polops.add;
-// pub const addUnchecked = polops.addUnchecked;
-// pub const addAlloc = polops.addAlloc;
-// pub const addInto = polops.addInto;
-// pub const addIntoUnchecked = polops.addIntoUnchecked;
-// pub const Sub = polops.Sub;
-// pub const sub = polops.sub;
-// pub const subUnchecked = polops.subUnchecked;
-// pub const subAlloc = polops.subAlloc;
-// pub const subInto = polops.subInto;
-// pub const subIntoUnchecked = polops.subIntoUnchecked;
-// pub const Mul = polops.Mul;
-// pub const mul = polops.mul;
-// pub const mulAlloc = polops.mulAlloc;
-// pub const mulInto = polops.mulInto;
-// pub const mulIntoUnchecked = polops.mulIntoUnchecked;
-// pub const Div = polops.Div;
-// pub const div = polops.div;
-// pub const divAlloc = polops.divAlloc;
-// pub const divInto = polops.divInto;
-// pub const divIntoUnchecked = polops.divIntoUnchecked;
+// pub const Add = @import("poly/ops.zig").Add;
+// pub const add = @import("poly/ops.zig").add;
+// pub const addUnchecked = @import("poly/ops.zig").addUnchecked;
+// pub const addAlloc = @import("poly/ops.zig").addAlloc;
+// pub const addInto = @import("poly/ops.zig").addInto;
+// pub const addIntoUnchecked = @import("poly/ops.zig").addIntoUnchecked;
+// pub const Sub = @import("poly/ops.zig").Sub;
+// pub const sub = @import("poly/ops.zig").sub;
+// pub const subUnchecked = @import("poly/ops.zig").subUnchecked;
+// pub const subAlloc = @import("poly/ops.zig").subAlloc;
+// pub const subInto = @import("poly/ops.zig").subInto;
+// pub const subIntoUnchecked = @import("poly/ops.zig").subIntoUnchecked;
+// pub const Mul = @import("poly/ops.zig").Mul;
+// pub const mul = @import("poly/ops.zig").mul;
+// pub const mulAlloc = @import("poly/ops.zig").mulAlloc;
+// pub const mulInto = @import("poly/ops.zig").mulInto;
+// pub const mulIntoUnchecked = @import("poly/ops.zig").mulIntoUnchecked;
+// pub const Div = @import("poly/ops.zig").Div;
+// pub const div = @import("poly/ops.zig").div;
+// pub const divAlloc = @import("poly/ops.zig").divAlloc;
+// pub const divInto = @import("poly/ops.zig").divInto;
+// pub const divIntoUnchecked = @import("poly/ops.zig").divIntoUnchecked;
 
 pub const Error = error{
     PositionOutOfBounds,

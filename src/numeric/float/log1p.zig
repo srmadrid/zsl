@@ -1,9 +1,7 @@
 const std = @import("std");
 
-const meta = @import("../meta.zig");
-const numeric = @import("../numeric.zig");
-
-const float = @import("../float.zig");
+const meta = @import("../../meta.zig");
+const numeric = @import("../../numeric.zig");
 
 const dbl64 = @import("dbl64.zig");
 const ldbl128 = @import("ldbl128.zig");
@@ -319,7 +317,7 @@ fn log1p128(x: f128) f128 {
     // Separate mantissa from exponent.
     // Use frexp used so that denormal numbers will be handled properly.
     var e: i32 = undefined;
-    xx = float.frexp(xx, &e);
+    xx = @import("frexp.zig").frexp(xx, &e);
 
     // Logarithm using log(x) = z + z**3 P(z**2)/Q(z**2),
     // where z = 2 * (x - 1)/(x + 1)

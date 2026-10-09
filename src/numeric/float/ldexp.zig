@@ -1,7 +1,7 @@
 const std = @import("std");
-const meta = @import("../meta.zig");
-const numeric = @import("../numeric.zig");
-const float = @import("../float.zig");
+
+const meta = @import("../../meta.zig");
+const numeric = @import("../../numeric.zig");
 
 pub fn ldexp(x: anytype, n: i32) @TypeOf(x) {
     const X: type = @TypeOf(x);
@@ -12,5 +12,5 @@ pub fn ldexp(x: anytype, n: i32) @TypeOf(x) {
     if (!std.math.isFinite(x) or x == 0)
         return x + x;
 
-    return float.scalbn(x, n);
+    return @import("scalbn.zig").scalbn(x, n);
 }

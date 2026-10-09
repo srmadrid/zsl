@@ -2,7 +2,6 @@ const std = @import("std");
 
 const options = @import("options");
 
-const float = @import("../../../float.zig");
 const int = @import("../../../int.zig");
 const linalg = @import("../../../linalg.zig");
 const matrix = @import("../../../matrix.zig");

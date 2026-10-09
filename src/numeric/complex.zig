@@ -19,8 +19,8 @@ pub const cf128 = Complex(f128);
 pub const comptime_complex = Complex(comptime_float);
 
 pub fn Complex(comptime N: type) type {
-    if (!meta.isNumeric(N) or meta.isIntegral(N))
-        @compileError("zsl.Complex: N must be a non-integral numeric type, got \n\tN = " ++ @typeName(N) ++ "\n");
+    if (!meta.isNumeric(N) or (meta.numericType(N) != .float and meta.numericType(N) != .dyadic))
+        @compileError("zsl.Complex: N must be a float or dyadic type, got \n\tN = " ++ @typeName(N) ++ "\n");
 
     return struct {
         re: N,
@@ -73,101 +73,3 @@ pub fn Complex(comptime N: type) type {
 
     };
 }
-
-/// Compares two operands of complex, dyadic, float, int or bool types, where at
-/// least one operand must be of complex type, for equality. The operation is
-/// performed by casting both operands to the coerced type, then comparing them.
-///
-/// ## Signature
-/// ```zig
-/// complex.eq(x: X, y: Y) bool
-/// ```
-///
-/// ## Arguments
-/// * `x` (`anytype`): The left operand.
-/// * `y` (`anytype`): The right operand.
-///
-/// ## Returns
-/// `bool`: `true` if the operands are equal, `false` otherwise.
-pub fn eq(x: anytype, y: anytype) bool {
-    const X: type = @TypeOf(x);
-    const Y: type = @TypeOf(y);
-
-    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y) or
-        !meta.numericType(X).le(.complex) or !meta.numericType(Y).le(.complex) or
-        (meta.numericType(X) != .complex and meta.numericType(Y) != .complex))
-        @compileError("zsl.complex.eq: at least one of x or y to be a complex, the other must be a bool, an int, a float or a complex, got\n\tx: " ++
-            @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
-
-    switch (comptime meta.numericType(X)) {
-        .bool, .int, .float, .dyadic => switch (comptime meta.numericType(Y)) {
-            .complex => return numeric.eq(x, y.re) and numeric.eq(y.im, 0),
-            else => unreachable,
-        },
-        .complex => switch (comptime meta.numericType(Y)) {
-            .bool, .int, .float, .dyadic => return numeric.eq(x.re, y) and numeric.eq(x.im, 0),
-            .complex => return numeric.eq(x.re, y.re) and numeric.eq(x.im, y.im),
-            .custom => unreachable,
-        },
-        .custom => unreachable,
-    }
-}
-
-/// Compares two operands of complex, dyadic, float, int or bool types, where at
-/// least one operand must be of complex type, for inequality. The operation is
-/// performed by casting both operands to the coerced type, then comparing them.
-///
-/// ## Signature
-/// ```zig
-/// complex.ne(x: X, y: Y) bool
-/// ```
-///
-/// ## Arguments
-/// * `x` (`anytype`): The left operand.
-/// * `y` (`anytype`): The right operand.
-///
-/// ## Returns
-/// `bool`: `true` if the operands are not equal, `false` otherwise.
-pub fn ne(x: anytype, y: anytype) bool {
-    const X: type = @TypeOf(x);
-    const Y: type = @TypeOf(y);
-
-    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y) or
-        !meta.numericType(X).le(.complex) or !meta.numericType(Y).le(.complex) or
-        (meta.numericType(X) != .complex and meta.numericType(Y) != .complex))
-        @compileError("zsl.complex.ne: at least one of x or y to be a complex, the other must be a bool, an int, a float or a complex, got\n\tx: " ++
-            @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
-
-    switch (comptime meta.numericType(X)) {
-        .bool, .int, .float, .dyadic => switch (comptime meta.numericType(Y)) {
-            .complex => return numeric.ne(x, y.re) or numeric.ne(y.im, 0),
-            else => unreachable,
-        },
-        .complex => switch (comptime meta.numericType(Y)) {
-            .bool, .int, .float, .dyadic => return numeric.ne(x.re, y) or numeric.ne(x.im, 0),
-            .complex => return numeric.ne(x.re, y.re) or numeric.ne(x.im, y.im),
-            .custom => unreachable,
-        },
-        .custom => unreachable,
-    }
-}
-
-pub const Arg = @import("complex/arg.zig").Arg;
-pub const arg = @import("complex/arg.zig").arg;
-pub const exp = @import("complex/exp.zig").exp;
-pub const ln = @import("complex/ln.zig").ln;
-pub const Pow = @import("complex/pow.zig").Pow;
-pub const pow = @import("complex/pow.zig").pow;
-pub const sqrt = @import("complex/sqrt.zig").sqrt;
-pub const sin = @import("complex/sin.zig").sin;
-pub const cos = @import("complex/cos.zig").cos;
-pub const tan = @import("complex/tan.zig").tan;
-pub const asin = @import("complex/asin.zig").asin;
-pub const acos = @import("complex/acos.zig").acos;
-pub const atan = @import("complex/atan.zig").atan;
-pub const sinh = @import("complex/sinh.zig").sinh;
-pub const cosh = @import("complex/cosh.zig").cosh;
-pub const tanh = @import("complex/tanh.zig").tanh;
-pub const asinh = @import("complex/asinh.zig").asinh;
-pub const acosh = @import("complex/acosh.zig").acosh;
-pub const atanh = @import("complex/atanh.zig").atanh;

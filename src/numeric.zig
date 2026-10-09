@@ -1,5 +1,14 @@
 //! Namespace for numeric types and operations.
 
+pub const Dyadic = @import("numeric/dyadic.zig").Dyadic;
+pub const Complex = @import("numeric/complex.zig").Complex;
+pub const cf16 = @import("numeric/complex.zig").cf16;
+pub const cf32 = @import("numeric/complex.zig").cf32;
+pub const cf64 = @import("numeric/complex.zig").cf64;
+pub const cf80 = @import("numeric/complex.zig").cf80;
+pub const cf128 = @import("numeric/complex.zig").cf128;
+pub const comptime_complex = @import("numeric/complex.zig").comptime_complex;
+
 // Utilities
 pub const Coerce = @import("numeric/ops.zig").Coerce;
 pub const cast = @import("numeric/ops.zig").cast;
@@ -8,7 +17,7 @@ pub const bitSize = @import("numeric/ops.zig").bitSize;
 pub const isZero = @import("numeric/ops.zig").isZero;
 pub const isInf = @import("numeric/ops.zig").isInf;
 pub const isNan = @import("numeric/ops.zig").isNan;
-// isPositive
+// isPositive?
 
 // Constants
 pub const highest = @import("numeric/constants.zig").highest;
@@ -47,6 +56,8 @@ pub const conj = @import("numeric/ops.zig").conj;
 pub const conjInto = @import("numeric/ops.zig").conjInto;
 pub const Sign = @import("numeric/ops.zig").Sign;
 pub const sign = @import("numeric/ops.zig").sign;
+pub const Arg = @import("numeric/ops.zig").Arg;
+pub const arg = @import("numeric/ops.zig").arg; // hypot(x.re, x.im)
 // pub const copysign = num@import("numeric/ops.zig").copysign;
 
 // Rounding functions
@@ -96,7 +107,7 @@ pub const min = @import("numeric/ops.zig").min;
 pub const minInto = @import("numeric/ops.zig").minInto;
 
 // Exponential functions
-pub const Exp = @import("numeric/ops.zig").Exp; // From here
+pub const Exp = @import("numeric/ops.zig").Exp;
 pub const exp = @import("numeric/ops.zig").exp;
 pub const expInto = @import("numeric/ops.zig").expInto;
 pub const Ln = @import("numeric/ops.zig").Ln;

@@ -5,14 +5,14 @@ const meta = @import("../../meta.zig");
 const numeric = @import("../../numeric.zig");
 const vector = @import("../../vector.zig");
 
-const vecops = @import("../ops.zig");
+const ops = @import("../ops.zig");
 
 pub fn Sub(comptime X: type, comptime Y: type) type {
     comptime if (!meta.isVector(X) or !meta.isVector(Y))
         @compileError("zsl.vector.Sub: X and Y must be vector types, got\n\tX = " ++
             @typeName(X) ++ "\n\tY = " ++ @typeName(Y) ++ "\n");
 
-    return vecops.Apply2(X, Y, numeric.sub);
+    return ops.Apply2(X, Y, numeric.sub);
 }
 
 /// Performs subtraction between two vectors.
@@ -37,7 +37,7 @@ pub fn Sub(comptime X: type, comptime Y: type) type {
 /// * `vector.Error.DimensionMismatch`: If the two vectors do not have the same
 ///   length.
 pub fn sub(x: anytype, y: anytype) !vector.Sub(@TypeOf(x), @TypeOf(y)) {
-    return vecops.apply2(x, y, numeric.sub);
+    return ops.apply2(x, y, numeric.sub);
 }
 
 /// Performs subtraction between two vectors, without performing any dimension
@@ -58,7 +58,7 @@ pub fn sub(x: anytype, y: anytype) !vector.Sub(@TypeOf(x), @TypeOf(y)) {
 /// ## Returns
 /// `vector.Sub(@TypeOf(x), @TypeOf(y))`: The result of the subtraction.
 pub fn subUnchecked(x: anytype, y: anytype) vector.Sub(@TypeOf(x), @TypeOf(y)) {
-    return vecops.apply2Unchecked(x, y, numeric.sub);
+    return ops.apply2Unchecked(x, y, numeric.sub);
 }
 
 /// Performs subtraction between two vectors, dynamically allocating memory for
@@ -86,7 +86,7 @@ pub fn subUnchecked(x: anytype, y: anytype) vector.Sub(@TypeOf(x), @TypeOf(y)) {
 /// * `vector.Error.DimensionMismatch`: If the two vectors do not have the same
 ///   length.
 pub fn subAlloc(allocator: std.mem.Allocator, x: anytype, y: anytype) !vector.Sub(@TypeOf(x), @TypeOf(y)) {
-    return vecops.apply2Alloc(allocator, x, y, numeric.sub);
+    return ops.apply2Alloc(allocator, x, y, numeric.sub);
 }
 
 /// Performs computation of the subtraction of two vectors `x` and `y` into a
@@ -123,7 +123,7 @@ pub fn subInto(o: anytype, x: anytype, y: anytype) !void {
         @compileError("zsl.vector.subInto: X and Y must be vector types, got\n\tX = " ++
             @typeName(X) ++ "\n\tY = " ++ @typeName(Y) ++ "\n");
 
-    return vecops.apply2Into(o, x, y, numeric.subInto);
+    return ops.apply2Into(o, x, y, numeric.subInto);
 }
 
 /// Performs computation of the subtraction of two vectors `x` and `y` into a
@@ -153,5 +153,5 @@ pub fn subIntoUnchecked(o: anytype, x: anytype, y: anytype) void {
         @compileError("zsl.vector.subIntoUnchecked: X and Y must be vector types, got\n\tX = " ++
             @typeName(X) ++ "\n\tY = " ++ @typeName(Y) ++ "\n");
 
-    return vecops.apply2IntoUnchecked(o, x, y, numeric.subInto);
+    return ops.apply2IntoUnchecked(o, x, y, numeric.subInto);
 }

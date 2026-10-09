@@ -1,7 +1,5 @@
-const meta = @import("../meta.zig");
-const numeric = @import("../numeric.zig");
-
-const float = @import("../float.zig");
+const meta = @import("../../meta.zig");
+const numeric = @import("../../numeric.zig");
 
 const dbl64 = @import("dbl64.zig");
 const ldbl128 = @import("ldbl128.zig");
@@ -83,7 +81,7 @@ fn atan32(x: f32) f32 {
 
         id = -1;
     } else {
-        xx = float.abs(xx);
+        xx = numeric.abs(xx);
         if (ix < 0x3f980000) { // |x| < 1.1875
             if (ix < 0x3f300000) { // 7/16 <= |x| < 11/16
                 id = 0;
@@ -172,7 +170,7 @@ fn atan64(x: f64) f64 {
 
         id = -1;
     } else {
-        xx = float.abs(xx);
+        xx = numeric.abs(xx);
         if (ix < 0x3ff30000) { // |x| < 1.1875
             if (ix < 0x3fe60000) { // 7/16 <=|x|<11/16
                 id = 0;
@@ -275,7 +273,7 @@ fn atan128(x: f128) f128 {
 
         id = -1;
     } else {
-        xx = float.abs(xx);
+        xx = numeric.abs(xx);
         if (expman < ((16384 - 1) << 8) + 0x30) { // |x| < 1.1875
             if (expman < ((16384 - 2) << 8) + 0x60) { // 7/16 <= |x| < 11/16
                 id = 0;

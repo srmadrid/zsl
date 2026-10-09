@@ -1,9 +1,7 @@
 const std = @import("std");
 
-const meta = @import("../meta.zig");
-const numeric = @import("../numeric.zig");
-
-const float = @import("../float.zig");
+const meta = @import("../../meta.zig");
+const numeric = @import("../../numeric.zig");
 
 const rem_pio2 = @import("rem_pio2.zig");
 const rem_pio2_32 = rem_pio2.rem_pio2_32;
@@ -280,7 +278,7 @@ pub fn k_tan128(x: f128, y: f128, iy: i32) f128 {
     var xx: f128 = x;
     var yy: f128 = y;
     var i: i32 = 0;
-    if (float.abs(xx) >= 0.67434) {
+    if (numeric.abs(xx) >= 0.67434) {
         if (xx < 0) {
             xx = -xx;
             yy = -yy;

@@ -1,9 +1,7 @@
 const std = @import("std");
 
-const meta = @import("../meta.zig");
-const numeric = @import("../numeric.zig");
-
-const float = @import("../float.zig");
+const meta = @import("../../meta.zig");
+const numeric = @import("../../numeric.zig");
 
 const dbl64 = @import("dbl64.zig");
 const ldbl128 = @import("ldbl128.zig");
@@ -80,10 +78,10 @@ fn tanh32(x: f32) f32 {
             return x; // tanh(tiny) = tiny
 
         if (ix >= 0x3f800000) { // |x| >= 1
-            const t: f32 = float.expm1(2.0 * float.abs(x));
+            const t: f32 = @import("expm1.zig").expm1(2.0 * numeric.abs(x));
             z = 1.0 - 2.0 / (t + 2.0);
         } else {
-            const t: f32 = float.expm1(-2.0 * float.abs(x));
+            const t: f32 = @import("expm1.zig").expm1(-2.0 * numeric.abs(x));
             z = -t / (t + 2.0);
         }
     } else { // |x| >= 9, return ±1
@@ -122,10 +120,10 @@ fn tanh64(x: f64) f64 {
             return x; // tanh(tiny) = tiny
 
         if (ix >= 0x3ff00000) { // |x| >= 1
-            const t: f64 = float.expm1(2.0 * float.abs(x));
+            const t: f64 = @import("expm1.zig").expm1(2.0 * numeric.abs(x));
             z = 1.0 - 2.0 / (t + 2.0);
         } else {
-            const t: f64 = float.expm1(-2.0 * float.abs(x));
+            const t: f64 = @import("expm1.zig").expm1(-2.0 * numeric.abs(x));
             z = -t / (t + 2.0);
         }
     } else { // |x| >= 22, return ±1
@@ -185,10 +183,10 @@ fn tanh128(x: f128) f128 {
 
         u.mswhi = ix; // Absolute value of x
         if (ix >= 0x3fff0000) { // |x| >= 1
-            const t: f128 = float.expm1(2.0 * u.toFloat());
+            const t: f128 = @import("expm1.zig").expm1(2.0 * u.toFloat());
             z = 1.0 - 2.0 / (t + 2.0);
         } else {
-            const t: f128 = float.expm1(-2.0 * u.toFloat());
+            const t: f128 = @import("expm1.zig").expm1(-2.0 * u.toFloat());
             z = -t / (t + 2.0);
         }
     } else { // |x| > 40, return ±1

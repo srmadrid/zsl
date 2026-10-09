@@ -5,14 +5,14 @@ const meta = @import("../../meta.zig");
 const numeric = @import("../../numeric.zig");
 const vector = @import("../../vector.zig");
 
-const vecops = @import("../ops.zig");
+const ops = @import("../ops.zig");
 
 pub fn Div(comptime X: type, comptime Y: type) type {
     comptime if (!meta.isVector(X) or !meta.isNumeric(Y))
         @compileError("zsl.vector.Div: X must be a vector type and Y must be a numeric type, got\n\tX = " ++
             @typeName(X) ++ "\n\tY = " ++ @typeName(Y) ++ "\n");
 
-    return vecops.Apply2(X, Y, numeric.div);
+    return ops.Apply2(X, Y, numeric.div);
 }
 
 /// Performs division of a vector by a numeric.
@@ -32,7 +32,7 @@ pub fn Div(comptime X: type, comptime Y: type) type {
 /// ## Returns
 /// `vector.Div(@TypeOf(x), @TypeOf(y))`: The result of the division.
 pub fn div(x: anytype, y: anytype) vector.Div(@TypeOf(x), @TypeOf(y)) {
-    return vecops.apply2Unchecked(x, y, numeric.div);
+    return ops.apply2Unchecked(x, y, numeric.div);
 }
 
 /// Performs division of vector by a numeric, dynamically allocating memory for
@@ -58,7 +58,7 @@ pub fn div(x: anytype, y: anytype) vector.Div(@TypeOf(x), @TypeOf(y)) {
 /// ## Errors
 /// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
 pub fn divAlloc(allocator: std.mem.Allocator, x: anytype, y: anytype) !vector.Div(@TypeOf(x), @TypeOf(y)) {
-    return vecops.apply2Alloc(allocator, x, y, numeric.div);
+    return ops.apply2Alloc(allocator, x, y, numeric.div);
 }
 
 /// Performs computation of the division of a vector `x` and a numeric `y` into
@@ -94,7 +94,7 @@ pub fn divInto(o: anytype, x: anytype, y: anytype) !void {
         @compileError("zsl.vector.divInto: X must be a vector type and Y must be a numeric type, got\n\tX = " ++
             @typeName(X) ++ "\n\tY = " ++ @typeName(Y) ++ "\n");
 
-    return vecops.apply2Into(o, x, y, numeric.divInto);
+    return ops.apply2Into(o, x, y, numeric.divInto);
 }
 
 /// Performs computation of the division of a vector `x` and a numeric `y` into
@@ -123,5 +123,5 @@ pub fn divIntoUnchecked(o: anytype, x: anytype, y: anytype) void {
         @compileError("zsl.vector.divIntoUnchecked: X must be a vector type and Y must be a numeric type, got\n\tX = " ++
             @typeName(X) ++ "\n\tY = " ++ @typeName(Y) ++ "\n");
 
-    return vecops.apply2IntoUnchecked(o, x, y, numeric.divInto);
+    return ops.apply2IntoUnchecked(o, x, y, numeric.divInto);
 }

@@ -5,14 +5,14 @@ const meta = @import("../../meta.zig");
 const numeric = @import("../../numeric.zig");
 const vector = @import("../../vector.zig");
 
-const vecops = @import("../ops.zig");
+const ops = @import("../ops.zig");
 
 pub fn Add(comptime X: type, comptime Y: type) type {
     comptime if (!meta.isVector(X) or !meta.isVector(Y))
         @compileError("zsl.vector.Add: X and Y must be vector types, got\n\tX = " ++
             @typeName(X) ++ "\n\tY = " ++ @typeName(Y) ++ "\n");
 
-    return vecops.Apply2(X, Y, numeric.add);
+    return ops.Apply2(X, Y, numeric.add);
 }
 
 /// Performs addition between two vectors.
@@ -37,7 +37,7 @@ pub fn Add(comptime X: type, comptime Y: type) type {
 /// * `vector.Error.DimensionMismatch`: If the two vectors do not have the same
 ///   length.
 pub fn add(x: anytype, y: anytype) !vector.Add(@TypeOf(x), @TypeOf(y)) {
-    return vecops.apply2(x, y, numeric.add);
+    return ops.apply2(x, y, numeric.add);
 }
 
 /// Performs addition between two vectors, without performing any dimension
@@ -58,7 +58,7 @@ pub fn add(x: anytype, y: anytype) !vector.Add(@TypeOf(x), @TypeOf(y)) {
 /// ## Returns
 /// `vector.Add(@TypeOf(x), @TypeOf(y))`: The result of the addition.
 pub fn addUnchecked(x: anytype, y: anytype) vector.Add(@TypeOf(x), @TypeOf(y)) {
-    return vecops.apply2Unchecked(x, y, numeric.add);
+    return ops.apply2Unchecked(x, y, numeric.add);
 }
 
 /// Performs addition between two vectors, dynamically allocating memory for the
@@ -86,7 +86,7 @@ pub fn addUnchecked(x: anytype, y: anytype) vector.Add(@TypeOf(x), @TypeOf(y)) {
 /// * `vector.Error.DimensionMismatch`: If the two vectors do not have the same
 ///   length.
 pub fn addAlloc(allocator: std.mem.Allocator, x: anytype, y: anytype) !vector.Add(@TypeOf(x), @TypeOf(y)) {
-    return vecops.apply2Alloc(allocator, x, y, numeric.add);
+    return ops.apply2Alloc(allocator, x, y, numeric.add);
 }
 
 /// Performs computation of the addition of two vectors `x` and `y` into a
@@ -123,7 +123,7 @@ pub fn addInto(o: anytype, x: anytype, y: anytype) !void {
         @compileError("zsl.vector.addInto: x and y must be vectors, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    return vecops.apply2Into(o, x, y, numeric.addInto);
+    return ops.apply2Into(o, x, y, numeric.addInto);
 }
 
 /// Performs computation of the addition of two vectors `x` and `y` into a
@@ -153,5 +153,5 @@ pub fn addIntoUnchecked(o: anytype, x: anytype, y: anytype) void {
         @compileError("zsl.vector.addIntoUnchecked: x and y must be vectors, got\n\tx: " ++
             @typeName(X) ++ "\n\ty: " ++ @typeName(Y) ++ "\n");
 
-    return vecops.apply2IntoUnchecked(o, x, y, numeric.addInto);
+    return ops.apply2IntoUnchecked(o, x, y, numeric.addInto);
 }

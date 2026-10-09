@@ -52,8 +52,8 @@ pub fn exp(x: anytype) numeric.Exp(@TypeOf(x)) {
         .bool => unreachable,
         .int => unreachable,
         .float => return @import("../float/exp.zig").exp(x),
-        .dyadic => return dyadic.exp(x),
-        .complex => return complex.exp(x),
+        .dyadic => @compileError("zsl.numeric.exp: not implemented for " ++ @typeName(X) ++ " yet."),
+        .complex => return @import("exp/complex.zig").exp(x),
         .custom => {
             const Impl: type = comptime meta.anyHasMethod(
                 &.{ R, X },

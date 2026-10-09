@@ -1,20 +1,8 @@
-const meta = @import("../meta.zig");
-const numeric = @import("../numeric.zig");
-
-const float = @import("../float.zig");
+const meta = @import("../../meta.zig");
+const numeric = @import("../../numeric.zig");
 
 const dbl64 = @import("dbl64.zig");
 const ldbl128 = @import("ldbl128.zig");
-
-pub fn Hypot(comptime X: type, comptime Y: type) type {
-    comptime if (!meta.isNumeric(X) or !meta.isNumeric(Y) or
-        !meta.numericType(X).le(.float) or !meta.numericType(Y).le(.float) or
-        (meta.numericType(X) != .float and meta.numericType(Y) != .float))
-        @compileError("zsl.float.Hypot: at least one of X or Y must be a float type, the other must be a bool, an int or a float type, got\n\tX = " ++
-            @typeName(X) ++ "\n\tY = " ++ @typeName(Y) ++ "\n");
-
-    return float.Coerce(X, Y);
-}
 
 /// Calculates the hypotenuse $\sqrt{x^2 + y^2}$ of two operands of float,
 /// int or bool types, where at least one operand must be of float type. The
@@ -33,16 +21,16 @@ pub fn Hypot(comptime X: type, comptime Y: type) type {
 ///
 /// ## Returns
 /// `float.Hypot(@TypeOf(x), @TypeOf(y))`: The hypotenuse of `x` and `y`.
-pub fn hypot(x: anytype, y: anytype) float.Hypot(@TypeOf(y), @TypeOf(x)) {
-    switch (float.Hypot(@TypeOf(x), @TypeOf(y))) {
+pub fn hypot(x: anytype, y: @TypeOf(x)) @TypeOf(x) {
+    switch (@TypeOf(x)) {
         f16 => return numeric.cast(f16, hypot32(numeric.cast(f32, x), numeric.cast(f32, y))),
         f32 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_hypotf.c
-            return hypot32(numeric.cast(f32, x), numeric.cast(f32, y));
+            return hypot32(x, y);
         },
         f64 => {
             // https://github.com/JuliaMath/openlibm/blob/master/src/e_hypot.c
-            return hypot64(numeric.cast(f64, x), numeric.cast(f64, y));
+            return hypot64(x, y);
         },
         f80 => {
             // https://github.com/JuliaMath/openlibm/blob/master/ld80/e_hypotl.c
@@ -51,7 +39,7 @@ pub fn hypot(x: anytype, y: anytype) float.Hypot(@TypeOf(y), @TypeOf(x)) {
         },
         f128 => {
             // https://github.com/JuliaMath/openlibm/blob/master/ld128/e_hypotl.c
-            return hypot128(numeric.cast(f128, x), numeric.cast(f128, y));
+            return hypot128(x, y);
         },
         else => unreachable,
     }
@@ -91,8 +79,8 @@ fn hypot32(x: f32, y: f32) f32 {
         b = y;
     }
 
-    a = float.abs(a);
-    b = float.abs(b);
+    a = numeric.abs(a);
+    b = numeric.abs(b);
     if (ha -% hb > 0xf000000) // x/y > 2**30
         return a + b;
 
@@ -100,7 +88,7 @@ fn hypot32(x: f32, y: f32) f32 {
     if (ha > 0x58800000) { // a > 2**50
         if (ha >= 0x7f800000) { // Inf or NaN
             // Use original arg order iff result is NaN; quieten sNaNs
-            var w: f32 = float.abs(x + 0.0) - float.abs(y + 0.0);
+            var w: f32 = numeric.abs(x + 0.0) - numeric.abs(y + 0.0);
 
             if (ha == 0x7f800000)
                 w = a;
@@ -143,14 +131,14 @@ fn hypot32(x: f32, y: f32) f32 {
     if (w > b) {
         const t1: f32 = @bitCast(@as(u32, @bitCast(ha)) & 0xfffff000);
         const t2: f32 = a - t1;
-        w = float.sqrt(t1 * t1 - (b * (-b) - t2 * (a + t1)));
+        w = @import("sqrt.zig").sqrt(t1 * t1 - (b * (-b) - t2 * (a + t1)));
     } else {
         a = a + a;
         const y1: f32 = @bitCast(@as(u32, @bitCast(hb)) & 0xfffff000);
         const y2: f32 = b - y1;
         const t1: f32 = @bitCast(@as(u32, @bitCast(ha +% 0x00800000)) & 0xfffff000);
         const t2: f32 = a - t1;
-        w = float.sqrt(t1 * y1 - (w * (-w) - (t1 * y2 + t2 * b)));
+        w = @import("sqrt.zig").sqrt(t1 * y1 - (w * (-w) - (t1 * y2 + t2 * b)));
     }
     if (k != 0) {
         const t1: f32 = @bitCast(0x3f800000 +% (k << 23));
@@ -191,8 +179,8 @@ fn hypot64(x: f64, y: f64) f64 {
         b = y;
     }
 
-    a = float.abs(a);
-    b = float.abs(b);
+    a = numeric.abs(a);
+    b = numeric.abs(b);
     if ((ha - hb) > 0x3c00000) // x/y > 2**60
         return a + b;
 
@@ -200,7 +188,7 @@ fn hypot64(x: f64, y: f64) f64 {
     if (ha > 0x5f300000) { // a > 2**500
         if (ha >= 0x7ff00000) { // Inf or NaN
             // Use original arg order iff result is NaN; quieten sNaNs
-            var w: f64 = float.abs(x + 0.0) - float.abs(y + 0.0);
+            var w: f64 = numeric.abs(x + 0.0) - numeric.abs(y + 0.0);
             var low: u32 = dbl64.getLowPart(a);
 
             if (((@as(u32, @bitCast(ha)) & 0xfffff) | low) == 0)
@@ -248,7 +236,7 @@ fn hypot64(x: f64, y: f64) f64 {
         var t1: f64 = 0;
         dbl64.setHighPart(&t1, @bitCast(ha));
         const t2: f64 = a - t1;
-        w = float.sqrt(t1 * t1 - (b * (-b) - t2 * (a + t1)));
+        w = @import("sqrt.zig").sqrt(t1 * t1 - (b * (-b) - t2 * (a + t1)));
     } else {
         a = a + a;
         var y1: f64 = 0;
@@ -257,7 +245,7 @@ fn hypot64(x: f64, y: f64) f64 {
         var t1: f64 = 0;
         dbl64.setHighPart(&t1, @bitCast(ha +% 0x00100000));
         const t2: f64 = a - t1;
-        w = float.sqrt(t1 * y1 - (w * (-w) - (t1 * y2 + t2 * b)));
+        w = @import("sqrt.zig").sqrt(t1 * y1 - (w * (-w) - (t1 * y2 + t2 * b)));
     }
 
     if (k != 0) {
@@ -365,7 +353,7 @@ fn hypot128(x: f128, y: f128) f128 {
         var t1: f128 = 0;
         ldbl128.setHighPart(&t1, @bitCast(ha));
         const t2: f128 = a - t1;
-        w = float.sqrt(t1 * t1 - (b * (-b) - t2 * (a + t1)));
+        w = @import("sqrt.zig").sqrt(t1 * t1 - (b * (-b) - t2 * (a + t1)));
     } else {
         a = a + a;
         var yy1: f128 = 0;
@@ -374,7 +362,7 @@ fn hypot128(x: f128, y: f128) f128 {
         var t1: f128 = 0;
         ldbl128.setHighPart(&t1, @bitCast(ha +% 0x0001000000000000));
         const t2: f128 = a - t1;
-        w = float.sqrt(t1 * yy1 - (w * (-w) - (t1 * y2 + t2 * b)));
+        w = @import("sqrt.zig").sqrt(t1 * yy1 - (w * (-w) - (t1 * y2 + t2 * b)));
     }
 
     if (k != 0) {

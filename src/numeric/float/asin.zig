@@ -1,7 +1,5 @@
-const meta = @import("../meta.zig");
-const numeric = @import("../numeric.zig");
-
-const float = @import("../float.zig");
+const meta = @import("../../meta.zig");
+const numeric = @import("../../numeric.zig");
 
 const dbl64 = @import("dbl64.zig");
 const ldbl128 = @import("ldbl128.zig");
@@ -83,11 +81,11 @@ fn asin32(x: f32) f32 {
     }
 
     // 1 > |x| >= 0.5
-    var w: f32 = 1.0 - float.abs(x);
+    var w: f32 = 1.0 - numeric.abs(x);
     var t: f32 = w * 0.5;
     const p: f32 = t * (1.6666586697e-1 + t * (-4.2743422091e-2 + t * -8.6563630030e-3));
     const q: f32 = 1.0 + t * -7.0662963390e-1;
-    const s: f64 = float.sqrt(t);
+    const s: f64 = @import("sqrt.zig").sqrt(t);
     w = p / q;
     t = numeric.cast(f32, 1.570796326794896558e+0 - 2.0 * (s + s * numeric.cast(f64, w)));
     if (hx > 0)
@@ -140,7 +138,7 @@ fn asin64(x: f64) f64 {
     }
 
     // 1 > |x| >= 0.5
-    var w: f64 = 1.0 - float.abs(x);
+    var w: f64 = 1.0 - numeric.abs(x);
     var t: f64 = w * 0.5;
     var p: f64 = t *
         (1.66666666666666657415e-1 + t *
@@ -154,7 +152,7 @@ fn asin64(x: f64) f64 {
             (2.02094576023350569471e+0 + t *
                 (-6.88283971605453293030e-1 + t *
                     7.70381505559019352791e-2)));
-    const s: f64 = float.sqrt(t);
+    const s: f64 = @import("sqrt.zig").sqrt(t);
     if (ix >= 0x3fef3333) { // If |x| > 0.975
         w = p / q;
         t = 1.57079632679489655800e+0 - (2.0 * (s + s * w) - 6.12323399573676603587e-17);
@@ -233,7 +231,7 @@ fn asin128(x: f128) f128 {
     }
 
     // 1> |x| >= 0.5
-    var w: f128 = 1.0 - float.abs(x);
+    var w: f128 = 1.0 - numeric.abs(x);
     var t: f128 = w * 0.5;
     var p: f128 = t *
         (1.66666666666666666666666666666700314e-1 + t *
@@ -256,7 +254,7 @@ fn asin128(x: f128) f128 {
                                 (-1.18768052702942805423330715206348004e-1 + t *
                                     (8.32600764660522313269101537926539470e-3 + t *
                                         -1.99407384882605586705979504567947007e-4))))))));
-    const s: f128 = float.sqrt(t);
+    const s: f128 = @import("sqrt.zig").sqrt(t);
     if (u.mantissa_high >= (0xe666666666666666 >> 44)) { // If |x| is close to 1
         w = p / q;
         t = 1.57079632679489661923132169163975140e+0 -

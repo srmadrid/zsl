@@ -1,11 +1,5 @@
-const meta = @import("../meta.zig");
-
-const int = @import("../int.zig");
-const float = @import("../float.zig");
-const dyadic = @import("../dyadic.zig");
-const complex = @import("../complex.zig");
-
-const numeric = @import("../numeric.zig");
+const meta = @import("../../meta.zig");
+const numeric = @import("../../numeric.zig");
 
 pub fn Asinh(X: type) type {
     comptime if (!meta.isNumeric(X))
@@ -58,9 +52,9 @@ pub fn asinh(x: anytype) numeric.Asinh(@TypeOf(x)) {
     switch (comptime meta.numericType(X)) {
         .bool => unreachable,
         .int => unreachable,
-        .float => return float.asinh(x),
-        .dyadic => return dyadic.asinh(x),
-        .complex => return complex.asinh(x),
+        .float => return @import("../float/asinh.zig").asinh(x),
+        .dyadic => @compileError("zsl.numeric.asinh: not implemented for " ++ @typeName(X) ++ " yet."),
+        .complex => return @import("asinh/complex.zig").asinh(x),
         .custom => {
             const Impl: type = comptime meta.anyHasMethod(
                 &.{ R, X },

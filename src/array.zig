@@ -2,36 +2,30 @@
 
 const std = @import("std");
 
-const int = @import("int.zig");
-
 const numeric = @import("numeric.zig");
 
 pub const max_dimensions = @import("options").max_dimensions;
 
 // Arrays shall no longer use Layout, use Order = enum { c, f }, but only on creation
 
-const static = @import("array/static.zig");
-pub const Static = static.Static;
-const dense = @import("array/dense.zig");
-pub const Dense = dense.Dense;
-const sparse = @import("array/sparse.zig");
-pub const Sparse = sparse.Sparse;
+pub const Static = @import("array/static.zig").Static;
+pub const Dense = @import("array/dense.zig").Dense;
+pub const Sparse = @import("array/sparse.zig").Sparse;
 
 pub const builder = @import("array/builder.zig");
 
-const arrops = @import("array/ops.zig");
-pub const Apply1 = arrops.Apply1;
-pub const apply1 = arrops.apply1;
-pub const apply1Unchecked = arrops.apply1Unchecked;
-pub const apply1Alloc = arrops.apply1Alloc;
-pub const apply1Into = arrops.apply1Into;
-pub const apply1IntoUnchecked = arrops.apply1IntoUnchecked;
-pub const Apply2 = arrops.Apply2;
-pub const apply2 = arrops.apply2;
-pub const apply2Unchecked = arrops.apply2Unchecked;
-pub const apply2Alloc = arrops.apply2Alloc;
-pub const apply2Into = arrops.apply2Into;
-pub const apply2IntoUnchecked = arrops.apply2IntoUnchecked;
+pub const Apply1 = @import("array/ops.zig").Apply1;
+pub const apply1 = @import("array/ops.zig").apply1;
+pub const apply1Unchecked = @import("array/ops.zig").apply1Unchecked;
+pub const apply1Alloc = @import("array/ops.zig").apply1Alloc;
+pub const apply1Into = @import("array/ops.zig").apply1Into;
+pub const apply1IntoUnchecked = @import("array/ops.zig").apply1IntoUnchecked;
+pub const Apply2 = @import("array/ops.zig").Apply2;
+pub const apply2 = @import("array/ops.zig").apply2;
+pub const apply2Unchecked = @import("array/ops.zig").apply2Unchecked;
+pub const apply2Alloc = @import("array/ops.zig").apply2Alloc;
+pub const apply2Into = @import("array/ops.zig").apply2Into;
+pub const apply2IntoUnchecked = @import("array/ops.zig").apply2IntoUnchecked;
 
 // These here or in stats?
 // sum, prod, min, max, argmin, argmax (over whole array, or specific axes if array is static)
@@ -77,8 +71,8 @@ pub const Range = struct {
         var actual_start: usize = undefined;
         var actual_stop: usize = undefined;
         if (self.step > 0) {
-            actual_start = int.min(self.start orelse 0, dim_size);
-            actual_stop = int.min(self.stop orelse dim_size, dim_size);
+            actual_start = numeric.min(self.start orelse 0, dim_size);
+            actual_stop = numeric.min(self.stop orelse dim_size, dim_size);
 
             if (actual_start >= actual_stop)
                 return .{ .start = actual_start, .stop = actual_stop, .len = 0 };
@@ -91,9 +85,9 @@ pub const Range = struct {
                 .len = try std.math.divCeil(usize, diff, ustep),
             };
         } else {
-            actual_start = int.min(self.start orelse (dim_size - 1), dim_size - 1);
+            actual_start = numeric.min(self.start orelse (dim_size - 1), dim_size - 1);
             const go_to_end = (self.stop == null);
-            actual_stop = if (go_to_end) 0 else int.min(self.stop.?, dim_size - 1);
+            actual_stop = if (go_to_end) 0 else numeric.min(self.stop.?, dim_size - 1);
 
             if (!go_to_end and actual_start <= actual_stop)
                 return .{ .start = actual_start, .stop = actual_stop, .len = 0 };

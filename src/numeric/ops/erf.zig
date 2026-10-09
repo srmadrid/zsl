@@ -1,11 +1,5 @@
-const meta = @import("../meta.zig");
-
-const int = @import("../int.zig");
-const float = @import("../float.zig");
-const dyadic = @import("../dyadic.zig");
-const complex = @import("../complex.zig");
-
-const numeric = @import("../numeric.zig");
+const meta = @import("../../meta.zig");
+const numeric = @import("../../numeric.zig");
 
 pub fn Erf(X: type) type {
     comptime if (!meta.isNumeric(X))
@@ -62,9 +56,9 @@ pub fn erf(x: anytype) numeric.Erf(@TypeOf(x)) {
     switch (comptime meta.numericType(X)) {
         .bool => unreachable,
         .int => unreachable,
-        .float => return float.erf(x),
-        .dyadic => return dyadic.erf(x),
-        .complex => return complex.erf(x),
+        .float => return @import("../float/erf.zig").erf(x),
+        .dyadic => @compileError("zsl.numeric.erf: not implemented for " ++ @typeName(X) ++ " yet."),
+        .complex => @compileError("zsl.numeric.erf: not implemented for " ++ @typeName(X) ++ " yet."),
         .custom => {
             const Impl: type = comptime meta.anyHasMethod(
                 &.{ R, X },

@@ -1,7 +1,5 @@
-const meta = @import("../meta.zig");
-const numeric = @import("../numeric.zig");
-
-const float = @import("../float.zig");
+const meta = @import("../../meta.zig");
+const numeric = @import("../../numeric.zig");
 
 const erf_data = @import("erf_data.zig");
 
@@ -98,7 +96,7 @@ fn erf32(x: f32) f32 {
     }
 
     if (ix < 0x3fa00000) { // 0.84375 <= |x| < 1.25
-        const s: f32 = float.abs(x) - 1.0;
+        const s: f32 = numeric.abs(x) - 1.0;
         const P: f32 = 3.64939137e-6 + s *
             (4.15109694e-1 + s *
                 (-1.65179938e-1 + s *
@@ -121,7 +119,7 @@ fn erf32(x: f32) f32 {
             return -1.0;
     }
 
-    const xx: f32 = float.abs(x);
+    const xx: f32 = numeric.abs(x);
     const s: f32 = 1.0 / (xx * xx);
     var R: f32 = undefined;
     var S: f32 = undefined;
@@ -149,7 +147,7 @@ fn erf32(x: f32) f32 {
     }
 
     const z: f32 = @bitCast(@as(u32, @bitCast(hx)) & 0xffffe000);
-    const r: f32 = float.exp(-z * z - 0.5625) * float.exp((z - xx) * (z + xx) + R / S);
+    const r: f32 = @import("exp.zig").exp(-z * z - 0.5625) * @import("exp.zig").exp((z - xx) * (z + xx) + R / S);
     if (hx >= 0)
         return 1.0 - r / xx
     else
@@ -202,7 +200,7 @@ fn erf64(x: f64) f64 {
     }
 
     if (ix < 0x3ff40000) { // 0.84375 <= |x| < 1.25
-        const s: f64 = float.abs(x) - 1.0;
+        const s: f64 = numeric.abs(x) - 1.0;
         const P: f64 = -2.36211856075265944077e-3 + s *
             (4.14856118683748331666e-1 + s *
                 (-3.72207876035701323847e-1 + s *
@@ -230,7 +228,7 @@ fn erf64(x: f64) f64 {
             return -1.0;
     }
 
-    const xx: f64 = float.abs(x);
+    const xx: f64 = numeric.abs(x);
     const s: f64 = 1.0 / (xx * xx);
     var R: f64 = undefined;
     var S: f64 = undefined;
@@ -272,7 +270,7 @@ fn erf64(x: f64) f64 {
 
     var z: f64 = xx;
     dbl64.setLowPart(&z, 0);
-    const r: f64 = float.exp(-z * z - 0.5625) * float.exp((z - xx) * (z + xx) + R / S);
+    const r: f64 = @import("exp.zig").exp(-z * z - 0.5625) * @import("exp.zig").exp((z - xx) * (z + xx) + R / S);
     if (hx >= 0)
         return 1.0 - r / xx
     else
@@ -316,7 +314,7 @@ fn erf128(x: f128) f128 {
     }
 
     if (ix >= 0x3fff0000) { // |x| >= 1.0
-        const y: f128 = float.erfc(x);
+        const y: f128 = @import("erfc.zig").erfc(x);
         return 1 - y;
         // return (1 - __erfcl (x));
     }

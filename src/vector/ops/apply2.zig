@@ -5,7 +5,7 @@ const meta = @import("../../meta.zig");
 const numeric = @import("../../numeric.zig");
 const vector = @import("../../vector.zig");
 
-const vecops = @import("../ops.zig");
+const ops = @import("../ops.zig");
 
 pub fn Apply2(comptime X: type, comptime Y: type, comptime op: anytype) type {
     const Op = @TypeOf(op);
@@ -85,11 +85,11 @@ pub fn Apply2(comptime X: type, comptime Y: type, comptime op: anytype) type {
 /// ## Errors
 /// * `vector.Error.DimensionMismatch`: If the two vectors do not have the same
 ///   length. Can only happen if both operands are vectors.
-pub fn apply2(x: anytype, y: anytype, comptime op: anytype) !vecops.Apply2(@TypeOf(x), @TypeOf(y), op) {
+pub fn apply2(x: anytype, y: anytype, comptime op: anytype) !ops.Apply2(@TypeOf(x), @TypeOf(y), op) {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
     const Op: type = @TypeOf(op);
-    const R: type = vecops.Apply2(X, Y, op);
+    const R: type = ops.Apply2(X, Y, op);
 
     if (comptime meta.isDenseVector(R) or meta.isSparseVector(R))
         @compileError("zsl.vector.apply2: the result cannot be a heap-allocated vector type, i.e., at least one input must be a static vector, got\n\tx: " ++
@@ -106,7 +106,7 @@ pub fn apply2(x: anytype, y: anytype, comptime op: anytype) !vecops.Apply2(@Type
 
     var result = R.init;
 
-    vecops.apply2IntoUnchecked(
+    ops.apply2IntoUnchecked(
         &result,
         x,
         y,
@@ -141,11 +141,11 @@ pub fn apply2(x: anytype, y: anytype, comptime op: anytype) !vecops.Apply2(@Type
 ///
 /// ## Returns
 /// `vector.Apply2(@TypeOf(x), @TypeOf(y), op)`: The result of the operation.
-pub fn apply2Unchecked(x: anytype, y: anytype, comptime op: anytype) vecops.Apply2(@TypeOf(x), @TypeOf(y), op) {
+pub fn apply2Unchecked(x: anytype, y: anytype, comptime op: anytype) ops.Apply2(@TypeOf(x), @TypeOf(y), op) {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
     const Op: type = @TypeOf(op);
-    const R: type = vecops.Apply2(X, Y, op);
+    const R: type = ops.Apply2(X, Y, op);
 
     if (comptime meta.isDenseVector(R) or meta.isSparseVector(R))
         @compileError("zsl.vector.apply2Unchecked: the result cannot be a heap-allocated vector type, i.e., at least one input must be a static vector, got\n\tx: " ++
@@ -153,7 +153,7 @@ pub fn apply2Unchecked(x: anytype, y: anytype, comptime op: anytype) vecops.Appl
 
     var result = R.init;
 
-    vecops.apply2IntoUnchecked(
+    ops.apply2IntoUnchecked(
         &result,
         x,
         y,
@@ -199,10 +199,10 @@ pub fn apply2Unchecked(x: anytype, y: anytype, comptime op: anytype) vecops.Appl
 /// * `std.mem.Allocator.Error.OutOfMemory`: If memory allocation fails.
 /// * `vector.Error.DimensionMismatch`: If the two vectors do not have the same
 ///   length. Can only happen if both operands are vectors.
-pub fn apply2Alloc(allocator: std.mem.Allocator, x: anytype, y: anytype, comptime op: anytype) !vecops.Apply2(@TypeOf(x), @TypeOf(y), op) {
+pub fn apply2Alloc(allocator: std.mem.Allocator, x: anytype, y: anytype, comptime op: anytype) !ops.Apply2(@TypeOf(x), @TypeOf(y), op) {
     const X: type = @TypeOf(x);
     const Y: type = @TypeOf(y);
-    const R: type = vecops.Apply2(X, Y, op);
+    const R: type = ops.Apply2(X, Y, op);
 
     const x_len_optional: ?usize = if (comptime meta.isVector(X)) (if (comptime meta.isStaticVector(X)) X.len else x.len) else null;
     const y_len = if (comptime meta.isVector(Y)) (if (comptime meta.isStaticVector(Y)) Y.len else y.len) else x_len_optional.?;
@@ -220,7 +220,7 @@ pub fn apply2Alloc(allocator: std.mem.Allocator, x: anytype, y: anytype, comptim
         .numeric => unreachable,
     };
 
-    vecops.apply2IntoUnchecked(
+    ops.apply2IntoUnchecked(
         &result,
         x,
         y,

@@ -1,9 +1,7 @@
 const std = @import("std");
 
-const meta = @import("../meta.zig");
-const numeric = @import("../numeric.zig");
-
-const float = @import("../float.zig");
+const meta = @import("../../meta.zig");
+const numeric = @import("../../numeric.zig");
 
 const dbl64 = @import("dbl64.zig");
 const ldbl128 = @import("ldbl128.zig");
@@ -217,7 +215,7 @@ fn log10_128(x: f128) f128 {
     // Note, frexp is used so that denormal numbers
     // will be handled properly
     var e: i32 = undefined;
-    var xx: f128 = float.frexp(x, &e);
+    var xx: f128 = @import("frexp.zig").frexp(x, &e);
 
     // logarithm using log(xx) = z + z**3 P(z)/Q(z),
     // where z = 2 * (xx - 1)/(xx + 1)

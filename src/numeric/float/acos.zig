@@ -1,7 +1,5 @@
-const meta = @import("../meta.zig");
-const numeric = @import("../numeric.zig");
-
-const float = @import("../float.zig");
+const meta = @import("../../meta.zig");
+const numeric = @import("../../numeric.zig");
 
 const dbl64 = @import("dbl64.zig");
 const ldbl128 = @import("ldbl128.zig");
@@ -92,13 +90,13 @@ fn acos32(x: f32) f32 {
         const p: f32 = z * (1.6666586697e-1 +
             z * (-4.2743422091e-2 + z * -8.6563630030e-3));
         const q: f32 = 1.0 + z * -7.0662963390e-1;
-        const s: f32 = float.sqrt(z);
+        const s: f32 = @import("sqrt.zig").sqrt(z);
         const r: f32 = p / q;
         const w: f32 = r * s - 7.5497894159e-8;
         return 3.1415925026e+0 - 2.0 * (s + w);
     } else { // x > 0.5
         const z: f32 = (1.0 - x) * 0.5;
-        const s: f32 = float.sqrt(z);
+        const s: f32 = @import("sqrt.zig").sqrt(z);
         var df: f32 = s;
         const idf: u32 = @bitCast(df);
         df = @bitCast(idf & 0xfffff000);
@@ -173,13 +171,13 @@ fn acos64(x: f64) f64 {
                 (2.02094576023350569471e+0 + z *
                     (-6.88283971605453293030e-1 + z *
                         7.70381505559019352791e-2)));
-        const s: f64 = float.sqrt(z);
+        const s: f64 = @import("sqrt.zig").sqrt(z);
         const r: f64 = p / q;
         const w: f64 = r * s - 6.12323399573676603587e-17;
         return 3.14159265358979311600e+0 - 2.0 * (s + w);
     } else { // x > 0.5
         const z: f64 = (1.0 - x) * 0.5;
-        const s: f64 = float.sqrt(z);
+        const s: f64 = @import("sqrt.zig").sqrt(z);
         var df: f64 = s;
         dbl64.setLowPart(&df, 0);
         const c: f64 = (z - df * df) / (s + df);
@@ -283,13 +281,13 @@ fn acos128(x: f128) f128 {
                                     (-1.18768052702942805423330715206348004e-1 + z *
                                         (8.32600764660522313269101537926539470e-3 + z *
                                             -1.99407384882605586705979504567947007e-4))))))));
-        const s: f128 = float.sqrt(z);
+        const s: f128 = @import("sqrt.zig").sqrt(z);
         const r: f128 = p / q;
         const w: f128 = r * s - 4.33590506506189051239852201302167613e-35;
         return 3.14159265358979323846264338327950280e+0 - 2.0 * (s + w);
     } else { // x > 0.5
         const z: f128 = (1.0 - x) * 0.5;
-        const s: f128 = float.sqrt(z);
+        const s: f128 = @import("sqrt.zig").sqrt(z);
         u = .fromFloat(s);
         u.mantissa_low = 0;
         const df: f128 = u.toFloat();

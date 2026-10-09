@@ -1,8 +1,7 @@
 //! Namespace for automatic differentiation types and operations.
 
 // Forward mode
-pub const dual = @import("autodiff/dual.zig");
-pub const Dual = dual.Dual;
+pub const Dual = @import("autodiff/dual.zig").Dual;
 
 // Backward mode
 pub const Op = enum {
@@ -58,5 +57,4 @@ pub const Op = enum {
 };
 
 pub const Tape = @import("autodiff/tape.zig").Tape;
-pub const @"var" = @import("autodiff/var.zig");
-pub const Var = @"var".Var;
+pub const Var = @import("autodiff/var.zig").Var;

@@ -1,11 +1,5 @@
-const meta = @import("../meta.zig");
-
-const int = @import("../int.zig");
-const float = @import("../float.zig");
-const dyadic = @import("../dyadic.zig");
-const complex = @import("../complex.zig");
-
-const numeric = @import("../numeric.zig");
+const meta = @import("../../meta.zig");
+const numeric = @import("../../numeric.zig");
 
 pub fn Cos(X: type) type {
     comptime if (!meta.isNumeric(X))
@@ -57,9 +51,9 @@ pub fn cos(x: anytype) numeric.Cos(@TypeOf(x)) {
     switch (comptime meta.numericType(X)) {
         .bool => unreachable,
         .int => unreachable,
-        .float => return float.cos(x),
-        .dyadic => return dyadic.cos(x),
-        .complex => return complex.cos(x),
+        .float => return @import("../float/cos.zig").cos(x),
+        .dyadic => @compileError("zsl.numeric.cos: not implemented for " ++ @typeName(X) ++ " yet."),
+        .complex => return @import("cos/complex.zig").cos(x),
         .custom => {
             const Impl: type = comptime meta.anyHasMethod(
                 &.{ R, X },

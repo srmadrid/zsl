@@ -1,11 +1,5 @@
-const meta = @import("../meta.zig");
-
-const int = @import("../int.zig");
-const float = @import("../float.zig");
-const dyadic = @import("../dyadic.zig");
-const complex = @import("../complex.zig");
-
-const numeric = @import("../numeric.zig");
+const meta = @import("../../meta.zig");
+const numeric = @import("../../numeric.zig");
 
 pub fn Cosh(X: type) type {
     comptime if (!meta.isNumeric(X))
@@ -57,9 +51,9 @@ pub fn cosh(x: anytype) numeric.Cosh(@TypeOf(x)) {
     switch (comptime meta.numericType(X)) {
         .bool => unreachable,
         .int => unreachable,
-        .float => return float.cosh(x),
-        .dyadic => return dyadic.cosh(x),
-        .complex => return complex.cosh(x),
+        .float => return @import("../float/cosh.zig").cosh(x),
+        .dyadic => @compileError("zsl.numeric.cosh: not implemented for " ++ @typeName(X) ++ " yet."),
+        .complex => return @import("cosh/complex.zig").cosh(x),
         .custom => {
             const Impl: type = comptime meta.anyHasMethod(
                 &.{ R, X },

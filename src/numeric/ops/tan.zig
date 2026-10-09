@@ -1,11 +1,5 @@
-const meta = @import("../meta.zig");
-
-const int = @import("../int.zig");
-const float = @import("../float.zig");
-const dyadic = @import("../dyadic.zig");
-const complex = @import("../complex.zig");
-
-const numeric = @import("../numeric.zig");
+const meta = @import("../../meta.zig");
+const numeric = @import("../../numeric.zig");
 
 pub fn Tan(X: type) type {
     comptime if (!meta.isNumeric(X))
@@ -57,9 +51,9 @@ pub fn tan(x: anytype) numeric.Tan(@TypeOf(x)) {
     switch (comptime meta.numericType(X)) {
         .bool => unreachable,
         .int => unreachable,
-        .float => return float.tan(x),
-        .dyadic => return dyadic.tan(x),
-        .complex => return complex.tan(x),
+        .float => return @import("../float/tan.zig").tan(x),
+        .dyadic => @compileError("zsl.numeric.tan: not implemented for " ++ @typeName(X) ++ " yet."),
+        .complex => return @import("tan/complex.zig").tan(x),
         .custom => {
             const Impl: type = comptime meta.anyHasMethod(
                 &.{ R, X },

@@ -3,8 +3,6 @@ const std = @import("std");
 const meta = @import("../meta.zig");
 const numeric = @import("../numeric.zig");
 
-const int = @import("../int.zig");
-
 const poly = @import("../poly.zig");
 
 const polutils = @import("utils.zig");
@@ -192,8 +190,8 @@ pub fn Static(max_degree_: comptime_int, N: type) type {
         ///
         /// ## Returns
         /// `poly.Static(max_degree -| 1, N)`: `p'(x)`.
-        pub fn derivative(self: poly.Static(max_degree, N)) poly.Static(int.max(1, max_degree -| 1), N) {
-            var result: Static(int.max(1, max_degree -| 1), N) = .zero;
+        pub fn derivative(self: poly.Static(max_degree, N)) poly.Static(numeric.max(1, max_degree -| 1), N) {
+            var result: Static(numeric.max(1, max_degree -| 1), N) = .zero;
 
             var i: usize = 1;
             while (i <= max_degree) : (i += 1) {

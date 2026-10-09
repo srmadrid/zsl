@@ -9,13 +9,11 @@ const stats = @import("../stats.zig");
 const utils = @import("utils.zig");
 
 /// A uniform distribution that yields values of type `N`. For integral types,
-/// the range is inclusive, `[min, max]`, for non-integral types, the range is
-/// half-open, `[min, max)`, and for complex types the range is applied to the
-/// real and imaginary parts independently, `[min.re, max.re)` and
-/// `[min.im, max.im)`.
+/// the range is inclusive, `[min, max]`, and for non-integral types, the range
+/// is half-open, `[min, max)`.
 pub fn Uniform(N: type) type {
-    comptime if (!meta.isNumeric(N) or meta.numericType(N) == .bool)
-        @compileError("zsl.stats.Uniform: N must be a non-bool numeric type, got \n\tN = " ++ @typeName(N) ++ "\n");
+    comptime if (!meta.isNumeric(N) or meta.numericType(N) == .bool or !meta.isReal(N))
+        @compileError("zsl.stats.Uniform: N must be a non-bool real numeric type, got \n\tN = " ++ @typeName(N) ++ "\n");
 
     return struct {
         min: N,
@@ -23,9 +21,6 @@ pub fn Uniform(N: type) type {
 
         // Type signatures
         pub const is_distribution = true;
-
-        // Numeric type
-        pub const Numeric = N;
 
         /// Initializes a new uniform distribution.
         ///
@@ -53,21 +48,18 @@ pub fn Uniform(N: type) type {
         /// `N`: A random value uniformly distributed between `min` and `max`.
         pub fn sample(self: stats.Uniform(N), prng: std.Random) N {
             switch (comptime meta.numericType(N)) {
-                .bool => unreachable,
                 .int => return utils.discreteUniform(N, self.min, self.max, prng),
                 .float, .dyadic => {
-                    const u = utils.standardUniform(N, prng);
-                    return numeric.add(self.min, numeric.mul(u, numeric.sub(self.max, self.min)));
-                },
-                .complex => {
-                    const u_re = utils.standardUniform(meta.Real(N), prng);
-                    const u_im = utils.standardUniform(meta.Real(N), prng);
-                    return .{
-                        .re = numeric.add(self.min.re, numeric.mul(u_re, numeric.sub(self.max.re, self.min.re))),
-                        .im = numeric.add(self.min.im, numeric.mul(u_im, numeric.sub(self.max.im, self.min.im))),
-                    };
+                    return numeric.add(
+                        self.min,
+                        numeric.mul(
+                            utils.standardUniform(N, prng),
+                            numeric.sub(self.max, self.min),
+                        ),
+                    );
                 },
                 .custom => @compileError("zsl.stats.Uniform(N).sample: not implemented for custom types yet"),
+                else => unreachable,
             }
         }
     };

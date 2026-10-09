@@ -1,6 +1,4 @@
-const numeric = @import("../numeric.zig");
-
-const float = @import("../float.zig");
+const numeric = @import("../../numeric.zig");
 
 const dbl64 = @import("dbl64.zig");
 const ldbl128 = @import("ldbl128.zig");
@@ -326,8 +324,8 @@ fn goto_recompute64(x: [*]f64, j: *i32, i: *i32, f: *[20]f64, q: *[20]f64, jz: *
     }
 
     // Compute n
-    z.* = float.scalbn(z.*, q0); // Actual value of z
-    z.* -= 8.0 * float.floor(z.* * 0.125); // Trim off integer >= 8
+    z.* = @import("scalbn.zig").scalbn(z.*, q0); // Actual value of z
+    z.* -= 8.0 * @import("floor.zig").floor(z.* * 0.125); // Trim off integer >= 8
     n.* = numeric.cast(i32, z.*);
     z.* -= numeric.cast(f64, n.*);
     ih.* = 0;
@@ -369,7 +367,7 @@ fn goto_recompute64(x: [*]f64, j: *i32, i: *i32, f: *[20]f64, q: *[20]f64, jz: *
         if (ih.* == 2) {
             z.* = 1.0 - z.*;
             if (carry != 0)
-                z.* -= float.scalbn(@as(f64, 1.0), q0);
+                z.* -= @import("scalbn.zig").scalbn(@as(f64, 1.0), q0);
         }
     }
 
@@ -486,7 +484,7 @@ pub fn k_rem_pio2_64(x: [*]f64, y: [*]f64, e0: i32, nx: i32, prec: i32) i32 {
             q0 -%= 24;
         }
     } else { // Break z into 24-bit if necessary
-        z = float.scalbn(z, -q0);
+        z = @import("scalbn.zig").scalbn(z, -q0);
         if (z >= 1.67772160000000000000e+7) {
             const fw: f64 = numeric.cast(f64, numeric.cast(i32, 5.96046447753906250000e-8 * z));
             iq[numeric.cast(u32, jz)] = numeric.cast(i32, z - 1.67772160000000000000e+7 * fw);
@@ -499,7 +497,7 @@ pub fn k_rem_pio2_64(x: [*]f64, y: [*]f64, e0: i32, nx: i32, prec: i32) i32 {
     }
 
     // Convert integer "bit" chunk to floating-point value
-    var fw: f64 = float.scalbn(@as(f64, 1.0), q0);
+    var fw: f64 = @import("scalbn.zig").scalbn(@as(f64, 1.0), q0);
     i = jz;
     while (i >= 0) : (i -= 1) {
         q[numeric.cast(u32, i)] = fw * numeric.cast(f64, iq[numeric.cast(u32, i)]);

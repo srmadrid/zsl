@@ -4,8 +4,6 @@ const meta = @import("../meta.zig");
 
 const numeric = @import("../numeric.zig");
 
-const int = @import("../int.zig");
-
 /// Generates a uniformly distributed integer in the closed interval
 /// `[min, max]`.
 pub fn discreteUniform(comptime N: type, min: N, max: N, prng: std.Random) N {
@@ -34,7 +32,7 @@ pub fn standardUniform(comptime N: type, prng: std.Random) N {
         .float => switch (comptime N) {
             f16 => {
                 const rand = prng.int(u24);
-                const rand_lz = int.min(14, @clz(rand));
+                const rand_lz = numeric.min(14, @clz(rand));
 
                 const mantissa: u10 = @truncate(rand);
                 const exponent = @as(u16, 14 - rand_lz) << 10;
